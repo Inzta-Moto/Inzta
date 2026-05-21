@@ -10,27 +10,27 @@ Dokumen ini melacak status implementasi fitur Inzta dari fase purwarupa (prototy
 - [x] Integrasi Firebase Firestore & Auth (Client-side / Sementara).
 - [x] Alur Checkout ke WhatsApp (Basic redirect).
 
-## Phase 2: Backend & Security Migration (Status: 🔴 Belum Dimulai)
-- [ ] Setup Firebase Admin SDK untuk Server-Side.
-- [ ] Buat Next.js API Routes (`/api/products`, `/api/orders`, dll) untuk memindahkan logika database dari komponen *client-side*.
-- [ ] Refactor folder `app/admin` yang ada saat ini agar menggunakan pemanggilan API alih-alih `getDocs/setDoc` Firebase Client secara langsung.
-- [ ] Implementasi Next.js Middleware untuk melindungi route `/admin` dan `/api/admin`.
+## Phase 2: Backend & Security Migration (Status: 🟡 Sedang Berjalan)
+- [x] Setup Firebase Admin SDK untuk Server-Side (Koneksi aman via `.env` dan fallback `serviceAccountKey.json`).
+- [x] Implementasi Next.js Middleware untuk melindungi route `/admin` dan `/api/admin`.
+- [/] Buat Next.js API Routes (`/api/products`, `/api/articles`) untuk memindahkan logika database dari client-side. (Sisa: `/api/orders`, `/api/affiliates`, dll).
+- [/] Refactor folder `app/admin` (Selesai untuk produk dan artikel agar menggunakan API Route. Sisa: affiliate, voucher, dan commission).
 - [ ] Amankan Firestore Rules (Hanya Admin SDK yang bisa memodifikasi, klien dibatasi).
 
 ## Phase 3: Order & Checkout Flow (Status: 🟡 Direncanakan)
 - [ ] Generate `Order ID` unik sebelum redirect checkout.
 - [ ] Simpan draft pesanan (`Status: Pending`) ke Firestore melalui API sebelum redirect ke WhatsApp.
-- [ ] Otomatisasi penyesuaian teks WhatsApp agar memuat `Order ID` dan total harga yang benar (termasuk diskon/voucher).
+- [x] Otomatisasi penyesuaian teks WhatsApp agar memuat total harga yang benar (termasuk diskon/voucher dari detail produk).
 
-## Phase 4: Admin Command Center (Status: 🟡 70% Selesai secara UI/Client-side)
+## Phase 4: Admin Command Center (Status: 🟡 75% Selesai)
 - [x] **Auth:** Halaman Login khusus Admin (Sudah ada di `app/admin/login`).
 - [x] **Dashboard:** UI metrik utama (Sudah ada di `app/admin/page.tsx`).
-- [x] **Product Manager:** Fitur CRUD produk & upload gambar (Sudah ada di `app/admin/produk`).
-- [x] **Blog/Content Manager:** CRUD untuk artikel (Sudah ada di `app/admin/artikel`).
+- [x] **Product Manager:** Fitur CRUD produk & upload gambar (Sudah menggunakan API).
+- [x] **Blog/Content Manager:** CRUD untuk artikel (Sudah menggunakan API).
 - [ ] **Order Manager:** Buat halaman baru `app/admin/order` untuk cari `Order ID`, ubah status (`pending` -> `completed`), dan logika otomatis potong stok.
 
-## Phase 5: Affiliate & Reward System (Status: 🟡 60% Selesai secara UI/Client-side)
+## Phase 5: Affiliate & Reward System (Status: 🟡 60% Selesai)
 - [x] **Admin - Affiliate Manager:** Fitur pendaftaran afiliasi, pembuatan voucher, dan tracking komisi (Sudah ada UI-nya).
 - [ ] Deteksi parameter URL `?aff=` secara global dan simpan ke `localStorage`/Cookies.
 - [ ] Logika auto-apply voucher saat checkout berdasarkan referal afiliasi.
-- [ ] Tambahkan logika perhitungan diskon (`discountAmount`) ke dalam model data pesanan saat klik "Beli".
+- [x] Tambahkan logika perhitungan diskon (`discountAmount`) ke dalam tampilan detail produk saat menerapkan voucher.

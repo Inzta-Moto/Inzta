@@ -17,8 +17,20 @@ export default function AdminLogin() {
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault(); setError(''); setLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, email, accessCode);
-      router.replace('/admin');
+      const userCredential = await signInWithEmailAndPassword(auth, email, accessCode);
+      const idToken = await userCredential.user.getIdToken();
+
+      const response = await fetch('/api/auth/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken }),
+      });
+
+      if (response.ok) {
+        router.replace('/admin');
+      } else {
+        setError('Gagal membuat sesi admin.');
+      }
     } catch (err: any) {
       let msg = 'Login gagal.';
       if (err.code === 'auth/user-not-found') msg = 'Email tidak ditemukan.';

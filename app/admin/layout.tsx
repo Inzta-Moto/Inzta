@@ -180,6 +180,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <span className="admin-nav-icon"><ArrowLeftIcon /></span>
             <span className="admin-nav-label">Kembali ke Toko</span>
           </Link>
+          <button 
+            onClick={async () => {
+              await fetch('/api/auth/logout', { method: 'POST' });
+              window.location.href = '/admin/login';
+            }}
+            className="admin-nav-item" 
+            style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', color: '#EF4444', marginTop: '4px', textAlign: 'left' }}
+          >
+            <span className="admin-nav-icon"><XIcon /></span>
+            <span className="admin-nav-label">Logout</span>
+          </button>
         </div>
       </aside>
 

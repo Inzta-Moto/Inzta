@@ -37,29 +37,31 @@ export default function DetailClient({ slug }: { slug: string }) {
 
   async function loadProduct() {
     try {
-      const docSnap = await getDoc(doc(db, 'products', slug));
-      if (docSnap.exists()) {
-        const data = docSnap.data() as Product;
-        setProduct(data);
-        loadRelated(slug);
-      } else {
-        setError("Produk tidak ada di dalam database.");
+      const res = await fetch(`/api/products/${slug}`);
+      const data = await res.json();
+      
+      if (!res.ok) {
+        setError(data.error || 'Produk tidak ditemukan');
+        setLoading(false);
+        return;
+      }
+
+      const pData = data.product as Product;
+      setProduct(pData);
+      imagesLenRef.current = pData.images?.length || (pData.imageUrl ? 1 : 0);
+
+      // Load related products
+      const relRes = await fetch('/api/products');
+      const relData = await relRes.json();
+      if (relRes.ok && relData.products) {
+        let items: Product[] = relData.products;
+        setRelated(items.filter((p: Product) => p.isActive && p.slug !== slug).slice(0, 4));
       }
     } catch (e: any) {
-      console.error('[Detail Client Error]', e);
-      setError(e.message || "Gagal memuat data produk. Cek koneksi internet Anda.");
+      setError(e.message);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
-  }
-
-  async function loadRelated(currentSlug: string) {
-    try {
-      const snap = await getDocs(collection(db, 'products'));
-      let items: Product[] = snap.docs.map(d => d.data() as Product)
-        .filter(p => p.isActive === true && p.slug !== currentSlug)
-        .sort(() => Math.random() - 0.5).slice(0, 3);
-      setRelated(items);
-    } catch (e) { console.warn('[Related]', e); }
   }
 
   // ── Voucher Logic ──

@@ -1,8 +1,6 @@
 'use client';
 
 import { useState, useEffect, FormEvent } from 'react';
-import { collection, getDocs, doc, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 import { formatPrice } from '@/lib/utils';
 import { Product } from '@/types';
 import ImageUpload from '@/components/ImageUpload';
@@ -32,9 +30,22 @@ export default function ProductsPage() {
 
   async function loadProducts() {
     try {
-      const snap = await getDocs(collection(db, 'products'));
-      let items: Product[] = snap.docs.map(d => d.data() as Product).sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
-      setProducts(items);
+      const res = await fetch('/api/products');
+      const data = await res.json();
+      if (res.ok && data.products) {
+        const getTimestamp = (val: any) => {
+          if (!val) return 0;
+          if (typeof val === 'string') return new Date(val).getTime() || 0;
+          if (typeof val === 'number') return val;
+          if (typeof val === 'object') {
+            if (typeof val.seconds === 'number') return val.seconds * 1000;
+            if (typeof val._seconds === 'number') return val._seconds * 1000;
+          }
+          return 0;
+        };
+        let items: Product[] = data.products.sort((a: any, b: any) => getTimestamp(b.createdAt) - getTimestamp(a.createdAt));
+        setProducts(items);
+      }
     } catch (e) { console.error(e); }
   }
 
@@ -56,7 +67,16 @@ export default function ProductsPage() {
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
-    try { await deleteDoc(doc(db, 'products', deleteTarget.slug)); closeDelete(); loadProducts(); } catch (e: any) { alert(e.message); }
+    try { 
+      const res = await fetch('/api/products/' + deleteTarget.slug, { method: 'DELETE' });
+      if (res.ok) {
+        closeDelete(); 
+        loadProducts(); 
+      } else {
+        const errorData = await res.json();
+        alert(errorData.error || 'Failed to delete');
+      }
+    } catch (e: any) { alert(e.message); }
   };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
@@ -85,8 +105,21 @@ export default function ProductsPage() {
     };
 
     try {
-      if (editSlug) { await setDoc(doc(db, 'products', editSlug), data, { merge: true }); if (editSlug !== slug) await deleteDoc(doc(db, 'products', editSlug)); }
-      else { data.createdAt = serverTimestamp() as any; await setDoc(doc(db, 'products', slug), data); }
+      if (editSlug && editSlug !== slug) {
+        await fetch('/api/products/' + editSlug, { method: 'DELETE' });
+      }
+      
+      const res = await fetch('/api/products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.error || 'Failed to save product');
+      }
+
       closeModal(); loadProducts();
     } catch (err: any) { 
       console.error(err);

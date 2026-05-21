@@ -1,8 +1,6 @@
 'use client';
 
 import { useState, useEffect, FormEvent } from 'react';
-import { collection, getDocs, doc, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 import { Article } from '@/types';
 import ImageUpload from '@/components/ImageUpload';
 
@@ -18,9 +16,22 @@ export default function ArticlesPage() {
 
   async function loadArticles() {
     try {
-      const snap = await getDocs(collection(db, 'articles'));
-      let items: Article[] = snap.docs.map(d => d.data() as Article).sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
-      setArticles(items);
+      const res = await fetch('/api/articles');
+      const data = await res.json();
+      if (res.ok && data.items) {
+        const getTimestamp = (val: any) => {
+          if (!val) return 0;
+          if (typeof val === 'string') return new Date(val).getTime() || 0;
+          if (typeof val === 'number') return val;
+          if (typeof val === 'object') {
+            if (typeof val.seconds === 'number') return val.seconds * 1000;
+            if (typeof val._seconds === 'number') return val._seconds * 1000;
+          }
+          return 0;
+        };
+        let items: Article[] = data.items.sort((a: any, b: any) => getTimestamp(b.createdAt) - getTimestamp(a.createdAt));
+        setArticles(items);
+      }
     } catch (e) { console.error(e); }
   }
 
@@ -39,7 +50,12 @@ export default function ArticlesPage() {
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
-    try { await deleteDoc(doc(db, 'articles', deleteTarget.slug)); closeDelete(); loadArticles(); } catch (e: any) { alert(e.message); }
+    try { 
+      const res = await fetch('/api/articles/' + deleteTarget.slug, { method: 'DELETE' });
+      if (res.ok) {
+        closeDelete(); loadArticles(); 
+      }
+    } catch (e: any) { alert(e.message); }
   };
 
   const autoSlug = (title: string) => {
@@ -63,33 +79,21 @@ export default function ArticlesPage() {
     };
 
     try {
-      if (editSlug) { 
-        await setDoc(doc(db, 'articles', editSlug), data, { merge: true }); 
-        if (editSlug !== slug) await deleteDoc(doc(db, 'articles', editSlug)); 
-      } else { 
-        data.createdAt = serverTimestamp(); 
-        await setDoc(doc(db, 'articles', slug), data); 
+      if (editSlug && editSlug !== slug) { 
+        await fetch('/api/articles/' + editSlug, { method: 'DELETE' }); 
       }
+      
+      const res = await fetch('/api/articles', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      
+      if (!res.ok) throw new Error('Gagal menyimpan');
+      
       closeModal(); loadArticles();
     } catch (err: any) { setFormError('Error: ' + err.message); }
     setSaving(false);
-  };
-
-  const seedDummyArticle = async () => {
-    try {
-      const dummyData: any = {
-        title: 'Tips Aman Riding Saat Hujan',
-        slug: 'tips-aman-riding-saat-hujan',
-        excerpt: 'Hujan bukan alasan berhenti berkendara. Simak tips aman riding saat hujan menggunakan gear yang tepat dari INZTA.',
-        content: 'Hujan bukan alasan berhenti berkendara.\n\nPertama, pastikan kamu menggunakan jas hujan dan tas waterproof seperti INZTA agar barang bawaanmu tetap kering.\n\nKedua, kurangi kecepatan dan jaga jarak aman dengan kendaraan di depanmu. Jalan basah membuat jarak pengereman lebih panjang.\n\nKetiga, pastikan visor helm bersih dan gunakan anti-fog agar visi tetap jelas.\n\nDengan persiapan yang matang, riding di bawah hujan tetap bisa menjadi pengalaman yang menyenangkan!',
-        images: ['https://images.unsplash.com/photo-1558981806-ec527fa84c39?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'],
-        createdAt: serverTimestamp()
-      };
-      await setDoc(doc(db, 'articles', dummyData.slug), dummyData);
-      loadArticles();
-    } catch (err: any) {
-      alert('Gagal membuat data contoh: ' + err.message);
-    }
   };
 
   return (
@@ -102,9 +106,6 @@ export default function ArticlesPage() {
       {articles.length === 0 && (
         <div className="empty-state" style={{ marginBottom: '24px' }}>
           <p>Collection <strong>articles</strong> belum ada.</p>
-          <button onClick={seedDummyArticle} className="btn btn-primary" style={{ marginTop: '12px', fontSize: 11, padding: '8px 16px' }}>
-            🚀 Buat Data Contoh Sekarang
-          </button>
         </div>
       )}
 
