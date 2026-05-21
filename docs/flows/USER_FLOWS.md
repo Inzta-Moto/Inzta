@@ -19,7 +19,7 @@
     - Admin receives the message, logs into the dashboard, searches for `#ORD-12345`, and verifies the price is correct before providing payment instructions (Bank Transfer).
 
 ## 2. Affiliate Flow
-1.  **Referral:** User clicks an affiliate link (e.g., `?ref=rider123`).
+1.  **Referral:** User clicks an affiliate link (e.g., `?aff=rider123`).
 2.  **Shopping:** User browses and finds a product.
 3.  **Voucher Usage:** User applies a voucher code provided by the affiliate.
 4.  **Conversion:** Purchase happens on WhatsApp.
@@ -27,8 +27,9 @@
 
 ## 3. Admin Flow (Management)
 1.  **Auth:** Admin logs in via `/admin/login`.
-2.  **Dashboard:** Views stock alerts and high-level stats.
-3.  **Content Management:**
+2.  **Dashboard:** Views stock alerts, recent pending orders, and high-level stats.
+3.  **Content & Order Management:**
+    - **Orders:** Verifikasi `Order ID` dari pesan WhatsApp. Ubah status pesanan dari `pending` menjadi `completed`. **Catatan:** Sistem baru akan mengurangi jumlah stok (`stock`) produk ketika pesanan di-mark sebagai `completed`.
     - **Products:** Create, Edit, Toggle `isActive`, Manage inventory.
     - **Blog:** Write articles, manage images.
     - **Affiliates:** Add new partners, generate voucher codes.

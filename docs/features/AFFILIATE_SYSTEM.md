@@ -26,9 +26,12 @@ interface Order {
   orderId: string;
   customerName: string;
   address: string;
-  items: Array<{id, name, price}>;
-  totalPrice: number;
+  items: Array<{id: string, name: string, price: number, quantity: number}>;
+  totalPrice: number; // Harga sebelum diskon
+  discountAmount: number; // Jumlah potongan harga (baru)
+  voucherCode: string | null; // Voucher yang digunakan (baru)
   affiliateId: string | null; // For commission tracking
+  finalPrice: number; // Harga akhir setelah diskon (baru)
   status: 'pending' | 'completed' | 'cancelled';
   createdAt: Timestamp;
 }
