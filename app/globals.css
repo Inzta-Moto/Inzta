@@ -1372,3 +1372,11 @@ select.form-input { appearance: none; background-image: url("data:image/svg+xml,
   .stat-number { font-size: 20px; }
   .stat-label { font-size: 10px; }
 }
+
+/* ============================================
+   SPINNER ANIMATION
+   ============================================ */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}

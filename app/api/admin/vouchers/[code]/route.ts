@@ -1,0 +1,13 @@
+import { NextResponse } from 'next/server';
+import { getAdminDb } from '@/lib/firebaseAdmin';
+
+export async function DELETE(_: Request, { params }: { params: { code: string } }) {
+  try {
+    const code = decodeURIComponent(params.code);
+    await getAdminDb().collection('vouchers').doc(code).delete();
+    return NextResponse.json({ status: 'success' }, { status: 200 });
+  } catch (error: any) {
+    console.error('Error deleting voucher:', error);
+    return NextResponse.json({ error: 'Failed to delete voucher' }, { status: 500 });
+  }
+}

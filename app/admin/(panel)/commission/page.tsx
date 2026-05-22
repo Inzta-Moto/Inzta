@@ -1,8 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { collection, getDocs, doc, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 import { formatPrice } from '@/lib/utils';
 import { Commission } from '@/types';
 
@@ -16,10 +14,11 @@ export default function CommissionPage() {
   async function loadCommissions() {
     setLoading(true);
     try {
-      const snap = await getDocs(collection(db, 'commissions'));
-      let items = snap.docs.map(d => ({ id: d.id, ...d.data() } as Commission))
-        .sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
-      setCommissions(items);
+      const res = await fetch('/api/admin/commissions');
+      const data = await res.json();
+      if (res.ok && data.commissions) {
+        setCommissions(data.commissions as Commission[]);
+      }
     } catch (e) { console.error(e); }
     setLoading(false);
   }
@@ -32,14 +31,22 @@ export default function CommissionPage() {
 
   const markPaid = async (id: string) => {
     try {
-      await updateDoc(doc(db, 'commissions', id), { isPaid: true, paidAt: serverTimestamp() });
+      await fetch('/api/admin/commissions/' + id, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isPaid: true }),
+      });
       loadCommissions();
     } catch (e: any) { alert(e.message); }
   };
 
   const markUnpaid = async (id: string) => {
     try {
-      await updateDoc(doc(db, 'commissions', id), { isPaid: false, paidAt: null });
+      await fetch('/api/admin/commissions/' + id, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isPaid: false }),
+      });
       loadCommissions();
     } catch (e: any) { alert(e.message); }
   };
@@ -49,7 +56,11 @@ export default function CommissionPage() {
     if (pending.length === 0) return;
     if (!confirm(`Cairkan ${pending.length} komisi pending (${formatPrice(totalPending)})?`)) return;
     try {
-      const batch = pending.map(c => updateDoc(doc(db, 'commissions', c.id), { isPaid: true, paidAt: serverTimestamp() }));
+      const batch = pending.map(c => fetch('/api/admin/commissions/' + c.id, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isPaid: true }),
+      }));
       await Promise.all(batch);
       loadCommissions();
     } catch (e: any) { alert(e.message); }
@@ -58,7 +69,7 @@ export default function CommissionPage() {
   const deleteCommission = async (id: string) => {
     if (!confirm('Hapus komisi ini?')) return;
     try {
-      await deleteDoc(doc(db, 'commissions', id));
+      await fetch('/api/admin/commissions/' + id, { method: 'DELETE' });
       loadCommissions();
     } catch (e: any) { alert(e.message); }
   };

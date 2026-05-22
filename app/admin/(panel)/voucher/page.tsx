@@ -1,8 +1,6 @@
 'use client';
 
 import { useState, useEffect, FormEvent } from 'react';
-import { collection, getDocs, doc, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 import { formatPrice } from '@/lib/utils';
 import { Voucher, Affiliate } from '@/types';
 import { Copy, Check, Ticket } from 'lucide-react';
@@ -27,15 +25,21 @@ export default function VoucherPage() {
 
   async function loadVouchers() {
     try {
-      const snap = await getDocs(collection(db, 'vouchers'));
-      setVouchers(snap.docs.map(d => d.data() as Voucher).sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)));
+      const res = await fetch('/api/admin/vouchers');
+      const data = await res.json();
+      if (res.ok && data.vouchers) {
+        setVouchers(data.vouchers as Voucher[]);
+      }
     } catch (e) { console.error(e); }
   }
 
   async function loadAffiliates() {
     try {
-      const snap = await getDocs(collection(db, 'affiliates'));
-      setAffiliates(snap.docs.map(d => ({ id: d.id, ...d.data() } as Affiliate)));
+      const res = await fetch('/api/admin/affiliates');
+      const data = await res.json();
+      if (res.ok && data.affiliates) {
+        setAffiliates(data.affiliates as Affiliate[]);
+      }
     } catch (e) { console.error(e); }
   }
 
@@ -51,7 +55,10 @@ export default function VoucherPage() {
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
-    try { await deleteDoc(doc(db, 'vouchers', deleteTarget.code)); closeDelete(); loadVouchers(); } catch (e: any) { alert(e.message); }
+    try {
+      await fetch('/api/admin/vouchers/' + deleteTarget.code, { method: 'DELETE' });
+      closeDelete(); loadVouchers();
+    } catch (e: any) { alert(e.message); }
   };
 
   const copyCode = (code: string) => {
@@ -84,12 +91,16 @@ export default function VoucherPage() {
       usageCount: modal?.usageCount || 0,
       maxUsage: maxUsageVal ? parseInt(maxUsageVal) : null,
       expiresAt: expiresVal ? new Date(expiresVal) : null,
-      createdAt: modal?.createdAt || serverTimestamp() as any,
+      createdAt: modal?.createdAt || new Date().toISOString() as any,
     };
 
     try {
-      await setDoc(doc(db, 'vouchers', code), data, { merge: true });
-      if (editCode && editCode !== code) await deleteDoc(doc(db, 'vouchers', editCode));
+      await fetch('/api/admin/vouchers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (editCode && editCode !== code) await fetch('/api/admin/vouchers/' + editCode, { method: 'DELETE' });
       closeModal(); loadVouchers();
     } catch (err: any) { setFormError('Gagal menyimpan: ' + err.message); }
     setSaving(false);

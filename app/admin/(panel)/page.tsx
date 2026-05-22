@@ -1,8 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { collection, getDocs } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 import Link from 'next/link';
 import { Product } from '@/types';
 
@@ -13,10 +11,15 @@ export default function AdminDashboard() {
 
   async function loadDash() {
     try {
-      const pSnap = await getDocs(collection(db, 'products'));
-      const products = pSnap.docs.map(d => d.data() as Product);
-      const lowStock = products.filter(p => p.stock <= 10);
-      setStats({ total: products.length, active: products.filter(p => p.isActive).length, lowStock: lowStock.length, lowList: lowStock });
+      const res = await fetch('/api/admin/dashboard-stats');
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || 'Failed to load dashboard stats');
+      setStats({
+        total: data.total || 0,
+        active: data.active || 0,
+        lowStock: data.lowStock || 0,
+        lowList: data.lowList || [],
+      });
     } catch (e) { console.error(e); }
   }
 

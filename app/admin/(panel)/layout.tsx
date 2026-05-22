@@ -4,9 +4,6 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { db } from '@/lib/firebase';
-import { collection, getDocs } from 'firebase/firestore';
-import { Product, Article, Voucher, Affiliate, Commission } from '@/types';
 
 // ── Icons ──
 function GridIcon() {
@@ -59,6 +56,16 @@ function DollarIcon() {
   );
 }
 
+function ClipboardIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+      <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
+      <path d="M9 14l2 2 4-4" />
+    </svg>
+  );
+}
+
 function ArrowLeftIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -87,6 +94,7 @@ function XIcon() {
 const navLinks = [
   { href: '/admin', label: 'Dashboard', icon: <GridIcon /> },
   { href: '/admin/produk', label: 'Produk', icon: <BoxIcon /> },
+  { href: '/admin/orders', label: 'Pesanan', icon: <ClipboardIcon /> },
   { href: '/admin/artikel', label: 'Artikel', icon: <ArticleIcon /> },
   { href: '/admin/voucher', label: 'Voucher', icon: <TicketIcon /> },
   { href: '/admin/affiliate', label: 'Afiliasi', icon: <UsersIcon /> },
@@ -96,7 +104,7 @@ const navLinks = [
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [stats, setStats] = useState({ products: 0, articles: 0, vouchers: 0, affiliates: 0, pendingCommissions: 0 });
+  const [stats, setStats] = useState({ products: 0, articles: 0, vouchers: 0, affiliates: 0, pendingCommissions: 0, pendingOrders: 0 });
 
   useEffect(() => {
     loadSidebarStats();
@@ -104,23 +112,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   async function loadSidebarStats() {
     try {
-      const [pSnap, aSnap, vSnap, afSnap, cSnap] = await Promise.all([
-        getDocs(collection(db, 'products')),
-        getDocs(collection(db, 'articles')),
-        getDocs(collection(db, 'vouchers')),
-        getDocs(collection(db, 'affiliates')),
-        getDocs(collection(db, 'commissions')),
-      ]);
-
-      const commissions = cSnap.docs.map(d => d.data() as Commission);
-      const pendingCount = commissions.filter(c => !c.isPaid).length;
-
+      const res = await fetch('/api/admin/sidebar-stats');
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || 'Failed to load sidebar stats');
       setStats({
-        products: pSnap.size,
-        articles: aSnap.size,
-        vouchers: vSnap.size,
-        affiliates: afSnap.size,
-        pendingCommissions: pendingCount,
+        products: data.products || 0,
+        articles: data.articles || 0,
+        vouchers: data.vouchers || 0,
+        affiliates: data.affiliates || 0,
+        pendingCommissions: data.pendingCommissions || 0,
+        pendingOrders: data.pendingOrders || 0,
       });
     } catch (e) { console.error('[Sidebar Stats]', e); }
   }
@@ -128,6 +129,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   // Badge counts per menu
   const getBadge = (href: string) => {
     if (href === '/admin/commission' && stats.pendingCommissions > 0) return stats.pendingCommissions;
+    if (href === '/admin/orders' && stats.pendingOrders > 0) return stats.pendingOrders;
     return 0;
   };
 

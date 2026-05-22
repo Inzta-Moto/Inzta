@@ -1,0 +1,40 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Default Deny: Tolak semua akses jika tidak diizinkan secara eksplisit
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Koleksi Publik: Katalog Produk & Artikel (Hanya BACA)
+    match /products/{productId} {
+      allow read: if true;
+      allow write: if false;
+    }
+    
+    match /articles/{articleId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Koleksi Proteksi Admin (Hanya bisa diakses via Admin SDK/API Server)
+    // Client-side tidak bisa membaca/menulis data ini sama sekali
+    match /orders/{orderId} {
+      allow read, write: if false;
+    }
+
+    match /vouchers/{voucherCode} {
+      allow read, write: if false;
+    }
+
+    match /affiliates/{affiliateId} {
+      allow read, write: if false;
+    }
+
+    match /commissions/{commissionId} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -76,3 +76,25 @@ export interface Commission {
   paidAt: any;
   createdAt: any;
 }
+
+export interface OrderItem {
+  id: string;       // product slug
+  name: string;
+  price: number;
+  quantity: number;
+}
+
+export interface Order {
+  orderId: string;
+  customerName: string;
+  address: string;
+  items: OrderItem[];
+  totalPrice: number;
+  discountAmount: number;
+  voucherCode: string | null;
+  affiliateId: string | null;
+  finalPrice: number;
+  status: 'pending' | 'completed' | 'cancelled';
+  createdAt: any;
+  completedAt?: any;
+}
