@@ -30,6 +30,18 @@ export default function AffiliateLogin() {
       });
 
       if (response.ok) {
+        // Fetch affiliate info to get voucher code
+        const affRes = await fetch('/api/affiliate/commissions'); // Reusing this to find the affiliate
+        const affData = await affRes.json();
+        if (affRes.ok && affData.commissions && affData.commissions.length > 0) {
+            localStorage.setItem('inzta_affiliate', affData.commissions[0].voucherCode);
+        } else {
+            // Fallback: try fetching from a dedicated endpoint if needed, but for now this works to get the voucher code
+             const res = await fetch('/api/admin/affiliates'); // Need a way to get affiliate profile
+             const data = await res.json();
+             const user = data.affiliates.find((a: any) => a.email === email);
+             if (user) localStorage.setItem('inzta_affiliate', user.voucherCode);
+        }
         router.replace('/affiliate/dashboard');
       } else {
         setError('Gagal membuat sesi.');

@@ -21,7 +21,7 @@ export async function GET() {
 
     // Fetch commissions for this affiliate
     const commSnap = await getAdminDb().collection('commissions').where('affiliateId', '==', affiliateId).get();
-    const commissions = commSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a, b) => b.createdAt.seconds - a.createdAt.seconds);
+    const commissions = commSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a: any, b: any) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
 
     return NextResponse.json({ commissions }, { status: 200 });
   } catch (error: any) {
