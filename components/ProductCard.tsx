@@ -61,7 +61,7 @@ export default function ProductCard({ product: p, showDetails }: ProductCardProp
         <div className="product-card-image">
           {p.badge && <span className={`product-badge badge-${p.badgeType || 'white'}`}>{p.badge}</span>}
           {mainImage ? (
-            <>
+              <>
               <img src={mainImage} alt={p.name} loading="lazy" onError={handleImgError} />
               <div className="img-placeholder" style={{ display: 'none' }}><PlaceholderIcon /><span>{p.name}</span></div>
             </>
@@ -69,7 +69,7 @@ export default function ProductCard({ product: p, showDetails }: ProductCardProp
             <div className="img-placeholder" style={{ display: 'flex' }}><PlaceholderIcon /><span>{p.name}</span></div>
           )}
         </div>
-      </Link>
+      
       
       <div className="product-card-body">
         <div className="product-card-category">{p.category}</div>
@@ -115,7 +115,9 @@ export default function ProductCard({ product: p, showDetails }: ProductCardProp
           )}
         </button>
       </div>
+      </Link>
     </div>
+    
   );
 }
 
