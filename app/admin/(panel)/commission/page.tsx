@@ -124,7 +124,7 @@ export default function CommissionPage() {
             {affiliateSummary.map((a, i) => (
               <div key={i} style={{ padding: 14, border: '1px solid #e9ecef', borderRadius: 10, background: '#fff' }}>
                 <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 8 }}>{a.name}</div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#666' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', fontSize: 12, color: '#666', gap: 4 }}>
                   <span>Transaksi: <strong>{a.count}</strong></span>
                   <span>Belum: <strong style={{ color: '#e65100' }}>{formatPrice(a.pending)}</strong></span>
                   <span>Cair: <strong style={{ color: '#2e7d32' }}>{formatPrice(a.paid)}</strong></span>
