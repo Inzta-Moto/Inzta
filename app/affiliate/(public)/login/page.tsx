@@ -2,6 +2,8 @@
 
 import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
 import { Eye, EyeOff } from 'lucide-react';
 import { WA_NUMBER } from '@/lib/firebase';
 import Link from 'next/link';
@@ -16,13 +18,26 @@ export default function AffiliateLogin() {
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault(); setError(''); setLoading(true);
-    // Placeholder untuk logika login
-    setTimeout(() => {
-        console.log('Login attempt', email, accessCode);
-        setLoading(false);
-        // Nanti redirect ke dashboard affiliator
-        // router.replace('/affiliate/dashboard');
-    }, 1000);
+    
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, email, accessCode);
+      const idToken = await userCredential.user.getIdToken();
+
+      const response = await fetch('/api/auth/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken }),
+      });
+
+      if (response.ok) {
+        router.replace('/affiliate/dashboard');
+      } else {
+        setError('Gagal membuat sesi.');
+      }
+    } catch (err: any) {
+      setError('Login gagal. Email atau kode akses salah.');
+    }
+    setLoading(false);
   };
 
   return (
