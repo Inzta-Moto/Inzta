@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { RotateCcw, DollarSign, Trash2, CheckCircle, Clock } from 'lucide-react';
 import { formatPrice } from '@/lib/utils';
 import { Commission } from '@/types';
 
@@ -94,7 +95,7 @@ export default function CommissionPage() {
       <div className="admin-page-header">
         <h1 className="admin-page-title">Komisi Afiliasi</h1>
         <button className="btn btn-primary" onClick={markAllPendingPaid} disabled={commissions.filter(c => !c.isPaid).length === 0} style={{ fontSize: 11, padding: '8px 16px', background: '#2e7d32' }}>
-          ✅ Cairkan Semua Pending ({formatPrice(totalPending)})
+          <CheckCircle size={12} /> Cairkan Semua Pending ({formatPrice(totalPending)})
         </button>
       </div>
 
@@ -182,20 +183,20 @@ export default function CommissionPage() {
                 <td>
                   {c.isPaid ? (
                     <span className="table-badge table-badge-active" style={{ background: '#e8f5e9', color: '#2e7d32' }}>
-                      ✅ Cair {c.paidAt ? new Date(c.paidAt.seconds * 1000).toLocaleDateString('id-ID') : ''}
+                      <CheckCircle size={12} /> Cair {c.paidAt ? new Date(c.paidAt.seconds * 1000).toLocaleDateString('id-ID') : ''}
                     </span>
                   ) : (
-                    <span className="table-badge" style={{ background: '#fff3e0', color: '#e65100' }}>⏳ Pending</span>
+                    <span className="table-badge" style={{ background: '#fff3e0', color: '#e65100' }}><Clock size={12} /> Pending</span>
                   )}
                 </td>
                 <td>
                   <div className="table-actions">
                     {c.isPaid ? (
-                      <button className="table-btn" onClick={() => markUnpaid(c.id)} title="Batalkan cair">↩️</button>
+                      <button className="table-btn" onClick={() => markUnpaid(c.id)} title="Batalkan cair"><RotateCcw size={16} /></button>
                     ) : (
-                      <button className="table-btn" onClick={() => markPaid(c.id)} title="Cairkan komisi" style={{ color: '#2e7d32' }}>💰</button>
+                      <button className="table-btn" onClick={() => markPaid(c.id)} title="Cairkan komisi" style={{ color: '#2e7d32' }}><DollarSign size={16} /></button>
                     )}
-                    <button className="table-btn danger" onClick={() => deleteCommission(c.id)} title="Hapus">🗑️</button>
+                    <button className="table-btn danger" onClick={() => deleteCommission(c.id)} title="Hapus"><Trash2 size={16} /></button>
                   </div>
                 </td>
               </tr>

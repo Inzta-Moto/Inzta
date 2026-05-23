@@ -31,6 +31,9 @@ export default function DetailClient({ slug }: { slug: string }) {
   const [voucherError, setVoucherError] = useState('');
   const [discountAmount, setDiscountAmount] = useState(0);
 
+  // ── Quantity State ──
+  const [quantity, setQuantity] = useState(1);
+
   // ── Order State ──
   const [orderLoading, setOrderLoading] = useState(false);
 
@@ -67,50 +70,72 @@ export default function DetailClient({ slug }: { slug: string }) {
     }
   }
 
-  // ── Auto-Apply Affiliate Voucher ──
+  // ── Auto-Apply Affiliate Voucher & Re-calculate on Quantity Change ──
   useEffect(() => {
-    if (product && !voucherData && !voucherError && !voucherInput) {
-      const voucherCode = localStorage.getItem('inzta_affiliate');
-      if (voucherCode) {
-        const resolveAndApply = async () => {
-          try {
-            setVoucherLoading(true);
-            const res = await fetch(`/api/vouchers/validate?code=${voucherCode}`);
-            const data = await res.json();
-            
-            if (!res.ok) {
-               setVoucherLoading(false);
-               return;
-            }
-            const v = data.voucher;
-            
-            if (v.minPurchase && product.price < v.minPurchase) {
+    if (product) {
+      if (!voucherData && !voucherError && !voucherInput) {
+        const voucherCode = localStorage.getItem('inzta_affiliate');
+        if (voucherCode) {
+          const resolveAndApply = async () => {
+            try {
+              setVoucherLoading(true);
+              const res = await fetch(`/api/vouchers/validate?code=${voucherCode}`);
+              const data = await res.json();
+              
+              if (!res.ok) {
+                 setVoucherLoading(false);
+                 return;
+              }
+              const v = data.voucher;
+              
+              const subtotal = product.price * quantity;
+              if (v.minPurchase && subtotal < v.minPurchase) {
+                setVoucherLoading(false);
+                return; 
+              }
+
+              let disc = 0;
+              if (v.type === 'percentage') {
+                disc = (subtotal * v.value) / 100;
+                if (v.maxDiscount && disc > v.maxDiscount) disc = v.maxDiscount;
+              } else {
+                disc = v.value;
+              }
+              if (disc > subtotal) disc = subtotal;
+
+              setVoucherInput(v.code);
+              setVoucherData(v);
+              setDiscountAmount(Math.round(disc));
+            } catch (e) {
+              console.error('Failed to auto-apply affiliate voucher', e);
+            } finally {
               setVoucherLoading(false);
-              return; 
             }
+          };
+          resolveAndApply();
+        }
+      } else if (voucherData) {
+        // Re-calculate discount if quantity changes and voucher is already applied
+        const subtotal = product.price * quantity;
+        if (voucherData.minPurchase && subtotal < voucherData.minPurchase) {
+          // If quantity is reduced and no longer meets min purchase, remove voucher
+          removeVoucher();
+          setVoucherError(`Voucher dihapus. Minimal pembelian ${formatPrice(voucherData.minPurchase)}.`);
+          return;
+        }
 
-            let disc = 0;
-            if (v.type === 'percentage') {
-              disc = (product.price * v.value) / 100;
-              if (v.maxDiscount && disc > v.maxDiscount) disc = v.maxDiscount;
-            } else {
-              disc = v.value;
-            }
-            if (disc > product.price) disc = product.price;
-
-            setVoucherInput(v.code);
-            setVoucherData(v);
-            setDiscountAmount(Math.round(disc));
-          } catch (e) {
-            console.error('Failed to auto-apply affiliate voucher', e);
-          } finally {
-            setVoucherLoading(false);
-          }
-        };
-        resolveAndApply();
+        let disc = 0;
+        if (voucherData.type === 'percentage') {
+          disc = (subtotal * voucherData.value) / 100;
+          if (voucherData.maxDiscount && disc > voucherData.maxDiscount) disc = voucherData.maxDiscount;
+        } else {
+          disc = voucherData.value;
+        }
+        if (disc > subtotal) disc = subtotal;
+        setDiscountAmount(Math.round(disc));
       }
     }
-  }, [product?.slug]);
+  }, [product?.slug, quantity]);
 
   // ── Voucher Logic ──
   const applyVoucher = async () => {
@@ -132,17 +157,18 @@ export default function DetailClient({ slug }: { slug: string }) {
       }
 
       const v = data.voucher;
+      const subtotal = product.price * quantity;
 
-      if (v.minPurchase && product.price < v.minPurchase) { setVoucherError(`Minimal pembelian ${formatPrice(v.minPurchase)}.`); setVoucherLoading(false); return; }
+      if (v.minPurchase && subtotal < v.minPurchase) { setVoucherError(`Minimal pembelian ${formatPrice(v.minPurchase)}.`); setVoucherLoading(false); return; }
 
       let disc = 0;
       if (v.type === 'percentage') {
-        disc = (product.price * v.value) / 100;
+        disc = (subtotal * v.value) / 100;
         if (v.maxDiscount && disc > v.maxDiscount) disc = v.maxDiscount;
       } else {
         disc = v.value;
       }
-      if (disc > product.price) disc = product.price;
+      if (disc > subtotal) disc = subtotal;
 
       setVoucherData(v);
       setDiscountAmount(Math.round(disc));
@@ -163,14 +189,16 @@ export default function DetailClient({ slug }: { slug: string }) {
   const buildWaLink = (orderId?: string) => {
     if (!product) return '#';
     const p = product;
-    const fp = p.price - discountAmount;
+    const subtotal = p.price * quantity;
+    const fp = subtotal - discountAmount;
 
     let msg = `🛒 *PESANAN PRODUK*\n`;
     if (orderId) msg += `📋 Order ID: #${orderId}\n`;
     msg += `━━━━━━━━━━━━━━━\n\n`;
-    msg += `📦 *${p.name}*\n`;
+    msg += `📦 *${p.name}* (x${quantity})\n`;
     if (p.features?.length) msg += `${p.features.join(' • ')}\n`;
-    msg += `\n💰 Harga: ${formatPrice(p.price)}\n`;
+    msg += `\n💰 Harga Satuan: ${formatPrice(p.price)}\n`;
+    msg += `💵 Subtotal: ${formatPrice(subtotal)}\n`;
     if (voucherData) {
       msg += `🎫 Voucher: ${voucherData.code}\n`;
       msg += `🔻 Diskon: -${formatPrice(discountAmount)}\n`;
@@ -189,15 +217,16 @@ export default function DetailClient({ slug }: { slug: string }) {
     setOrderLoading(true);
 
     try {
-      const fp = product.price - discountAmount;
+      const subtotal = product.price * quantity;
+      const fp = subtotal - discountAmount;
 
       // 1. Create order via API
       const res = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          items: [{ id: product.slug, name: product.name, price: product.price, quantity: 1 }],
-          totalPrice: product.price,
+          items: [{ id: product.slug, name: product.name, price: product.price, quantity: quantity }],
+          totalPrice: subtotal,
           discountAmount: discountAmount,
           voucherCode: voucherData?.code || null,
           affiliateId: voucherData?.affiliateId || null,
@@ -223,6 +252,7 @@ export default function DetailClient({ slug }: { slug: string }) {
               productName: product.name,
               productSlug: product.slug,
               productPrice: product.price,
+              quantity: quantity,
               discountAmount: discountAmount,
               finalPrice: fp,
             })
@@ -325,7 +355,7 @@ export default function DetailClient({ slug }: { slug: string }) {
   const stockCls = p.stock <= 10 ? 'low-stock' : 'in-stock';
   const stockLabel = p.stock <= 10 ? `Sisa ${p.stock} unit` : 'Tersedia';
 
-  const finalPrice = p.price - discountAmount;
+  const finalPrice = (p.price * quantity) - discountAmount;
 
   const trustItems: { icon: LucideIcon; title: string; desc: string }[] = [
     { icon: Truck, title: 'Pengiriman Cepat', desc: 'Paket dikirim 1-2 hari kerja' },
@@ -446,6 +476,65 @@ export default function DetailClient({ slug }: { slug: string }) {
               <div className="detail-stock">
                 <span className={`detail-stock-dot ${stockCls}`} />
                 <span className="detail-stock-text"><strong>{stockLabel}</strong></span>
+              </div>
+
+              {/* ── Quantity Selector ── */}
+              <div style={{ marginBottom: 20 }}>
+                <div className="detail-features-label">Jumlah</div>
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  width: 'fit-content',
+                  border: '1px solid var(--border-light)',
+                  borderRadius: 8,
+                  overflow: 'hidden',
+                  background: 'var(--bg-white)'
+                }}>
+                  <button 
+                    onClick={() => setQuantity(q => Math.max(1, q - 1))}
+                    disabled={quantity <= 1}
+                    style={{ 
+                      padding: '8px 14px', 
+                      background: 'var(--bg-subtle)', 
+                      border: 'none',
+                      cursor: quantity <= 1 ? 'not-allowed' : 'pointer',
+                      opacity: quantity <= 1 ? 0.5 : 1,
+                      fontSize: 16,
+                      fontWeight: 600,
+                      color: 'var(--text-primary)',
+                      borderRight: '1px solid var(--border-light)'
+                    }}
+                  >
+                    -
+                  </button>
+                  <div style={{ 
+                    padding: '8px 24px', 
+                    fontSize: 14, 
+                    fontWeight: 600, 
+                    color: 'var(--text-primary)',
+                    minWidth: '40px',
+                    textAlign: 'center'
+                  }}>
+                    {quantity}
+                  </div>
+                  <button 
+                    onClick={() => setQuantity(q => Math.min(p.stock, q + 1))}
+                    disabled={quantity >= p.stock}
+                    style={{ 
+                      padding: '8px 14px', 
+                      background: 'var(--bg-subtle)', 
+                      border: 'none',
+                      cursor: quantity >= p.stock ? 'not-allowed' : 'pointer',
+                      opacity: quantity >= p.stock ? 0.5 : 1,
+                      fontSize: 16,
+                      fontWeight: 600,
+                      color: 'var(--text-primary)',
+                      borderLeft: '1px solid var(--border-light)'
+                    }}
+                  >
+                    +
+                  </button>
+                </div>
               </div>
 
               {/* ── Voucher Input ── */}

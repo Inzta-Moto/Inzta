@@ -2,7 +2,7 @@
 
 import { useState, useEffect, FormEvent } from 'react';
 import { Affiliate } from '@/types';
-import { Copy, Check, Users, Phone, Mail } from 'lucide-react';
+import { Copy, Check, Users, Phone, Mail, Edit2, Trash2 } from 'lucide-react';
 
 function generateAffCode() {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -171,8 +171,8 @@ export default function AffiliatePage() {
                 <td style={{ fontSize: 12 }}>{a.createdAt ? (typeof a.createdAt === 'object' ? new Date(a.createdAt.seconds * 1000).toLocaleDateString('id-ID') : new Date(a.createdAt).toLocaleDateString('id-ID')) : '-'}</td>
                 <td>
                   <div className="table-actions">
-                    <button className="table-btn" onClick={() => openEdit(a)}>✏️</button>
-                    <button className="table-btn danger" onClick={() => openDelete(a)}>🗑️</button>
+                    <button className="table-btn" onClick={() => openEdit(a)}><Edit2 size={16} /></button>
+                    <button className="table-btn danger" onClick={() => openDelete(a)}><Trash2 size={16} /></button>
                   </div>
                 </td>
               </tr>
@@ -181,7 +181,6 @@ export default function AffiliatePage() {
         </table>
       </div>
 
-      {/* Modal Add/Edit */}
       {modal !== null && (
         <div className="modal-overlay" style={{ display: 'flex' }} onClick={e => { if (e.target === e.currentTarget) closeModal(); }}>
           <div className="modal" style={{ maxWidth: 440 }}>
@@ -233,7 +232,6 @@ export default function AffiliatePage() {
         </div>
       )}
 
-      {/* Modal Delete */}
       {deleteTarget && (
         <div className="modal-overlay" style={{ display: 'flex' }} onClick={e => { if (e.target === e.currentTarget) closeDelete(); }}>
           <div className="modal modal-sm">
@@ -244,7 +242,7 @@ export default function AffiliatePage() {
             </div>
             <div className="modal-footer">
               <button type="button" className="btn btn-ghost" onClick={closeDelete} style={{ fontSize: 11, padding: '8px 16px' }}>Batal</button>
-              <button className="btn btn-primary" style={{ fontSize: 11, padding: '8px 16px', background: '#333' }} onClick={handleDelete}>Hapus</button>
+              <button className="btn btn-primary" style={{ fontSize: 11, padding: '8px 16px', background: '#333' }} onClick={handleDelete}><Trash2 size={12} /> Hapus</button>
             </div>
           </div>
         </div>

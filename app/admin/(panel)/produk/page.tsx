@@ -4,6 +4,7 @@ import { useState, useEffect, FormEvent } from 'react';
 import { formatPrice } from '@/lib/utils';
 import { Product } from '@/types';
 import ImageUpload from '@/components/ImageUpload';
+import { Edit2, Trash2, Package } from 'lucide-react';
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -140,7 +141,24 @@ export default function ProductsPage() {
         {products.length === 0 ? <tr><td colSpan={6} className="table-empty">Belum ada produk.</td></tr> : products.map(p => {
           const thumb = p.images?.[0] || p.imageUrl;
           return (
-            <tr key={p.slug}><td><div className="table-product-cell">{thumb ? <img src={thumb} className="table-product-thumb" alt="" /> : <div className="table-product-thumb-placeholder">📦</div>}<span className="table-product-name">{p.name}</span></div></td><td style={{ textTransform: 'capitalize' }}>{p.category}</td><td>{formatPrice(p.price)}</td><td>{p.stock}</td><td>{p.isActive ? <span className="table-badge table-badge-active">Aktif</span> : <span className="table-badge table-badge-inactive">Nonaktif</span>}</td><td><div className="table-actions"><button className="table-btn" onClick={() => openEdit(p)}>✏️</button><button className="table-btn danger" onClick={() => openDelete(p.slug, p.name)}>🗑️</button></div></td></tr>
+            <tr key={p.slug}>
+              <td>
+                <div className="table-product-cell">
+                  {thumb ? <img src={thumb} className="table-product-thumb" alt="" /> : <div className="table-product-thumb-placeholder"><Package size={16} /></div>}
+                  <span className="table-product-name">{p.name}</span>
+                </div>
+              </td>
+              <td style={{ textTransform: 'capitalize' }}>{p.category}</td>
+              <td>{formatPrice(p.price)}</td>
+              <td>{p.stock}</td>
+              <td>{p.isActive ? <span className="table-badge table-badge-active">Aktif</span> : <span className="table-badge table-badge-inactive">Nonaktif</span>}</td>
+              <td>
+                <div className="table-actions">
+                  <button className="table-btn" onClick={() => openEdit(p)}><Edit2 size={16} /></button>
+                  <button className="table-btn danger" onClick={() => openDelete(p.slug, p.name)}><Trash2 size={16} /></button>
+                </div>
+              </td>
+            </tr>
           );
         })}
       </tbody></table></div>
@@ -189,7 +207,7 @@ export default function ProductsPage() {
         <div className="modal-footer"><button type="button" className="btn btn-ghost" onClick={closeModal} style={{ fontSize: 11, padding: '8px 16px' }}>Batal</button><button type="submit" className="btn btn-primary" disabled={saving} style={{ fontSize: 11, padding: '8px 16px' }}>{saving ? 'Menyimpan...' : 'Simpan'}</button></div>
       </form></div></div>)}
 
-      {deleteTarget && (<div className="modal-overlay" style={{ display: 'flex' }} onClick={e => { if (e.target === e.currentTarget) closeDelete(); }}><div className="modal modal-sm"><div className="modal-header"><h2 className="modal-title">Hapus Produk</h2><button type="button" className="modal-close" onClick={closeDelete}>&times;</button></div><div className="modal-body"><p className="modal-text">Yakin hapus <strong>{deleteTarget.name}</strong>?</p></div><div className="modal-footer"><button type="button" className="btn btn-ghost" onClick={closeDelete} style={{ fontSize: 11, padding: '8px 16px' }}>Batal</button><button className="btn btn-primary" style={{ fontSize: 11, padding: '8px 16px', background: '#333' }} onClick={handleDelete}>Hapus</button></div></div></div>)}
+      {deleteTarget && (<div className="modal-overlay" style={{ display: 'flex' }} onClick={e => { if (e.target === e.currentTarget) closeDelete(); }}><div className="modal modal-sm"><div className="modal-header"><h2 className="modal-title">Hapus Produk</h2><button type="button" className="modal-close" onClick={closeDelete}>&times;</button></div><div className="modal-body"><p className="modal-text">Yakin hapus <strong>{deleteTarget.name}</strong>?</p></div><div className="modal-footer"><button type="button" className="btn btn-ghost" onClick={closeDelete} style={{ fontSize: 11, padding: '8px 16px' }}>Batal</button><button className="btn btn-primary" style={{ fontSize: 11, padding: '8px 16px', background: '#333' }} onClick={handleDelete}><Trash2 size={12} /> Hapus</button></div></div></div>)}
     </>
   );
 }

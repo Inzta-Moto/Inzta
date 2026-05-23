@@ -2,6 +2,7 @@
 
 import { useState, useEffect, FormEvent } from 'react';
 import { Article } from '@/types';
+import { Edit2, Trash2 } from 'lucide-react';
 import ImageUpload from '@/components/ImageUpload';
 
 export default function ArticlesPage() {
@@ -121,8 +122,8 @@ export default function ArticlesPage() {
                 <td style={{ color: 'var(--text-tertiary)', fontSize: '12px' }}>{a.slug}</td>
                 <td style={{ color: 'var(--text-tertiary)', fontSize: '12px' }}>{a.createdAt ? new Date(a.createdAt.seconds * 1000).toLocaleDateString('id-ID') : '-'}</td>
                 <td><div className="table-actions">
-                  <button className="table-btn" onClick={() => openEdit(a)}>✏️</button>
-                  <button className="table-btn danger" onClick={() => openDelete(a.slug, a.title)}>🗑️</button>
+                  <button className="table-btn" onClick={() => openEdit(a)}><Edit2 size={16} /></button>
+                  <button className="table-btn danger" onClick={() => openDelete(a.slug, a.title)}><Trash2 size={16} /></button>
                 </div></td>
               </tr>
             ))}
@@ -190,7 +191,7 @@ export default function ArticlesPage() {
             <div className="modal-body"><p className="modal-text">Yakin hapus artikel <strong>{deleteTarget.title}</strong>?</p></div>
             <div className="modal-footer">
               <button className="btn btn-ghost" onClick={closeDelete} style={{ fontSize: 11, padding: '8px 16px' }}>Batal</button>
-              <button className="btn btn-primary" style={{ fontSize: 11, padding: '8px 16px', background: '#EF4444' }} onClick={handleDelete}>Hapus</button>
+              <button className="btn btn-primary" style={{ fontSize: 11, padding: '8px 16px', background: '#EF4444' }} onClick={handleDelete}><Trash2 size={12} /> Hapus</button>
             </div>
           </div>
         </div>
