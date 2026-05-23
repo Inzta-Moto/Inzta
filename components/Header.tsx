@@ -65,7 +65,7 @@ export default function Header({ active }: HeaderProps) {
                   DASHBOARD <User size={18} />
                 </Link>
               ) : (
-                <Link href="/login" className="header-login">
+                <Link href="/affiliate/login" className="header-login">
                   LOGIN <User size={18} />
                 </Link>
               )}

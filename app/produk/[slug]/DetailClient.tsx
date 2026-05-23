@@ -481,7 +481,7 @@ export default function DetailClient({ slug }: { slug: string }) {
                   }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#2e7d32', marginBottom: 4 }}>
                       <TicketCheck size={14} />
-                      <strong>Voucher {voucherData.code} aktif!</strong>
+                      <strong>Voucher {voucherData.code.length > 5 ? voucherData.code.substring(0, 5) + '...' : voucherData.code} aktif!</strong>
                       <button onClick={removeVoucher} style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: '#2e7d32', padding: 2 }}><TicketX size={14} /></button>
                     </div>
                     <div style={{ fontSize: 13, color: '#555' }}>

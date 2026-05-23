@@ -5,6 +5,8 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Grid, ArrowLeft, X, Menu, LogOut } from 'lucide-react';
+import { auth } from '@/lib/firebase';
+import { signOut } from 'firebase/auth';
 
 const navLinks = [
   { href: '/affiliate/dashboard', label: 'Dashboard', icon: <Grid size={18} /> },
@@ -54,7 +56,9 @@ export default function AffiliateLayout({ children }: { children: React.ReactNod
           
           <button 
             onClick={async () => {
+              await signOut(auth);
               await fetch('/api/auth/logout', { method: 'POST' });
+              localStorage.removeItem('inzta_affiliate');
               window.location.href = '/affiliate/login';
             }}
             className="sidebar-link logout" 
