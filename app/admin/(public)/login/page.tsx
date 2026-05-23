@@ -65,17 +65,13 @@ export default function AdminLogin() {
             <div className="form-group" style={{ position: 'relative' }}>
               <label className="form-label">Kode Akses</label>
               <input 
-                type="text" 
+                type={showCode ? 'text' : 'password'} 
                 value={accessCode} 
                 onChange={e => setAccessCode(e.target.value)} 
                 className="form-input" 
                 placeholder="Masukkan kode rahasia" 
                 autoComplete="off" 
-                style={{ 
-                  paddingRight: '40px',
-                  // RAHASIANYA DISINI:
-                  WebkitTextSecurity: showCode ? 'none' : 'disc' 
-                } as any} // ← TAMBAHKAN as any DI SINI
+                style={{ paddingRight: '40px' }}
                 required 
               />
               
@@ -96,7 +92,7 @@ export default function AdminLogin() {
                 }}
                 aria-label="Lihat kode"
               >
-                {showCode ? <EyeOff size={18} /> : <Eye size={18} />}
+                {showCode ? <Eye size={18} /> : <EyeOff size={18} />}
               </button>
             </div>
 

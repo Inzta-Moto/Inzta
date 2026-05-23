@@ -237,6 +237,15 @@ ul, ol { list-style: none; }
   height: 2px; background: var(--accent); border-radius: 2px;
 }
 
+.header-login { 
+  font-size: 12px; font-weight: 500; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--accent); display: flex; align-items: center; gap: 6px; transition: color 0.3s ease; 
+}
+.header-login:hover { color: #FFFFFF; }
+.header.scrolled .header-login { color: var(--accent); }
+.header.scrolled .header-login:hover { color: var(--text-primary); }
+
+
 /* Header Right & Social */
 .header-right { display: flex; align-items: center; gap: 16px; }
 .header-social { display: none; }
