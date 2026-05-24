@@ -100,17 +100,17 @@ export default function CommissionPage() {
       </div>
 
       {/* Summary Cards */}
-      <div className="stats-cards" style={{ marginBottom: 24 }}>
+      <div className="admin-stats-grid cols-4">
         {[
           { n: formatPrice(totalAll), l: 'Total Komisi', c: '#1a1a1a' },
           { n: formatPrice(totalPending), l: 'Belum Cair', c: '#e65100' },
           { n: formatPrice(totalPaid), l: 'Sudah Cair', c: '#2e7d32' },
           { n: commissions.filter(c => !c.isPaid).length.toString(), l: 'Transaksi Pending', c: '#1565c0' },
         ].map((s, i) => (
-          <div className="stat-card" key={i}>
+          <div className="admin-stat-card" key={i}>
             <div>
-              <span className="stat-card-number" style={{ color: s.c }}>{s.n}</span>
-              <span className="stat-card-label">{s.l}</span>
+              <div className="admin-stat-number" style={{ color: s.c }}>{s.n}</div>
+              <div className="admin-stat-label">{s.l}</div>
             </div>
           </div>
         ))}
@@ -136,7 +136,7 @@ export default function CommissionPage() {
       )}
 
       {/* Filter Tabs */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+      <div className="scrollable-tabs" style={{ marginBottom: 16 }}>
         {[
           { key: 'all' as const, label: `Semua (${commissions.length})` },
           { key: 'pending' as const, label: `Belum Cair (${commissions.filter(c => !c.isPaid).length})` },

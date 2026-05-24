@@ -35,21 +35,21 @@ export default function AdminDashboard() {
     <>
       <h1 className="admin-page-title" style={{ marginBottom: 24 }}>Dashboard</h1>
       
-      <div className="stats-cards" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 32 }}>
+      <div className="admin-stats-grid">
         {statItems.map((s, i) => (
-          <div className="stat-card" key={i} style={{ background: '#fff', padding: 24, borderRadius: 8, border: '1px solid #eee', display: 'flex', alignItems: 'center', gap: 20 }}>
-            <div className="stat-card-icon" style={{ width: 50, height: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #eee', borderRadius: '50%', color: '#666' }}>
+          <div className="admin-stat-card" key={i}>
+            <div className="admin-stat-icon" style={{ color: '#666' }}>
               {s.icon}
             </div>
             <div>
-              <div className="stat-card-number" style={{ fontSize: 24, fontWeight: 700 }}>{s.n}</div>
-              <div className="stat-card-label" style={{ fontSize: 14, color: '#888' }}>{s.l}</div>
+              <div className="admin-stat-number">{s.n}</div>
+              <div className="admin-stat-label">{s.l}</div>
             </div>
           </div>
         ))}
       </div>
 
-      <div className="dash-grid" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 24 }}>
+      <div className="dash-grid-responsive">
         {/* Recent Orders Panel */}
         <div className="dash-panel" style={{ background: '#fff', padding: 20, borderRadius: 8, border: '1px solid #eee' }}>
           <div className="dash-panel-header"><h3 className="dash-panel-title" style={{ marginBottom: 16 }}>Pesanan Terbaru</h3></div>

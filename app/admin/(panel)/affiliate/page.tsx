@@ -165,7 +165,7 @@ export default function AffiliatePage() {
                 <td>
                   <button onClick={() => copyCode(a.voucherCode)} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', font: 'inherit', color: 'inherit' }}>
                     <span style={{ fontFamily: 'monospace', letterSpacing: 1, fontSize: 12, background: '#f0f0f0', padding: '3px 8px', borderRadius: 4 }}>{a.voucherCode}</span>
-                    {copiedCode === a.voucherCode ? <Check size={12} color="green" /> : <Copy size={12} color="#aaa" />}
+                    {copiedCode === a.voucherCode ? <Check size={20} color="green" /> : <Copy size={20} color="#aaa" />}
                   </button>
                 </td>
                 <td style={{ fontSize: 12 }}>{a.createdAt ? (typeof a.createdAt === 'object' ? new Date(a.createdAt.seconds * 1000).toLocaleDateString('id-ID') : new Date(a.createdAt).toLocaleDateString('id-ID')) : '-'}</td>

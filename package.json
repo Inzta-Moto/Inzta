@@ -8,6 +8,7 @@
     "start": "next start"
   },
   "dependencies": {
+    "browser-image-compression": "^2.0.2",
     "firebase": "^10.12.0",
     "firebase-admin": "^13.10.0",
     "lucide-react": "^0.400.0",

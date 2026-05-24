@@ -111,18 +111,18 @@ export default function OrdersPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="stats-cards" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
+      <div className="admin-stats-grid cols-4">
         {[
           { n: statusCounts.all, l: 'Total Pesanan', icon: <Clipboard size={18} /> },
           { n: statusCounts.pending, l: 'Pending', icon: <Clock size={18} /> },
           { n: statusCounts.completed, l: 'Selesai', icon: <CheckCircle size={18} /> },
           { n: statusCounts.cancelled, l: 'Dibatalkan', icon: <XCircle size={18} /> },
         ].map((s, i) => (
-          <div className="stat-card" key={i}>
-            <div className="stat-card-icon" style={{ width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #1A1A1A', borderRadius: '50%', color: '#555' }}>{s.icon}</div>
+          <div className="admin-stat-card" key={i}>
+            <div className="admin-stat-icon" style={{ color: '#555' }}>{s.icon}</div>
             <div>
-              <span className="stat-card-number">{s.n}</span>
-              <span className="stat-card-label">{s.l}</span>
+              <div className="admin-stat-number">{s.n}</div>
+              <div className="admin-stat-label">{s.l}</div>
             </div>
           </div>
         ))}
@@ -130,7 +130,7 @@ export default function OrdersPage() {
 
       {/* Filter & Search */}
       <div className="orders-toolbar">
-        <div className="orders-tabs">
+        <div className="orders-tabs scrollable-tabs">
           {(['all', 'pending', 'completed', 'cancelled'] as StatusFilter[]).map(tab => (
             <button
               key={tab}

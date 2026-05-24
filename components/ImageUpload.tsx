@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, DragEvent, ChangeEvent } from 'react';
+import imageCompression from 'browser-image-compression';
 
 interface ImageUploadProps {
   value: string[];
@@ -21,8 +22,24 @@ export default function ImageUpload({ value, onChange, max = 1 }: ImageUploadPro
     setUploading(true);
     setProgress(0);
 
+    let fileToUpload = file;
+    try {
+      const options = {
+        maxSizeMB: 1, // Kompresi hingga maksimal ~1MB
+        maxWidthOrHeight: 1920, // Batas resolusi HD
+        useWebWorker: true,
+        initialQuality: 0.85 // Kualitas 85% untuk menjaga ketajaman
+      };
+      const compressedFile = await imageCompression(file, options);
+      if (compressedFile.size < file.size) {
+        fileToUpload = compressedFile;
+      }
+    } catch (error) {
+      console.error('Error compressing image:', error);
+    }
+
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append('file', fileToUpload);
     formData.append('upload_preset', 'inztaa');
 
     const xhr = new XMLHttpRequest();
