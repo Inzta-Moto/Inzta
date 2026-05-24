@@ -190,7 +190,7 @@ export default function OrdersPage() {
                         {order.items?.map((item, i) => (
                           <div key={i} className="order-item-line">
                             <span className="order-item-name">{item.name}</span>
-                            <span className="order-item-qty">×{item.quantity}</span>
+                            <span className="order-item-qty">×{item.quantity} ({formatPrice(item.price)})</span>
                           </div>
                         )) || <span style={{ color: '#999' }}>-</span>}
                       </div>
