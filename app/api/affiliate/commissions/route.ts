@@ -11,19 +11,48 @@ export async function GET() {
 
     const decodedClaims = await getAdminAuth().verifySessionCookie(sessionCookie, true);
     const uid = decodedClaims.uid;
+    const email = decodedClaims.email; // Get email for fallback
 
     // Find the affiliate by uid
-    const affSnap = await getAdminDb().collection('affiliates').where('uid', '==', uid).limit(1).get();
+    let affSnap = await getAdminDb().collection('affiliates').where('uid', '==', uid).limit(1).get();
+    
+    // Fallback: If not found by UID, try finding by email
+    if (affSnap.empty && email) {
+      affSnap = await getAdminDb().collection('affiliates').where('email', '==', email).limit(1).get();
+      
+      // Self-healing: if found by email, update the document with the correct UID
+      if (!affSnap.empty) {
+        const docId = affSnap.docs[0].id;
+        await getAdminDb().collection('affiliates').doc(docId).update({ uid: uid });
+      }
+    }
+
     if (affSnap.empty) {
       return NextResponse.json({ error: 'Affiliate not found' }, { status: 404 });
     }
-    const affiliateId = affSnap.docs[0].id;
+    
+    const affiliateDoc = affSnap.docs[0];
+    const affiliateId = affiliateDoc.id;
+    const affiliateData = affiliateDoc.data();
 
     // Fetch commissions for this affiliate
     const commSnap = await getAdminDb().collection('commissions').where('affiliateId', '==', affiliateId).get();
     const commissions = commSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a: any, b: any) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
 
-    return NextResponse.json({ commissions }, { status: 200 });
+    // Fetch the affiliate's voucher status
+    let voucherData = null;
+    if (affiliateData.voucherCode) {
+      const voucherSnap = await getAdminDb().collection('vouchers').doc(affiliateData.voucherCode).get();
+      if (voucherSnap.exists) {
+        voucherData = voucherSnap.data();
+      }
+    }
+
+    return NextResponse.json({ 
+      commissions, 
+      affiliateName: affiliateData.name || 'Afiliasi',
+      voucher: voucherData 
+    }, { status: 200 });
   } catch (error: any) {
     console.error('Error fetching affiliate commissions:', error);
     return NextResponse.json({ error: 'Failed to fetch commissions' }, { status: 500 });

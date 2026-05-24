@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, FormEvent } from 'react';
-import { formatPrice } from '@/lib/utils';
+import { formatPrice, formatDate } from '@/lib/utils';
 import { Voucher, Affiliate } from '@/types';
 import { Copy, Check, Ticket, Edit2, Trash2 } from 'lucide-react';
 
@@ -20,6 +20,8 @@ export default function VoucherPage() {
   const [formError, setFormError] = useState('');
   const [saving, setSaving] = useState(false);
   const [copiedCode, setCopiedCode] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
   useEffect(() => { loadVouchers(); loadAffiliates(); }, []);
 
@@ -82,9 +84,9 @@ export default function VoucherPage() {
     const data: Voucher = {
       code,
       type: fd.get('type') as 'percentage' | 'fixed',
-      value: parseFloat(fd.get('value') as string) || 0,
-      minPurchase: parseFloat(fd.get('minPurchase') as string) || 0,
-      maxDiscount: parseFloat(fd.get('maxDiscount') as string) || 0,
+      value: parseInt((fd.get('value') as string).replace(/\D/g, '')) || 0,
+      minPurchase: parseInt((fd.get('minPurchase') as string).replace(/\D/g, '')) || 0,
+      maxDiscount: parseInt((fd.get('maxDiscount') as string).replace(/\D/g, '')) || 0,
       affiliateId: affiliateId || null,
       affiliateName: aff?.name || null,
       isActive: fd.get('isActive') === 'true',
@@ -106,7 +108,14 @@ export default function VoucherPage() {
     setSaving(false);
   };
 
-  const isExpired = (v: Voucher) => v.expiresAt && v.expiresAt.seconds * 1000 < Date.now();
+  const isExpired = (v: Voucher) => {
+    if (!v.expiresAt) return false;
+    let ms = 0;
+    if (typeof v.expiresAt.seconds === 'number') ms = v.expiresAt.seconds * 1000;
+    else if (typeof v.expiresAt === 'string') ms = new Date(v.expiresAt).getTime();
+    else if (v.expiresAt instanceof Date) ms = v.expiresAt.getTime();
+    return ms > 0 && ms < Date.now();
+  };
 
   return (
     <>
@@ -133,7 +142,7 @@ export default function VoucherPage() {
           <tbody>
             {vouchers.length === 0 ? (
               <tr><td colSpan={9} className="table-empty">Belum ada voucher.</td></tr>
-            ) : vouchers.map(v => (
+            ) : vouchers.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE).map(v => (
               <tr key={v.code}>
                 <td>
                   <button onClick={() => copyCode(v.code)} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', font: 'inherit', color: 'inherit' }}>
@@ -165,6 +174,30 @@ export default function VoucherPage() {
         </table>
       </div>
 
+      {vouchers.length > ITEMS_PER_PAGE && (
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '15px', marginTop: '20px' }}>
+          <button 
+            className="btn btn-ghost" 
+            disabled={currentPage === 1} 
+            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+            style={{ fontSize: 13, padding: '6px 12px' }}
+          >
+            Sebelumnya
+          </button>
+          <span style={{ fontSize: 13, color: '#666' }}>
+            Halaman {currentPage} dari {Math.ceil(vouchers.length / ITEMS_PER_PAGE)}
+          </span>
+          <button 
+            className="btn btn-ghost" 
+            disabled={currentPage === Math.ceil(vouchers.length / ITEMS_PER_PAGE)} 
+            onClick={() => setCurrentPage(p => Math.min(Math.ceil(vouchers.length / ITEMS_PER_PAGE), p + 1))}
+            style={{ fontSize: 13, padding: '6px 12px' }}
+          >
+            Selanjutnya
+          </button>
+        </div>
+      )}
+
       {modal !== null && (
         <div className="modal-overlay" style={{ display: 'flex' }} onClick={e => { if (e.target === e.currentTarget) closeModal(); }}>
           <div className="modal" style={{ maxWidth: 520 }}>
@@ -195,18 +228,54 @@ export default function VoucherPage() {
                 </div>
                 <div className="form-group">
                   <label className="form-label">Nilai Diskon *</label>
-                  <input type="number" name="value" className="form-input" min={0} step={modal.type === 'percentage' ? 1 : 1000} defaultValue={modal.value || ''} required />
+                  {modal.type === 'percentage' ? (
+                    <input type="number" name="value" className="form-input" min={0} max={100} step={1} defaultValue={modal.value || ''} required />
+                  ) : (
+                    <input 
+                      type="text" 
+                      name="value" 
+                      className="form-input" 
+                      value={modal.value ? modal.value.toLocaleString('id-ID') : ''} 
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/\D/g, '');
+                        setModal(prev => prev ? { ...prev, value: val ? parseInt(val) : 0 } : { value: val ? parseInt(val) : 0 });
+                      }}
+                      required
+                    />
+                  )}
                 </div>
               </div>
 
               <div className="form-row">
                 <div className="form-group">
                   <label className="form-label">Minimum Pembelian</label>
-                  <input type="number" name="minPurchase" className="form-input" min={0} step={1000} defaultValue={modal.minPurchase || 0} />
+                  <input 
+                    type="text" 
+                    name="minPurchase" 
+                    className="form-input" 
+                    value={modal.minPurchase ? modal.minPurchase.toLocaleString('id-ID') : ''} 
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, '');
+                      setModal(prev => prev ? { ...prev, minPurchase: val ? parseInt(val) : 0 } : { minPurchase: val ? parseInt(val) : 0 });
+                    }}
+                  />
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Maks. Diskon {modal.type !== 'percentage' && <span style={{ color: '#999', fontWeight: 400 }}>(persen saja)</span>}</label>
-                  <input type="number" name="maxDiscount" className="form-input" min={0} step={1000} defaultValue={modal.maxDiscount || 0} disabled={modal.type !== 'percentage'} />
+                  <label className="form-label" style={{ color: modal.type !== 'percentage' ? '#bbb' : 'inherit' }}>
+                    Maks. Diskon {modal.type !== 'percentage' && <span style={{ fontWeight: 400 }}>(Hanya Persen)</span>}
+                  </label>
+                  <input 
+                    type="text" 
+                    name="maxDiscount" 
+                    className="form-input" 
+                    value={modal.maxDiscount ? modal.maxDiscount.toLocaleString('id-ID') : ''} 
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, '');
+                      setModal(prev => prev ? { ...prev, maxDiscount: val ? parseInt(val) : 0 } : { maxDiscount: val ? parseInt(val) : 0 });
+                    }}
+                    disabled={modal.type !== 'percentage'} 
+                    style={{ opacity: modal.type !== 'percentage' ? 0.5 : 1 }}
+                  />
                 </div>
               </div>
 
@@ -217,7 +286,19 @@ export default function VoucherPage() {
                 </div>
                 <div className="form-group">
                   <label className="form-label">Tanggal Kadaluarsa</label>
-                  <input type="date" name="expiresAt" className="form-input" defaultValue={modal.expiresAt ? new Date(modal.expiresAt.seconds * 1000).toISOString().split('T')[0] : ''} />
+                  <input 
+                    type="date" 
+                    name="expiresAt" 
+                    className="form-input" 
+                    defaultValue={(() => {
+                      if (!modal.expiresAt) return '';
+                      let d: Date;
+                      if (typeof modal.expiresAt.seconds === 'number') d = new Date(modal.expiresAt.seconds * 1000);
+                      else d = new Date(modal.expiresAt);
+                      if (isNaN(d.getTime())) return '';
+                      return d.toISOString().split('T')[0];
+                    })()} 
+                  />
                 </div>
               </div>
 
@@ -233,8 +314,10 @@ export default function VoucherPage() {
                   <label className="form-label">Terhubung ke Afiliasi</label>
                   <select name="affiliateId" className="form-input" defaultValue={modal.affiliateId || ''}>
                     <option value="">-- Tidak terhubung --</option>
-                    {affiliates.map(a => (
-                      <option key={a.id} value={a.id}>{a.name} ({a.voucherCode})</option>
+                    {affiliates
+                      .filter(a => a.id === modal.affiliateId || !vouchers.some(v => v.affiliateId === a.id))
+                      .map(a => (
+                      <option key={a.id} value={a.id}>{a.name}</option>
                     ))}
                   </select>
                 </div>

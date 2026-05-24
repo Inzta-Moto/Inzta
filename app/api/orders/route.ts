@@ -9,7 +9,7 @@ function generateOrderId(): string {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { items, totalPrice, discountAmount, voucherCode, affiliateId, finalPrice } = body;
+    const { items, totalPrice, discountAmount, voucherCode, affiliateId, finalPrice, buyerUID } = body;
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json({ error: 'Items are required' }, { status: 400 });
@@ -40,6 +40,7 @@ export async function POST(request: Request) {
       discountAmount: discountAmount || 0,
       voucherCode: voucherCode || null,
       affiliateId: affiliateId || null,
+      buyerUID: buyerUID || null,
       finalPrice,
       status: 'pending',
       createdAt: new Date().toISOString(),

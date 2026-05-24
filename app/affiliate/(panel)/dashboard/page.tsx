@@ -1,12 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { CheckCircle, Clock } from 'lucide-react';
-import { formatPrice } from '@/lib/utils';
+import { CheckCircle, Clock, AlertTriangle } from 'lucide-react';
+import { formatPrice, formatDate } from '@/lib/utils';
 import { Commission } from '@/types';
 
 export default function AffiliateDashboardPage() {
   const [commissions, setCommissions] = useState<Commission[]>([]);
+  const [affiliateName, setAffiliateName] = useState('');
+  const [voucherData, setVoucherData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -17,6 +19,8 @@ export default function AffiliateDashboardPage() {
         const data = await res.json();
         if (res.ok) {
           setCommissions(data.commissions || []);
+          setAffiliateName(data.affiliateName || '');
+          setVoucherData(data.voucher || null);
         }
       } catch (e) {
         console.error(e);
@@ -32,11 +36,36 @@ export default function AffiliateDashboardPage() {
 
   if (loading) return <div style={{ textAlign: 'center', padding: 60, color: '#999' }}>Memuat dashboard...</div>;
 
+  const isVoucherExpired = () => {
+    if (!voucherData || !voucherData.expiresAt) return false;
+    let ms = 0;
+    if (typeof voucherData.expiresAt._seconds === 'number') ms = voucherData.expiresAt._seconds * 1000;
+    else if (typeof voucherData.expiresAt.seconds === 'number') ms = voucherData.expiresAt.seconds * 1000;
+    else if (typeof voucherData.expiresAt === 'string') ms = new Date(voucherData.expiresAt).getTime();
+    return ms > 0 && ms < Date.now();
+  };
+  
+  const expired = isVoucherExpired();
+  const isVoucherInactive = voucherData && !voucherData.isActive;
+  const showWarning = voucherData && (expired || isVoucherInactive);
+
   return (
     <>
-      <div className="admin-page-header">
+      <div className="admin-page-header" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 8 }}>
+        {affiliateName && <div style={{ fontSize: 16, color: '#666', fontWeight: 500 }}>Halo, {affiliateName}! 👋</div>}
         <h1 className="admin-page-title">Dashboard Affiliate</h1>
       </div>
+
+      {showWarning && (
+        <div style={{ background: '#fff3e0', border: '1px solid #ffcc80', borderRadius: 8, padding: '12px 16px', marginBottom: 24, display: 'flex', alignItems: 'center', gap: 12 }}>
+          <AlertTriangle size={24} color="#e65100" style={{ flexShrink: 0 }} />
+          <div style={{ fontSize: 13, color: '#e65100', lineHeight: 1.5 }}>
+            <strong>Peringatan:</strong> Kode voucher Anda ({voucherData.code}) saat ini sudah 
+            {expired ? ' kadaluarsa' : ' dinonaktifkan'}. Anda tidak akan menerima komisi dari transaksi baru. 
+            Silakan hubungi Admin Inzta untuk memperbarui voucher Anda.
+          </div>
+        </div>
+      )}
 
       {/* Summary Cards */}
       <div className="stats-cards" style={{ marginBottom: 24 }}>
@@ -72,14 +101,29 @@ export default function AffiliateDashboardPage() {
               <tr><td colSpan={5} className="table-empty">Belum ada data komisi.</td></tr>
             ) : commissions.map(c => (
               <tr key={c.id}>
-                <td style={{ fontSize: 11, whiteSpace: 'nowrap' }}>{c.createdAt ? new Date(c.createdAt.seconds * 1000).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-'}</td>
-                <td style={{ fontSize: 12, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.productName}</td>
+                <td style={{ fontSize: 11, whiteSpace: 'nowrap' }}>{formatDate(c.createdAt, { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
+                <td style={{ fontSize: 12 }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    {c.items && c.items.length > 0 ? (
+                      c.items.map((item, i) => (
+                        <div key={i} style={{ lineHeight: '1.2' }}>
+                          <div style={{ fontWeight: 600, color: '#1a1a1a', marginBottom: '2px' }}>{item.name}</div>
+                          <div style={{ fontSize: '10px', color: '#888' }}>Jumlah: {item.quantity} pcs</div>
+                        </div>
+                      ))
+                    ) : (
+                      <div style={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {c.productName}
+                      </div>
+                    )}
+                  </div>
+                </td>
                 <td style={{ fontSize: 12 }}>{formatPrice(c.productPrice)}</td>
                 <td style={{ fontSize: 12, fontWeight: 700, color: '#2e7d32' }}>{formatPrice(c.commissionAmount)}</td>
                 <td>
                   {c.isPaid ? (
                     <span className="table-badge table-badge-active" style={{ background: '#e8f5e9', color: '#2e7d32' }}>
-                      <CheckCircle size={12} /> Cair {c.paidAt ? new Date(c.paidAt.seconds * 1000).toLocaleDateString('id-ID') : ''}
+                      <CheckCircle size={12} /> Cair {formatDate(c.paidAt)}
                     </span>
                   ) : (
                     <span className="table-badge" style={{ background: '#fff3e0', color: '#e65100' }}><Clock size={12} /> Pending</span>

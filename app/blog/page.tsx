@@ -8,6 +8,7 @@ import Footer from '@/components/Footer';
 import Link from 'next/link';
 import { Article } from '@/types';
 import { Calendar, ArrowLeft } from 'lucide-react';
+import { formatDate } from '@/lib/utils';
 
 export default function BlogPage() {
   const [articles, setArticles] = useState<Article[]>([]);
@@ -45,7 +46,7 @@ export default function BlogPage() {
                     <img src={articleImage} alt={a.title} />
                   </div>
                   <div className="blog-card-body">
-                    <div className="blog-card-meta"><Calendar size={12} /> {a.createdAt ? new Date(a.createdAt.seconds * 1000).toLocaleDateString('id-ID') : ''}</div>
+                    <div className="blog-card-meta"><Calendar size={12} /> {formatDate(a.createdAt)}</div>
                     <h3 className="blog-card-title">{a.title}</h3>
                     <p className="blog-card-excerpt">{a.excerpt}</p>
                   </div>

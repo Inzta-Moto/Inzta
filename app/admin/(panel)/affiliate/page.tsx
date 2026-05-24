@@ -2,6 +2,7 @@
 
 import { useState, useEffect, FormEvent } from 'react';
 import { Affiliate } from '@/types';
+import { formatDate } from '@/lib/utils';
 import { Copy, Check, Users, Phone, Mail, Edit2, Trash2 } from 'lucide-react';
 
 function generateAffCode() {
@@ -14,10 +15,12 @@ function generateAffCode() {
 export default function AffiliatePage() {
   const [affiliates, setAffiliates] = useState<Affiliate[]>([]);
   const [modal, setModal] = useState<Partial<Affiliate> | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string; voucherCode: string } | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
   const [formError, setFormError] = useState('');
   const [saving, setSaving] = useState(false);
   const [copiedCode, setCopiedCode] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
   useEffect(() => { loadAffiliates(); }, []);
 
@@ -32,12 +35,12 @@ export default function AffiliatePage() {
   }
 
   const openAdd = () => { 
-    setModal({ name: '', phone: '', email: '', uid: '', voucherCode: generateAffCode() }); 
+    setModal({ name: '', phone: '', email: '', uid: '' }); 
     setFormError(''); 
   };
   const openEdit = (a: Affiliate) => { setModal({ ...a }); setFormError(''); };
   const closeModal = () => { setModal(null); setFormError(''); };
-  const openDelete = (a: Affiliate) => setDeleteTarget({ id: a.id, name: a.name, voucherCode: a.voucherCode });
+  const openDelete = (a: Affiliate) => setDeleteTarget({ id: a.id, name: a.name });
   const closeDelete = () => setDeleteTarget(null);
 
   const copyCode = (code: string) => { navigator.clipboard.writeText(code); setCopiedCode(code); setTimeout(() => setCopiedCode(''), 1500); };
@@ -45,8 +48,15 @@ export default function AffiliatePage() {
   const handleDelete = async () => {
     if (!deleteTarget) return;
     try {
+      // Find voucher associated with this affiliate and delete it
+      const res = await fetch('/api/admin/vouchers');
+      const data = await res.json();
+      const affiliateVoucher = data.vouchers?.find((v: any) => v.affiliateId === deleteTarget.id);
+      
       await fetch('/api/admin/affiliates/' + deleteTarget.id, { method: 'DELETE' });
-      try { await fetch('/api/admin/vouchers/' + deleteTarget.voucherCode, { method: 'DELETE' }); } catch (e) { /* ignore */ }
+      if (affiliateVoucher) {
+        try { await fetch('/api/admin/vouchers/' + affiliateVoucher.code, { method: 'DELETE' }); } catch (e) { /* ignore */ }
+      }
       closeDelete(); loadAffiliates();
     } catch (e: any) { alert(e.message); }
   };
@@ -56,29 +66,34 @@ export default function AffiliatePage() {
     const fd = new FormData(e.currentTarget);
     const editId = fd.get('editId') as string;
     const id = editId || Date.now().toString();
-    const voucherCode = (fd.get('voucherCode') as string).toUpperCase().trim();
+    const isNew = !editId;
     const name = (fd.get('name') as string).trim();
     const phone = (fd.get('phone') as string).trim();
     const email = (fd.get('email') as string).trim();
     const password = (fd.get('password') as string);
 
-    if (!name || !phone || !voucherCode || !email) { 
+    if (!name || !phone || !email) { 
       setFormError('Semua field wajib diisi.'); 
       setSaving(false); 
       return; 
     }
 
     try {
-      const data = { 
+      const data: any = { 
         id, 
         name, 
         phone, 
         email, 
         uid: modal?.uid || '', 
         password: password || undefined,
-        voucherCode, 
         createdAt: modal?.createdAt || new Date().toISOString()
       };
+
+      if (isNew) {
+        data.voucherCode = generateAffCode();
+      } else if (modal?.voucherCode) {
+        data.voucherCode = modal.voucherCode;
+      }
 
       const res = await fetch('/api/admin/affiliates', {
         method: 'POST',
@@ -91,26 +106,28 @@ export default function AffiliatePage() {
         throw new Error(resData.error || 'Gagal menyimpan afiliasi');
       }
       
-      const voucherData = {
-        code: voucherCode,
-        type: 'percentage' as const,
-        value: 0,
-        minPurchase: 0,
-        maxDiscount: 0,
-        affiliateId: id,
-        affiliateName: name,
-        isActive: true,
-        usageCount: 0,
-        maxUsage: null,
-        expiresAt: null,
-        createdAt: modal?.createdAt || new Date().toISOString(),
-      };
+      if (isNew) {
+        const voucherData = {
+          code: data.voucherCode,
+          type: 'percentage' as const,
+          value: 0,
+          minPurchase: 0,
+          maxDiscount: 0,
+          affiliateId: id,
+          affiliateName: name,
+          isActive: true,
+          usageCount: 0,
+          maxUsage: null,
+          expiresAt: null,
+          createdAt: new Date().toISOString(),
+        };
 
-      await fetch('/api/admin/vouchers', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(voucherData),
-      });
+        await fetch('/api/admin/vouchers', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(voucherData),
+        });
+      }
 
       closeModal(); loadAffiliates();
     } catch (err: any) { 
@@ -137,12 +154,12 @@ export default function AffiliatePage() {
       <div className="admin-table-wrap">
         <table className="admin-table">
           <thead>
-            <tr><th>Afiliasi</th><th>Email</th><th>No. HP</th><th>Voucher Code</th><th>Bergabung</th><th>Aksi</th></tr>
+            <tr><th>Afiliasi</th><th>Email</th><th>No. HP</th><th>Bergabung</th><th>Aksi</th></tr>
           </thead>
           <tbody>
             {affiliates.length === 0 ? (
-              <tr><td colSpan={6} className="table-empty">Belum ada afiliasi.</td></tr>
-            ) : affiliates.map(a => (
+              <tr><td colSpan={5} className="table-empty">Belum ada afiliasi.</td></tr>
+            ) : affiliates.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE).map(a => (
               <tr key={a.id}>
                 <td>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -162,13 +179,7 @@ export default function AffiliatePage() {
                     <Phone size={12} color="#888" /> {a.phone}
                   </div>
                 </td>
-                <td>
-                  <button onClick={() => copyCode(a.voucherCode)} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', font: 'inherit', color: 'inherit' }}>
-                    <span style={{ fontFamily: 'monospace', letterSpacing: 1, fontSize: 12, background: '#f0f0f0', padding: '3px 8px', borderRadius: 4 }}>{a.voucherCode}</span>
-                    {copiedCode === a.voucherCode ? <Check size={20} color="green" /> : <Copy size={20} color="#aaa" />}
-                  </button>
-                </td>
-                <td style={{ fontSize: 12 }}>{a.createdAt ? (typeof a.createdAt === 'object' ? new Date(a.createdAt.seconds * 1000).toLocaleDateString('id-ID') : new Date(a.createdAt).toLocaleDateString('id-ID')) : '-'}</td>
+                <td style={{ fontSize: 12 }}>{formatDate(a.createdAt)}</td>
                 <td>
                   <div className="table-actions">
                     <button className="table-btn" onClick={() => openEdit(a)}><Edit2 size={16} /></button>
@@ -180,6 +191,30 @@ export default function AffiliatePage() {
           </tbody>
         </table>
       </div>
+
+      {affiliates.length > ITEMS_PER_PAGE && (
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '15px', marginTop: '20px' }}>
+          <button 
+            className="btn btn-ghost" 
+            disabled={currentPage === 1} 
+            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+            style={{ fontSize: 13, padding: '6px 12px' }}
+          >
+            Sebelumnya
+          </button>
+          <span style={{ fontSize: 13, color: '#666' }}>
+            Halaman {currentPage} dari {Math.ceil(affiliates.length / ITEMS_PER_PAGE)}
+          </span>
+          <button 
+            className="btn btn-ghost" 
+            disabled={currentPage === Math.ceil(affiliates.length / ITEMS_PER_PAGE)} 
+            onClick={() => setCurrentPage(p => Math.min(Math.ceil(affiliates.length / ITEMS_PER_PAGE), p + 1))}
+            style={{ fontSize: 13, padding: '6px 12px' }}
+          >
+            Selanjutnya
+          </button>
+        </div>
+      )}
 
       {modal !== null && (
         <div className="modal-overlay" style={{ display: 'flex' }} onClick={e => { if (e.target === e.currentTarget) closeModal(); }}>
@@ -215,14 +250,6 @@ export default function AffiliatePage() {
                 <input name="phone" className="form-input" required defaultValue={modal.phone || ''} placeholder="08xxxxxxxxxx" />
               </div>
 
-              <div className="form-group">
-                <label className="form-label">Kode Voucher Afiliasi *</label>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <input name="voucherCode" className="form-input" required value={modal.voucherCode || ''} onChange={e => setModal(prev => prev ? { ...prev, voucherCode: e.target.value.toUpperCase() } : { voucherCode: e.target.value.toUpperCase() })} style={{ fontFamily: 'monospace', letterSpacing: 1, textTransform: 'uppercase' }} />
-                  <button type="button" onClick={() => setModal(prev => prev ? { ...prev, voucherCode: generateAffCode() } : { voucherCode: generateAffCode() })} style={{ padding: '0 12px', border: '1px solid #ddd', borderRadius: 8, background: '#f5f5f5', cursor: 'pointer', fontSize: 11, whiteSpace: 'nowrap' }}>Acak</button>
-                </div>
-              </div>
-
               <div className="modal-footer">
                 <button type="button" className="btn btn-ghost" onClick={closeModal} style={{ fontSize: 11, padding: '8px 16px' }}>Batal</button>
                 <button type="submit" className="btn btn-primary" disabled={saving} style={{ fontSize: 11, padding: '8px 16px' }}>{saving ? 'Menyimpan...' : 'Simpan'}</button>
@@ -238,7 +265,7 @@ export default function AffiliatePage() {
             <div className="modal-header"><h2 className="modal-title">Hapus Afiliasi</h2><button type="button" className="modal-close" onClick={closeDelete}>&times;</button></div>
             <div className="modal-body">
               <p className="modal-text">Yakin hapus afiliasi <strong>{deleteTarget.name}</strong>?</p>
-              <p style={{ fontSize: 12, color: '#999', marginTop: 8 }}>Voucher terkait ({deleteTarget.voucherCode}) juga akan dihapus.</p>
+              <p style={{ fontSize: 12, color: '#999', marginTop: 8 }}>Voucher terkait juga akan dihapus.</p>
             </div>
             <div className="modal-footer">
               <button type="button" className="btn btn-ghost" onClick={closeDelete} style={{ fontSize: 11, padding: '8px 16px' }}>Batal</button>

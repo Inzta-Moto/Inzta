@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { doc, getDoc, collection, getDocs, updateDoc, addDoc, increment } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { db, auth } from '@/lib/firebase';
+import { onAuthStateChanged } from 'firebase/auth';
 import { formatPrice, calcDiscount } from '@/lib/utils';
 import { Truck, ShieldCheck, RefreshCw, Headphones, LucideIcon, X, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Tag, TicketCheck, TicketX } from 'lucide-react';
 import Header from '@/components/Header';
@@ -36,8 +37,24 @@ export default function DetailClient({ slug }: { slug: string }) {
 
   // ── Order State ──
   const [orderLoading, setOrderLoading] = useState(false);
+  const [buyerUID, setBuyerUID] = useState<string | null>(null);
+
+  // ── Toast State ──
+  const [toastMessage, setToastMessage] = useState('');
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(''), 3000);
+  };
 
   const imagesLenRef = useRef(0);
+
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (user) => {
+      setBuyerUID(user ? user.uid : null);
+    });
+    return () => unsub();
+  }, []);
 
   useEffect(() => { if (slug) loadProduct(); }, [slug]);
 
@@ -83,6 +100,9 @@ export default function DetailClient({ slug }: { slug: string }) {
               const data = await res.json();
               
               if (!res.ok) {
+                 if (data.error && data.error.toLowerCase().includes('batas')) {
+                   showToast(data.error);
+                 }
                  setVoucherLoading(false);
                  return;
               }
@@ -90,6 +110,8 @@ export default function DetailClient({ slug }: { slug: string }) {
               
               const subtotal = product.price * quantity;
               if (v.minPurchase && subtotal < v.minPurchase) {
+                const errMsg = `Minimal pembelian ${formatPrice(v.minPurchase)} tidak terpenuhi.`;
+                showToast(errMsg);
                 setVoucherLoading(false);
                 return; 
               }
@@ -120,7 +142,9 @@ export default function DetailClient({ slug }: { slug: string }) {
         if (voucherData.minPurchase && subtotal < voucherData.minPurchase) {
           // If quantity is reduced and no longer meets min purchase, remove voucher
           removeVoucher();
-          setVoucherError(`Voucher dihapus. Minimal pembelian ${formatPrice(voucherData.minPurchase)}.`);
+          const errMsg = `Voucher dilepas. Minimal pembelian ${formatPrice(voucherData.minPurchase)}.`;
+          setVoucherError(errMsg);
+          showToast(errMsg);
           return;
         }
 
@@ -151,6 +175,9 @@ export default function DetailClient({ slug }: { slug: string }) {
       const data = await res.json();
 
       if (!res.ok) {
+        if (data.error && data.error.toLowerCase().includes('batas')) {
+          showToast(data.error);
+        }
         setVoucherError(data.error || 'Voucher tidak ditemukan.');
         setVoucherLoading(false);
         return;
@@ -159,7 +186,13 @@ export default function DetailClient({ slug }: { slug: string }) {
       const v = data.voucher;
       const subtotal = product.price * quantity;
 
-      if (v.minPurchase && subtotal < v.minPurchase) { setVoucherError(`Minimal pembelian ${formatPrice(v.minPurchase)}.`); setVoucherLoading(false); return; }
+      if (v.minPurchase && subtotal < v.minPurchase) { 
+        const errMsg = `Minimal pembelian ${formatPrice(v.minPurchase)} tidak terpenuhi.`;
+        setVoucherError(errMsg); 
+        showToast(errMsg);
+        setVoucherLoading(false); 
+        return; 
+      }
 
       let disc = 0;
       if (v.type === 'percentage') {
@@ -231,6 +264,7 @@ export default function DetailClient({ slug }: { slug: string }) {
           voucherCode: voucherData?.code || null,
           affiliateId: voucherData?.affiliateId || null,
           finalPrice: fp,
+          buyerUID: buyerUID, // Kirim UID pembeli (jika sedang login sebagai affiliate)
         }),
       });
 
@@ -239,30 +273,7 @@ export default function DetailClient({ slug }: { slug: string }) {
 
       const orderId = data.orderId;
 
-      // 2. Track commission if voucher is from affiliate
-      if (voucherData && voucherData.affiliateId) {
-        try {
-          await fetch('/api/admin/commissions/track', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              affiliateId: voucherData.affiliateId,
-              affiliateName: voucherData.affiliateName || '',
-              voucherCode: voucherData.code,
-              productName: product.name,
-              productSlug: product.slug,
-              productPrice: product.price,
-              quantity: quantity,
-              discountAmount: discountAmount,
-              finalPrice: fp,
-            })
-          });
-        } catch (e) {
-          console.error('[Commission Error]', e);
-        }
-      }
-
-      // 3. Open WhatsApp with Order ID
+      // 2. Open WhatsApp with Order ID
       const waUrl = buildWaLink(orderId);
       window.open(waUrl, '_blank', 'noopener,noreferrer');
     } catch (e: any) {
@@ -481,9 +492,14 @@ export default function DetailClient({ slug }: { slug: string }) {
                   }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#2e7d32', marginBottom: 4 }}>
                       <TicketCheck size={14} />
-                      <strong>Voucher {voucherData.code.length > 5 ? voucherData.code.substring(0, 5) + '...' : voucherData.code} aktif!</strong>
+                      <strong>Voucher {voucherData.code} aktif!</strong>
                       <button onClick={removeVoucher} style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: '#2e7d32', padding: 2 }}><TicketX size={14} /></button>
                     </div>
+                    {buyerUID && voucherData.affiliateId && buyerUID === voucherData.affiliateId && (
+                      <div style={{ fontSize: 11, color: '#2e7d32', marginBottom: 8, fontStyle: 'italic', fontWeight: 500 }}>
+                        ℹ️ Voucher pribadi: Anda mendapatkan diskon, komisi tidak berlaku.
+                      </div>
+                    )}
                     <div style={{ fontSize: 13, color: '#555' }}>
                       Diskon: <span style={{ color: '#d32f2f', fontWeight: 600 }}>-{formatPrice(discountAmount)}</span>
                       {voucherData.type === 'percentage' && voucherData.maxDiscount ? ` (maks ${formatPrice(voucherData.maxDiscount)})` : ''}
@@ -663,6 +679,11 @@ export default function DetailClient({ slug }: { slug: string }) {
               </div>
               <div id="share-toast" className="toast">✓ Link berhasil disalin!</div>
             </div>
+          </div>
+
+          {/* Toast for errors/limits */}
+          <div className={`toast ${toastMessage ? 'show' : ''}`} style={{ background: '#ef4444', borderColor: '#b91c1c' }}>
+            {toastMessage}
           </div>
 
           {/* Trust */}

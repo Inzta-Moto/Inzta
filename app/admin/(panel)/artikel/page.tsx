@@ -2,6 +2,7 @@
 
 import { useState, useEffect, FormEvent } from 'react';
 import { Article } from '@/types';
+import { formatDate } from '@/lib/utils';
 import { Edit2, Trash2 } from 'lucide-react';
 import ImageUpload from '@/components/ImageUpload';
 
@@ -12,6 +13,8 @@ export default function ArticlesPage() {
   const [formError, setFormError] = useState<string>('');
   const [saving, setSaving] = useState<boolean>(false);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
   useEffect(() => { loadArticles(); }, []);
 
@@ -116,11 +119,11 @@ export default function ArticlesPage() {
           <tbody>
             {articles.length === 0 ? (
               <tr><td colSpan={4} className="table-empty">Belum ada artikel.</td></tr>
-            ) : articles.map(a => (
+            ) : articles.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE).map(a => (
               <tr key={a.slug}>
                 <td><span className="table-product-name">{a.title}</span></td>
                 <td style={{ color: 'var(--text-tertiary)', fontSize: '12px' }}>{a.slug}</td>
-                <td style={{ color: 'var(--text-tertiary)', fontSize: '12px' }}>{a.createdAt ? new Date(a.createdAt.seconds * 1000).toLocaleDateString('id-ID') : '-'}</td>
+                <td style={{ color: 'var(--text-tertiary)', fontSize: '12px' }}>{formatDate(a.createdAt)}</td>
                 <td><div className="table-actions">
                   <button className="table-btn" onClick={() => openEdit(a)}><Edit2 size={16} /></button>
                   <button className="table-btn danger" onClick={() => openDelete(a.slug, a.title)}><Trash2 size={16} /></button>
@@ -130,6 +133,30 @@ export default function ArticlesPage() {
           </tbody>
         </table>
       </div>
+
+      {articles.length > ITEMS_PER_PAGE && (
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '15px', marginTop: '20px' }}>
+          <button 
+            className="btn btn-ghost" 
+            disabled={currentPage === 1} 
+            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+            style={{ fontSize: 13, padding: '6px 12px' }}
+          >
+            Sebelumnya
+          </button>
+          <span style={{ fontSize: 13, color: '#666' }}>
+            Halaman {currentPage} dari {Math.ceil(articles.length / ITEMS_PER_PAGE)}
+          </span>
+          <button 
+            className="btn btn-ghost" 
+            disabled={currentPage === Math.ceil(articles.length / ITEMS_PER_PAGE)} 
+            onClick={() => setCurrentPage(p => Math.min(Math.ceil(articles.length / ITEMS_PER_PAGE), p + 1))}
+            style={{ fontSize: 13, padding: '6px 12px' }}
+          >
+            Selanjutnya
+          </button>
+        </div>
+      )}
 
       {/* Modal Tambah/Edit */}
       {modal !== null && (

@@ -2,13 +2,15 @@
 
 import { useState, useEffect } from 'react';
 import { RotateCcw, DollarSign, Trash2, CheckCircle, Clock } from 'lucide-react';
-import { formatPrice } from '@/lib/utils';
+import { formatPrice, formatDate } from '@/lib/utils';
 import { Commission } from '@/types';
 
 export default function CommissionPage() {
   const [commissions, setCommissions] = useState<Commission[]>([]);
   const [filter, setFilter] = useState<'all' | 'pending' | 'paid'>('all');
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
   useEffect(() => { loadCommissions(); }, []);
 
@@ -142,7 +144,7 @@ export default function CommissionPage() {
           { key: 'pending' as const, label: `Belum Cair (${commissions.filter(c => !c.isPaid).length})` },
           { key: 'paid' as const, label: `Sudah Cair (${commissions.filter(c => c.isPaid).length})` },
         ].map(t => (
-          <button key={t.key} onClick={() => setFilter(t.key)} style={{
+          <button key={t.key} onClick={() => { setFilter(t.key); setCurrentPage(1); }} style={{
             padding: '8px 16px', border: `1px solid ${filter === t.key ? '#1a1a1a' : '#ddd'}`, borderRadius: 8,
             background: filter === t.key ? '#1a1a1a' : '#fff', color: filter === t.key ? '#fff' : '#555',
             cursor: 'pointer', fontSize: 12, fontWeight: 500
@@ -170,12 +172,45 @@ export default function CommissionPage() {
           <tbody>
             {filtered.length === 0 ? (
               <tr><td colSpan={10} className="table-empty">Tidak ada data komisi.</td></tr>
-            ) : filtered.map(c => (
+            ) : filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE).map(c => (
               <tr key={c.id}>
-                <td style={{ fontSize: 11, whiteSpace: 'nowrap' }}>{c.createdAt ? new Date(c.createdAt.seconds * 1000).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-'}</td>
+                <td style={{ fontSize: 11, whiteSpace: 'nowrap' }}>{formatDate(c.createdAt, { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
                 <td style={{ fontSize: 12, fontWeight: 500 }}>{c.affiliateName || '-'}</td>
                 <td style={{ fontFamily: 'monospace', fontSize: 11, letterSpacing: 0.5 }}>{c.voucherCode}</td>
-                <td style={{ fontSize: 12, maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.productName}</td>
+                <td style={{ fontSize: 12, minWidth: '220px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {c.items && c.items.length > 0 ? (
+                      // Jika ada data items (data baru)
+                      c.items.map((item, i) => (
+                        <div key={i} style={{ lineHeight: '1.2' }}>
+                          <div style={{ fontWeight: 600, color: '#1a1a1a', marginBottom: '2px' }}>{item.name}</div>
+                          <div style={{ fontSize: '10px', color: '#888' }}>Jumlah: {item.quantity} pcs</div>
+                        </div>
+                      ))
+                    ) : (
+                      // Fallback untuk data lama (parsing string)
+                      c.productName.split(',').map((item, i) => {
+                        const match = item.match(/(.+)\s\(x(\d+)\)/);
+                        let name = match ? match[1] : item;
+                        let qty = match ? match[2] : null;
+
+                        // Smart fallback: Jika qty tidak ada tapi hanya ada 1 produk, 
+                        // coba hitung dari harga vs total
+                        if (!qty && c.productName.split(',').length === 1) {
+                           const calculatedQty = Math.round((c.finalPrice + c.discountAmount) / c.productPrice);
+                           if (calculatedQty > 0) qty = calculatedQty.toString();
+                        }
+
+                        return (
+                          <div key={i} style={{ lineHeight: '1.2' }}>
+                            <div style={{ fontWeight: 600, color: '#1a1a1a', marginBottom: '2px' }}>{name.trim()}</div>
+                            <div style={{ fontSize: '10px', color: '#888' }}>Jumlah: {qty || 1} pcs</div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                </td>
                 <td style={{ fontSize: 12 }}>{formatPrice(c.productPrice)}</td>
                 <td style={{ fontSize: 12, color: '#d32f2f' }}>-{formatPrice(c.discountAmount)}</td>
                 <td style={{ fontSize: 12, fontWeight: 600 }}>{formatPrice(c.finalPrice)}</td>
@@ -183,7 +218,7 @@ export default function CommissionPage() {
                 <td>
                   {c.isPaid ? (
                     <span className="table-badge table-badge-active" style={{ background: '#e8f5e9', color: '#2e7d32' }}>
-                      <CheckCircle size={12} /> Cair {c.paidAt ? new Date(c.paidAt.seconds * 1000).toLocaleDateString('id-ID') : ''}
+                      <CheckCircle size={12} /> Cair {formatDate(c.paidAt)}
                     </span>
                   ) : (
                     <span className="table-badge" style={{ background: '#fff3e0', color: '#e65100' }}><Clock size={12} /> Pending</span>
@@ -204,6 +239,30 @@ export default function CommissionPage() {
           </tbody>
         </table>
       </div>
+
+      {filtered.length > ITEMS_PER_PAGE && (
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '15px', marginTop: '20px' }}>
+          <button 
+            className="btn btn-ghost" 
+            disabled={currentPage === 1} 
+            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+            style={{ fontSize: 13, padding: '6px 12px' }}
+          >
+            Sebelumnya
+          </button>
+          <span style={{ fontSize: 13, color: '#666' }}>
+            Halaman {currentPage} dari {Math.ceil(filtered.length / ITEMS_PER_PAGE)}
+          </span>
+          <button 
+            className="btn btn-ghost" 
+            disabled={currentPage === Math.ceil(filtered.length / ITEMS_PER_PAGE)} 
+            onClick={() => setCurrentPage(p => Math.min(Math.ceil(filtered.length / ITEMS_PER_PAGE), p + 1))}
+            style={{ fontSize: 13, padding: '6px 12px' }}
+          >
+            Selanjutnya
+          </button>
+        </div>
+      )}
     </>
   );
 }

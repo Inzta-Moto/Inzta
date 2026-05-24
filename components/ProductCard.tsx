@@ -1,8 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Product } from '@/types';
+import { auth } from '@/lib/firebase';
+import { onAuthStateChanged } from 'firebase/auth';
 import { formatPrice, calcDiscount, buildWaLink } from '@/lib/utils';
 
 interface ProductCardProps {
@@ -15,6 +17,14 @@ export default function ProductCard({ product: p, showDetails }: ProductCardProp
   const images = p.images?.length ? p.images : (p.imageUrl ? [p.imageUrl] : []);
   const mainImage = images[0] || null;
   const [orderLoading, setOrderLoading] = useState(false);
+  const [buyerUID, setBuyerUID] = useState<string | null>(null);
+
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (user) => {
+      setBuyerUID(user ? user.uid : null);
+    });
+    return () => unsub();
+  }, []);
 
   const handleImgError = (e: React.SyntheticEvent<HTMLImageElement>) => {
     const target = e.currentTarget;
@@ -39,6 +49,7 @@ export default function ProductCard({ product: p, showDetails }: ProductCardProp
           voucherCode: null,
           affiliateId: null,
           finalPrice: p.price,
+          buyerUID: buyerUID,
         }),
       });
 

@@ -1,7 +1,7 @@
 // app/admin/(panel)/layout.tsx
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Grid, Box, FileText, Ticket, Users, DollarSign, Clipboard, ArrowLeft, X, Menu, LogOut } from 'lucide-react';
@@ -11,16 +11,35 @@ import { signOut } from 'firebase/auth';
 const navLinks = [
   { href: '/admin', label: 'Dashboard', icon: <Grid size={18} /> },
   { href: '/admin/produk', label: 'Produk', icon: <Box size={18} /> },
-  { href: '/admin/orders', label: 'Pesanan', icon: <Clipboard size={18} /> },
+  { href: '/admin/orders', label: 'Pesanan', icon: <Clipboard size={18} />, key: 'pendingOrders' },
   { href: '/admin/artikel', label: 'Artikel', icon: <FileText size={18} /> },
   { href: '/admin/voucher', label: 'Voucher', icon: <Ticket size={18} /> },
   { href: '/admin/affiliate', label: 'Afiliasi', icon: <Users size={18} /> },
-  { href: '/admin/commission', label: 'Komisi', icon: <DollarSign size={18} /> },
+  { href: '/admin/commission', label: 'Komisi', icon: <DollarSign size={18} />, key: 'pendingCommissions' },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [stats, setStats] = useState({ pendingOrders: 0, pendingCommissions: 0 });
+
+  useEffect(() => {
+    async function loadStats() {
+      try {
+        const res = await fetch('/api/admin/sidebar-stats');
+        if (res.ok) {
+          const data = await res.json();
+          setStats({
+            pendingOrders: data.pendingOrders || 0,
+            pendingCommissions: data.pendingCommissions || 0
+          });
+        }
+      } catch (error) {
+        console.error('Failed to load stats', error);
+      }
+    }
+    loadStats();
+  }, [pathname]); // Refresh stats when route changes
 
   const isActive = (href: string) => {
     if (href === '/admin') return pathname === '/admin';
@@ -50,9 +69,29 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               href={link.href}
               className={`sidebar-link ${isActive(link.href) ? 'active' : ''}`}
               onClick={() => setSidebarOpen(false)}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
             >
-              {link.icon}
-              <span>{link.label}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                {link.icon}
+                <span>{link.label}</span>
+              </div>
+              {link.key && stats[link.key as keyof typeof stats] > 0 && (
+                <span style={{
+                  backgroundColor: '#ef4444',
+                  color: 'white',
+                  fontSize: '10px',
+                  fontWeight: 'bold',
+                  minWidth: '18px',
+                  height: '18px',
+                  borderRadius: '999px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '0 5px'
+                }}>
+                  {stats[link.key as keyof typeof stats]}
+                </span>
+              )}
             </Link>
           ))}
           

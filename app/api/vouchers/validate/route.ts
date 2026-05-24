@@ -22,7 +22,21 @@ export async function GET(request: Request) {
 
     // Validasi Dasar
     if (!voucher.isActive) return NextResponse.json({ error: 'Voucher tidak aktif' }, { status: 400 });
-    if (voucher.maxUsage && voucher.usageCount >= voucher.maxUsage) return NextResponse.json({ error: 'Batas penggunaan voucher tercapai' }, { status: 400 });
+    
+    if (voucher.maxUsage) {
+      // Menghitung jumlah pesanan pending yang menggunakan voucher ini
+      const pendingOrdersSnap = await db.collection('orders')
+        .where('voucherCode', '==', code.toUpperCase())
+        .where('status', '==', 'pending')
+        .get();
+        
+      const pendingCount = pendingOrdersSnap.size;
+      const totalUsage = (voucher.usageCount || 0) + pendingCount;
+      
+      if (totalUsage >= voucher.maxUsage) {
+        return NextResponse.json({ error: 'Batas penggunaan voucher tercapai (termasuk antrean)' }, { status: 400 });
+      }
+    }
     
     // Validasi kadaluarsa
     if (voucher.expiresAt && typeof voucher.expiresAt === 'string') {

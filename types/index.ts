@@ -73,6 +73,8 @@ export interface Commission {
   finalPrice: number;
   commissionAmount: number;
   isPaid: boolean;
+  orderId?: string;
+  items?: OrderItem[]; // Tambahkan items di sini
   paidAt: any;
   createdAt: any;
 }

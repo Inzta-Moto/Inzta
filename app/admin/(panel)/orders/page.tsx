@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { formatPrice } from '@/lib/utils';
+import { formatPrice, formatDate } from '@/lib/utils';
 import { Order } from '@/types';
-import { Clipboard, Clock, CheckCircle, XCircle, Search, X } from 'lucide-react';
+import { Clipboard, Clock, CheckCircle, XCircle, Search, X, RotateCcw, Trash2 } from 'lucide-react';
 
 type StatusFilter = 'all' | 'pending' | 'completed' | 'cancelled';
 
@@ -12,8 +12,10 @@ export default function OrdersPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
-  const [actionTarget, setActionTarget] = useState<{ id: string; action: 'completed' | 'cancelled'; name: string } | null>(null);
+  const [actionTarget, setActionTarget] = useState<{ id: string; action: 'completed' | 'cancelled' | 'pending' | 'delete'; name: string } | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
   useEffect(() => { loadOrders(); }, []);
 
@@ -66,14 +68,21 @@ export default function OrdersPage() {
     setActionLoading(true);
 
     try {
-      const res = await fetch(`/api/admin/orders/${actionTarget.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: actionTarget.action }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Gagal mengubah status');
+      if (actionTarget.action === 'delete') {
+        const res = await fetch(`/api/admin/orders/${actionTarget.id}`, {
+          method: 'DELETE',
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Gagal menghapus pesanan');
+      } else {
+        const res = await fetch(`/api/admin/orders/${actionTarget.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: actionTarget.action }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Gagal mengubah status');
+      }
 
       setActionTarget(null);
       loadOrders();
@@ -82,16 +91,6 @@ export default function OrdersPage() {
     } finally {
       setActionLoading(false);
     }
-  };
-
-  const formatDate = (val: any) => {
-    if (!val) return '-';
-    let d: Date;
-    if (typeof val === 'string') d = new Date(val);
-    else if (typeof val === 'object' && val.seconds) d = new Date(val.seconds * 1000);
-    else if (typeof val === 'object' && val._seconds) d = new Date(val._seconds * 1000);
-    else return '-';
-    return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) + ' ' + d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
   };
 
   const statusBadge = (status: string) => {
@@ -180,7 +179,7 @@ export default function OrdersPage() {
                   </td>
                 </tr>
               ) : (
-                filteredOrders.map(order => (
+                filteredOrders.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE).map(order => (
                   <tr key={order.id || order.orderId}>
                     <td>
                       <span className="order-id-cell">#{order.orderId}</span>
@@ -215,7 +214,7 @@ export default function OrdersPage() {
                       )}
                     </td>
                     <td>{statusBadge(order.status)}</td>
-                    <td style={{ fontSize: 12, color: '#666' }}>{formatDate(order.createdAt)}</td>
+                    <td style={{ fontSize: 12, color: '#666' }}>{formatDate(order.createdAt, { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
                     <td>
                       <div className="table-actions">
                         {order.status === 'pending' && (
@@ -245,11 +244,34 @@ export default function OrdersPage() {
                           </>
                         )}
                         {order.status === 'completed' && (
-                          <span style={{ fontSize: 11, color: '#059669', fontWeight: 500 }}>Selesai</span>
+                          <button
+                            className="orders-action-btn"
+                            style={{ background: '#f5f5f5', color: '#666', borderColor: '#ddd' }}
+                            onClick={() => setActionTarget({
+                              id: order.id || order.orderId,
+                              action: 'pending',
+                              name: order.orderId,
+                            })}
+                            title="Kembalikan ke Pending"
+                          >
+                            <RotateCcw size={12} /> Revert
+                          </button>
                         )}
                         {order.status === 'cancelled' && (
                           <span style={{ fontSize: 11, color: '#EF4444', fontWeight: 500 }}>Dibatalkan</span>
                         )}
+                        
+                        <button
+                          className="table-btn danger"
+                          onClick={() => setActionTarget({
+                            id: order.id || order.orderId,
+                            action: 'delete',
+                            name: order.orderId,
+                          })}
+                          title="Hapus Pesanan"
+                        >
+                          <Trash2 size={16} />
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -260,13 +282,39 @@ export default function OrdersPage() {
         </div>
       )}
 
+      {filteredOrders.length > ITEMS_PER_PAGE && (
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '15px', marginTop: '20px' }}>
+          <button 
+            className="btn btn-ghost" 
+            disabled={currentPage === 1} 
+            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+            style={{ fontSize: 13, padding: '6px 12px' }}
+          >
+            Sebelumnya
+          </button>
+          <span style={{ fontSize: 13, color: '#666' }}>
+            Halaman {currentPage} dari {Math.ceil(filteredOrders.length / ITEMS_PER_PAGE)}
+          </span>
+          <button 
+            className="btn btn-ghost" 
+            disabled={currentPage === Math.ceil(filteredOrders.length / ITEMS_PER_PAGE)} 
+            onClick={() => setCurrentPage(p => Math.min(Math.ceil(filteredOrders.length / ITEMS_PER_PAGE), p + 1))}
+            style={{ fontSize: 13, padding: '6px 12px' }}
+          >
+            Selanjutnya
+          </button>
+        </div>
+      )}
+
       {/* Confirmation Modal */}
       {actionTarget && (
         <div className="modal-overlay" style={{ display: 'flex' }} onClick={e => { if (e.target === e.currentTarget) setActionTarget(null); }}>
           <div className="modal modal-sm">
             <div className="modal-header">
               <h2 className="modal-title">
-                {actionTarget.action === 'completed' ? 'Selesaikan Pesanan' : 'Batalkan Pesanan'}
+                {actionTarget.action === 'completed' ? 'Selesaikan Pesanan' : 
+                 actionTarget.action === 'cancelled' ? 'Batalkan Pesanan' :
+                 actionTarget.action === 'pending' ? 'Kembalikan ke Pending' : 'Hapus Pesanan'}
               </h2>
               <button type="button" className="modal-close" onClick={() => setActionTarget(null)}>&times;</button>
             </div>
@@ -279,12 +327,28 @@ export default function OrdersPage() {
                     ℹ️ Stok produk akan otomatis dikurangi sesuai jumlah pesanan.
                   </span>
                 </p>
-              ) : (
+              ) : actionTarget.action === 'cancelled' ? (
                 <p className="modal-text">
                   Anda yakin ingin membatalkan pesanan <strong>#{actionTarget.name}</strong>?
                   <br /><br />
                   <span style={{ fontSize: 12, color: '#666', display: 'flex', alignItems: 'center', gap: 6, background: '#fef2f2', padding: '8px 12px', borderRadius: 6, border: '1px solid #fecaca' }}>
                     ⚠️ Pesanan yang dibatalkan tidak dapat dikembalikan.
+                  </span>
+                </p>
+              ) : actionTarget.action === 'pending' ? (
+                <p className="modal-text">
+                  Anda yakin ingin mengembalikan pesanan <strong>#{actionTarget.name}</strong> ke status Pending?
+                  <br /><br />
+                  <span style={{ fontSize: 12, color: '#666', display: 'flex', alignItems: 'center', gap: 6, background: '#f0f9ff', padding: '8px 12px', borderRadius: 6, border: '1px solid #bae6fd' }}>
+                    ℹ️ Stok akan dikembalikan dan catatan komisi (jika ada) akan dihapus.
+                  </span>
+                </p>
+              ) : (
+                <p className="modal-text">
+                  Yakin hapus pesanan <strong>#{actionTarget.name}</strong>?
+                  <br /><br />
+                  <span style={{ fontSize: 12, color: '#666', display: 'flex', alignItems: 'center', gap: 6, background: '#fef2f2', padding: '8px 12px', borderRadius: 6, border: '1px solid #fecaca' }}>
+                    ⚠️ Tindakan ini permanen dan akan menghapus semua data terkait pesanan ini.
                   </span>
                 </p>
               )}
@@ -296,12 +360,16 @@ export default function OrdersPage() {
                 style={{
                   fontSize: 11,
                   padding: '8px 16px',
-                  background: actionTarget.action === 'completed' ? '#059669' : '#333',
+                  background: actionTarget.action === 'completed' ? '#059669' : 
+                             actionTarget.action === 'pending' ? '#0369a1' : '#333',
                 }}
                 onClick={handleAction}
                 disabled={actionLoading}
               >
-                {actionLoading ? 'Memproses...' : (actionTarget.action === 'completed' ? '✓ Selesaikan' : <><X size={12} /> Batalkan</>)}
+                {actionLoading ? 'Memproses...' : 
+                 actionTarget.action === 'completed' ? '✓ Selesaikan' : 
+                 actionTarget.action === 'pending' ? '↺ Kembalikan' :
+                 actionTarget.action === 'delete' ? '🗑️ Hapus' : '✕ Batalkan'}
               </button>
             </div>
           </div>

@@ -13,6 +13,8 @@ export default function ProductsPage() {
   const [formError, setFormError] = useState<string>('');
   const [saving, setSaving] = useState<boolean>(false);
   const [images, setImages] = useState<string[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
   useEffect(() => { loadProducts(); }, []);
 
@@ -95,8 +97,8 @@ export default function ProductsPage() {
       description: fd.get('description') as string || '',
       category: fd.get('category') as 'hardcase' | 'softcase' | 'tank',
       stock: parseInt(fd.get('stock') as string) || 0,
-      price: parseInt(fd.get('price') as string) || 0,
-      originalPrice: parseInt(fd.get('originalPrice') as string) || 0,
+      price: parseInt((fd.get('price') as string).replace(/\D/g, '')) || 0,
+      originalPrice: parseInt((fd.get('originalPrice') as string).replace(/\D/g, '')) || 0,
       isActive: fd.get('isActive') === 'true',
       badge: fd.get('badge') as string || null,
       badgeType: fd.get('badgeType') as 'white' | 'outline' | 'dark' || 'white',
@@ -138,7 +140,7 @@ export default function ProductsPage() {
       </div>
 
       <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>Produk</th><th>Kategori</th><th>Harga</th><th>Stok</th><th>Status</th><th>Aksi</th></tr></thead><tbody>
-        {products.length === 0 ? <tr><td colSpan={6} className="table-empty">Belum ada produk.</td></tr> : products.map(p => {
+        {products.length === 0 ? <tr><td colSpan={6} className="table-empty">Belum ada produk.</td></tr> : products.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE).map(p => {
           const thumb = p.images?.[0] || p.imageUrl;
           return (
             <tr key={p.slug}>
@@ -162,6 +164,30 @@ export default function ProductsPage() {
           );
         })}
       </tbody></table></div>
+
+      {products.length > ITEMS_PER_PAGE && (
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '15px', marginTop: '20px' }}>
+          <button 
+            className="btn btn-ghost" 
+            disabled={currentPage === 1} 
+            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+            style={{ fontSize: 13, padding: '6px 12px' }}
+          >
+            Sebelumnya
+          </button>
+          <span style={{ fontSize: 13, color: '#666' }}>
+            Halaman {currentPage} dari {Math.ceil(products.length / ITEMS_PER_PAGE)}
+          </span>
+          <button 
+            className="btn btn-ghost" 
+            disabled={currentPage === Math.ceil(products.length / ITEMS_PER_PAGE)} 
+            onClick={() => setCurrentPage(p => Math.min(Math.ceil(products.length / ITEMS_PER_PAGE), p + 1))}
+            style={{ fontSize: 13, padding: '6px 12px' }}
+          >
+            Selanjutnya
+          </button>
+        </div>
+      )}
 
       {modal !== null && (<div className="modal-overlay" style={{ display: 'flex' }} onClick={e => { if (e.target === e.currentTarget) closeModal(); }}><div className="modal"><div className="modal-header"><h2 className="modal-title">{modal.slug ? 'Edit Produk' : 'Tambah Produk'}</h2><button type="button" className="modal-close" onClick={closeModal}>&times;</button></div><form onSubmit={handleSubmit} className="modal-body">
         
@@ -195,7 +221,41 @@ export default function ProductsPage() {
         <div className="form-group"><label className="form-label">Deskripsi</label><textarea name="description" className="form-input" rows={4} defaultValue={modal.description || ''} /></div>
         <div className="form-row"><div className="form-group"><label className="form-label">Kategori *</label><select name="category" className="form-input" defaultValue={modal.category || 'hardcase'}><option value="hardcase">Hardcase</option><option value="softcase">Softcase</option><option value="tank">Tank Bag</option></select></div><div className="form-group"><label className="form-label">Stok *</label><input type="number" name="stock" className="form-input" min={0} defaultValue={modal.stock ?? 0} /></div></div>
         <div className="form-section-title">Harga</div>
-        <div className="form-row"><div className="form-group"><label className="form-label">Harga Jual *</label><input type="number" name="price" className="form-input" min={0} defaultValue={modal.price || ''} /></div><div className="form-group"><label className="form-label">Harga Coret</label><input type="number" name="originalPrice" className="form-input" min={0} defaultValue={modal.originalPrice || ''} /></div><div className="form-group"><label className="form-label">Aktif</label><select name="isActive" className="form-input" defaultValue={String(modal.isActive ?? true)}><option value="true">Ya</option><option value="false">Tidak</option></select></div></div>
+        <div className="form-row">
+          <div className="form-group">
+            <label className="form-label">Harga Jual *</label>
+            <input 
+              type="text" 
+              name="price" 
+              className="form-input" 
+              value={modal.price ? modal.price.toLocaleString('id-ID') : ''} 
+              onChange={(e) => {
+                const val = e.target.value.replace(/\D/g, '');
+                setModal(prev => prev ? { ...prev, price: val ? parseInt(val) : 0 } : { price: val ? parseInt(val) : 0 });
+              }}
+            />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Harga Coret</label>
+            <input 
+              type="text" 
+              name="originalPrice" 
+              className="form-input" 
+              value={modal.originalPrice ? modal.originalPrice.toLocaleString('id-ID') : ''} 
+              onChange={(e) => {
+                const val = e.target.value.replace(/\D/g, '');
+                setModal(prev => prev ? { ...prev, originalPrice: val ? parseInt(val) : 0 } : { originalPrice: val ? parseInt(val) : 0 });
+              }}
+            />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Aktif</label>
+            <select name="isActive" className="form-input" defaultValue={String(modal.isActive ?? true)}>
+              <option value="true">Ya</option>
+              <option value="false">Tidak</option>
+            </select>
+          </div>
+        </div>
         <div className="form-section-title">Lainnya</div>
         <div className="form-row form-row-3"><div className="form-group"><label className="form-label">Badge</label><select name="badge" className="form-input" defaultValue={modal.badge || ''}><option value="">Tanpa</option><option value="BEST SELLER">BEST SELLER</option><option value="NEW">NEW</option><option value="SALE">SALE</option></select></div><div className="form-group"><label className="form-label">Badge Style</label><select name="badgeType" className="form-input" defaultValue={modal.badgeType || 'white'}><option value="white">White</option><option value="outline">Outline</option><option value="dark">Dark</option></select></div><div className="form-group"><label className="form-label">Features</label><input name="features" className="form-input" defaultValue={modal.features?.join(', ') || ''} /></div></div>
 
