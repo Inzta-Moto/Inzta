@@ -3,11 +3,11 @@
 import { useState, useEffect, FormEvent } from 'react';
 import { Affiliate } from '@/types';
 import { formatDate } from '@/lib/utils';
-import { Copy, Check, Users, Phone, Mail, Edit2, Trash2 } from 'lucide-react';
+import { Copy, Check, Users, Phone, Mail, Edit2, Trash2, Eye, EyeOff } from 'lucide-react';
 
 function generateAffCode() {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let code = 'AFF-';
+  let code = 'INZ-';
   for (let i = 0; i < 5; i++) code += chars[Math.floor(Math.random() * chars.length)];
   return code;
 }
@@ -19,6 +19,7 @@ export default function AffiliatePage() {
   const [formError, setFormError] = useState('');
   const [saving, setSaving] = useState(false);
   const [copiedCode, setCopiedCode] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
 
@@ -238,9 +239,34 @@ export default function AffiliatePage() {
               </div>
 
               {(!modal.createdAt || modal.email) && (
-                <div className="form-group">
+                <div className="form-group" style={{ position: 'relative' }}>
                   <label className="form-label">Password Login {modal.createdAt ? '(Kosongkan jika tidak ganti)' : '*'}</label>
-                  <input name="password" type="password" className="form-input" required={!modal.createdAt} minLength={6} placeholder="Minimal 6 karakter" />
+                  <input 
+                    name="password" 
+                    type={showPassword ? 'text' : 'password'} 
+                    className="form-input" 
+                    required={!modal.createdAt} 
+                    minLength={6} 
+                    placeholder="Minimal 6 karakter" 
+                    style={{ paddingRight: '40px' }}
+                  />
+                  <button 
+                    type="button" 
+                    onClick={() => setShowPassword(!showPassword)}
+                    style={{
+                      position: 'absolute',
+                      right: '12px',
+                      top: '34px',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      color: '#999',
+                      display: 'flex',
+                      alignItems: 'center'
+                    }}
+                  >
+                    {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
+                  </button>
                   <small style={{ color: '#999', fontSize: 11, marginTop: 4, display: 'block' }}>Password ini dipakai afiliasi untuk login di /affiliate</small>
                 </div>
               )}
