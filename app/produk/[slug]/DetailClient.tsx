@@ -225,21 +225,19 @@ export default function DetailClient({ slug }: { slug: string }) {
     const subtotal = p.price * quantity;
     const fp = subtotal - discountAmount;
 
-    let msg = `🛒 *PESANAN PRODUK*\n`;
-    if (orderId) msg += `📋 Order ID: #${orderId}\n`;
-    msg += `━━━━━━━━━━━━━━━\n\n`;
-    msg += `📦 *${p.name}* (x${quantity})\n`;
-    if (p.features?.length) msg += `${p.features.join(' • ')}\n`;
-    msg += `\n💰 Harga Satuan: ${formatPrice(p.price)}\n`;
-    msg += `💵 Subtotal: ${formatPrice(subtotal)}\n`;
+    let msg = `PESANAN PRODUK\n`;
+    if (orderId) msg += `Order ID: #${orderId}\n`;
+    msg += `\n`;
+    msg += `${p.name} (x${quantity})\n`;
+    if (p.features?.length) msg += `${p.features.join(', ')}\n`;
+    msg += `\nHarga Satuan: ${formatPrice(p.price)}\n`;
+    msg += `Subtotal: ${formatPrice(subtotal)}\n`;
     if (voucherData) {
-      msg += `🎫 Voucher: ${voucherData.code}\n`;
-      msg += `🔻 Diskon: -${formatPrice(discountAmount)}\n`;
+      msg += `Voucher: ${voucherData.code}\n`;
+      msg += `Diskon: -${formatPrice(discountAmount)}\n`;
     }
-    msg += `━━━━━━━━━━━━━━━\n`;
-    msg += `💵 *Total Bayar: ${formatPrice(fp)}*\n`;
-    msg += `━━━━━━━━━━━━━━━\n\n`;
-    msg += `Data Pemesan:\n• Nama: \n• No. HP: \n• Alamat: \n\nTerima kasih! 🙏`;
+    msg += `Total Bayar: ${formatPrice(fp)}\n\n`;
+    msg += `Data Pemesan:\nNama: \nNo. HP: \nAlamat: \n\nTerima kasih!`;
 
     return `https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`;
   };

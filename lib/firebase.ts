@@ -3,16 +3,17 @@ import { getFirestore } from 'firebase/firestore';
 import { getAuth, setPersistence, browserLocalPersistence } from 'firebase/auth';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyA4dvAli7mc_0LSO7Ig9iWqb7N330K049U",
-  authDomain: "inzta-5244e.firebaseapp.com",
-  projectId: "inzta-5244e",
-  storageBucket: "inzta-5244e.firebasestorage.app",
-  messagingSenderId: "97605265667",
-  appId: "1:97605265667:web:e836aec51004fedb9aa136"
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
 };
 
 // WA_NUMBER DIDEKLARASIKAN DI SINI
-export const WA_NUMBER: string = "6289513482410";
+export const WA_NUMBER: string = process.env.NEXT_PUBLIC_WA_NUMBER || "6283804058329";
+
 
 let app;
 if (!getApps().length) {
