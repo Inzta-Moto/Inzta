@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { doc, getDoc, collection, getDocs, updateDoc, addDoc, increment } from 'firebase/firestore';
-import { db, auth } from '@/lib/firebase';
+import { db, auth, WA_NUMBER } from '@/lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { formatPrice, calcDiscount } from '@/lib/utils';
 import { Truck, ShieldCheck, RefreshCw, Headphones, LucideIcon, X, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Tag, TicketCheck, TicketX } from 'lucide-react';
@@ -239,7 +239,7 @@ export default function DetailClient({ slug }: { slug: string }) {
     msg += `Total Bayar: ${formatPrice(fp)}\n\n`;
     msg += `Data Pemesan:\nNama: \nNo. HP: \nAlamat: \n\nTerima kasih!`;
 
-    return `https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`;
+    return `https://api.whatsapp.com/send?phone=${WA_NUMBER}&text=${encodeURIComponent(msg)}`;
   };
 
   // ── Create Order & Open WhatsApp ──

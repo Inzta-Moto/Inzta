@@ -34,7 +34,9 @@ export default function ProductCard({ product: p, showDetails }: ProductCardProp
     }
   };
 
-  const handleOrder = async () => {
+  const handleOrder = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     if (orderLoading) return;
     setOrderLoading(true);
 
