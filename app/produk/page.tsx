@@ -1,8 +1,6 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { collection, getDocs } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import ProductCard from '@/components/ProductCard';
@@ -34,13 +32,25 @@ export default function ProdukPage() {
 
   async function loadProducts() {
     try {
-      const snap = await getDocs(collection(db, 'products'));
-      let items: Product[] = snap.docs.map(d => d.data() as Product)
-        .filter(p => p.isActive === true)
-        .sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
-      setAllProducts(items);
-      setFiltered(items);
-    } catch (e) { console.error('[Products]', e); }
+      const res = await fetch('/api/products');
+      const data = await res.json();
+      if (res.ok && data.products) {
+        const getTimestamp = (val: any) => {
+          if (!val) return 0;
+          if (typeof val === 'string') return new Date(val).getTime() || 0;
+          if (typeof val === 'number') return val;
+          if (typeof val === 'object') {
+            if (typeof val.seconds === 'number') return val.seconds * 1000;
+            if (typeof val._seconds === 'number') return val._seconds * 1000;
+          }
+          return 0;
+        };
+        let items: Product[] = data.products
+          .filter((p: Product) => p.isActive === true)
+          .sort((a: any, b: any) => getTimestamp(b.createdAt) - getTimestamp(a.createdAt));
+        setAllProducts(items);
+      }
+    } catch (e) { console.error(e); }
   }
 
   function applyFilter() {

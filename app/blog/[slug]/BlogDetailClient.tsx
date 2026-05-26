@@ -8,6 +8,7 @@ import Footer from '@/components/Footer';
 import Link from 'next/link';
 import { Article } from '@/types';
 import { ArrowLeft, Calendar } from 'lucide-react';
+import { formatDate } from '@/lib/utils';
 
 export default function BlogDetailClient({ slug }: { slug: string }) {
   const [article, setArticle] = useState<Article | null>(null);
@@ -83,7 +84,7 @@ export default function BlogDetailClient({ slug }: { slug: string }) {
           <div className="blog-detail-header">
             <h1 className="blog-detail-title">{a.title}</h1>
             <div className="blog-card-meta" style={{ marginBottom: '24px' }}>
-              <Calendar size={14} /> {a.createdAt ? new Date(a.createdAt.seconds * 1000).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : ''}
+              <Calendar size={14} /> {formatDate(a.createdAt, { day: 'numeric', month: 'long', year: 'numeric' })}
             </div>
             
             {/* GALLERY GAMBAR (1 BESAR, SISANYA KECIL) */}

@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { doc, getDoc, collection, getDocs, updateDoc, addDoc, increment } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { db, auth, WA_NUMBER } from '@/lib/firebase';
+import { onAuthStateChanged } from 'firebase/auth';
 import { formatPrice, calcDiscount } from '@/lib/utils';
 import { Truck, ShieldCheck, RefreshCw, Headphones, LucideIcon, X, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Tag, TicketCheck, TicketX } from 'lucide-react';
 import Header from '@/components/Header';
@@ -31,36 +32,144 @@ export default function DetailClient({ slug }: { slug: string }) {
   const [voucherError, setVoucherError] = useState('');
   const [discountAmount, setDiscountAmount] = useState(0);
 
+  // ── Quantity State ──
+  const [quantity, setQuantity] = useState(1);
+
+  // ── Order State ──
+  const [orderLoading, setOrderLoading] = useState(false);
+  const [buyerUID, setBuyerUID] = useState<string | null>(null);
+
+  // ── Toast State ──
+  const [toastMessage, setToastMessage] = useState('');
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(''), 3000);
+  };
+
   const imagesLenRef = useRef(0);
+
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (user) => {
+      const isAffiliate = localStorage.getItem('is_affiliate_logged_in') === 'true';
+      setBuyerUID(user && isAffiliate ? user.uid : null);
+    });
+    return () => unsub();
+  }, []);
 
   useEffect(() => { if (slug) loadProduct(); }, [slug]);
 
   async function loadProduct() {
     try {
-      const docSnap = await getDoc(doc(db, 'products', slug));
-      if (docSnap.exists()) {
-        const data = docSnap.data() as Product;
-        setProduct(data);
-        loadRelated(slug);
-      } else {
-        setError("Produk tidak ada di dalam database.");
+      const res = await fetch(`/api/products/${slug}`);
+      const data = await res.json();
+      
+      if (!res.ok) {
+        setError(data.error || 'Produk tidak ditemukan');
+        setLoading(false);
+        return;
+      }
+
+      const pData = data.product as Product;
+      setProduct(pData);
+      imagesLenRef.current = pData.images?.length || (pData.imageUrl ? 1 : 0);
+
+      // Load related products
+      const relRes = await fetch('/api/products');
+      const relData = await relRes.json();
+      if (relRes.ok && relData.products) {
+        let items: Product[] = relData.products;
+        setRelated(items.filter((p: Product) => p.isActive && p.slug !== slug).slice(0, 4));
       }
     } catch (e: any) {
-      console.error('[Detail Client Error]', e);
-      setError(e.message || "Gagal memuat data produk. Cek koneksi internet Anda.");
+      setError(e.message);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }
 
-  async function loadRelated(currentSlug: string) {
-    try {
-      const snap = await getDocs(collection(db, 'products'));
-      let items: Product[] = snap.docs.map(d => d.data() as Product)
-        .filter(p => p.isActive === true && p.slug !== currentSlug)
-        .sort(() => Math.random() - 0.5).slice(0, 3);
-      setRelated(items);
-    } catch (e) { console.warn('[Related]', e); }
-  }
+  // ── Auto-Apply Affiliate Voucher & Re-calculate on Quantity Change ──
+  useEffect(() => {
+    if (product) {
+      if (!voucherData && !voucherError && !voucherInput) {
+        const affiliateId = localStorage.getItem('inzta_affiliate');
+        if (affiliateId) {
+          const resolveAndApply = async () => {
+            try {
+              setVoucherLoading(true);
+              const res = await fetch(`/api/vouchers/resolve?affiliateId=${affiliateId}`);
+              
+              // 1. Baca body HANYA SEKALI
+              const data = await res.json();
+              
+              // 2. Gunakan status kode dan data yang sudah dibaca
+              if (res.status !== 200) {
+                // Jika terjadi error (400, 404, 500), tampilkan toast
+                const errorMessage = data.error || 'Terjadi kesalahan saat menerapkan voucher.';
+                showToast(errorMessage);
+                
+                // Debug tambahan
+                console.error('Voucher Resolution Error:', { status: res.status, data });
+                
+                setVoucherLoading(false);
+                return;
+              }
+
+              const v = data.voucher;
+              
+              const subtotal = product.price * quantity;
+              if (v.minPurchase && subtotal < v.minPurchase) {
+                const errMsg = `Minimal pembelian ${formatPrice(v.minPurchase)} tidak terpenuhi.`;
+                showToast(errMsg);
+                setVoucherLoading(false);
+                return; 
+              }
+
+              let disc = 0;
+              if (v.type === 'percentage') {
+                disc = (subtotal * v.value) / 100;
+                if (v.maxDiscount && disc > v.maxDiscount) disc = v.maxDiscount;
+              } else {
+                disc = v.value;
+              }
+              if (disc > subtotal) disc = subtotal;
+
+              setVoucherInput(v.code);
+              setVoucherData(v);
+              setDiscountAmount(Math.round(disc));
+            } catch (e) {
+              console.error('Failed to resolve affiliate voucher', e);
+              showToast('Koneksi ke server bermasalah.');
+            } finally {
+              setVoucherLoading(false);
+            }
+          };
+          resolveAndApply();
+        }
+      } else if (voucherData) {
+        // Re-calculate discount if quantity changes and voucher is already applied
+        const subtotal = product.price * quantity;
+        if (voucherData.minPurchase && subtotal < voucherData.minPurchase) {
+          // If quantity is reduced and no longer meets min purchase, remove voucher
+          removeVoucher();
+          const errMsg = `Voucher dilepas. Minimal pembelian ${formatPrice(voucherData.minPurchase)}.`;
+          setVoucherError(errMsg);
+          showToast(errMsg);
+          return;
+        }
+
+        let disc = 0;
+        if (voucherData.type === 'percentage') {
+          disc = (subtotal * voucherData.value) / 100;
+          if (voucherData.maxDiscount && disc > voucherData.maxDiscount) disc = voucherData.maxDiscount;
+        } else {
+          disc = voucherData.value;
+        }
+        if (disc > subtotal) disc = subtotal;
+        setDiscountAmount(Math.round(disc));
+      }
+    }
+  }, [product?.slug, quantity]);
 
   // ── Voucher Logic ──
   const applyVoucher = async () => {
@@ -72,29 +181,37 @@ export default function DetailClient({ slug }: { slug: string }) {
 
     try {
       const code = voucherInput.trim().toUpperCase();
-      const vSnap = await getDoc(doc(db, 'vouchers', code));
+      const res = await fetch(`/api/vouchers/validate?code=${code}`);
+      const data = await res.json();
 
-      if (!vSnap.exists()) {
-        setVoucherError('Voucher tidak ditemukan.');
+      if (!res.ok) {
+        if (data.error && data.error.toLowerCase().includes('batas')) {
+          showToast(data.error);
+        }
+        setVoucherError(data.error || 'Voucher tidak ditemukan.');
         setVoucherLoading(false);
         return;
       }
 
-      const v = vSnap.data() as Voucher;
+      const v = data.voucher;
+      const subtotal = product.price * quantity;
 
-      if (!v.isActive) { setVoucherError('Voucher sudah tidak aktif.'); setVoucherLoading(false); return; }
-      if (v.maxUsage && v.usageCount >= v.maxUsage) { setVoucherError('Batas penggunaan voucher sudah tercapai.'); setVoucherLoading(false); return; }
-      if (v.expiresAt && v.expiresAt.seconds * 1000 < Date.now()) { setVoucherError('Voucher sudah kadaluarsa.'); setVoucherLoading(false); return; }
-      if (v.minPurchase && product.price < v.minPurchase) { setVoucherError(`Minimal pembelian ${formatPrice(v.minPurchase)}.`); setVoucherLoading(false); return; }
+      if (v.minPurchase && subtotal < v.minPurchase) { 
+        const errMsg = `Minimal pembelian ${formatPrice(v.minPurchase)} tidak terpenuhi.`;
+        setVoucherError(errMsg); 
+        showToast(errMsg);
+        setVoucherLoading(false); 
+        return; 
+      }
 
       let disc = 0;
       if (v.type === 'percentage') {
-        disc = (product.price * v.value) / 100;
+        disc = (subtotal * v.value) / 100;
         if (v.maxDiscount && disc > v.maxDiscount) disc = v.maxDiscount;
       } else {
         disc = v.value;
       }
-      if (disc > product.price) disc = product.price;
+      if (disc > subtotal) disc = subtotal;
 
       setVoucherData(v);
       setDiscountAmount(Math.round(disc));
@@ -112,61 +229,66 @@ export default function DetailClient({ slug }: { slug: string }) {
   };
 
   // ── Build WA Link with Voucher ──
-  const buildWaLink = () => {
+  const buildWaLink = (orderId?: string) => {
     if (!product) return '#';
     const p = product;
-    const finalPrice = p.price - discountAmount;
+    const subtotal = p.price * quantity;
+    const fp = subtotal - discountAmount;
 
-    let msg = `🛒 *PESANAN PRODUK*\n━━━━━━━━━━━━━━━\n\n`;
-    msg += `📦 *${p.name}*\n`;
-    if (p.features?.length) msg += `${p.features.join(' • ')}\n`;
-    msg += `\n💰 Harga: ${formatPrice(p.price)}\n`;
+    let msg = `PESANAN PRODUK\n`;
+    if (orderId) msg += `Order ID: #${orderId}\n`;
+    msg += `\n`;
+    msg += `${p.name} (x${quantity})\n`;
+    if (p.features?.length) msg += `${p.features.join(', ')}\n`;
+    msg += `\nHarga Satuan: ${formatPrice(p.price)}\n`;
+    msg += `Subtotal: ${formatPrice(subtotal)}\n`;
     if (voucherData) {
-      msg += `🎫 Voucher: ${voucherData.code}\n`;
-      msg += `🔻 Diskon: -${formatPrice(discountAmount)}\n`;
+      msg += `Voucher: ${voucherData.code}\n`;
+      msg += `Diskon: -${formatPrice(discountAmount)}\n`;
     }
-    msg += `━━━━━━━━━━━━━━━\n`;
-    msg += `💵 *Total Bayar: ${formatPrice(finalPrice)}*\n`;
-    msg += `━━━━━━━━━━━━━━━\n\n`;
-    msg += `Data Pemesan:\n• Nama: \n• No. HP: \n• Alamat: \n\nTerima kasih! 🙏`;
+    msg += `Total Bayar: ${formatPrice(fp)}\n\n`;
+    msg += `Data Pemesan:\nNama: \nNo. HP: \nAlamat: \n\nTerima kasih!`;
 
-    return `https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`;
+    return `https://api.whatsapp.com/send?phone=${WA_NUMBER}&text=${encodeURIComponent(msg)}`;
   };
 
-  // ── Track Commission on WA Click ──
+  // ── Create Order & Open WhatsApp ──
   const handleOrderClick = async () => {
-    if (voucherData && voucherData.affiliateId && product) {
-      const finalPrice = product.price - discountAmount;
-      const commissionAmt = Math.round(finalPrice * 0.05);
-      try {
-        await addDoc(collection(db, 'commissions'), {
-          affiliateId: voucherData.affiliateId,
-          affiliateName: voucherData.affiliateName || '',
-          voucherCode: voucherData.code,
-          productName: product.name,
-          productSlug: product.slug,
-          productPrice: product.price,
+    if (!product || orderLoading) return;
+    setOrderLoading(true);
+
+    try {
+      const subtotal = product.price * quantity;
+      const fp = subtotal - discountAmount;
+
+      // 1. Create order via API
+      const res = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items: [{ id: product.slug, name: product.name, price: product.price, quantity: quantity }],
+          totalPrice: subtotal,
           discountAmount: discountAmount,
-          finalPrice: finalPrice,
-          commissionAmount: commissionAmt,
-          isPaid: false,
-          paidAt: null,
-          createdAt: new Date(),
-        });
-        await updateDoc(doc(db, 'vouchers', voucherData.code), {
-          usageCount: increment(1),
-        });
-      } catch (e) {
-        console.error('[Commission Error]', e);
-      }
-    } else if (voucherData && product) {
-      try {
-        await updateDoc(doc(db, 'vouchers', voucherData.code), {
-          usageCount: increment(1),
-        });
-      } catch (e) {
-        console.error('[Voucher Usage Error]', e);
-      }
+          voucherCode: voucherData?.code || null,
+          affiliateId: voucherData?.affiliateId || null,
+          finalPrice: fp,
+          buyerUID: buyerUID, // Kirim UID pembeli (jika sedang login sebagai affiliate)
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Gagal membuat pesanan');
+
+      const orderId = data.orderId;
+
+      // 2. Open WhatsApp with Order ID
+      const waUrl = buildWaLink(orderId);
+      window.open(waUrl, '_blank', 'noopener,noreferrer');
+    } catch (e: any) {
+      console.error('[Order Error]', e);
+      alert('Gagal membuat pesanan: ' + e.message);
+    } finally {
+      setOrderLoading(false);
     }
   };
 
@@ -252,7 +374,7 @@ export default function DetailClient({ slug }: { slug: string }) {
   const stockCls = p.stock <= 10 ? 'low-stock' : 'in-stock';
   const stockLabel = p.stock <= 10 ? `Sisa ${p.stock} unit` : 'Tersedia';
 
-  const finalPrice = p.price - discountAmount;
+  const finalPrice = (p.price * quantity) - discountAmount;
 
   const trustItems: { icon: LucideIcon; title: string; desc: string }[] = [
     { icon: Truck, title: 'Pengiriman Cepat', desc: 'Paket dikirim 1-2 hari kerja' },
@@ -274,6 +396,37 @@ export default function DetailClient({ slug }: { slug: string }) {
       <line x1="12" y1="22.08" x2="12" y2="12" />
     </svg>
   );
+
+  // ── Share Section ──
+  const handleShare = async () => {
+    if (!product) return;
+    const p = product;
+    const imageUrl = images[activeImg] || p.imageUrl;
+    const baseUrl = window.location.origin + window.location.pathname;
+    const affiliateId = localStorage.getItem('inzta_affiliate');
+    const shareUrl = affiliateId ? `${baseUrl}?aff=${affiliateId}` : baseUrl;
+    const text = `*${p.name}*\n${p.description ? p.description.split('\n')[0] : ''}\n\nHarga: ${formatPrice(p.price)}\n\n${shareUrl}`;
+
+    try {
+      if (imageUrl && navigator.canShare && navigator.canShare({ files: [new File([new Blob()], 'image.jpg', { type: 'image/jpeg' })] })) {
+        const response = await fetch(imageUrl);
+        const blob = await response.blob();
+        const file = new File([blob], 'product.jpg', { type: blob.type });
+
+        await navigator.share({
+          files: [file],
+          title: p.name,
+          text: text,
+        });
+      } else {
+        throw new Error('Web Share API not supported');
+      }
+    } catch (error) {
+      // Fallback
+      const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+      window.open(waUrl, '_blank', 'noopener,noreferrer');
+    }
+  };
 
   return (
     <>
@@ -350,6 +503,11 @@ export default function DetailClient({ slug }: { slug: string }) {
                       <strong>Voucher {voucherData.code} aktif!</strong>
                       <button onClick={removeVoucher} style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: '#2e7d32', padding: 2 }}><TicketX size={14} /></button>
                     </div>
+                    {buyerUID && voucherData.affiliateId && buyerUID === voucherData.affiliateId && (
+                      <div style={{ fontSize: 11, color: '#2e7d32', marginBottom: 8, fontStyle: 'italic', fontWeight: 500 }}>
+                        ℹ️ Voucher pribadi: Anda mendapatkan diskon, komisi tidak berlaku.
+                      </div>
+                    )}
                     <div style={{ fontSize: 13, color: '#555' }}>
                       Diskon: <span style={{ color: '#d32f2f', fontWeight: 600 }}>-{formatPrice(discountAmount)}</span>
                       {voucherData.type === 'percentage' && voucherData.maxDiscount ? ` (maks ${formatPrice(voucherData.maxDiscount)})` : ''}
@@ -373,6 +531,65 @@ export default function DetailClient({ slug }: { slug: string }) {
               <div className="detail-stock">
                 <span className={`detail-stock-dot ${stockCls}`} />
                 <span className="detail-stock-text"><strong>{stockLabel}</strong></span>
+              </div>
+
+              {/* ── Quantity Selector ── */}
+              <div style={{ marginBottom: 20 }}>
+                <div className="detail-features-label">Jumlah</div>
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  width: 'fit-content',
+                  border: '1px solid var(--border-light)',
+                  borderRadius: 8,
+                  overflow: 'hidden',
+                  background: 'var(--bg-white)'
+                }}>
+                  <button 
+                    onClick={() => setQuantity(q => Math.max(1, q - 1))}
+                    disabled={quantity <= 1}
+                    style={{ 
+                      padding: '8px 14px', 
+                      background: 'var(--bg-subtle)', 
+                      border: 'none',
+                      cursor: quantity <= 1 ? 'not-allowed' : 'pointer',
+                      opacity: quantity <= 1 ? 0.5 : 1,
+                      fontSize: 16,
+                      fontWeight: 600,
+                      color: 'var(--text-primary)',
+                      borderRight: '1px solid var(--border-light)'
+                    }}
+                  >
+                    -
+                  </button>
+                  <div style={{ 
+                    padding: '8px 24px', 
+                    fontSize: 14, 
+                    fontWeight: 600, 
+                    color: 'var(--text-primary)',
+                    minWidth: '40px',
+                    textAlign: 'center'
+                  }}>
+                    {quantity}
+                  </div>
+                  <button 
+                    onClick={() => setQuantity(q => Math.min(p.stock, q + 1))}
+                    disabled={quantity >= p.stock}
+                    style={{ 
+                      padding: '8px 14px', 
+                      background: 'var(--bg-subtle)', 
+                      border: 'none',
+                      cursor: quantity >= p.stock ? 'not-allowed' : 'pointer',
+                      opacity: quantity >= p.stock ? 0.5 : 1,
+                      fontSize: 16,
+                      fontWeight: 600,
+                      color: 'var(--text-primary)',
+                      borderLeft: '1px solid var(--border-light)'
+                    }}
+                  >
+                    +
+                  </button>
+                </div>
               </div>
 
               {/* ── Voucher Input ── */}
@@ -426,37 +643,55 @@ export default function DetailClient({ slug }: { slug: string }) {
 
               {/* ── CTA Button ── */}
               <div className="detail-cta">
-                <a
-                  href={buildWaLink()}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <button
                   className="btn-detail-wa"
                   onClick={handleOrderClick}
+                  disabled={orderLoading}
+                  style={{ opacity: orderLoading ? 0.7 : 1, cursor: orderLoading ? 'wait' : 'pointer' }}
                 >
-                  <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
-                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
-                  </svg>
-                  Pesan via WhatsApp
-                </a>
+                  {orderLoading ? (
+                    <>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: 'spin 1.5s linear infinite' }}>
+                        <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                      </svg>
+                      Memproses...
+                    </>
+                  ) : (
+                    <>
+                      <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
+                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+                      </svg>
+                      Pesan via WhatsApp
+                    </>
+                  )}
+                </button>
               </div>
 
               {/* ── Share Section ── */}
               <div className="detail-share">
                 <button className="detail-share-btn detail-share-copy" onClick={() => {
-                  navigator.clipboard.writeText(window.location.href);
+                  const baseUrl = window.location.origin + window.location.pathname;
+                  const affiliateId = localStorage.getItem('inzta_affiliate');
+                  const shareUrl = affiliateId ? `${baseUrl}?aff=${affiliateId}` : baseUrl;
+                  navigator.clipboard.writeText(shareUrl);
                   const toast = document.getElementById('share-toast');
                   if (toast) { toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 2000); }
                 }}>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>
                   <span>Salin Link</span>
                 </button>
-                <a href={`https://api.whatsapp.com/send?text=${encodeURIComponent(`*${p.name}*\n${p.description ? p.description.split('\n')[0] : ''}\n\nHarga: ${formatPrice(p.price)}\n\n${window.location.href}`)}`} target="_blank" rel="noopener noreferrer" className="detail-share-btn detail-share-wa">
+                <button className="detail-share-btn detail-share-wa" onClick={handleShare}>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" /></svg>
-                  <span>Bagikan</span>
-                </a>
+                  <span>Bagikan Gambar</span>
+                </button>
               </div>
               <div id="share-toast" className="toast">✓ Link berhasil disalin!</div>
             </div>
+          </div>
+
+          {/* Toast for errors/limits */}
+          <div className={`toast ${toastMessage ? 'show' : ''}`} style={{ background: '#ef4444', borderColor: '#b91c1c' }}>
+            {toastMessage}
           </div>
 
           {/* Trust */}

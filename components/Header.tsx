@@ -2,8 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import Image from 'next/image'; // ← TAMBAHKAN INI
+import Image from 'next/image';
+import { User } from 'lucide-react';
 import { WA_NUMBER } from '@/lib/firebase';
+import { auth } from '@/lib/firebase';
+import { onAuthStateChanged } from 'firebase/auth';
 
 interface HeaderProps {
   active: 'home' | 'produk' | 'blog';
@@ -12,11 +15,24 @@ interface HeaderProps {
 export default function Header({ active }: HeaderProps) {
   const [scrolled, setScrolled] = useState<boolean>(false);
   const [mobileOpen, setMobileOpen] = useState<boolean>(false);
+  const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 50);
     window.addEventListener('scroll', onScroll);
     return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      const isAffiliate = localStorage.getItem('is_affiliate_logged_in') === 'true';
+      if (currentUser && isAffiliate) {
+        setUser(currentUser);
+      } else {
+        setUser(null);
+      }
+    });
+    return () => unsubscribe();
   }, []);
 
   useEffect(() => {
@@ -30,10 +46,9 @@ export default function Header({ active }: HeaderProps) {
         <div className="container">
           <div className="header-inner">
             
-            {/* ← UBAH BAGIAN INI */}
             <Link href="/" className="header-logo">
               <Image 
-                src="/logo-inzta.png" // Ganti sesuai nama file logo Anda di folder public
+                src="/logo-inzta.png" 
                 alt="INZTA Logo" 
                 width={24} 
                 height={24} 
@@ -50,6 +65,15 @@ export default function Header({ active }: HeaderProps) {
             </nav>
 
             <div className="header-right">
+              {user ? (
+                <Link href="/affiliate/dashboard" className="header-login">
+                  DASHBOARD <User size={18} />
+                </Link>
+              ) : (
+                <Link href="/affiliate/login" className="header-login">
+                  LOGIN <User size={18} />
+                </Link>
+              )}
               <button className="mobile-toggle" onClick={() => setMobileOpen(!mobileOpen)} aria-label="Menu">
                 <div className={`hamburger-box${mobileOpen ? ' open' : ''}`}>
                   <span></span>
@@ -61,6 +85,7 @@ export default function Header({ active }: HeaderProps) {
           </div>
         </div>
       </header>
+
 
       {/* Backdrop */}
       <div className={`mobile-backdrop${mobileOpen ? ' open' : ''}`} onClick={() => setMobileOpen(false)} />

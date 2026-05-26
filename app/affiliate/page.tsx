@@ -8,6 +8,7 @@ import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword, signOut as secondarySignOut } from 'firebase/auth';
 import { Affiliate } from '@/types';
 import { Copy, Check, Users, Phone, Mail } from 'lucide-react';
+import { formatDate } from '@/lib/utils';
 
 // Secondary app untuk buat user tanpa ngeluarin admin dari session
 const apps = getApps();
@@ -168,7 +169,7 @@ export default function AffiliatePage() {
                     {copiedCode === a.voucherCode ? <Check size={12} color="green" /> : <Copy size={12} color="#aaa" />}
                   </button>
                 </td>
-                <td style={{ fontSize: 12 }}>{a.createdAt ? new Date(a.createdAt.seconds * 1000).toLocaleDateString('id-ID') : '-'}</td>
+                <td style={{ fontSize: 12 }}>{formatDate(a.createdAt)}</td>
                 <td>
                   <div className="table-actions">
                     <button className="table-btn" onClick={() => openEdit(a)}>✏️</button>
