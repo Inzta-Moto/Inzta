@@ -57,8 +57,13 @@ export default function AffiliateLayout({ children }: { children: React.ReactNod
           <button 
             onClick={async () => {
               await signOut(auth);
-              await fetch('/api/auth/logout', { method: 'POST' });
+              await fetch('/api/auth/logout', { 
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ role: 'affiliate' })
+              });
               localStorage.removeItem('inzta_affiliate');
+              localStorage.removeItem('is_affiliate_logged_in');
               window.location.href = '/affiliate/login';
             }}
             className="sidebar-link logout" 

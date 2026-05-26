@@ -4,10 +4,14 @@ import { cookies } from 'next/headers';
 
 export async function POST(request: Request) {
   try {
-    const { idToken } = await request.json();
+    const { idToken, role } = await request.json();
 
     if (!idToken) {
       return NextResponse.json({ error: 'Missing ID Token' }, { status: 400 });
+    }
+
+    if (!role || (role !== 'admin' && role !== 'affiliate')) {
+      return NextResponse.json({ error: 'Invalid role' }, { status: 400 });
     }
 
     // Set session expiration to 5 days
@@ -16,8 +20,11 @@ export async function POST(request: Request) {
     // Create the session cookie
     const sessionCookie = await getAdminAuth().createSessionCookie(idToken, { expiresIn });
 
+    // Determine cookie name based on role
+    const cookieName = role === 'admin' ? 'admin_session' : 'affiliate_session';
+
     // Set cookie
-    cookies().set('session', sessionCookie, {
+    cookies().set(cookieName, sessionCookie, {
       maxAge: expiresIn / 1000,
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',

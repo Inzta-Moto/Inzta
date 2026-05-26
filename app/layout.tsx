@@ -4,10 +4,40 @@ import AffiliateTracker from '@/components/AffiliateTracker';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'INZTA — Moto Rider Bag',
-  description: 'Tas motor Ekslusif untuk rider. Waterproof, ringan, dan stylish.',
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://inzta.id'),
+  title: {
+    default: 'INZTA Moto | Premium Waterproof Motorcycle Bags',
+    template: '%s | INZTA Moto'
+  },
+  description: 'Tas motor eksklusif dan perlengkapan touring untuk rider. Waterproof, ringan, tahan banting, dan stylish. Temukan Sidebag Inzta Adventure dan produk lainnya.',
+  keywords: ['inzta', 'inzta moto', 'tas motor', 'tas waterproof', 'sidebag motor', 'sidebag touring', 'tas touring waterproof', 'perlengkapan motor'],
+  authors: [{ name: 'Inzta Moto' }],
+  creator: 'Inzta Moto',
+  openGraph: {
+    type: 'website',
+    locale: 'id_ID',
+    url: process.env.NEXT_PUBLIC_SITE_URL || 'https://inzta.id',
+    title: 'INZTA Moto | Premium Waterproof Motorcycle Bags',
+    description: 'Tas motor eksklusif untuk rider. Waterproof, ringan, tahan banting, dan stylish.',
+    siteName: 'INZTA Moto',
+    images: [
+      {
+        url: '/logo.png', // Pastikan logo yang representatif
+        width: 800,
+        height: 600,
+        alt: 'INZTA Moto Logo',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'INZTA Moto | Premium Waterproof Motorcycle Bags',
+    description: 'Tas motor eksklusif untuk rider. Waterproof, ringan, tahan banting, dan stylish.',
+    images: ['/logo.png'],
+    creator: '@inztamoto',
+  },
   icons: {
-    icon: '/logo.png', 
+    icon: '/logo.png',
   },
 };
 

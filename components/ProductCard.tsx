@@ -21,7 +21,8 @@ export default function ProductCard({ product: p, showDetails }: ProductCardProp
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (user) => {
-      setBuyerUID(user ? user.uid : null);
+      const isAffiliate = localStorage.getItem('is_affiliate_logged_in') === 'true';
+      setBuyerUID(user && isAffiliate ? user.uid : null);
     });
     return () => unsub();
   }, []);

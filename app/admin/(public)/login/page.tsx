@@ -23,7 +23,7 @@ export default function AdminLogin() {
       const response = await fetch('/api/auth/session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ idToken }),
+        body: JSON.stringify({ idToken, role: 'admin' }),
       });
 
       if (response.ok) {

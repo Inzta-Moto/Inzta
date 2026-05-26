@@ -105,7 +105,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <button 
             onClick={async () => {
               await signOut(auth);
-              await fetch('/api/auth/logout', { method: 'POST' });
+              await fetch('/api/auth/logout', { 
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ role: 'admin' })
+              });
               window.location.href = '/admin/login';
             }}
             className="sidebar-link logout" 

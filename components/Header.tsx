@@ -25,7 +25,12 @@ export default function Header({ active }: HeaderProps) {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
+      const isAffiliate = localStorage.getItem('is_affiliate_logged_in') === 'true';
+      if (currentUser && isAffiliate) {
+        setUser(currentUser);
+      } else {
+        setUser(null);
+      }
     });
     return () => unsubscribe();
   }, []);

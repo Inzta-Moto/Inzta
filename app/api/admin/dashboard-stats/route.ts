@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getAdminDb } from '@/lib/firebaseAdmin';
+import { verifyAdminSession } from '@/lib/auth';
 
 async function countQuery(query: FirebaseFirestore.Query) {
   try {
@@ -12,6 +13,9 @@ async function countQuery(query: FirebaseFirestore.Query) {
 }
 
 export async function GET() {
+  const auth = await verifyAdminSession();
+  if (auth.error) return NextResponse.json({ error: auth.error }, { status: 401 });
+
   try {
     const db = getAdminDb();
     const products = db.collection('products');

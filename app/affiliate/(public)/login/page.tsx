@@ -26,10 +26,13 @@ export default function AffiliateLogin() {
       const response = await fetch('/api/auth/session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ idToken }),
+        body: JSON.stringify({ idToken, role: 'affiliate' }),
       });
 
       if (response.ok) {
+        // Mark as affiliate in local storage
+        localStorage.setItem('is_affiliate_logged_in', 'true');
+        
         // Fetch affiliate info to get voucher code
         const affRes = await fetch('/api/affiliate/commissions'); // Reusing this to find the affiliate
         const affData = await affRes.json();

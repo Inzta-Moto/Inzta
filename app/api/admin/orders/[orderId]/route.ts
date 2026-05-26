@@ -1,8 +1,12 @@
 import { NextResponse } from 'next/server';
 import { getAdminDb } from '@/lib/firebaseAdmin';
 import * as admin from 'firebase-admin';
+import { verifyAdminSession } from '@/lib/auth';
 
 export async function PATCH(request: Request, { params }: { params: { orderId: string } }) {
+  const auth = await verifyAdminSession();
+  if (auth.error) return NextResponse.json({ error: auth.error }, { status: 401 });
+
   try {
     const { orderId } = params;
     const { status } = await request.json();
@@ -138,6 +142,9 @@ export async function PATCH(request: Request, { params }: { params: { orderId: s
 }
 
 export async function DELETE(request: Request, { params }: { params: { orderId: string } }) {
+  const auth = await verifyAdminSession();
+  if (auth.error) return NextResponse.json({ error: auth.error }, { status: 401 });
+
   try {
     const { orderId } = params;
     const db = getAdminDb();

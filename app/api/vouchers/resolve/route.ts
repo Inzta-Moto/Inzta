@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getAdminDb } from '@/lib/firebaseAdmin';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -10,11 +12,12 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Missing affiliateId' }, { status: 400 });
     }
 
+    // Search for voucher with matching code (passed as affiliateId from frontend)
     const db = getAdminDb();
+    const upperCode = affiliateId.toUpperCase();
     
-    // Search for voucher with matching affiliateId
     const vouchersSnap = await db.collection('vouchers')
-      .where('affiliateId', '==', affiliateId)
+      .where('code', '==', upperCode)
       .where('isActive', '==', true)
       .limit(1)
       .get();

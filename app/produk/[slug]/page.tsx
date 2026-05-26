@@ -55,6 +55,50 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   }
 }
 
-export default function DetailPage({ params }: { params: { slug: string } }) {
-  return <DetailClient slug={params.slug} />;
+export default async function DetailPage({ params }: { params: { slug: string } }) {
+  let jsonLd = null;
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://inzta.id';
+
+  try {
+    const doc = await getAdminDb().collection('products').doc(params.slug).get();
+    if (doc.exists) {
+      const data = doc.data() as any;
+      const imageUrl = (data.images && data.images.length > 0) ? data.images[0] : (data.imageUrl || '/logo.png');
+      
+      jsonLd = {
+        '@context': 'https://schema.org',
+        '@type': 'Product',
+        name: data.name || 'Produk INZTA',
+        image: imageUrl.startsWith('http') ? imageUrl : `${baseUrl}${imageUrl}`,
+        description: data.description || 'Tas motor premium INZTA',
+        sku: data.slug || params.slug,
+        offers: {
+          '@type': 'Offer',
+          url: `${baseUrl}/produk/${params.slug}`,
+          priceCurrency: 'IDR',
+          price: data.price || 0,
+          availability: data.stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+          itemCondition: 'https://schema.org/NewCondition',
+        },
+        brand: {
+          '@type': 'Brand',
+          name: 'INZTA Moto'
+        }
+      };
+    }
+  } catch (error) {
+    console.error('Error generating JSON-LD:', error);
+  }
+
+  return (
+    <>
+      {jsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      )}
+      <DetailClient slug={params.slug} />
+    </>
+  );
 }

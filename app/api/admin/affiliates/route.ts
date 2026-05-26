@@ -1,7 +1,11 @@
 import { NextResponse } from 'next/server';
 import { getAdminDb, getAdminAuth } from '@/lib/firebaseAdmin';
+import { verifyAdminSession } from '@/lib/auth';
 
 export async function GET() {
+  const authSession = await verifyAdminSession();
+  if (authSession.error) return NextResponse.json({ error: authSession.error }, { status: 401 });
+
   try {
     const snap = await getAdminDb().collection('affiliates').orderBy('createdAt', 'desc').get();
     const affiliates = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -13,6 +17,9 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const authSession = await verifyAdminSession();
+  if (authSession.error) return NextResponse.json({ error: authSession.error }, { status: 401 });
+
   try {
     const data = await request.json();
     const { id, email, password, name, phone, voucherCode, createdAt } = data;

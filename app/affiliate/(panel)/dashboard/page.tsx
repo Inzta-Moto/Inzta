@@ -10,6 +10,8 @@ export default function AffiliateDashboardPage() {
   const [affiliateName, setAffiliateName] = useState('');
   const [voucherData, setVoucherData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
   useEffect(() => {
     async function loadAffiliateCommissions() {
@@ -99,7 +101,7 @@ export default function AffiliateDashboardPage() {
           <tbody>
             {commissions.length === 0 ? (
               <tr><td colSpan={5} className="table-empty">Belum ada data komisi.</td></tr>
-            ) : commissions.map(c => (
+            ) : commissions.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE).map(c => (
               <tr key={c.id}>
                 <td style={{ fontSize: 11, whiteSpace: 'nowrap' }}>{formatDate(c.createdAt, { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
                 <td style={{ fontSize: 12 }}>
@@ -134,6 +136,30 @@ export default function AffiliateDashboardPage() {
           </tbody>
         </table>
       </div>
+
+      {commissions.length > ITEMS_PER_PAGE && (
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '15px', marginTop: '20px' }}>
+          <button 
+            className="btn btn-ghost" 
+            disabled={currentPage === 1} 
+            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+            style={{ fontSize: 13, padding: '6px 12px' }}
+          >
+            Sebelumnya
+          </button>
+          <span style={{ fontSize: 13, color: '#666' }}>
+            Halaman {currentPage} dari {Math.ceil(commissions.length / ITEMS_PER_PAGE)}
+          </span>
+          <button 
+            className="btn btn-ghost" 
+            disabled={currentPage === Math.ceil(commissions.length / ITEMS_PER_PAGE)} 
+            onClick={() => setCurrentPage(p => Math.min(Math.ceil(commissions.length / ITEMS_PER_PAGE), p + 1))}
+            style={{ fontSize: 13, padding: '6px 12px' }}
+          >
+            Selanjutnya
+          </button>
+        </div>
+      )}
     </>
   );
 }

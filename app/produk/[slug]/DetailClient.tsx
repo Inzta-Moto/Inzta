@@ -51,7 +51,8 @@ export default function DetailClient({ slug }: { slug: string }) {
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (user) => {
-      setBuyerUID(user ? user.uid : null);
+      const isAffiliate = localStorage.getItem('is_affiliate_logged_in') === 'true';
+      setBuyerUID(user && isAffiliate ? user.uid : null);
     });
     return () => unsub();
   }, []);
@@ -91,21 +92,29 @@ export default function DetailClient({ slug }: { slug: string }) {
   useEffect(() => {
     if (product) {
       if (!voucherData && !voucherError && !voucherInput) {
-        const voucherCode = localStorage.getItem('inzta_affiliate');
-        if (voucherCode) {
+        const affiliateId = localStorage.getItem('inzta_affiliate');
+        if (affiliateId) {
           const resolveAndApply = async () => {
             try {
               setVoucherLoading(true);
-              const res = await fetch(`/api/vouchers/validate?code=${voucherCode}`);
+              const res = await fetch(`/api/vouchers/resolve?affiliateId=${affiliateId}`);
+              
+              // 1. Baca body HANYA SEKALI
               const data = await res.json();
               
-              if (!res.ok) {
-                 if (data.error && data.error.toLowerCase().includes('batas')) {
-                   showToast(data.error);
-                 }
-                 setVoucherLoading(false);
-                 return;
+              // 2. Gunakan status kode dan data yang sudah dibaca
+              if (res.status !== 200) {
+                // Jika terjadi error (400, 404, 500), tampilkan toast
+                const errorMessage = data.error || 'Terjadi kesalahan saat menerapkan voucher.';
+                showToast(errorMessage);
+                
+                // Debug tambahan
+                console.error('Voucher Resolution Error:', { status: res.status, data });
+                
+                setVoucherLoading(false);
+                return;
               }
+
               const v = data.voucher;
               
               const subtotal = product.price * quantity;
@@ -129,7 +138,8 @@ export default function DetailClient({ slug }: { slug: string }) {
               setVoucherData(v);
               setDiscountAmount(Math.round(disc));
             } catch (e) {
-              console.error('Failed to auto-apply affiliate voucher', e);
+              console.error('Failed to resolve affiliate voucher', e);
+              showToast('Koneksi ke server bermasalah.');
             } finally {
               setVoucherLoading(false);
             }
@@ -393,8 +403,8 @@ export default function DetailClient({ slug }: { slug: string }) {
     const p = product;
     const imageUrl = images[activeImg] || p.imageUrl;
     const baseUrl = window.location.origin + window.location.pathname;
-    const voucherCode = localStorage.getItem('inzta_affiliate');
-    const shareUrl = voucherCode ? `${baseUrl}?aff=${voucherCode}` : baseUrl;
+    const affiliateId = localStorage.getItem('inzta_affiliate');
+    const shareUrl = affiliateId ? `${baseUrl}?aff=${affiliateId}` : baseUrl;
     const text = `*${p.name}*\n${p.description ? p.description.split('\n')[0] : ''}\n\nHarga: ${formatPrice(p.price)}\n\n${shareUrl}`;
 
     try {
@@ -661,8 +671,8 @@ export default function DetailClient({ slug }: { slug: string }) {
               <div className="detail-share">
                 <button className="detail-share-btn detail-share-copy" onClick={() => {
                   const baseUrl = window.location.origin + window.location.pathname;
-                  const voucherCode = localStorage.getItem('inzta_affiliate');
-                  const shareUrl = voucherCode ? `${baseUrl}?aff=${voucherCode}` : baseUrl;
+                  const affiliateId = localStorage.getItem('inzta_affiliate');
+                  const shareUrl = affiliateId ? `${baseUrl}?aff=${affiliateId}` : baseUrl;
                   navigator.clipboard.writeText(shareUrl);
                   const toast = document.getElementById('share-toast');
                   if (toast) { toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 2000); }
