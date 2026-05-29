@@ -2,7 +2,7 @@ import { MetadataRoute } from 'next';
 import { getAdminDb } from '@/lib/firebaseAdmin';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://inztamoto.id';
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://inzta.id';
 
   // Halaman statis
   const staticRoutes: MetadataRoute.Sitemap = [

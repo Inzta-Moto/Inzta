@@ -306,9 +306,37 @@ ul, ol { list-style: none; }
 .stat-label { font-size: 12px; font-weight: 500; color: var(--text-tertiary); letter-spacing: 0.05em; text-transform: uppercase; }
 
 
-/* ============================================
-   PRODUCT CARD — Compact & Clean
-   ============================================ */
+/* Carousel Buttons */
+.product-carousel-wrapper { position: relative; }
+.carousel-btn {
+  position: absolute;
+  top: 40%;
+  transform: translateY(-50%);
+  background: var(--bg-white);
+  border: 1px solid var(--border-light);
+  padding: 10px;
+  border-radius: 50%;
+  box-shadow: var(--shadow-md);
+  z-index: 10;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.carousel-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.prev-btn { left: -20px; }
+.next-btn { right: -20px; }
+
+@media (max-width: 767px) {
+  .carousel-btn { padding: 8px; }
+  .prev-btn { left: -10px; }
+  .next-btn { right: -10px; }
+}
 .product-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
 @media (min-width: 768px) { .product-grid { grid-template-columns: repeat(3, 1fr); gap: 16px; } }
 
@@ -946,19 +974,18 @@ ul, ol { list-style: none; }
 .sidebar-divider { height: 1px; background: #374151; margin: 12px 0; }
 .sidebar-link.logout { color: #6B7280; margin-top: auto; }
 .sidebar-link.logout:hover { color: #EF4444; }
-.sidebar-toggle { display: none; position: fixed; top: 16px; left: 16px; width: 40px; height: 40px; align-items: center; justify-content: center; background: var(--bg-white); border: 1px solid var(--border-light); border-radius: 4px; z-index: 200; cursor: pointer; box-shadow: var(--shadow-sm); }
+.sidebar-toggle { display: none; width: 40px; height: 40px; align-items: center; justify-content: center; background: var(--bg-white); border: 1px solid var(--border-light); border-radius: 4px; z-index: 200; cursor: pointer; box-shadow: var(--shadow-sm); }
 .sidebar-toggle svg { width: 20px; height: 20px; stroke: var(--text-primary); }
 @media (max-width: 767px) { 
   .admin-sidebar { transform: translateX(-100%); } 
   .admin-sidebar.open { transform: translateX(0); } 
   .sidebar-toggle { display: flex; } 
   .admin-main { margin-left: 0 !important; } 
-  .admin-sidebar-brand { padding-left: 64px; } /* Mencegah tombol X menghalangi logo */
 }
 
 .admin-main { margin-left: 240px; min-height: 100vh; }
 .admin-topbar { padding: 16px 32px; border-bottom: 1px solid var(--border-light); display: flex; align-items: center; justify-content: space-between; background: rgba(255, 255, 255, 0.8); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); position: sticky; top: 0; z-index: 50; }
-@media (max-width: 767px) { .admin-topbar { padding: 16px 16px 16px 64px; } }
+@media (max-width: 767px) { .admin-topbar { padding: 16px; } }
 .topbar-title { font-size: 13px; font-weight: 600; color: var(--text-tertiary); letter-spacing: 0.05em; text-transform: uppercase; }
 .topbar-user { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-secondary); }
 .topbar-user-dot { width: 6px; height: 6px; border-radius: 50%; background: #10B981; }
@@ -1351,7 +1378,7 @@ select.form-input { appearance: none; background-image: url("data:image/svg+xml,
   .admin-sidebar.open { transform: translateX(0); }
   .sidebar-toggle { display: flex; }
   .admin-main { margin-left: 0 !important; }
-  .admin-topbar { padding: 16px 16px 16px 64px; }
+  .admin-topbar { padding: 16px; }
   .admin-content { padding: 24px 16px; }
 
   /* --- Halaman Produk Mobile --- */
