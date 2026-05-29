@@ -306,9 +306,37 @@ ul, ol { list-style: none; }
 .stat-label { font-size: 12px; font-weight: 500; color: var(--text-tertiary); letter-spacing: 0.05em; text-transform: uppercase; }
 
 
-/* ============================================
-   PRODUCT CARD — Compact & Clean
-   ============================================ */
+/* Carousel Buttons */
+.product-carousel-wrapper { position: relative; }
+.carousel-btn {
+  position: absolute;
+  top: 40%;
+  transform: translateY(-50%);
+  background: var(--bg-white);
+  border: 1px solid var(--border-light);
+  padding: 10px;
+  border-radius: 50%;
+  box-shadow: var(--shadow-md);
+  z-index: 10;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.carousel-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.prev-btn { left: -20px; }
+.next-btn { right: -20px; }
+
+@media (max-width: 767px) {
+  .carousel-btn { padding: 8px; }
+  .prev-btn { left: -10px; }
+  .next-btn { right: -10px; }
+}
 .product-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
 @media (min-width: 768px) { .product-grid { grid-template-columns: repeat(3, 1fr); gap: 16px; } }
 

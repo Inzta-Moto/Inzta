@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { ArrowRight, ShieldCheck, Feather, Lock, Wrench, LucideIcon } from 'lucide-react';
+import { ArrowRight, ShieldCheck, Feather, Lock, Wrench, LucideIcon, ChevronLeft, ChevronRight } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import ProductCard from '@/components/ProductCard';
@@ -25,6 +25,20 @@ export default function HomePage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [features, setFeatures] = useState<Feature[]>([]);
   const [currentSlide, setCurrentSlide] = useState<number>(0);
+  const [carouselIndex, setCarouselIndex] = useState(0);
+  const [itemsPerPage, setItemsPerPage] = useState(3);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setItemsPerPage(window.innerWidth < 768 ? 2 : 3);
+    };
+    handleResize(); // Init
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const nextSlide = () => { if (carouselIndex < products.length - itemsPerPage) setCarouselIndex(prev => prev + 1); };
+  const prevSlide = () => { if (carouselIndex > 0) setCarouselIndex(prev => prev - 1); };
 
   const typeLines = ['RIDE WITH', 'INZTA.'];
   const [displayedLines, setDisplayedLines] = useState(['', '']);
@@ -87,7 +101,7 @@ export default function HomePage() {
       let items: Product[] = snap.docs.map(d => d.data() as Product)
         .filter(p => p.isActive === true)
         .sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0))
-        .slice(0, 4);
+        .slice(0, 10);
       setProducts(items);
     } catch (e) { console.error('[Featured]', e); }
   }
@@ -192,10 +206,20 @@ export default function HomePage() {
             </Link>
           </div>
           
-          <div className="product-grid product-grid-featured">
-            {products.length === 0
-              ? <div className="empty-state"><p>Belum ada produk aktif.</p></div>
-              : products.map(p => <ProductCard key={p.slug} product={p} showDetails={false} />)}
+          <div className="product-carousel-wrapper">
+             <button onClick={prevSlide} disabled={carouselIndex === 0} className="carousel-btn prev-btn">
+                <ChevronLeft size={20} />
+             </button>
+             
+             <div className="product-grid product-grid-featured">
+                {products.length === 0
+                  ? <div className="empty-state"><p>Belum ada produk aktif.</p></div>
+                  : products.slice(carouselIndex, carouselIndex + itemsPerPage).map(p => <ProductCard key={p.slug} product={p} showDetails={false} />)}
+             </div>
+
+             <button onClick={nextSlide} disabled={products.length <= itemsPerPage || carouselIndex >= products.length - itemsPerPage} className="carousel-btn next-btn">
+                <ChevronRight size={20} />
+             </button>
           </div>
 
           {/* ✅ Tombol Mobile Khusus di Bawah Card (Akan muncul hanya di HP via CSS) */}
