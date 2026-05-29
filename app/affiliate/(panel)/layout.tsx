@@ -20,18 +20,20 @@ export default function AffiliateLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="admin-body">
-      {/* ── Mobile Toggle ── */}
-      <button className="sidebar-toggle" onClick={() => setSidebarOpen(!sidebarOpen)}>
-        {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
-      </button>
-
       {/* ── Sidebar ── */}
       <aside className={`admin-sidebar ${sidebarOpen ? 'open' : ''}`}>
-        <div className="admin-sidebar-brand">
+        <div className="admin-sidebar-brand" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingRight: '16px' }}>
           <Link href="/affiliate/dashboard" onClick={() => setSidebarOpen(false)} style={{ color: 'inherit', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span>INZTA</span>
             <span className="admin-sidebar-tag">AFFILIATE</span>
           </Link>
+          <button 
+            className="md:hidden" 
+            onClick={() => setSidebarOpen(false)}
+            style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', display: 'flex' }}
+          >
+            <X size={20} />
+          </button>
         </div>
 
         <nav className="admin-sidebar-nav">
@@ -83,7 +85,13 @@ export default function AffiliateLayout({ children }: { children: React.ReactNod
       {/* ── Main Content ── */}
       <main className="admin-main">
         <div className="admin-topbar">
-          <div className="topbar-title">Dashboard Affiliate</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            {/* ── Mobile Toggle ── */}
+            <button className="sidebar-toggle" onClick={() => setSidebarOpen(true)}>
+              <Menu size={20} />
+            </button>
+            <div className="topbar-title">Dashboard Affiliate</div>
+          </div>
           <div className="topbar-user">
             <span className="topbar-user-dot"></span> Online
           </div>
