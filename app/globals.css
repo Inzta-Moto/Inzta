@@ -355,6 +355,20 @@ ul, ol { list-style: none; }
 .badge-outline { background: var(--bg-white); color: var(--text-primary); border: 1px solid var(--border-medium); }
 .badge-dark { background: var(--text-primary); color: var(--text-inverse); }
 
+.product-image-discount {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background-color: var(--accent);
+  color: var(--bg-white);
+  text-align: center;
+  padding: 4px 0;
+  font-size: 11px;
+  font-weight: 600;
+  z-index: 2;
+}
+
 .product-card-body { padding: 12px; display: flex; flex-direction: column; flex-grow: 1; }
 .product-card-category { font-size: 9px; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; color: var(--accent-hover); margin-bottom: 4px; }
 .product-card-name { font-size: 14px; font-weight: 600; letter-spacing: -0.01em; margin-bottom: 4px; line-height: 1.3; color: var(--text-primary); }
@@ -1542,3 +1556,65 @@ select.form-input { appearance: none; background-image: url("data:image/svg+xml,
     gap: 24px;
   }
 }
+
+/* ============================================
+   AFFILIATE LOADING OVERLAY
+   ============================================ */
+.affiliate-loading-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: var(--bg-main);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.affiliate-loading-content {
+  text-align: center;
+  padding: 24px;
+}
+
+.affiliate-loading-text {
+  font-size: clamp(24px, 5vw, 36px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+  margin-bottom: 24px;
+  animation: pulseText 1.5s ease-in-out infinite;
+}
+
+.affiliate-loading-bar {
+  width: 100%;
+  max-width: 240px;
+  height: 4px;
+  background: var(--border-light);
+  border-radius: 2px;
+  margin: 0 auto;
+  overflow: hidden;
+  position: relative;
+}
+
+.affiliate-loading-progress {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 30%;
+  background: var(--accent);
+  border-radius: 2px;
+  animation: loadingProgress 2s ease infinite;
+}
+
+@keyframes pulseText {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes loadingProgress {
+  0% { left: -30%; width: 30%; }
+  50% { width: 60%; }
+  100% { left: 100%; width: 30%; }
+}
+

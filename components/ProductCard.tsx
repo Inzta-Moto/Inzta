@@ -82,6 +82,11 @@ export default function ProductCard({ product: p, showDetails }: ProductCardProp
           ) : (
             <div className="img-placeholder" style={{ display: 'flex' }}><PlaceholderIcon /><span>{p.name}</span></div>
           )}
+          {discount > 0 && (
+            <div className="product-image-discount">
+              DISKON {discount}%
+            </div>
+          )}
         </div>
       
       
