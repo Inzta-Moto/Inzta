@@ -33,7 +33,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'INZTA Moto | Premium Waterproof Motorcycle Bags',
     description: 'Tas motor eksklusif untuk rider. Waterproof, ringan, tahan banting, dan stylish.',
-    images: ['/logo.png'],
+    images: ['/logo-mtg.png'],
     creator: '@inztamoto',
   },
   icons: {
