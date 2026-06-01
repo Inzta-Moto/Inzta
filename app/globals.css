@@ -125,14 +125,12 @@ ul, ol { list-style: none; }
 }
 
 /* ============================================
-   FEATURED PRODUCTS (3 Desktop, 4 Mobile)
+   FEATURED PRODUCT GRID
    ============================================ */
-@media (min-width: 768px) {
-  /* Sembunyikan card ke-4 di Desktop */
-  .product-grid-featured .product-card:nth-child(4) {
-    display: none !important;
-  }
-}
+.product-grid-featured .product-stock, .product-grid-featured .btn-wa { display: none !important; }
+.product-grid-featured .product-card-image { aspect-ratio: 4 / 3; }
+.product-grid-featured .product-card-image::after { content: ''; position: absolute; inset: 0; background: rgba(17, 24, 39, 0.06); opacity: 0; transition: opacity 0.4s ease; pointer-events: none; z-index: 1; }
+.product-grid-featured .product-card:hover .product-card-image::after { opacity: 1; }
 
 /* ============================================
    BLOG HOME SECTION (Grid Desktop, Scroll Mobile)
@@ -306,37 +304,7 @@ ul, ol { list-style: none; }
 .stat-label { font-size: 12px; font-weight: 500; color: var(--text-tertiary); letter-spacing: 0.05em; text-transform: uppercase; }
 
 
-/* Carousel Buttons */
-.product-carousel-wrapper { position: relative; }
-.carousel-btn {
-  position: absolute;
-  top: 40%;
-  transform: translateY(-50%);
-  background: var(--bg-white);
-  border: 1px solid var(--border-light);
-  padding: 10px;
-  border-radius: 50%;
-  box-shadow: var(--shadow-md);
-  z-index: 10;
-  transition: all 0.3s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
 
-.carousel-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.prev-btn { left: -20px; }
-.next-btn { right: -20px; }
-
-@media (max-width: 767px) {
-  .carousel-btn { padding: 8px; }
-  .prev-btn { left: -10px; }
-  .next-btn { right: -10px; }
-}
 .product-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
 @media (min-width: 768px) { .product-grid { grid-template-columns: repeat(3, 1fr); gap: 16px; } }
 
@@ -409,15 +377,66 @@ ul, ol { list-style: none; }
 
 
 /* ============================================
-   CTA BANNER
+   CTA BANNER — BACKGROUND IMAGE
    ============================================ */
-.cta-banner { background: var(--accent); padding: 42px 0; }
+.cta-banner { 
+  position: relative; 
+  padding: 42px 0; 
+  overflow: hidden;
+  background-color: #000; /* Warna cadangan jika gambar lambat load */
+}
+
 @media (min-width: 768px) { .cta-banner { padding: 72px 0; } }
+
+.cta-banner::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  /* ✅ GANTI URL DI BAWAH INI DENGAN LINK GAMBAR CTA KAMU */
+  background-image: url('https://res.cloudinary.com/dukddlp0b/image/upload/q_auto/f_auto/v1780326022/99_u0fbp7.jpg');
+  background-size: cover;
+  background-position: center;
+  z-index: 0;
+}
+
+.cta-banner::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  /* Gradient gelap agar teks putih terbaca jelas di atas gambar */
+  background: linear-gradient(to right, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.6) 50%, rgba(0, 0, 0, 0.4) 100%);
+  z-index: 1;
+}
+
+.cta-banner > .container {
+  position: relative;
+  z-index: 2;
+}
+
 .cta-inner { text-align: center; max-width: 600px; margin: 0 auto; }
-.cta-title { font-size: clamp(30px, 5vw, 52px); font-weight: 800; letter-spacing: -0.03em; line-height: 1; margin-bottom: 16px; text-transform: uppercase; color: var(--text-primary); }
-.cta-desc { font-size: 16px; font-weight: 300; color: rgba(17, 24, 39, 0.7); margin-bottom: 32px; line-height: 1.6; }
-.cta-banner .btn-primary { background: var(--text-primary); color: var(--bg-white); }
-.cta-banner .btn-primary:hover { background: #374151; transform: translateY(-2px); }
+
+/* Teks diubah menjadi putih */
+.cta-title { 
+  font-size: clamp(30px, 5vw, 52px); font-weight: 800; letter-spacing: -0.03em; 
+  line-height: 1; margin-bottom: 16px; text-transform: uppercase; color: #FFFFFF; 
+}
+
+.cta-desc { 
+  font-size: 16px; font-weight: 300; color: rgba(255, 255, 255, 0.8); margin-bottom: 32px; line-height: 1.6; 
+}
+
+/* Tombol dikembalikan ke kuning (accent) agar mencolok di background gelap */
+.cta-banner .btn-primary { 
+  background: var(--accent); 
+  color: var(--text-inverse); 
+  box-shadow: var(--shadow-md); 
+}
+
+.cta-banner .btn-primary:hover { 
+  background: var(--accent-hover); 
+  transform: translateY(-2px); 
+  box-shadow: var(--shadow-lg); 
+}
 
 
 /* ============================================
@@ -1331,8 +1350,6 @@ select.form-input { appearance: none; background-image: url("data:image/svg+xml,
   .btn-wa { font-size: 8px; padding: 6px 8px; letter-spacing: 0.05em; border-radius: 4px; }
   .btn-wa svg { width: 10px; height: 10px; }
 
-  /* --- Featured Product Grid --- */
-  .product-grid-featured .product-card-image { aspect-ratio: 1 / 1; }
 
   /* --- Product Listing Mobile Top Bar --- */
   .produk-mobile-top { display: flex; flex-direction: column; position: sticky; top: 56px; z-index: 40; background: var(--bg-white); border-bottom: 1px solid var(--border-light); }
@@ -1618,3 +1635,160 @@ select.form-input { appearance: none; background-image: url("data:image/svg+xml,
   100% { left: 100%; width: 30%; }
 }
 
+/* ============================================
+   FEATURED SECTION — BACKGROUND IMAGE
+   ============================================ */
+.featured-section-bg {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--bg-main); /* Warna dasar jika gambar gagal load */
+}
+
+.featured-section-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url('https://res.cloudinary.com/dukddlp0b/image/upload/q_auto/f_auto/v1780333229/bk1_lvuc1t.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  z-index: 0;
+}
+
+.featured-section-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(249, 250, 251, 0.95) 0%,   /* ✅ Atas dipudarkan agar teks judul jelas */
+    rgba(249, 250, 251, 0.75) 40%,  /* ✅ Tengah dibuat lebih transparan agar gambar muncul */
+    rgba(249, 250, 251, 0.75) 60%,  /* ✅ Tengah dibuat lebih transparan agar gambar muncul */
+    rgba(249, 250, 251, 0.95) 100%  /* ✅ Bawah dipudarkan lagi */
+  );
+  z-index: 1;
+}
+
+.featured-section-bg > .container {
+  position: relative;
+  z-index: 2;
+}
+/* ============================================
+   PRODUCT HORIZONTAL SCROLL TRACK
+   ============================================ */
+.product-scroll-track {
+  display: flex;
+  gap: 12px;
+}
+
+/* --- Mobile: Horizontal Free Scroll (Awal 24px, Ujung Mentok 0px) --- */
+@media (max-width: 767px) {
+  /* 1. Kembalikan container ke 24px agar teks judul rapi kiri-kanan */
+  .featured-section-bg > .container {
+    padding-left: 24px !important;
+    padding-right: 24px !important;
+  }
+
+  /* 2. Atur Track Scroll dengan Negative Margin */
+  .product-scroll-track {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    scroll-snap-type: none !important; /* Bebas usap */
+    
+    /* ✅ TRIK UTAMA: Menembus dinding container */
+    margin-left: -24px; /* Menembus padding kiri container */
+    margin-right: -24px; /* Menembus padding kanan container */
+    
+    padding-left: 24px;  /* Mengembalikan jarak awal 24px untuk card pertama */
+    padding-right: 0px;  /* TIDAK ADA jarak sisa, agar bisa mentok ke ujung */
+  }
+
+  /* Hapus ::after pseudo element jika masih ada */
+  .product-scroll-track::after {
+    display: none !important;
+  }
+
+  .product-scroll-track::-webkit-scrollbar {
+    display: none;
+  }
+
+  .product-scroll-track .product-card {
+    /* 
+      Karena memakai margin negatif, lebar layar = 100vw.
+      24px (pad kiri) + 12px (1 gap) = 36px
+    */
+    min-width: calc((100vw - 36px) / 2.15);
+    max-width: calc((100vw - 36px) / 2.15);
+    flex-shrink: 0;
+    scroll-snap-align: none !important;
+    
+    border: none !important;
+    box-shadow: var(--shadow-md) !important;
+  }
+
+  /* Tinggi gambar proporsional di HP */
+  .product-scroll-track .product-card-image {
+    aspect-ratio: 4 / 5 !important; 
+  }
+  
+  .product-scroll-track .product-card-image img {
+    object-fit: cover !important;
+  }
+
+  .product-scroll-track .product-stock,
+  .product-scroll-track .btn-wa {
+    display: none !important;
+  }
+}
+
+/* --- Desktop: Horizontal Scroll (4 Full + 20% Peek) --- */
+@media (min-width: 768px) {
+  .product-scroll-track {
+    display: flex;
+    gap: 16px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 16px;
+  }
+
+  .product-scroll-track::-webkit-scrollbar {
+    display: none;
+  }
+
+  .product-scroll-track .product-card {
+    min-width: calc((100% - 64px) / 4.2);
+    max-width: calc((100% - 64px) / 4.2);
+    flex-shrink: 0;
+    scroll-snap-align: start;
+  }
+
+  /* Hide stock & WA di featured desktop */
+  .product-scroll-track .product-stock,
+  .product-scroll-track .btn-wa {
+    display: none !important;
+  }
+
+  .product-scroll-track .product-card-image {
+    aspect-ratio: 4 / 3 !important;
+  }
+
+  .product-scroll-track .product-card-image::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(17, 24, 39, 0.06);
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .product-scroll-track .product-card:hover .product-card-image::after {
+    opacity: 1;
+  }
+}
