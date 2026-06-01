@@ -16,29 +16,17 @@ import BlogSection from '@/components/BlogSection';
 import FAQ from '@/components/FAQ';
 
 const heroImages = [
-  'https://i.ytimg.com/vi/hrJnT58v8Ss/hq720.jpg?sqp=-oaymwE7CK4FEIIDSFryq4qpAy0IARUAAAAAGAElAADIQj0AgKJD8AEB-AH-CYAC0AWKAgwIABABGFQgXihlMA8=&rs=AOn4CLBjwCeRL8haREKtJ3qI5BUFZG6LcQ',
-  'https://images.tokopedia.net/img/cache/700/aphluv/1997/1/1/3e2473ce6b7c416290e9fffa5b1b708c~.jpeg',
-  'https://down-id.img.susercontent.com/file/id-11134207-7r98x-lsd01sx4skwped'
+  'https://res.cloudinary.com/dukddlp0b/image/upload/q_auto/f_auto/v1780326022/99_u0fbp7.jpg',
+  'https://res.cloudinary.com/dukddlp0b/image/upload/q_auto/f_auto/v1780324954/01_rmqx6d.jpg',
+  'https://res.cloudinary.com/dukddlp0b/image/upload/q_auto/f_auto/v1780325195/04_avqwtg.jpg'
 ];
 
 export default function HomePage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [features, setFeatures] = useState<Feature[]>([]);
   const [currentSlide, setCurrentSlide] = useState<number>(0);
-  const [carouselIndex, setCarouselIndex] = useState(0);
-  const [itemsPerPage, setItemsPerPage] = useState(3);
 
-  useEffect(() => {
-    const handleResize = () => {
-      setItemsPerPage(window.innerWidth < 768 ? 2 : 3);
-    };
-    handleResize(); // Init
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
 
-  const nextSlide = () => { if (carouselIndex < products.length - itemsPerPage) setCarouselIndex(prev => prev + 1); };
-  const prevSlide = () => { if (carouselIndex > 0) setCarouselIndex(prev => prev - 1); };
 
   const typeLines = ['RIDE WITH', 'INZTA.'];
   const [displayedLines, setDisplayedLines] = useState(['', '']);
@@ -191,43 +179,33 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ====== FEATURED PRODUCTS ====== */}
-      <section className="section featured">
-        <div className="container">
-          <div className="section-header section-header-row">
-            <div className="section-header-left">
-              <p className="section-eyebrow">Koleksi Unggulan</p>
-              <h2 className="section-title">Pilihan Terbaik</h2>
-              <p className="section-desc">Produk yang paling diminati oleh rider Indonesia.</p>
-            </div>
-            {/* Tombol Desktop (Akan di-hide di HP via CSS) */}
-            <Link href="/produk" className="section-view-all">
-              Lihat Semua Produk <ArrowRight size={14} />
-            </Link>
-          </div>
-          
-          <div className="product-carousel-wrapper">
-             <button onClick={prevSlide} disabled={carouselIndex === 0} className="carousel-btn prev-btn">
-                <ChevronLeft size={20} />
-             </button>
-             
-             <div className="product-grid product-grid-featured">
-                {products.length === 0
-                  ? <div className="empty-state"><p>Belum ada produk aktif.</p></div>
-                  : products.slice(carouselIndex, carouselIndex + itemsPerPage).map(p => <ProductCard key={p.slug} product={p} showDetails={false} />)}
-             </div>
+{/* ====== FEATURED PRODUCTS ====== */}
+<section className="section featured featured-section-bg">
+  <div className="container">
+    <div className="section-header section-header-row">
+      <div className="section-header-left">
+        <p className="section-eyebrow">Koleksi Unggulan</p>
+        <h2 className="section-title">Pilihan Terbaik</h2>
+        <p className="section-desc">Produk yang paling diminati oleh rider Indonesia.</p>
+      </div>
+      <Link href="/produk" className="section-view-all">
+        Lihat Semua Produk <ArrowRight size={14} />
+      </Link>
+    </div>
 
-             <button onClick={nextSlide} disabled={products.length <= itemsPerPage || carouselIndex >= products.length - itemsPerPage} className="carousel-btn next-btn">
-                <ChevronRight size={20} />
-             </button>
-          </div>
+    <div className="product-scroll-wrapper">
+      <div className="product-scroll-track">
+        {products.length === 0
+          ? <div className="empty-state"><p>Belum ada produk aktif.</p></div>
+          : products.map(p => <ProductCard key={p.slug} product={p} showDetails={false} />)}
+      </div>
+    </div>
 
-          {/* ✅ Tombol Mobile Khusus di Bawah Card (Akan muncul hanya di HP via CSS) */}
-          <Link href="/produk" className="section-mobile-view-all">
-            Lihat Semua Produk <ArrowRight size={14} />
-          </Link>
-        </div>
-      </section>
+    <Link href="/produk" className="section-mobile-view-all">
+      Lihat Semua Produk <ArrowRight size={14} />
+    </Link>
+  </div>
+</section>
 
       {/* ====== GALLERY ====== */}
       <Gallery />
