@@ -22,10 +22,10 @@ export const metadata: Metadata = {
     siteName: 'INZTA Moto',
     images: [
       {
-        url: '/logo.png', // Pastikan logo yang representatif
-        width: 800,
-        height: 600,
-        alt: 'INZTA Moto Logo',
+        url: '/logo-mtg.png',
+        width: 1200,
+        height: 630,
+        alt: 'INZTA Moto',
       },
     ],
   },
