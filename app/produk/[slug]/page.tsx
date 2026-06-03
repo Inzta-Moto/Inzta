@@ -11,6 +11,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
     title: 'Produk — INZTA MOTO',
     description: 'Tas motor premium INZTA',
     openGraph: {
+      url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://inzta.id'}/produk/${slug}`,
       title: 'INZTA MOTO',
       description: 'Tas motor premium INZTA',
       images: ['/logo.png'],
@@ -36,6 +37,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
       title: `${name} — INZTA MOTO`,
       description: ogDescription,
       openGraph: {
+        url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://inzta.id'}/produk/${slug}`,
         title: name,
         description: ogDescription,
         images: [{ url: ogImage, width: 800, height: 800, alt: name }],
