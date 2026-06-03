@@ -7,6 +7,7 @@ import { User } from 'lucide-react';
 import { WA_NUMBER } from '@/lib/firebase';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
+import { clearAffiliateSession } from '@/lib/utils';
 
 interface HeaderProps {
   active: 'home' | 'produk' | 'blog';
@@ -24,9 +25,55 @@ export default function Header({ active }: HeaderProps) {
   }, []);
 
   useEffect(() => {
-    setIsAffiliate(localStorage.getItem('is_affiliate_logged_in') === 'true');
+    async function checkSession() {
+      const stored = localStorage.getItem('is_affiliate_logged_in') === 'true';
+      if (stored) {
+        try {
+          const res = await fetch('/api/affiliate/check');
+          if (res.status === 401) {
+            clearAffiliateSession();
+            setIsAffiliate(false);
+          } else {
+            setIsAffiliate(true);
+          }
+        } catch (e) {
+          // ignore
+        }
+      } else {
+        setIsAffiliate(false);
+      }
+    }
+    checkSession();
+    
     const unsubscribe = onAuthStateChanged(auth, () => {
-      setIsAffiliate(localStorage.getItem('is_affiliate_logged_in') === 'true');
+      checkSession();
+    });
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    async function checkSession() {
+      const stored = localStorage.getItem('is_affiliate_logged_in') === 'true';
+      if (stored) {
+        try {
+          const res = await fetch('/api/affiliate/check');
+          if (res.status === 401) {
+            clearAffiliateSession();
+            setIsAffiliate(false);
+          } else {
+            setIsAffiliate(true);
+          }
+        } catch (e) {
+          // ignore
+        }
+      } else {
+        setIsAffiliate(false);
+      }
+    }
+    checkSession();
+    
+    const unsubscribe = onAuthStateChanged(auth, () => {
+      checkSession();
     });
     return () => unsubscribe();
   }, []);

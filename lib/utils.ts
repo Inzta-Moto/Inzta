@@ -43,6 +43,12 @@ export function buildWaLink(product: Product, orderId?: string): string {
   return `https://api.whatsapp.com/send?phone=${WA_NUMBER}&text=${encodeURIComponent(msg)}`;
 }
 
+export function clearAffiliateSession() {
+  localStorage.removeItem('is_affiliate_logged_in');
+  localStorage.removeItem('inzta_affiliate');
+  // Optional: Add more cleanup if needed
+}
+
 export function copyToClipboard(text: string): Promise<void> {
   return new Promise((resolve, reject) => {
     // 1. API Modern (Berjalan di HTTPS/Localhost)

@@ -40,13 +40,15 @@ export default function AffiliateLogin() {
         }
         
         router.replace('/affiliate/dashboard');
+        // Do not set loading to false so the button stays "Memproses..." during navigation
       } else {
         setError('Gagal membuat sesi.');
+        setLoading(false);
       }
     } catch (err: any) {
       setError('Login gagal. Email atau kode akses salah.');
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (

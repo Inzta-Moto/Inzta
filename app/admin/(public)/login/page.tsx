@@ -28,8 +28,10 @@ export default function AdminLogin() {
 
       if (response.ok) {
         router.replace('/admin');
+        // Do not set loading to false so the button stays "Memproses..." during navigation
       } else {
         setError('Gagal membuat sesi admin.');
+        setLoading(false);
       }
     } catch (err: any) {
       let msg = 'Login gagal.';
@@ -37,8 +39,8 @@ export default function AdminLogin() {
       else if (err.code === 'auth/wrong-password') msg = 'Kode akses salah.';
       else if (err.code === 'auth/invalid-credential') msg = 'Email atau kode akses salah.';
       setError(msg);
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
