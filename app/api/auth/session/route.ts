@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getAdminAuth } from '@/lib/firebaseAdmin';
+import { getAdminAuth, getAdminDb } from '@/lib/firebaseAdmin';
 import { cookies } from 'next/headers';
 
 export async function POST(request: Request) {
@@ -12,6 +12,24 @@ export async function POST(request: Request) {
 
     if (!role || (role !== 'admin' && role !== 'affiliate')) {
       return NextResponse.json({ error: 'Invalid role' }, { status: 400 });
+    }
+
+    let voucherCode = null;
+
+    if (role === 'affiliate') {
+      try {
+        const decodedToken = await getAdminAuth().verifyIdToken(idToken);
+        const db = getAdminDb();
+        let affSnap = await db.collection('affiliates').where('uid', '==', decodedToken.uid).limit(1).get();
+        if (affSnap.empty && decodedToken.email) {
+          affSnap = await db.collection('affiliates').where('email', '==', decodedToken.email).limit(1).get();
+        }
+        if (!affSnap.empty) {
+          voucherCode = affSnap.docs[0].data().voucherCode || null;
+        }
+      } catch (e) {
+        console.error('Error fetching affiliate data during session creation:', e);
+      }
     }
 
     // Set session expiration to 5 days
@@ -32,7 +50,7 @@ export async function POST(request: Request) {
       sameSite: 'lax',
     });
 
-    return NextResponse.json({ status: 'success' }, { status: 200 });
+    return NextResponse.json({ status: 'success', voucherCode }, { status: 200 });
   } catch (error: any) {
     console.error('Session creation error:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 401 });

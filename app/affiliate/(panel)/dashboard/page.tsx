@@ -23,6 +23,13 @@ export default function AffiliateDashboardPage() {
           setCommissions(data.commissions || []);
           setAffiliateName(data.affiliateName || '');
           setVoucherData(data.voucher || null);
+          
+          // Self-healing: Ensure localStorage is set just in case Safari wiped it
+          localStorage.setItem('is_affiliate_logged_in', 'true');
+          const codeToStore = data.voucher?.code || data.voucherCode;
+          if (codeToStore) {
+            localStorage.setItem('inzta_affiliate', codeToStore);
+          }
         }
       } catch (e) {
         console.error(e);

@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { doc, getDoc, collection, getDocs, updateDoc, addDoc, increment } from 'firebase/firestore';
 import { db, auth, WA_NUMBER } from '@/lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import { formatPrice, calcDiscount } from '@/lib/utils';
+import { formatPrice, calcDiscount, copyToClipboard } from '@/lib/utils';
 import { Truck, ShieldCheck, RefreshCw, Headphones, LucideIcon, X, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Tag, TicketCheck, TicketX } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -673,9 +673,10 @@ export default function DetailClient({ slug }: { slug: string }) {
                   const baseUrl = window.location.origin + window.location.pathname;
                   const affiliateId = localStorage.getItem('inzta_affiliate');
                   const shareUrl = affiliateId ? `${baseUrl}?aff=${affiliateId}` : baseUrl;
-                  navigator.clipboard.writeText(shareUrl);
-                  const toast = document.getElementById('share-toast');
-                  if (toast) { toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 2000); }
+                  copyToClipboard(shareUrl).then(() => {
+                    const toast = document.getElementById('share-toast');
+                    if (toast) { toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 2000); }
+                  }).catch(e => console.error(e));
                 }}>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>
                   <span>Salin Link</span>

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, FormEvent } from 'react';
 import { Affiliate } from '@/types';
-import { formatDate } from '@/lib/utils';
+import { formatDate, copyToClipboard } from '@/lib/utils';
 import { Copy, Check, Users, Phone, Mail, Edit2, Trash2, Eye, EyeOff } from 'lucide-react';
 
 function generateAffCode() {
@@ -44,7 +44,7 @@ export default function AffiliatePage() {
   const openDelete = (a: Affiliate) => setDeleteTarget({ id: a.id, name: a.name });
   const closeDelete = () => setDeleteTarget(null);
 
-  const copyCode = (code: string) => { navigator.clipboard.writeText(code); setCopiedCode(code); setTimeout(() => setCopiedCode(''), 1500); };
+  const copyCode = (code: string) => { copyToClipboard(code).then(() => { setCopiedCode(code); setTimeout(() => setCopiedCode(''), 1500); }).catch(e => console.error(e)); };
 
   const handleDelete = async () => {
     if (!deleteTarget) return;

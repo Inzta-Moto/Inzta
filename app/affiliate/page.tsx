@@ -8,7 +8,7 @@ import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword, signOut as secondarySignOut } from 'firebase/auth';
 import { Affiliate } from '@/types';
 import { Copy, Check, Users, Phone, Mail } from 'lucide-react';
-import { formatDate } from '@/lib/utils';
+import { formatDate, copyToClipboard } from '@/lib/utils';
 
 // Secondary app untuk buat user tanpa ngeluarin admin dari session
 const apps = getApps();
@@ -48,7 +48,7 @@ export default function AffiliatePage() {
   const openDelete = (a: Affiliate) => setDeleteTarget({ id: a.id, name: a.name, voucherCode: a.voucherCode });
   const closeDelete = () => setDeleteTarget(null);
 
-  const copyCode = (code: string) => { navigator.clipboard.writeText(code); setCopiedCode(code); setTimeout(() => setCopiedCode(''), 1500); };
+  const copyCode = (code: string) => { copyToClipboard(code).then(() => { setCopiedCode(code); setTimeout(() => setCopiedCode(''), 1500); }).catch(e => console.error(e)); };
 
   const handleDelete = async () => {
     if (!deleteTarget) return;

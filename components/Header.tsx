@@ -15,7 +15,7 @@ interface HeaderProps {
 export default function Header({ active }: HeaderProps) {
   const [scrolled, setScrolled] = useState<boolean>(false);
   const [mobileOpen, setMobileOpen] = useState<boolean>(false);
-  const [user, setUser] = useState<any>(null);
+  const [isAffiliate, setIsAffiliate] = useState<boolean>(false);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 50);
@@ -24,13 +24,9 @@ export default function Header({ active }: HeaderProps) {
   }, []);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      const isAffiliate = localStorage.getItem('is_affiliate_logged_in') === 'true';
-      if (currentUser && isAffiliate) {
-        setUser(currentUser);
-      } else {
-        setUser(null);
-      }
+    setIsAffiliate(localStorage.getItem('is_affiliate_logged_in') === 'true');
+    const unsubscribe = onAuthStateChanged(auth, () => {
+      setIsAffiliate(localStorage.getItem('is_affiliate_logged_in') === 'true');
     });
     return () => unsubscribe();
   }, []);
@@ -65,7 +61,7 @@ export default function Header({ active }: HeaderProps) {
             </nav>
 
             <div className="header-right">
-              {user ? (
+              {isAffiliate ? (
                 <Link href="/affiliate/dashboard" className="header-login">
                   DASHBOARD <User size={18} />
                 </Link>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, FormEvent } from 'react';
-import { formatPrice, formatDate } from '@/lib/utils';
+import { formatPrice, formatDate, copyToClipboard } from '@/lib/utils';
 import { Voucher, Affiliate } from '@/types';
 import { Copy, Check, Ticket, Edit2, Trash2 } from 'lucide-react';
 
@@ -64,9 +64,10 @@ export default function VoucherPage() {
   };
 
   const copyCode = (code: string) => {
-    navigator.clipboard.writeText(code);
-    setCopiedCode(code);
-    setTimeout(() => setCopiedCode(''), 1500);
+    copyToClipboard(code).then(() => {
+      setCopiedCode(code);
+      setTimeout(() => setCopiedCode(''), 1500);
+    }).catch(e => console.error(e));
   };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {

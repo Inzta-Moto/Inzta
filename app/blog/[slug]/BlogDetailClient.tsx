@@ -8,7 +8,7 @@ import Footer from '@/components/Footer';
 import Link from 'next/link';
 import { Article } from '@/types';
 import { ArrowLeft, Calendar } from 'lucide-react';
-import { formatDate } from '@/lib/utils';
+import { formatDate, copyToClipboard } from '@/lib/utils';
 
 export default function BlogDetailClient({ slug }: { slug: string }) {
   const [article, setArticle] = useState<Article | null>(null);
@@ -118,9 +118,10 @@ export default function BlogDetailClient({ slug }: { slug: string }) {
             <button
               className="detail-share-btn detail-share-copy"
               onClick={() => {
-                navigator.clipboard.writeText(window.location.href);
-                const toast = document.getElementById('share-toast-blog');
-                if (toast) { toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 2000); }
+                copyToClipboard(window.location.href).then(() => {
+                  const toast = document.getElementById('share-toast-blog');
+                  if (toast) { toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 2000); }
+                }).catch(e => console.error(e));
               }}
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

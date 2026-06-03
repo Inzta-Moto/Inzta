@@ -42,3 +42,48 @@ export function buildWaLink(product: Product, orderId?: string): string {
   
   return `https://api.whatsapp.com/send?phone=${WA_NUMBER}&text=${encodeURIComponent(msg)}`;
 }
+
+export function copyToClipboard(text: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    // 1. API Modern (Berjalan di HTTPS/Localhost)
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text).then(resolve).catch(reject);
+    } else {
+      // 2. Fallback Khusus iOS / Safari / HTTP
+      try {
+        // Gunakan <span>, BUKAN <textarea>, untuk mengatasi bug seleksi iOS
+        const span = document.createElement('span');
+        span.textContent = text;
+        
+        // Sembunyikan elemen tanpa display:none
+        span.style.position = 'fixed';
+        span.style.left = '-9999px';
+        span.style.top = '0';
+        span.style.whiteSpace = 'pre'; // Jaga format teks
+        
+        document.body.appendChild(span);
+        
+        // Logika seleksi murni WebKit/Safari
+        const selection = window.getSelection();
+        const range = document.createRange();
+        
+        selection?.removeAllRanges();
+        range.selectNodeContents(span); // Pada span, ini akan menyeleksi Teksnya!
+        selection?.addRange(range);
+        
+        const successful = document.execCommand('copy');
+        
+        selection?.removeAllRanges();
+        document.body.removeChild(span);
+        
+        if (successful) {
+          resolve();
+        } else {
+          reject(new Error('Gagal menyalin teks.'));
+        }
+      } catch (err) {
+        reject(err);
+      }
+    }
+  });
+}

@@ -53,7 +53,8 @@ export async function GET() {
     return NextResponse.json({ 
       commissions, 
       affiliateName: affiliateData.name || 'Afiliasi',
-      voucher: voucherData 
+      voucher: voucherData,
+      voucherCode: affiliateData.voucherCode
     }, { status: 200 });
   } catch (error: any) {
     console.error('Error fetching affiliate commissions:', error);
