@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://inzta.id'),
   title: {
     default: 'INZTA Moto | Premium Waterproof Motorcycle Bags',
-    template: '%s | INZTA Moto'
+    template: '%s'
   },
   description: 'Tas motor eksklusif dan perlengkapan touring untuk rider. Waterproof, ringan, tahan banting, dan stylish. Temukan Sidebag Inzta Adventure dan produk lainnya.',
   keywords: ['inzta', 'inzta moto', 'tas motor', 'tas waterproof', 'sidebag motor', 'sidebag touring', 'tas touring waterproof', 'perlengkapan motor'],
@@ -22,7 +22,7 @@ export const metadata: Metadata = {
     siteName: 'INZTA Moto',
     images: [
       {
-        url: '/logo-mtg.png',
+        url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://inzta.id'}/logo-mtg.png`,
         width: 1200,
         height: 630,
         alt: 'INZTA Moto',
@@ -33,7 +33,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'INZTA Moto | Premium Waterproof Motorcycle Bags',
     description: 'Tas motor eksklusif untuk rider. Waterproof, ringan, tahan banting, dan stylish.',
-    images: ['/logo-mtg.png'],
+    images: [`${process.env.NEXT_PUBLIC_SITE_URL || 'https://inzta.id'}/logo-mtg.png`],
     creator: '@inztamoto',
   },
   icons: {
