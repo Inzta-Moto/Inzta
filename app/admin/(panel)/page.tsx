@@ -1,26 +1,84 @@
-'use client';
-
-import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Product } from '@/types';
 import { Package, Plus, ExternalLink, Clipboard, Users, Banknote, Clock } from 'lucide-react';
 import { formatPrice } from '@/lib/utils';
+import { getAdminDb } from '@/lib/firebaseAdmin';
+import { verifyAdminSession } from '@/lib/auth';
+import { redirect } from 'next/navigation';
 
-export default function AdminDashboard() {
-  const [stats, setStats] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+export const dynamic = 'force-dynamic';
 
-  useEffect(() => {
-    fetch('/api/admin/dashboard-stats')
-      .then(res => res.json())
-      .then(data => {
-        setStats(data);
-        setLoading(false);
-      })
-      .catch(console.error);
-  }, []);
+async function countQuery(query: FirebaseFirestore.Query) {
+  try {
+    const snap = await query.count().get();
+    return snap.data().count || 0;
+  } catch {
+    const snap = await query.get();
+    return snap.size;
+  }
+}
 
-  if (loading) return <div>Loading...</div>;
+export default async function AdminDashboard() {
+  const auth = await verifyAdminSession();
+  if (auth.error) {
+    redirect('/admin/login');
+  }
+
+  let stats: any = {
+    total: 0, active: 0, lowStock: 0, lowList: [],
+    totalOrders: 0, pendingOrders: 0, totalAffiliates: 0, totalRevenue: 0,
+    recentOrders: []
+  };
+
+  try {
+    const db = getAdminDb();
+    const products = db.collection('products');
+    const orders = db.collection('orders');
+    const affiliates = db.collection('affiliates');
+
+    const [total, active, lowStock, totalOrders, pendingOrders, totalAffiliates] = await Promise.all([
+      countQuery(products),
+      countQuery(products.where('isActive', '==', true)),
+      countQuery(products.where('stock', '<=', 10)),
+      countQuery(orders),
+      countQuery(orders.where('status', '==', 'pending')),
+      countQuery(affiliates),
+    ]);
+
+    // Calculate total revenue
+    const completedOrdersSnap = await orders.where('status', '==', 'completed').get();
+    const totalRevenue = completedOrdersSnap.docs.reduce((sum, doc) => sum + (doc.data().finalPrice || 0), 0);
+
+    const lowSnap = await products.where('stock', '<=', 10).orderBy('stock', 'asc').limit(10).get();
+    const lowList = lowSnap.docs.map(doc => {
+      const data = doc.data() as any;
+      return {
+        name: data.name || 'Produk',
+        slug: data.slug || doc.id,
+        stock: typeof data.stock === 'number' ? data.stock : 0,
+      };
+    });
+
+    // Fetch Recent Orders
+    const recentOrdersSnap = await orders.orderBy('createdAt', 'desc').limit(5).get();
+    const recentOrders = recentOrdersSnap.docs.map(doc => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        orderId: data.orderId,
+        customerName: data.customerName,
+        finalPrice: data.finalPrice,
+        status: data.status,
+      };
+    });
+
+    stats = {
+      total, active, lowStock, lowList, 
+      totalOrders, pendingOrders, totalAffiliates, totalRevenue,
+      recentOrders
+    };
+  } catch (error) {
+    console.error('Failed to fetch dashboard stats', error);
+  }
 
   const statItems = [
     { n: formatPrice(stats.totalRevenue), l: 'Total Penjualan', icon: <Banknote size={24} /> },

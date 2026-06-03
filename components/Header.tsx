@@ -7,6 +7,7 @@ import { User } from 'lucide-react';
 import { WA_NUMBER } from '@/lib/firebase';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
+import { clearAffiliateSession } from '@/lib/utils';
 
 interface HeaderProps {
   active: 'home' | 'produk' | 'blog';
@@ -24,10 +25,28 @@ export default function Header({ active }: HeaderProps) {
   }, []);
 
   useEffect(() => {
+    async function checkSession(currentUser: any) {
+      const stored = localStorage.getItem('is_affiliate_logged_in') === 'true';
+      if (stored) {
+        try {
+          const res = await fetch('/api/affiliate/check');
+          if (res.status === 401) {
+            clearAffiliateSession();
+            setUser(null);
+          } else {
+            setUser(currentUser);
+          }
+        } catch (e) {
+          setUser(currentUser);
+        }
+      } else {
+        setUser(null);
+      }
+    }
+    
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      const isAffiliate = localStorage.getItem('is_affiliate_logged_in') === 'true';
-      if (currentUser && isAffiliate) {
-        setUser(currentUser);
+      if (currentUser) {
+        checkSession(currentUser);
       } else {
         setUser(null);
       }

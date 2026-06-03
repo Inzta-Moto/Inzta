@@ -12,10 +12,10 @@ import ProductCard from '@/components/ProductCard';
 import Link from 'next/link';
 import { Product, Voucher, Commission } from '@/types';
 
-export default function DetailClient({ slug }: { slug: string }) {
-  const [product, setProduct] = useState<Product | null>(null);
-  const [related, setRelated] = useState<Product[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+export default function DetailClient({ slug, initialProduct, initialRelated }: { slug: string, initialProduct?: any, initialRelated?: any[] }) {
+  const [product, setProduct] = useState<Product | null>(initialProduct || null);
+  const [related, setRelated] = useState<Product[]>(initialRelated || []);
+  const [loading, setLoading] = useState<boolean>(!initialProduct);
   const [error, setError] = useState<string | null>(null);
   const [activeImg, setActiveImg] = useState<number>(0);
 
@@ -57,7 +57,13 @@ export default function DetailClient({ slug }: { slug: string }) {
     return () => unsub();
   }, []);
 
-  useEffect(() => { if (slug) loadProduct(); }, [slug]);
+  useEffect(() => { 
+    if (slug && !initialProduct) {
+      loadProduct(); 
+    } else if (initialProduct) {
+      imagesLenRef.current = initialProduct.images?.length || (initialProduct.imageUrl ? 1 : 0);
+    }
+  }, [slug, initialProduct]);
 
   async function loadProduct() {
     try {
