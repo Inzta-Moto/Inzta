@@ -4,13 +4,11 @@ import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
-import { Eye, EyeOff } from 'lucide-react'; // ← Import ikon mata
 
 export default function AdminLogin() {
   const router = useRouter();
   const [email, setEmail] = useState<string>('');
   const [accessCode, setAccessCode] = useState<string>('');
-  const [showCode, setShowCode] = useState<boolean>(false); // ← State untuk toggle mata
   const [error, setError] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
 
@@ -28,7 +26,6 @@ export default function AdminLogin() {
 
       if (response.ok) {
         router.replace('/admin');
-        // Do not set loading to false so the button stays "Memproses..." during navigation
       } else {
         setError('Gagal membuat sesi admin.');
         setLoading(false);
@@ -64,38 +61,17 @@ export default function AdminLogin() {
               />
             </div>
             
-            <div className="form-group" style={{ position: 'relative' }}>
+            <div className="form-group">
               <label className="form-label">Kode Akses</label>
               <input 
-                type={showCode ? 'text' : 'password'} 
+                type="text" 
                 value={accessCode} 
                 onChange={e => setAccessCode(e.target.value)} 
                 className="form-input" 
                 placeholder="Masukkan kode rahasia" 
                 autoComplete="off" 
-                style={{ paddingRight: '40px' }}
                 required 
               />
-              
-              {/* Tombol Ikon Mata */}
-              <button 
-                type="button" 
-                onClick={() => setShowCode(!showCode)}
-                style={{
-                  position: 'absolute',
-                  right: '12px',
-                  top: '34px', // Posisi sejajar dengan input
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  color: 'var(--text-placeholder)',
-                  display: 'flex',
-                  alignItems: 'center'
-                }}
-                aria-label="Lihat kode"
-              >
-                {showCode ? <Eye size={18} /> : <EyeOff size={18} />}
-              </button>
             </div>
 
             {error && <div className="form-error" style={{ display: 'block' }}>{error}</div>}
