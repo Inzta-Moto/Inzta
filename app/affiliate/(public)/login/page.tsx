@@ -30,21 +30,14 @@ export default function AffiliateLogin() {
       });
 
       if (response.ok) {
+        const data = await response.json();
         // Mark as affiliate in local storage
         localStorage.setItem('is_affiliate_logged_in', 'true');
         
-        // Fetch affiliate info to get voucher code
-        const affRes = await fetch('/api/affiliate/commissions'); // Reusing this to find the affiliate
-        const affData = await affRes.json();
-        if (affRes.ok && affData.commissions && affData.commissions.length > 0) {
-            localStorage.setItem('inzta_affiliate', affData.commissions[0].voucherCode);
-        } else {
-            // Fallback: try fetching from a dedicated endpoint if needed, but for now this works to get the voucher code
-             const res = await fetch('/api/admin/affiliates'); // Need a way to get affiliate profile
-             const data = await res.json();
-             const user = data.affiliates.find((a: any) => a.email === email);
-             if (user) localStorage.setItem('inzta_affiliate', user.voucherCode);
+        if (data.voucherCode) {
+            localStorage.setItem('inzta_affiliate', data.voucherCode);
         }
+        
         router.replace('/affiliate/dashboard');
         // Do not set loading to false so the button stays "Memproses..." during navigation
       } else {

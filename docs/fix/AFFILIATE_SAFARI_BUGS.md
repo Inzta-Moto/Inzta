@@ -1,42 +1,32 @@
-# 🐛 Laporan Perbaikan Bug (Fix Report) - Safari & iPhone
+# 🐛 Laporan Perbaikan Bug (Fix Report) - Autentikasi & Platform
 
-Dokumen ini mencatat masalah-masalah kritis yang ditemukan selama pengujian pada lingkungan Apple/iOS (khususnya Safari di iPhone) beserta analisis mendalam dan solusi arsitektural yang telah diimplementasikan untuk menyelesaikannya.
+Dokumen ini mencatat masalah-masalah kritis yang ditemukan selama pengujian pada berbagai peramban (Chrome, Safari, dll) beserta analisis mendalam dan solusi arsitektural yang telah diimplementasikan untuk menyelesaikannya.
 
 ---
 
-## 1. Bug Gagal Login Affiliate (Cookie Race Condition Safari)
+## 1. Bug Gagal Login Affiliate (Cross-Browser API Race Condition & Fallback Crash)
 
 **Gejala yang Dialami:**
-- Pengguna (Affiliator) gagal masuk meskipun email dan kode akses yang dimasukkan sudah benar.
-- Muncul pesan error "Email atau kode akses salah."
-- Jika halaman di-*refresh* setelah error terjadi, pengguna anehnya tiba-tiba sudah berada di dalam Dashboard (berhasil login).
-- Saat pindah ke halaman toko, Header masih menampilkan status "LOGIN" (belum login) sehingga proses salin link gagal karena parameter `inzta_affiliate` tidak tersimpan di `localStorage`.
-
-**Pesan Error Log Server:**
-```json
-{
-  "code": "auth/session-cookie-revoked",
-  "message": "The Firebase session cookie has been revoked."
-}
-```
+- Pengguna (Affiliator) gagal masuk di Chrome, Safari, maupun browser lain meskipun email dan kode akses yang dimasukkan sudah benar.
+- Muncul pesan error "Email atau kode akses salah." secara konstan.
+- Jika halaman di-*refresh* setelah error terjadi, pengguna secara aneh tiba-tiba sudah berada di dalam Dashboard (berhasil login).
 
 ### Analisis Akar Permasalahan (Root Cause)
-Masalah ini diakibatkan oleh **Race Condition pada Cookie Jar (Brankas Cookie) di peramban Safari**.
-1. Klien mengirim kredensial ke `/api/auth/session` untuk membuat *Session Cookie*.
-2. Setelah Server merespons sukses (bersama *header Set-Cookie*), aplikasi Next.js di sisi klien secara instan langsung melakukan `fetch` kedua ke `/api/affiliate/commissions` untuk mendapatkan `voucherCode`.
-3. Karena *fetch* kedua terjadi **terlalu cepat** (dalam milidetik), WebKit/Safari belum sempat memperbarui *Cookie Jar* miliknya. Akibatnya, Safari mengirimkan *Session Cookie* versi LAMA (sesi usang) ke Server.
-4. Server Firebase membaca *cookie* lama tersebut, menganggapnya tidak valid/dicabut (*revoked*), dan memicu *Crash 500*.
-5. Di sisi lain, *Intelligent Tracking Prevention (ITP)* milik Safari membatasi penyimpanan lokal (*IndexedDB*), sehingga *Firebase Auth Client* mudah "lupa" status login saat berpindah halaman kembali ke toko (menyebabkan kasus Header tidak terupdate).
+Masalah ini BUKAN sepenuhnya disebabkan oleh masalah _Cookie Delay_ di Safari, melainkan **cacat logika (_logic flaw_) pada proses pengambilan `voucherCode` di sisi klien (`login/page.tsx`)**.
+1. Klien mengirim kredensial ke `/api/auth/session` untuk membuat *Session Cookie*. Ini **berhasil**.
+2. Klien kemudian secara beruntun memanggil `/api/affiliate/commissions` untuk mendapatkan `voucherCode`. Pada beberapa kasus, _cookie_ sesi baru belum tersimpan secara utuh di peramban saat pemanggilan API kedua ini terjadi, sehingga API mengembalikan status 401 Unauthorized.
+3. **The Fatal Crash:** Karena gagal, klien mengeksekusi blok *fallback* yang memanggil `/api/admin/affiliates`. Endpoint ini adalah endpoint administratif yang menolak akses afiliator dan mengembalikan error JSON (`{ error: 'Unauthorized' }`).
+4. Karena respons tidak mengandung _array_ `affiliates`, baris kode `data.affiliates.find(...)` memicu `TypeError: Cannot read properties of undefined`.
+5. _Error Javascript_ ini ditangkap oleh blok `catch` utama di form login, yang memiliki pesan _hardcoded_: "Login gagal. Email atau kode akses salah.", menyembunyikan masalah sebenarnya dan menggagalkan *redirect* ke dashboard.
+6. Karena sesi sebenarnya sudah berhasil dibuat pada langkah 1, sebuah _refresh_ akan memuat halaman dengan _cookie_ yang valid, sehingga pengguna langsung masuk ke dashboard.
 
 ### Solusi yang Diimplementasikan
-1. **Menghapus Kebutuhan Request Beruntun:** 
-   File `/api/auth/session/route.ts` dimodifikasi. Saat sesi dibuat, Server *backend* langsung melakukan verifikasi ke database Firestore untuk mencari dan mengembalikan `voucherCode` secara bersamaan (`{ status: 'success', voucherCode: '...' }`). Hal ini menghapus kewajiban klien untuk melakukan *fetch* kedua secara beruntun, menghindari *bug delay* pada Safari.
-2. **Penyimpanan Langsung & Aman:**
-   Pada file `app/affiliate/(public)/login/page.tsx`, `voucherCode` langsung diekstrak dari respon API login pertama dan disimpan ke `localStorage`.
-3. **Anti-ITP Header (Resilient Header):**
-   Komponen `Header.tsx` dimodifikasi agar tidak lagi sepenuhnya bergantung pada `onAuthStateChanged` dari Firebase Auth Klien yang gampang terhapus oleh Safari. Kini Header juga mengecek langsung status `localStorage` (`is_affiliate_logged_in`).
-4. **Mekanisme Self-Healing di Dashboard:**
-   Setiap kali halaman Dashboard (`app/affiliate/(panel)/dashboard/page.tsx`) dimuat dan berhasil mengambil data dari API yang dilindungi, halaman tersebut akan secara diam-diam memastikan dan menulis ulang status `localStorage` untuk memulihkan data yang mungkin dibersihkan sepihak oleh Safari.
+1. **Penerapan Arsitektur Single-Trip API:** 
+   File `/api/auth/session/route.ts` dimodifikasi. Saat sesi dibuat, Server *backend* langsung memverifikasi token dan melakukan _query_ ke koleksi `affiliates` di Firestore untuk mengambil `voucherCode`. Server mengembalikan respons terpadu: `{ status: 'success', voucherCode: '...' }`.
+2. **Pembersihan Logika Klien:**
+   Pada file `app/affiliate/(public)/login/page.tsx`, blok kode yang melakukan _fetch_ beruntun (Race Condition) ke `/api/affiliate/commissions` dan *fallback error* ke `/api/admin/affiliates` **dihapus sepenuhnya**. 
+3. **Penyimpanan Langsung:**
+   Klien kini cukup mengekstrak `voucherCode` dari respons login API pertama, menyimpannya di `localStorage`, dan langsung memanggil `router.replace` menuju dashboard dengan lancar tanpa _error_.
 
 ---
 
