@@ -80,7 +80,6 @@ export default function DetailClient({ slug, initialProduct, initialRelated }: {
       setProduct(pData);
       imagesLenRef.current = pData.images?.length || (pData.imageUrl ? 1 : 0);
 
-      // Load related products
       const relRes = await fetch('/api/products');
       const relData = await relRes.json();
       if (relRes.ok && relData.products) {
@@ -104,25 +103,16 @@ export default function DetailClient({ slug, initialProduct, initialRelated }: {
             try {
               setVoucherLoading(true);
               const res = await fetch(`/api/vouchers/resolve?affiliateId=${affiliateId}`);
-              
-              // 1. Baca body HANYA SEKALI
               const data = await res.json();
               
-              // 2. Gunakan status kode dan data yang sudah dibaca
               if (res.status !== 200) {
-                // Jika terjadi error (400, 404, 500), tampilkan toast
                 const errorMessage = data.error || 'Terjadi kesalahan saat menerapkan voucher.';
                 showToast(errorMessage);
-                
-                // Debug tambahan
-                console.error('Voucher Resolution Error:', { status: res.status, data });
-                
                 setVoucherLoading(false);
                 return;
               }
 
               const v = data.voucher;
-              
               const subtotal = product.price * quantity;
               if (v.minPurchase && subtotal < v.minPurchase) {
                 const errMsg = `Minimal pembelian ${formatPrice(v.minPurchase)} tidak terpenuhi.`;
@@ -156,7 +146,6 @@ export default function DetailClient({ slug, initialProduct, initialRelated }: {
         // Re-calculate discount if quantity changes and voucher is already applied
         const subtotal = product.price * quantity;
         if (voucherData.minPurchase && subtotal < voucherData.minPurchase) {
-          // If quantity is reduced and no longer meets min purchase, remove voucher
           removeVoucher();
           const errMsg = `Voucher dilepas. Minimal pembelian ${formatPrice(voucherData.minPurchase)}.`;
           setVoucherError(errMsg);
@@ -267,7 +256,6 @@ export default function DetailClient({ slug, initialProduct, initialRelated }: {
       const subtotal = product.price * quantity;
       const fp = subtotal - discountAmount;
 
-      // 1. Create order via API
       const res = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -278,7 +266,7 @@ export default function DetailClient({ slug, initialProduct, initialRelated }: {
           voucherCode: voucherData?.code || null,
           affiliateId: voucherData?.affiliateId || null,
           finalPrice: fp,
-          buyerUID: buyerUID, // Kirim UID pembeli (jika sedang login sebagai affiliate)
+          buyerUID: buyerUID,
         }),
       });
 
@@ -286,8 +274,6 @@ export default function DetailClient({ slug, initialProduct, initialRelated }: {
       if (!res.ok) throw new Error(data.error || 'Gagal membuat pesanan');
 
       const orderId = data.orderId;
-
-      // 2. Open WhatsApp with Order ID
       const waUrl = buildWaLink(orderId);
       window.open(waUrl, '_blank', 'noopener,noreferrer');
     } catch (e: any) {
@@ -380,7 +366,9 @@ export default function DetailClient({ slug, initialProduct, initialRelated }: {
   const stockCls = p.stock <= 10 ? 'low-stock' : 'in-stock';
   const stockLabel = p.stock <= 10 ? `Sisa ${p.stock} unit` : 'Tersedia';
 
-  const finalPrice = (p.price * quantity) - discountAmount;
+  // ✅ PERHITUNGAN SUBTOTAL & TOTAL BAYAR YANG SUDAH DIPERBAIKI
+  const subtotal = p.price * quantity;
+  const finalPrice = subtotal - discountAmount;
 
   const trustItems: { icon: LucideIcon; title: string; desc: string }[] = [
     { icon: Truck, title: 'Pengiriman Cepat', desc: 'Paket dikirim 1-2 hari kerja' },
@@ -403,7 +391,6 @@ export default function DetailClient({ slug, initialProduct, initialRelated }: {
     </svg>
   );
 
-  // ── Share Section ──
   const handleShare = async () => {
     if (!product) return;
     const p = product;
@@ -428,7 +415,6 @@ export default function DetailClient({ slug, initialProduct, initialRelated }: {
         throw new Error('Web Share API not supported');
       }
     } catch (error) {
-      // Fallback
       const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
       window.open(waUrl, '_blank', 'noopener,noreferrer');
     }
@@ -490,14 +476,23 @@ export default function DetailClient({ slug, initialProduct, initialRelated }: {
                   <div className="detail-price-original">{formatPrice(p.originalPrice)}</div>
                 )}
                 <div className="detail-price-row">
-                  <span className="detail-price-current">{formatPrice(p.price)}</span>
+                  {/* ✅ Jika quantity > 1, tampilkan subtotal. Jika 1, tampilkan harga satuan */}
+                  <span className="detail-price-current">
+                    {quantity > 1 ? formatPrice(subtotal) : formatPrice(p.price)}
+                  </span>
                   {discount > 0 && <span className="detail-price-discount">-{discount}%</span>}
                 </div>
+                {/* ✅ Tampilkan harga satuan jika quantity > 1 sebagai referensi */}
+                {quantity > 1 && (
+                  <div style={{ fontSize: 12, color: '#999', marginTop: 2 }}>
+                    {formatPrice(p.price)} / item
+                  </div>
+                )}
                 {savings > 0 && (
                   <div className="detail-price-save">Hemat <span>{formatPrice(savings)}</span> dari harga normal</div>
                 )}
 
-                {/* ── Voucher Applied Price ── */}
+                {/* ── Voucher Applied Info ── */}
                 {voucherData && discountAmount > 0 && (
                   <div style={{
                     marginTop: 12, padding: '10px 14px', borderRadius: 8,
@@ -510,16 +505,13 @@ export default function DetailClient({ slug, initialProduct, initialRelated }: {
                       <button onClick={removeVoucher} style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: '#2e7d32', padding: 2 }}><TicketX size={14} /></button>
                     </div>
                     {buyerUID && voucherData.affiliateId && buyerUID === voucherData.affiliateId && (
-                      <div style={{ fontSize: 11, color: '#2e7d32', marginBottom: 8, fontStyle: 'italic', fontWeight: 500 }}>
+                      <div style={{ fontSize: 11, color: '#2e7d32', marginBottom: 4, fontStyle: 'italic', fontWeight: 500 }}>
                         ℹ️ Voucher pribadi: Anda mendapatkan diskon, komisi tidak berlaku.
                       </div>
                     )}
                     <div style={{ fontSize: 13, color: '#555' }}>
                       Diskon: <span style={{ color: '#d32f2f', fontWeight: 600 }}>-{formatPrice(discountAmount)}</span>
                       {voucherData.type === 'percentage' && voucherData.maxDiscount ? ` (maks ${formatPrice(voucherData.maxDiscount)})` : ''}
-                    </div>
-                    <div style={{ marginTop: 6, fontSize: 18, fontWeight: 700, color: '#1b5e20' }}>
-                      {formatPrice(finalPrice)}
                     </div>
                   </div>
                 )}
@@ -647,8 +639,40 @@ export default function DetailClient({ slug, initialProduct, initialRelated }: {
                 )}
               </div>
 
+              {/* ✅ RINGKASAN HARGA (SUBTOTAL & TOTAL BAYAR) */}
+              {(quantity > 1 || discountAmount > 0) && (
+                <div style={{
+                  marginTop: 16, padding: '12px 16px', borderRadius: 8,
+                  background: '#f8f9fa', border: '1px solid #e9ecef'
+                }}>
+                  {quantity > 1 && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#666', marginBottom: 4 }}>
+                      <span>Harga Satuan</span>
+                      <span>{formatPrice(p.price)}</span>
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#333', fontWeight: 500, marginBottom: discountAmount > 0 ? 4 : 0 }}>
+                    <span>Subtotal ({quantity} item)</span>
+                    <span>{formatPrice(subtotal)}</span>
+                  </div>
+                  {discountAmount > 0 && (
+                    <>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#d32f2f', marginBottom: 8 }}>
+                        <span>Diskon Voucher</span>
+                        <span>-{formatPrice(discountAmount)}</span>
+                      </div>
+                      <div style={{ height: 1, background: '#e0e0e0', marginBottom: 8 }}></div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 16, fontWeight: 700, color: '#1a1a1a' }}>
+                        <span>Total Bayar</span>
+                        <span>{formatPrice(finalPrice)}</span>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+
               {/* ── CTA Button ── */}
-              <div className="detail-cta">
+              <div className="detail-cta" style={{ marginTop: 20 }}>
                 <button
                   className="btn-detail-wa"
                   onClick={handleOrderClick}

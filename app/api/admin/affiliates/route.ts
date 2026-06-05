@@ -22,7 +22,8 @@ export async function POST(request: Request) {
 
   try {
     const data = await request.json();
-    const { id, email, password, name, phone, voucherCode, createdAt } = data;
+    // ✅ Tambahkan commissionRate di sini
+    const { id, email, password, name, phone, voucherCode, createdAt, commissionRate } = data;
 
     if (!id || !email) {
       return NextResponse.json({ error: 'Missing affiliate data' }, { status: 400 });
@@ -55,6 +56,7 @@ export async function POST(request: Request) {
       email,
       uid,
       voucherCode,
+      commissionRate: commissionRate || 0, // ✅ TAMBAHKAN INI agar tersimpan ke Firestore
       createdAt: createdAt || new Date().toISOString(),
     };
 

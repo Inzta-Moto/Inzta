@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { formatPrice, formatDate } from '@/lib/utils';
 import { Order } from '@/types';
-import { Clipboard, Clock, CheckCircle, XCircle, Search, X, RotateCcw, Trash2 } from 'lucide-react';
+import { Clipboard, Clock, CheckCircle, XCircle, Search, X, RotateCcw, Trash2, ChevronDown, Package } from 'lucide-react';
 
 type StatusFilter = 'all' | 'pending' | 'completed' | 'cancelled';
 
@@ -14,6 +14,7 @@ export default function OrdersPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [actionTarget, setActionTarget] = useState<{ id: string; action: 'completed' | 'cancelled' | 'pending' | 'delete'; name: string } | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set());
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
 
@@ -35,21 +36,16 @@ export default function OrdersPage() {
 
   const filteredOrders = useMemo(() => {
     let result = orders;
-    
-    // Filter by status
     if (statusFilter !== 'all') {
       result = result.filter(o => o.status === statusFilter);
     }
-    
-    // Filter by search (order ID)
     if (search.trim()) {
       const q = search.trim().toUpperCase();
-      result = result.filter(o => 
-        o.orderId?.toUpperCase().includes(q) || 
+      result = result.filter(o =>
+        o.orderId?.toUpperCase().includes(q) ||
         o.items?.some(item => item.name.toUpperCase().includes(q))
       );
     }
-    
     return result;
   }, [orders, statusFilter, search]);
 
@@ -66,12 +62,9 @@ export default function OrdersPage() {
   const handleAction = async () => {
     if (!actionTarget) return;
     setActionLoading(true);
-
     try {
       if (actionTarget.action === 'delete') {
-        const res = await fetch(`/api/admin/orders/${actionTarget.id}`, {
-          method: 'DELETE',
-        });
+        const res = await fetch(`/api/admin/orders/${actionTarget.id}`, { method: 'DELETE' });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Gagal menghapus pesanan');
       } else {
@@ -83,7 +76,6 @@ export default function OrdersPage() {
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Gagal mengubah status');
       }
-
       setActionTarget(null);
       loadOrders();
     } catch (e: any) {
@@ -93,7 +85,34 @@ export default function OrdersPage() {
     }
   };
 
-  const statusBadge = (status: string) => {
+  const toggleExpand = (id: string) => {
+    setExpandedOrders(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const statusConfig: Record<string, { cls: string; label: string; icon: React.ReactNode; bg: string }> = {
+    pending: { cls: 'order-badge-pending', label: 'Pending', icon: <Clock size={12} />, bg: 'status-bg-pending' },
+    completed: { cls: 'order-badge-completed', label: 'Selesai', icon: <CheckCircle size={12} />, bg: 'status-bg-completed' },
+    cancelled: { cls: 'order-badge-cancelled', label: 'Dibatalkan', icon: <XCircle size={12} />, bg: 'status-bg-cancelled' },
+  };
+
+  const pagedOrders = filteredOrders.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+  const totalPages = Math.ceil(filteredOrders.length / ITEMS_PER_PAGE);
+
+  const tabsData: { key: StatusFilter; label: string; mobileLabel: string; icon: React.ReactNode; count: number }[] = [
+    { key: 'all', label: 'Semua', mobileLabel: 'Semua', icon: <Clipboard size={13} />, count: statusCounts.all },
+    { key: 'pending', label: 'Pending', mobileLabel: 'Pending', icon: <Clock size={13} />, count: statusCounts.pending },
+    { key: 'completed', label: 'Selesai', mobileLabel: 'Selesai', icon: <CheckCircle size={13} />, count: statusCounts.completed },
+    { key: 'cancelled', label: 'Dibatalkan', mobileLabel: 'Batal', icon: <XCircle size={13} />, count: statusCounts.cancelled },
+  ];
+
+  // ── Helper Functions ──
+
+  function orderStatusBadge(status: string) {
     const map: Record<string, { cls: string; label: string }> = {
       pending: { cls: 'order-badge-pending', label: 'Pending' },
       completed: { cls: 'order-badge-completed', label: 'Selesai' },
@@ -101,7 +120,53 @@ export default function OrdersPage() {
     };
     const s = map[status] || { cls: '', label: status };
     return <span className={`table-badge ${s.cls}`}>{s.label}</span>;
-  };
+  }
+
+  function orderActions(order: Order & { id: string }) {
+    const id = order.id || order.orderId;
+    return (
+      <div className="table-actions">
+        {order.status === 'pending' && (
+          <>
+            <button
+              className="orders-action-btn orders-action-complete"
+              onClick={() => setActionTarget({ id, action: 'completed', name: order.orderId })}
+              title="Selesaikan Pesanan"
+            >
+              ✓ Selesaikan
+            </button>
+            <button
+              className="orders-action-btn orders-action-cancel"
+              onClick={() => setActionTarget({ id, action: 'cancelled', name: order.orderId })}
+              title="Batalkan Pesanan"
+              style={{ padding: '5px 8px' }}
+            >
+              ✕
+            </button>
+          </>
+        )}
+        {order.status === 'completed' && (
+          <button
+            className="orders-action-btn orders-action-revert"
+            onClick={() => setActionTarget({ id, action: 'pending', name: order.orderId })}
+            title="Kembalikan ke Pending"
+          >
+            <RotateCcw size={12} /> Revert
+          </button>
+        )}
+        {order.status === 'cancelled' && (
+          <span style={{ fontSize: 11, color: '#EF4444', fontWeight: 500, lineHeight: '28px' }}>Dibatalkan</span>
+        )}
+        <button
+          className="table-btn danger"
+          onClick={() => setActionTarget({ id, action: 'delete', name: order.orderId })}
+          title="Hapus Pesanan"
+        >
+          <Trash2 size={14} />
+        </button>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -112,15 +177,33 @@ export default function OrdersPage() {
       {/* Stats Cards */}
       <div className="admin-stats-grid cols-4">
         {[
-          { n: statusCounts.all, l: 'Total Pesanan', icon: <Clipboard size={18} /> },
-          { n: statusCounts.pending, l: 'Pending', icon: <Clock size={18} /> },
-          { n: statusCounts.completed, l: 'Selesai', icon: <CheckCircle size={18} /> },
-          { n: statusCounts.cancelled, l: 'Dibatalkan', icon: <XCircle size={18} /> },
+          { n: statusCounts.all, l: 'Total Pesanan', icon: <Clipboard size={18} />, color: '#6366F1', bg: '#EEF2FF', border: '#C7D2FE' },
+          { n: statusCounts.pending, l: 'Pending', icon: <Clock size={18} />, color: '#D97706', bg: '#FFFBEB', border: '#FDE68A' },
+          { n: statusCounts.completed, l: 'Selesai', icon: <CheckCircle size={18} />, color: '#059669', bg: '#ECFDF5', border: '#A7F3D0' },
+          { n: statusCounts.cancelled, l: 'Dibatalkan', icon: <XCircle size={18} />, color: '#EF4444', bg: '#FEF2F2', border: '#FECACA' },
         ].map((s, i) => (
-          <div className="admin-stat-card" key={i}>
-            <div className="admin-stat-icon" style={{ color: '#555' }}>{s.icon}</div>
+          <div
+            className="admin-stat-card orders-stat-colored"
+            key={i}
+            style={{
+              borderLeft: '3px solid ' + s.color,
+              background: s.bg,
+              borderColor: s.border,
+            }}
+          >
+            <div
+              className="admin-stat-icon"
+              style={{
+                color: s.color,
+                borderColor: s.color + '30',
+                background: '#fff',
+                boxShadow: '0 1px 4px ' + s.color + '15',
+              }}
+            >
+              {s.icon}
+            </div>
             <div>
-              <div className="admin-stat-number">{s.n}</div>
+              <div className="orders-stat-number" style={{ color: s.color }}>{s.n}</div>
               <div className="admin-stat-label">{s.l}</div>
             </div>
           </div>
@@ -129,180 +212,196 @@ export default function OrdersPage() {
 
       {/* Filter & Search */}
       <div className="orders-toolbar">
-        <div className="orders-tabs scrollable-tabs">
-          {(['all', 'pending', 'completed', 'cancelled'] as StatusFilter[]).map(tab => (
+        <div className="orders-tabs-desktop">
+          {tabsData.map(tab => (
             <button
-              key={tab}
-              className={`orders-tab ${statusFilter === tab ? 'active' : ''}`}
-              onClick={() => setStatusFilter(tab)}
+              key={tab.key}
+              className={`orders-tab ${statusFilter === tab.key ? 'active' : ''}`}
+              onClick={() => { setStatusFilter(tab.key); setCurrentPage(1); }}
             >
-              {tab === 'all' ? 'Semua' : tab === 'pending' ? 'Pending' : tab === 'completed' ? 'Selesai' : 'Dibatalkan'}
-              <span className="orders-tab-count">{statusCounts[tab]}</span>
+              {tab.label}
+              <span className="orders-tab-count">{tab.count}</span>
             </button>
           ))}
         </div>
+
+        <div className="orders-tabs-mobile">
+          {tabsData.map(tab => (
+            <button
+              key={tab.key}
+              className={`orders-grid-tab ${statusFilter === tab.key ? 'active' : ''}`}
+              onClick={() => { setStatusFilter(tab.key); setCurrentPage(1); }}
+            >
+              <span className="orders-grid-tab-icon">{tab.icon}</span>
+              <span className="orders-grid-tab-label">{tab.mobileLabel}</span>
+              <span className="orders-grid-tab-count">{tab.count}</span>
+            </button>
+          ))}
+        </div>
+
         <div className="orders-search">
           <Search size={14} />
           <input
             type="text"
-            placeholder="Cari Order ID atau nama produk..."
+            placeholder="Cari ID atau produk..."
             value={search}
-            onChange={e => setSearch(e.target.value)}
+            onChange={e => { setSearch(e.target.value); setCurrentPage(1); }}
           />
+          {search && (
+            <button className="orders-search-clear" onClick={() => { setSearch(''); setCurrentPage(1); }}>
+              <X size={14} />
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Table */}
       {loading ? (
-        <div className="admin-table-wrap">
-          <div style={{ padding: 40, textAlign: 'center', color: '#999', fontSize: 13 }}>Memuat data pesanan...</div>
+        <div className="orders-loading-state">
+          <div className="orders-loading-spinner" />
+          <span>Memuat data pesanan...</span>
+        </div>
+      ) : filteredOrders.length === 0 ? (
+        <div className="orders-empty-state">
+          <Package size={40} strokeWidth={1.2} />
+          <p>{search ? `Tidak ada pesanan dengan "${search}"` : 'Belum ada pesanan.'}</p>
         </div>
       ) : (
-        <div className="admin-table-wrap">
-          <table className="admin-table">
-            <thead>
-              <tr>
-                <th>Order ID</th>
-                <th>Produk</th>
-                <th>Total</th>
-                <th>Voucher</th>
-                <th>Status</th>
-                <th>Tanggal</th>
-                <th>Aksi</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredOrders.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="table-empty">
-                    {search ? `Tidak ada pesanan dengan "${search}"` : 'Belum ada pesanan.'}
-                  </td>
-                </tr>
-              ) : (
-                filteredOrders.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE).map(order => (
-                  <tr key={order.id || order.orderId}>
-                    <td>
-                      <span className="order-id-cell">#{order.orderId}</span>
-                    </td>
-                    <td>
-                      <div className="order-items-cell">
-                        {order.items?.map((item, i) => (
-                          <div key={i} className="order-item-line">
-                            <span className="order-item-name">{item.name}</span>
-                            <span className="order-item-qty">×{item.quantity} ({formatPrice(item.price)})</span>
-                          </div>
-                        )) || <span style={{ color: '#999' }}>-</span>}
+        <>
+          {/* Desktop: Table */}
+          <div className="orders-desktop-table">
+            <div className="admin-table-wrap">
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>Order ID</th>
+                    <th>Produk</th>
+                    <th>Total</th>
+                    <th>Voucher</th>
+                    <th>Status</th>
+                    <th>Tanggal</th>
+                    <th>Aksi</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pagedOrders.map(order => (
+                    <tr key={order.id || order.orderId}>
+                      <td><span className="order-id-cell">#{order.orderId}</span></td>
+                      <td>
+                        <div className="order-items-cell">
+                          {order.items?.map((item, i) => (
+                            <div key={i} className="order-item-line">
+                              <span className="order-item-name">{item.name}</span>
+                              <span className="order-item-qty">×{item.quantity} ({formatPrice(item.price)})</span>
+                            </div>
+                          )) || <span style={{ color: '#999' }}>-</span>}
+                        </div>
+                      </td>
+                      <td>
+                        <div>
+                          {order.discountAmount > 0 && <div className="order-price-old">{formatPrice(order.totalPrice)}</div>}
+                          <div className="order-price-final">{formatPrice(order.finalPrice)}</div>
+                        </div>
+                      </td>
+                      <td>
+                        {order.voucherCode ? <span className="order-voucher-badge">{order.voucherCode}</span> : <span className="order-na">-</span>}
+                      </td>
+                      <td>{orderStatusBadge(order.status)}</td>
+                      <td className="order-date-cell">{formatDate(order.createdAt, { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
+                      <td>{orderActions(order)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Mobile: Accordion */}
+          <div className="orders-mobile-accordion">
+            {pagedOrders.map(order => {
+              const orderId = order.id || order.orderId;
+              const isExpanded = expandedOrders.has(orderId);
+              const sc = statusConfig[order.status] || statusConfig.pending;
+              return (
+                <div key={orderId} className={`order-accordion-card ${isExpanded ? 'expanded' : ''}`}>
+                  <button className="order-accordion-header" onClick={() => toggleExpand(orderId)}>
+                    <div className="order-accordion-header-left">
+                      <span className="order-accordion-id">#{order.orderId}</span>
+                      <span className={`order-accordion-status ${sc.bg}`}>{sc.icon}{sc.label}</span>
+                    </div>
+                    <div className="order-accordion-header-right">
+                      <span className="order-accordion-price">{formatPrice(order.finalPrice)}</span>
+                      <ChevronDown size={16} className={`order-accordion-chevron ${isExpanded ? 'rotated' : ''}`} />
+                    </div>
+                  </button>
+                  <div className="order-accordion-body">
+                    <div className="order-accordion-body-inner">
+                      <div className="order-accordion-row">
+                        <span className="order-accordion-label">Tanggal</span>
+                        <span className="order-accordion-value">{formatDate(order.createdAt, { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
                       </div>
-                    </td>
-                    <td>
-                      <div>
-                        {order.discountAmount > 0 && (
-                          <div style={{ fontSize: 11, color: '#999', textDecoration: 'line-through' }}>
-                            {formatPrice(order.totalPrice)}
-                          </div>
-                        )}
-                        <div style={{ fontWeight: 600, color: '#1a1a1a' }}>
-                          {formatPrice(order.finalPrice)}
+                      <div className="order-accordion-section">
+                        <span className="order-accordion-section-title">Produk</span>
+                        <div className="order-accordion-items">
+                          {order.items?.map((item, i) => (
+                            <div key={i} className="order-accordion-item">
+                              <span className="order-accordion-item-name">{item.name}</span>
+                              <span className="order-accordion-item-meta">×{item.quantity} · {formatPrice(item.price)}</span>
+                            </div>
+                          )) || <span className="order-na">-</span>}
                         </div>
                       </div>
-                    </td>
-                    <td>
-                      {order.voucherCode ? (
-                        <span className="order-voucher-badge">{order.voucherCode}</span>
-                      ) : (
-                        <span style={{ color: '#ccc' }}>-</span>
-                      )}
-                    </td>
-                    <td>{statusBadge(order.status)}</td>
-                    <td style={{ fontSize: 12, color: '#666' }}>{formatDate(order.createdAt, { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
-                    <td>
-                      <div className="table-actions">
+                      <div className="order-accordion-section">
+                        <span className="order-accordion-section-title">Rincian Harga</span>
+                        <div className="order-accordion-price-breakdown">
+                          <div className="order-accordion-price-row"><span>Subtotal</span><span>{formatPrice(order.totalPrice)}</span></div>
+                          {order.discountAmount > 0 && <div className="order-accordion-price-row discount"><span>Diskon</span><span>-{formatPrice(order.discountAmount)}</span></div>}
+                          <div className="order-accordion-price-row total"><span>Total Bayar</span><span>{formatPrice(order.finalPrice)}</span></div>
+                        </div>
+                      </div>
+                      <div className="order-accordion-row">
+                        <span className="order-accordion-label">Voucher</span>
+                        {order.voucherCode ? <span className="order-voucher-badge">{order.voucherCode}</span> : <span className="order-na">-</span>}
+                      </div>
+                      <div className="order-accordion-actions">
                         {order.status === 'pending' && (
                           <>
-                            <button
-                              className="orders-action-btn orders-action-complete"
-                              onClick={() => setActionTarget({
-                                id: order.id || order.orderId,
-                                action: 'completed',
-                                name: order.orderId,
-                              })}
-                              title="Selesaikan Pesanan"
-                            >
-                              ✓ Selesaikan
+                            <button className="order-action-btn order-action-complete" onClick={() => setActionTarget({ id: orderId, action: 'completed', name: order.orderId })}>
+                              <CheckCircle size={14} /> Selesaikan
                             </button>
-                            <button
-                              className="orders-action-btn orders-action-cancel"
-                              onClick={() => setActionTarget({
-                                id: order.id || order.orderId,
-                                action: 'cancelled',
-                                name: order.orderId,
-                              })}
-                              title="Batalkan Pesanan"
-                            >
-                              <X size={14} />
+                            <button className="order-action-btn order-action-cancel" onClick={() => setActionTarget({ id: orderId, action: 'cancelled', name: order.orderId })}>
+                              <XCircle size={14} /> Batalkan
                             </button>
                           </>
                         )}
                         {order.status === 'completed' && (
-                          <button
-                            className="orders-action-btn"
-                            style={{ background: '#f5f5f5', color: '#666', borderColor: '#ddd' }}
-                            onClick={() => setActionTarget({
-                              id: order.id || order.orderId,
-                              action: 'pending',
-                              name: order.orderId,
-                            })}
-                            title="Kembalikan ke Pending"
-                          >
-                            <RotateCcw size={12} /> Revert
+                          <button className="order-action-btn order-action-revert" onClick={() => setActionTarget({ id: orderId, action: 'pending', name: order.orderId })}>
+                            <RotateCcw size={14} /> Kembalikan
                           </button>
                         )}
-                        {order.status === 'cancelled' && (
-                          <span style={{ fontSize: 11, color: '#EF4444', fontWeight: 500 }}>Dibatalkan</span>
-                        )}
-                        
-                        <button
-                          className="table-btn danger"
-                          onClick={() => setActionTarget({
-                            id: order.id || order.orderId,
-                            action: 'delete',
-                            name: order.orderId,
-                          })}
-                          title="Hapus Pesanan"
-                        >
-                          <Trash2 size={16} />
+                        {order.status === 'cancelled' && <span className="order-cancelled-label"><XCircle size={12} /> Pesanan dibatalkan</span>}
+                        <button className="order-action-btn order-action-delete" onClick={() => setActionTarget({ id: orderId, action: 'delete', name: order.orderId })}>
+                          <Trash2 size={14} /> Hapus
                         </button>
                       </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </>
       )}
 
+      {/* Pagination */}
       {filteredOrders.length > ITEMS_PER_PAGE && (
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '15px', marginTop: '20px' }}>
-          <button 
-            className="btn btn-ghost" 
-            disabled={currentPage === 1} 
-            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-            style={{ fontSize: 13, padding: '6px 12px' }}
-          >
-            Sebelumnya
-          </button>
-          <span style={{ fontSize: 13, color: '#666' }}>
-            Halaman {currentPage} dari {Math.ceil(filteredOrders.length / ITEMS_PER_PAGE)}
-          </span>
-          <button 
-            className="btn btn-ghost" 
-            disabled={currentPage === Math.ceil(filteredOrders.length / ITEMS_PER_PAGE)} 
-            onClick={() => setCurrentPage(p => Math.min(Math.ceil(filteredOrders.length / ITEMS_PER_PAGE), p + 1))}
-            style={{ fontSize: 13, padding: '6px 12px' }}
-          >
-            Selanjutnya
-          </button>
+        <div className="orders-pagination">
+          <button className="orders-page-btn" disabled={currentPage === 1} onClick={() => setCurrentPage(p => Math.max(1, p - 1))}>← Sebelumnya</button>
+          <div className="orders-page-info">
+            <span className="orders-page-current">{currentPage}</span>
+            <span className="orders-page-sep">/</span>
+            <span className="orders-page-total">{totalPages}</span>
+          </div>
+          <button className="orders-page-btn" disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}>Selanjutnya →</button>
         </div>
       )}
 
@@ -312,7 +411,7 @@ export default function OrdersPage() {
           <div className="modal modal-sm">
             <div className="modal-header">
               <h2 className="modal-title">
-                {actionTarget.action === 'completed' ? 'Selesaikan Pesanan' : 
+                {actionTarget.action === 'completed' ? 'Selesaikan Pesanan' :
                  actionTarget.action === 'cancelled' ? 'Batalkan Pesanan' :
                  actionTarget.action === 'pending' ? 'Kembalikan ke Pending' : 'Hapus Pesanan'}
               </h2>
@@ -321,35 +420,27 @@ export default function OrdersPage() {
             <div className="modal-body">
               {actionTarget.action === 'completed' ? (
                 <p className="modal-text">
-                  Anda yakin ingin menyelesaikan pesanan <strong>#{actionTarget.name}</strong>?
+                  Selesaikan pesanan <strong>#{actionTarget.name}</strong>?
                   <br /><br />
-                  <span style={{ fontSize: 12, color: '#666', display: 'flex', alignItems: 'center', gap: 6, background: '#f0fdf4', padding: '8px 12px', borderRadius: 6, border: '1px solid #bbf7d0' }}>
-                    ℹ️ Stok produk akan otomatis dikurangi sesuai jumlah pesanan.
-                  </span>
+                  <span className="modal-info-box modal-info-green">ℹ️ Stok produk akan otomatis dikurangi sesuai jumlah pesanan.</span>
                 </p>
               ) : actionTarget.action === 'cancelled' ? (
                 <p className="modal-text">
-                  Anda yakin ingin membatalkan pesanan <strong>#{actionTarget.name}</strong>?
+                  Batalkan pesanan <strong>#{actionTarget.name}</strong>?
                   <br /><br />
-                  <span style={{ fontSize: 12, color: '#666', display: 'flex', alignItems: 'center', gap: 6, background: '#fef2f2', padding: '8px 12px', borderRadius: 6, border: '1px solid #fecaca' }}>
-                    ⚠️ Pesanan yang dibatalkan tidak dapat dikembalikan.
-                  </span>
+                  <span className="modal-info-box modal-info-red">⚠️ Pesanan yang dibatalkan tidak dapat dikembalikan.</span>
                 </p>
               ) : actionTarget.action === 'pending' ? (
                 <p className="modal-text">
-                  Anda yakin ingin mengembalikan pesanan <strong>#{actionTarget.name}</strong> ke status Pending?
+                  Kembalikan pesanan <strong>#{actionTarget.name}</strong> ke status Pending?
                   <br /><br />
-                  <span style={{ fontSize: 12, color: '#666', display: 'flex', alignItems: 'center', gap: 6, background: '#f0f9ff', padding: '8px 12px', borderRadius: 6, border: '1px solid #bae6fd' }}>
-                    ℹ️ Stok akan dikembalikan dan catatan komisi (jika ada) akan dihapus.
-                  </span>
+                  <span className="modal-info-box modal-info-blue">ℹ️ Stok akan dikembalikan dan catatan komisi (jika ada) akan dihapus.</span>
                 </p>
               ) : (
                 <p className="modal-text">
-                  Yakin hapus pesanan <strong>#{actionTarget.name}</strong>?
+                  Hapus pesanan <strong>#{actionTarget.name}</strong>?
                   <br /><br />
-                  <span style={{ fontSize: 12, color: '#666', display: 'flex', alignItems: 'center', gap: 6, background: '#fef2f2', padding: '8px 12px', borderRadius: 6, border: '1px solid #fecaca' }}>
-                    ⚠️ Tindakan ini permanen dan akan menghapus semua data terkait pesanan ini.
-                  </span>
+                  <span className="modal-info-box modal-info-red">⚠️ Tindakan ini permanen dan akan menghapus semua data terkait pesanan ini.</span>
                 </p>
               )}
             </div>
@@ -358,16 +449,14 @@ export default function OrdersPage() {
               <button
                 className="btn btn-primary"
                 style={{
-                  fontSize: 11,
-                  padding: '8px 16px',
-                  background: actionTarget.action === 'completed' ? '#059669' : 
-                             actionTarget.action === 'pending' ? '#0369a1' : '#333',
+                  fontSize: 11, padding: '8px 16px',
+                  background: actionTarget.action === 'completed' ? '#059669' : actionTarget.action === 'pending' ? '#0369a1' : '#333',
                 }}
                 onClick={handleAction}
                 disabled={actionLoading}
               >
-                {actionLoading ? 'Memproses...' : 
-                 actionTarget.action === 'completed' ? '✓ Selesaikan' : 
+                {actionLoading ? 'Memproses...' :
+                 actionTarget.action === 'completed' ? '✓ Selesaikan' :
                  actionTarget.action === 'pending' ? '↺ Kembalikan' :
                  actionTarget.action === 'delete' ? '🗑️ Hapus' : '✕ Batalkan'}
               </button>
@@ -375,231 +464,6 @@ export default function OrdersPage() {
           </div>
         </div>
       )}
-
-      {/* Scoped Styles */}
-      <style jsx>{`
-        .orders-toolbar {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 16px;
-          margin-bottom: 20px;
-          flex-wrap: wrap;
-        }
-
-        .orders-tabs {
-          display: flex;
-          gap: 4px;
-          background: #f5f5f5;
-          padding: 4px;
-          border-radius: 8px;
-          border: 1px solid #eee;
-        }
-
-        .orders-tab {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          padding: 6px 14px;
-          font-size: 12px;
-          font-weight: 500;
-          color: #888;
-          background: none;
-          border: none;
-          border-radius: 6px;
-          cursor: pointer;
-          transition: all 0.15s ease;
-          white-space: nowrap;
-        }
-
-        .orders-tab:hover {
-          color: #1a1a1a;
-          background: #fff;
-        }
-
-        .orders-tab.active {
-          color: #1a1a1a;
-          background: #fff;
-          box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-          font-weight: 600;
-        }
-
-        .orders-tab-count {
-          font-size: 10px;
-          font-weight: 700;
-          padding: 1px 6px;
-          border-radius: 10px;
-          background: #eee;
-          color: #888;
-          line-height: 1.6;
-        }
-
-        .orders-tab.active .orders-tab-count {
-          background: #1a1a1a;
-          color: #fff;
-        }
-
-        .orders-search {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          padding: 8px 14px;
-          background: #fff;
-          border: 1px solid #eee;
-          border-radius: 8px;
-          min-width: 260px;
-          transition: border-color 0.2s;
-        }
-
-        .orders-search:focus-within {
-          border-color: #F59E0B;
-          box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
-        }
-
-        .orders-search svg {
-          color: #999;
-          flex-shrink: 0;
-        }
-
-        .orders-search input {
-          border: none;
-          outline: none;
-          font-size: 13px;
-          font-family: 'Inter', sans-serif;
-          color: #1a1a1a;
-          width: 100%;
-          background: transparent;
-        }
-
-        .orders-search input::placeholder {
-          color: #bbb;
-        }
-
-        .order-id-cell {
-          font-family: 'SF Mono', 'Fira Code', monospace;
-          font-size: 12px;
-          font-weight: 600;
-          color: #1a1a1a;
-          background: #f5f5f5;
-          padding: 3px 8px;
-          border-radius: 4px;
-          letter-spacing: 0.03em;
-        }
-
-        .order-items-cell {
-          display: flex;
-          flex-direction: column;
-          gap: 2px;
-        }
-
-        .order-item-line {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-        }
-
-        .order-item-name {
-          font-size: 13px;
-          font-weight: 500;
-          color: #1a1a1a;
-        }
-
-        .order-item-qty {
-          font-size: 11px;
-          color: #999;
-          font-weight: 500;
-        }
-
-        .order-voucher-badge {
-          display: inline-block;
-          font-size: 10px;
-          font-weight: 600;
-          letter-spacing: 0.05em;
-          text-transform: uppercase;
-          padding: 2px 8px;
-          border-radius: 4px;
-          background: #FEF3C7;
-          color: #92400E;
-          border: 1px solid #FDE68A;
-        }
-
-        :global(.order-badge-pending) {
-          background: #FEF3C7 !important;
-          color: #92400E !important;
-          border: 1px solid #FDE68A !important;
-        }
-
-        :global(.order-badge-completed) {
-          background: #ECFDF5 !important;
-          color: #059669 !important;
-          border: 1px solid #A7F3D0 !important;
-        }
-
-        :global(.order-badge-cancelled) {
-          background: #FEF2F2 !important;
-          color: #DC2626 !important;
-          border: 1px solid #FECACA !important;
-        }
-
-        .orders-action-btn {
-          display: inline-flex;
-          align-items: center;
-          gap: 4px;
-          padding: 5px 12px;
-          font-size: 11px;
-          font-weight: 600;
-          border-radius: 6px;
-          cursor: pointer;
-          transition: all 0.15s ease;
-          border: 1px solid;
-          white-space: nowrap;
-        }
-
-        .orders-action-complete {
-          background: #ECFDF5;
-          color: #059669;
-          border-color: #A7F3D0;
-        }
-
-        .orders-action-complete:hover {
-          background: #059669;
-          color: #fff;
-          border-color: #059669;
-        }
-
-        .orders-action-cancel {
-          background: #FEF2F2;
-          color: #EF4444;
-          border-color: #FECACA;
-          padding: 5px 8px;
-        }
-
-        .orders-action-cancel:hover {
-          background: #EF4444;
-          color: #fff;
-          border-color: #EF4444;
-        }
-
-        @media (max-width: 768px) {
-          .orders-toolbar {
-            flex-direction: column;
-            align-items: stretch;
-          }
-
-          .orders-tabs {
-            overflow-x: auto;
-          }
-
-          .orders-search {
-            min-width: 0;
-          }
-        }
-
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
     </>
   );
 }

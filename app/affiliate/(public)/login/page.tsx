@@ -12,7 +12,7 @@ export default function AffiliateLogin() {
   const router = useRouter();
   const [email, setEmail] = useState<string>('');
   const [accessCode, setAccessCode] = useState<string>('');
-  const [showCode, setShowCode] = useState<boolean>(false);
+  const [showCode, setShowCode] = useState<boolean>(false); // ✅ State untuk toggle eye
   const [error, setError] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
 
@@ -39,13 +39,12 @@ export default function AffiliateLogin() {
         }
         
         router.replace('/affiliate/dashboard');
-        // Do not set loading to false so the button stays "Memproses..." during navigation
       } else {
         setError('Gagal membuat sesi.');
         setLoading(false);
       }
     } catch (err: any) {
-      setError('Login gagal. Email atau kode akses salah.');
+      setError('Login gagal. Email atau password salah.');
       setLoading(false);
     }
   };
@@ -66,21 +65,25 @@ export default function AffiliateLogin() {
                 onChange={e => setEmail(e.target.value)} 
                 className="form-input" 
                 placeholder="affiliate@inzta.id" 
-                autoComplete="off" 
+                autoComplete="email" 
                 required 
               />
             </div>
             
             <div className="form-group" style={{ position: 'relative' }}>
-              <label className="form-label">Kode Akses</label>
+              <label className="form-label">Password</label> {/* ✅ Ganti label */}
               <input 
-                type={showCode ? 'text' : 'password'} 
+                type="text" // ✅ BIARIN TEXT AGAR CHROME TIDAK DETEKSI PASSWORD
                 value={accessCode} 
                 onChange={e => setAccessCode(e.target.value)} 
                 className="form-input" 
-                placeholder="Masukkan kode rahasia" 
+                placeholder="Masukkan password" // ✅ Ganti placeholder
                 autoComplete="off" 
-                style={{ paddingRight: '40px' }}
+                style={{ 
+                  paddingRight: '40px',
+                  // ✅ TRIK CSS: Jika showCode false (mata tertutup), ubah teks jadi titik. Jika true, tampilkan teks biasa.
+                  WebkitTextSecurity: !showCode ? 'disc' : 'none', 
+                } as React.CSSProperties} // ✅ Tambahan agar TypeScript tidak error
                 required 
               />
               
@@ -98,7 +101,7 @@ export default function AffiliateLogin() {
                   display: 'flex',
                   alignItems: 'center'
                 }}
-                aria-label="Lihat kode"
+                aria-label="Lihat password"
               >
                 {showCode ? <Eye size={18} /> : <EyeOff size={18} />}
               </button>

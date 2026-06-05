@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { CheckCircle, Clock, AlertTriangle } from 'lucide-react';
 import { formatPrice, formatDate } from '@/lib/utils';
 import { Commission } from '@/types';
@@ -14,11 +15,22 @@ export default function AffiliateDashboardClient({
   initialAffiliateName: string, 
   initialVoucherData: any 
 }) {
-  const [commissions] = useState<Commission[]>(initialCommissions);
-  const [affiliateName] = useState(initialAffiliateName);
-  const [voucherData] = useState<any>(initialVoucherData);
+  const router = useRouter();
+  
+  const commissions = initialCommissions;
+  const affiliateName = initialAffiliateName;
+  const voucherData = initialVoucherData;
+
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
+
+  useEffect(() => {
+    const onFocus = () => {
+      router.refresh();
+    };
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
+  }, [router]);
 
   const totalPending = commissions.filter(c => !c.isPaid).reduce((s, c) => s + c.commissionAmount, 0);
   const totalPaid = commissions.filter(c => c.isPaid).reduce((s, c) => s + c.commissionAmount, 0);
@@ -55,7 +67,6 @@ export default function AffiliateDashboardClient({
         </div>
       )}
 
-      {/* Summary Cards */}
       <div className="stats-cards" style={{ marginBottom: 24 }}>
         {[
           { n: formatPrice(totalAll), l: 'Total Komisi', c: '#1a1a1a' },
@@ -72,7 +83,6 @@ export default function AffiliateDashboardClient({
         ))}
       </div>
 
-      {/* Table */}
       <div className="admin-table-wrap">
         <table className="admin-table">
           <thead>
@@ -123,12 +133,13 @@ export default function AffiliateDashboardClient({
         </table>
       </div>
 
+      {/* ✅ BAGIAN PAGINATION YANG SUDAH DIPERBAIKI */}
       {commissions.length > ITEMS_PER_PAGE && (
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '15px', marginTop: '20px' }}>
           <button 
             className="btn btn-ghost" 
             disabled={currentPage === 1} 
-            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+            onClick={() => setCurrentPage((p: number) => Math.max(1, p - 1))}
             style={{ fontSize: 13, padding: '6px 12px' }}
           >
             Sebelumnya
@@ -139,7 +150,7 @@ export default function AffiliateDashboardClient({
           <button 
             className="btn btn-ghost" 
             disabled={currentPage === Math.ceil(commissions.length / ITEMS_PER_PAGE)} 
-            onClick={() => setCurrentPage(p => Math.min(Math.ceil(commissions.length / ITEMS_PER_PAGE), p + 1))}
+            onClick={() => setCurrentPage((p: number) => Math.min(Math.ceil(commissions.length / ITEMS_PER_PAGE), p + 1))}
             style={{ fontSize: 13, padding: '6px 12px' }}
           >
             Selanjutnya

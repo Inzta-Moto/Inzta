@@ -4,7 +4,8 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Grid, Box, FileText, Ticket, Users, DollarSign, Clipboard, ArrowLeft, X, Menu, LogOut } from 'lucide-react';
+// ✅ TAMBAHKAN Settings DI SINI
+import { Grid, Box, FileText, Ticket, Users, DollarSign, Clipboard, ArrowLeft, X, Menu, LogOut, Settings } from 'lucide-react';
 import { auth } from '@/lib/firebase';
 import { signOut } from 'firebase/auth';
 
@@ -16,6 +17,8 @@ const navLinks = [
   { href: '/admin/voucher', label: 'Voucher', icon: <Ticket size={18} /> },
   { href: '/admin/affiliate', label: 'Afiliasi', icon: <Users size={18} /> },
   { href: '/admin/commission', label: 'Komisi', icon: <DollarSign size={18} />, key: 'pendingCommissions' },
+  // ✅ TAMBAHKAN LINK PENGATURAN DI BAWAH INI
+  { href: '/admin/settings', label: 'Pengaturan', icon: <Settings size={18} /> },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
