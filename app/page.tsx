@@ -217,7 +217,7 @@ export default function HomePage() {
   const fallbackFeatures: Feature[] = [
     { icon: 'shield-check', title: 'Waterproof 100%', description: 'Material tahan air premium. Barang Anda aman dalam segala kondisi cuaca.', order: 1, isActive: true },
     { icon: 'feather', title: 'Ultra Ringan', description: 'Bobot minimal, kapasitas maksimal. Tidak menambah beban berkendara.', order: 2, isActive: true },
-    { icon: 'lock', title: 'Anti-Desain', description: 'Desain low-profile mengurangi risiko pencurian. Safety first approach.', order: 3, isActive: true },
+    { icon: 'lock', title: 'Pakai Lebih Tenang', description: 'Dirancang untuk perjalanan panjang dengan ketersediaan spare part yang mudah diganti saat diperlukan.', order: 3, isActive: true },
     { icon: 'wrench', title: 'Universal Fit', description: 'Kompatibel dengan semua jenis motor. Instalasi mudah tanpa modifikasi.', order: 4, isActive: true },
   ];
   const displayFeatures = features.length > 0 ? features : fallbackFeatures;
@@ -254,7 +254,9 @@ export default function HomePage() {
               </h1>
 
               <p className={`hero-desc ${showHeroContent ? 'hero-fade-up' : 'hero-hidden'}`}>
-                Tas motor premium yang didesain untuk rider modern. Proteksi maksimal, desain minimal, performa tanpa kompromi.
+                Engineered For The Ride. Designed For The Journey.<br></br> 
+                Menggabungkan ketangguhan, kapasitas, dan desain fungsional
+                untuk menemani setiap perjalanan, di segala kondisi.
               </p>
 
               <div className={`hero-actions ${showHeroContent ? 'hero-fade-up' : 'hero-hidden'}`} style={showHeroContent ? { animationDelay: '0.15s' } : undefined}>
@@ -395,10 +397,10 @@ export default function HomePage() {
 
             <div className="highlight-grid">
               {[
-                { num: '01', title: 'Waterproof 100%', desc: 'Material premium tahan air, menjamin barang Anda kering dalam cuaca ekstrem sekalipun.' },
-                { num: '02', title: 'Ergonomis & Ringan', desc: 'Desain aerodinamis mengurangi hambatan angin tanpa menambah beban pada motor Anda.' },
-                { num: '03', title: 'Safety Lock System', desc: 'Sistem penguncian ganda anti-maling memberikan rasa aman saat parkir di mana saja.' },
-                { num: '04', title: 'Universal Fit', desc: 'Kompatibel dengan 99% jenis motor, instalasi praktis tanpa modifikasi tambahan.' }
+                { num: '01', title: 'Waterproof 100% Guys', desc: 'Material premium tahan air, menjamin barang Anda kering dalam cuaca ekstrem sekalipun.' },
+                { num: '02', title: 'Ergonomis & Ringan Anjay', desc: 'Desain aerodinamis mengurangi hambatan angin tanpa menambah beban pada motor Anda.' },
+                { num: '03', title: 'Perjalanan Lebih Enjoy Bro', desc: 'Dirancang untuk perjalanan panjang dengan ketersediaan spare part yang mudah diganti saat diperlukan.' },
+                { num: '04', title: 'Cocok For Semua Motor Gan', desc: 'Instalasi praktis tanpa modifikasi tambahan.' }
               ].map((f, i) => (
                 <div 
                   key={i} 
