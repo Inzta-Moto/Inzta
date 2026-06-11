@@ -34,7 +34,13 @@ Terdapat dua kendala utama pada halaman detail produk terkait fitur membagikan p
    - **Keuntungan:** Gambar PNG ~884KB otomatis dikonversi oleh Cloudinary menjadi JPEG berukuran kecil (~83KB). 
    - Metadata kini menjadi sangat "bersih" tanpa URL query params (`?url=`), dan field `og:image:type` (seperti `image/jpeg`) ditambahkan secara eksplisit. Hal ini menjamin *crawler* WhatsApp merender *thumbnail*, judul, dan deskripsi produk dengan sempurna saat link di-paste.
 
+4. **Perubahan Perilaku "Salin Link" (Client-Side):**
+   Aksi tombol "Salin Link" di `DetailClient.tsx` telah diperbarui. Kini tidak hanya menyalin URL, melainkan menyusun dan menyalin teks lengkap (Nama Produk, Deskripsi Singkat, Harga, dan Link Referral). Hal ini mempermudah penyebaran konteks utuh ke media sosial.
+
+5. **Perubahan Perilaku "Bagikan Gambar" (Client-Side):**
+   Fungsi `handleShare` dirombak agar difokuskan semata-mata untuk membagikan file gambar via Web Share API (`navigator.share`). Parameter `text` dan logika *fallback* ke teks WhatsApp dihapus secara total. Pendekatan Web API ini kompatibel dan aman dijalankan pada *Share Sheet* bawaan sistem operasi modern, seperti iOS (iPhone) sejak versi iOS 13.4.
+
 ## File yang Terdampak
 - `app/api/proxy-image/[...path]/route.ts` - API Endpoint Proxy (Dipertahankan khusus untuk Client CORS bypass).
 - `app/produk/[slug]/page.tsx` *(Modifikasi SSR Meta)* - Proxy dihapus, diganti dengan manipulasi string parameter URL Cloudinary (`c_fill,w_800,h_800,f_jpg,q_auto`) untuk Open Graph & injeksi `og:image:type`.
-- `app/produk/[slug]/DetailClient.tsx` - Fungsi `handleShare()` tetap menggunakan Proxy URL untuk bypass CORS.
+- `app/produk/[slug]/DetailClient.tsx` - Fungsi `handleShare()` dirombak murni untuk berbagi gambar, dan tombol *Salin Link* diubah untuk menyalin keseluruhan format teks deskripsi produk ke *clipboard*.
