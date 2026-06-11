@@ -396,17 +396,16 @@ export default function DetailClient({ slug, initialProduct, initialRelated }: {
     const imageUrlRaw = images[activeImg] || product.imageUrl;
 
     try {
-      if (imageUrlRaw && navigator.canShare && navigator.canShare({ files: [new File([new Blob()], 'image.jpg', { type: 'image/jpeg' })] })) {
-        // Gunakan proxy endpoint untuk bypass CORS
-        // Pastikan url absolute
-        let absoluteImageUrlRaw = imageUrlRaw;
-        if (!imageUrlRaw.startsWith('http')) {
-          absoluteImageUrlRaw = window.location.origin + (imageUrlRaw.startsWith('/') ? '' : '/') + imageUrlRaw;
-        }
+      if (!imageUrlRaw) throw new Error('No image available');
 
-        const proxyUrl = `/api/proxy-image/preview.jpg?url=${encodeURIComponent(absoluteImageUrlRaw)}`;
+      let absoluteImageUrlRaw = imageUrlRaw;
+      if (!imageUrlRaw.startsWith('http')) {
+        absoluteImageUrlRaw = window.location.origin + (imageUrlRaw.startsWith('/') ? '' : '/') + imageUrlRaw;
+      }
+      const proxyUrl = `/api/proxy-image/preview.jpg?url=${encodeURIComponent(absoluteImageUrlRaw)}`;
+
+      if (navigator.canShare && navigator.canShare({ files: [new File([new Blob()], 'image.jpg', { type: 'image/jpeg' })] })) {
         const response = await fetch(proxyUrl);
-        
         if (!response.ok) throw new Error('Failed to fetch image via proxy');
         
         const blob = await response.blob();
@@ -417,7 +416,15 @@ export default function DetailClient({ slug, initialProduct, initialRelated }: {
           title: product.name,
         });
       } else {
-        throw new Error('Web Share API not supported or no image');
+        // Fallback jika browser/device tidak mendukung Share File (misal Desktop Chrome)
+        // Kita unduh gambar tersebut sebagai gantinya
+        const a = document.createElement('a');
+        a.href = proxyUrl;
+        a.download = `${product.slug || 'product'}-image.jpg`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        showToast('Gambar diunduh karena perangkat belum mendukung share gambar langsung.');
       }
     } catch (error: any) {
       if (error.name !== 'AbortError') {
