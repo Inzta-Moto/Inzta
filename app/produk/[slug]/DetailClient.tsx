@@ -413,14 +413,16 @@ export default function DetailClient({ slug, initialProduct, initialRelated }: {
         const file = new File([blob], 'product.jpg', { type: blob.type || 'image/jpeg' });
 
         await navigator.share({
-          files: [file]
+          files: [file],
+          title: product.name,
         });
       } else {
         throw new Error('Web Share API not supported or no image');
       }
     } catch (error: any) {
-      console.error('Error sharing image:', error);
-      showToast('Browser Anda tidak mendukung fitur berbagi gambar secara langsung.');
+      if (error.name !== 'AbortError') {
+        console.error('Error sharing image:', error);
+      }
     }
   };
 
