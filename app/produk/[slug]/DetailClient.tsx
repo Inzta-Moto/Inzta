@@ -394,17 +394,22 @@ export default function DetailClient({ slug, initialProduct, initialRelated }: {
   const handleShare = async () => {
     if (!product) return;
     const p = product;
-    const imageUrl = images[activeImg] || p.imageUrl;
+    const imageUrlRaw = images[activeImg] || p.imageUrl;
     const baseUrl = window.location.origin + window.location.pathname;
     const affiliateId = localStorage.getItem('inzta_affiliate');
     const shareUrl = affiliateId ? `${baseUrl}?aff=${affiliateId}` : baseUrl;
     const text = `*${p.name}*\n${p.description ? p.description.split('\n')[0] : ''}\n\nHarga: ${formatPrice(p.price)}\n\n${shareUrl}`;
 
     try {
-      if (imageUrl && navigator.canShare && navigator.canShare({ files: [new File([new Blob()], 'image.jpg', { type: 'image/jpeg' })] })) {
-        const response = await fetch(imageUrl);
+      if (imageUrlRaw && navigator.canShare && navigator.canShare({ files: [new File([new Blob()], 'image.jpg', { type: 'image/jpeg' })] })) {
+        // Gunakan proxy endpoint untuk bypass CORS
+        const proxyUrl = `/api/proxy-image?url=${encodeURIComponent(imageUrlRaw)}`;
+        const response = await fetch(proxyUrl);
+        
+        if (!response.ok) throw new Error('Failed to fetch image via proxy');
+        
         const blob = await response.blob();
-        const file = new File([blob], 'product.jpg', { type: blob.type });
+        const file = new File([blob], 'product.jpg', { type: blob.type || 'image/jpeg' });
 
         await navigator.share({
           files: [file],
@@ -412,9 +417,11 @@ export default function DetailClient({ slug, initialProduct, initialRelated }: {
           text: text,
         });
       } else {
-        throw new Error('Web Share API not supported');
+        throw new Error('Web Share API not supported or no image');
       }
     } catch (error) {
+      console.error('Error sharing image:', error);
+      // Fallback ke WhatsApp text saja jika gagal
       const waUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
       window.location.href = waUrl;
     }

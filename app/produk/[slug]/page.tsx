@@ -30,7 +30,17 @@ export async function generateMetadata({ params }: { params: { slug: string } })
     const images = data.images || [];
     const imageUrl = data.imageUrl || '';
     
-    const ogImage = images.length > 0 ? images[0] : (imageUrl || '/logo.png');
+    const ogImageRaw = images.length > 0 ? images[0] : (imageUrl || '/logo.png');
+    
+    // Gunakan proxy endpoint untuk og:image agar URL bersih dan bisa dibaca WhatsApp
+    let ogImage = ogImageRaw;
+    if (ogImageRaw.startsWith('http') && process.env.NEXT_PUBLIC_SITE_URL) {
+      ogImage = `${process.env.NEXT_PUBLIC_SITE_URL}/api/proxy-image?url=${encodeURIComponent(ogImageRaw)}`;
+    } else if (ogImageRaw.startsWith('http')) {
+       // fallback jika env belum diset, relatif url
+       ogImage = `/api/proxy-image?url=${encodeURIComponent(ogImageRaw)}`;
+    }
+    
     const ogDescription = description ? description.split('\n')[0] : 'Tas motor premium INZTA';
 
     return {
