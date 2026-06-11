@@ -403,7 +403,13 @@ export default function DetailClient({ slug, initialProduct, initialRelated }: {
     try {
       if (imageUrlRaw && navigator.canShare && navigator.canShare({ files: [new File([new Blob()], 'image.jpg', { type: 'image/jpeg' })] })) {
         // Gunakan proxy endpoint untuk bypass CORS
-        const proxyUrl = `/api/proxy-image?url=${encodeURIComponent(imageUrlRaw)}`;
+        // Pastikan url absolute
+        let absoluteImageUrlRaw = imageUrlRaw;
+        if (!imageUrlRaw.startsWith('http')) {
+          absoluteImageUrlRaw = window.location.origin + (imageUrlRaw.startsWith('/') ? '' : '/') + imageUrlRaw;
+        }
+
+        const proxyUrl = `/api/proxy-image/preview.jpg?url=${encodeURIComponent(absoluteImageUrlRaw)}`;
         const response = await fetch(proxyUrl);
         
         if (!response.ok) throw new Error('Failed to fetch image via proxy');

@@ -33,13 +33,17 @@ export async function generateMetadata({ params }: { params: { slug: string } })
     const ogImageRaw = images.length > 0 ? images[0] : (imageUrl || '/logo.png');
     
     // Gunakan proxy endpoint untuk og:image agar URL bersih dan bisa dibaca WhatsApp
+    // Gunakan struktur folder baru yg memiliki akhiran /preview.jpg
     let ogImage = ogImageRaw;
-    if (ogImageRaw.startsWith('http') && process.env.NEXT_PUBLIC_SITE_URL) {
-      ogImage = `${process.env.NEXT_PUBLIC_SITE_URL}/api/proxy-image?url=${encodeURIComponent(ogImageRaw)}`;
-    } else if (ogImageRaw.startsWith('http')) {
-       // fallback jika env belum diset, relatif url
-       ogImage = `/api/proxy-image?url=${encodeURIComponent(ogImageRaw)}`;
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://inzta.id';
+    
+    // Pastikan ini adalah absolute URL
+    let absoluteOgImageRaw = ogImageRaw;
+    if (!ogImageRaw.startsWith('http')) {
+      absoluteOgImageRaw = `${siteUrl}${ogImageRaw.startsWith('/') ? '' : '/'}${ogImageRaw}`;
     }
+
+    ogImage = `${siteUrl}/api/proxy-image/preview.jpg?url=${encodeURIComponent(absoluteOgImageRaw)}`;
     
     const ogDescription = description ? description.split('\n')[0] : 'Tas motor premium INZTA';
 
