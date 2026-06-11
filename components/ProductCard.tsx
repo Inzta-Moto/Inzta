@@ -60,7 +60,7 @@ export default function ProductCard({ product: p, showDetails }: ProductCardProp
       if (!res.ok) throw new Error(data.error || 'Gagal membuat pesanan');
 
       const waUrl = buildWaLink(p, data.orderId);
-      window.open(waUrl, '_blank', 'noopener,noreferrer');
+      window.location.href = waUrl;
     } catch (e: any) {
       console.error('[Order Error]', e);
       alert('Gagal membuat pesanan: ' + e.message);

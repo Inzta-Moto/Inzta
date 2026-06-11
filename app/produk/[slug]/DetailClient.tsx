@@ -244,7 +244,7 @@ export default function DetailClient({ slug, initialProduct, initialRelated }: {
     msg += `Total Bayar: ${formatPrice(fp)}\n\n`;
     msg += `Data Pemesan:\nNama: \nNo. HP: \nAlamat: \n\nTerima kasih!`;
 
-    return `https://api.whatsapp.com/send?phone=${WA_NUMBER}&text=${encodeURIComponent(msg)}`;
+    return `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(msg)}`;
   };
 
   // ── Create Order & Open WhatsApp ──
@@ -275,7 +275,7 @@ export default function DetailClient({ slug, initialProduct, initialRelated }: {
 
       const orderId = data.orderId;
       const waUrl = buildWaLink(orderId);
-      window.open(waUrl, '_blank', 'noopener,noreferrer');
+      window.location.href = waUrl;
     } catch (e: any) {
       console.error('[Order Error]', e);
       alert('Gagal membuat pesanan: ' + e.message);
@@ -415,8 +415,8 @@ export default function DetailClient({ slug, initialProduct, initialRelated }: {
         throw new Error('Web Share API not supported');
       }
     } catch (error) {
-      const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
-      window.open(waUrl, '_blank', 'noopener,noreferrer');
+      const waUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
+      window.location.href = waUrl;
     }
   };
 

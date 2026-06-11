@@ -130,7 +130,7 @@ export default function BlogDetailClient({ slug }: { slug: string }) {
               <span>Salin Link</span>
             </button>
             <a
-              href={`https://api.whatsapp.com/send?text=${encodeURIComponent(`*${a.title}*\n\n${a.content?.split('\n')[0] || ''}\n\nBaca selengkapnya: ${window.location.href}`)}`}
+              href={`https://wa.me/?text=${encodeURIComponent(`*${a.title}*\n\n${a.content?.split('\n')[0] || ''}\n\nBaca selengkapnya: ${window.location.href}`)}`}
               target="_blank"
               rel="noopener noreferrer"
               className="detail-share-btn detail-share-wa"

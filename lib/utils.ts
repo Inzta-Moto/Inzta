@@ -40,7 +40,7 @@ export function buildWaLink(product: Product, orderId?: string): string {
   msg += `Harga: ${formatPrice(product.price)}\n\n`;
   msg += `Data Pemesan:\nNama: \nNo. HP: \nAlamat: \n\nTerima kasih!`;
   
-  return `https://api.whatsapp.com/send?phone=${WA_NUMBER}&text=${encodeURIComponent(msg)}`;
+  return `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(msg)}`;
 }
 
 export function clearAffiliateSession() {
