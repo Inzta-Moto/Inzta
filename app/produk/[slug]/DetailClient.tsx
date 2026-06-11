@@ -416,19 +416,20 @@ export default function DetailClient({ slug, initialProduct, initialRelated }: {
           title: product.name,
         });
       } else {
-        // Fallback jika browser/device tidak mendukung Share File (misal Desktop Chrome)
-        // Kita unduh gambar tersebut sebagai gantinya
-        const a = document.createElement('a');
-        a.href = proxyUrl;
-        a.download = `${product.slug || 'product'}-image.jpg`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        showToast('Gambar diunduh karena perangkat belum mendukung share gambar langsung.');
+        throw new Error('Web Share API not supported or no image');
       }
     } catch (error: any) {
       if (error.name !== 'AbortError') {
         console.error('Error sharing image:', error);
+        
+        // Fallback kembali seperti versi awal jika perangkat/browser tidak mendukung
+        // Namun kali ini KITA HANYA MENGIRIM LINK SAJA agar WhatsApp memunculkan preview gambar (tanpa teks promosi)
+        const baseUrl = window.location.origin + window.location.pathname;
+        const affiliateId = localStorage.getItem('inzta_affiliate');
+        const shareUrl = affiliateId ? `${baseUrl}?aff=${affiliateId}` : baseUrl;
+        
+        const waUrl = `https://wa.me/?text=${encodeURIComponent(shareUrl)}`;
+        window.location.href = waUrl;
       }
     }
   };
