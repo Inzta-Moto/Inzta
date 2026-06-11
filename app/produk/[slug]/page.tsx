@@ -32,18 +32,26 @@ export async function generateMetadata({ params }: { params: { slug: string } })
     
     const ogImageRaw = images.length > 0 ? images[0] : (imageUrl || '/logo.png');
     
-    // Gunakan proxy endpoint untuk og:image agar URL bersih dan bisa dibaca WhatsApp
-    // Gunakan struktur folder baru yg memiliki akhiran /preview.jpg
     let ogImage = ogImageRaw;
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://inzta.id';
     
     // Pastikan ini adalah absolute URL
-    let absoluteOgImageRaw = ogImageRaw;
-    if (!ogImageRaw.startsWith('http')) {
-      absoluteOgImageRaw = `${siteUrl}${ogImageRaw.startsWith('/') ? '' : '/'}${ogImageRaw}`;
+    if (!ogImage.startsWith('http')) {
+      ogImage = `${siteUrl}${ogImage.startsWith('/') ? '' : '/'}${ogImage}`;
     }
 
-    ogImage = `${siteUrl}/api/proxy-image/preview.jpg?url=${encodeURIComponent(absoluteOgImageRaw)}`;
+    // Optimize image untuk WhatsApp
+    let imageType = 'image/jpeg';
+    if (ogImage.includes('res.cloudinary.com')) {
+      // Jika image dari Cloudinary, convert jadi JPEG 800x800 size kecil agar aman di WA
+      ogImage = ogImage.replace(
+        '/image/upload/',
+        '/image/upload/c_fill,w_800,h_800,f_jpg,q_auto/'
+      );
+    } else {
+      if (ogImage.endsWith('.png')) imageType = 'image/png';
+      else if (ogImage.endsWith('.webp')) imageType = 'image/webp';
+    }
     
     const ogDescription = description ? description.split('\n')[0] : 'Tas motor premium INZTA';
 
@@ -54,7 +62,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
         url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://inzta.id'}/produk/${slug}`,
         title: name,
         description: ogDescription,
-        images: [{ url: ogImage, width: 800, height: 800, alt: name }],
+        images: [{ url: ogImage, width: 800, height: 800, alt: name, type: imageType }],
         type: 'website',
         siteName: 'INZTA MOTO',
       },
