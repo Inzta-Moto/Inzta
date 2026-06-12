@@ -244,7 +244,7 @@ export default function DetailClient({ slug, initialProduct, initialRelated }: {
     msg += `Total Bayar: ${formatPrice(fp)}\n\n`;
     msg += `Data Pemesan:\nNama: \nNo. HP: \nAlamat: \n\nTerima kasih!`;
 
-    return `https://api.whatsapp.com/send?phone=${WA_NUMBER}&text=${encodeURIComponent(msg)}`;
+    return `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(msg)}`;
   };
 
   // ── Create Order & Open WhatsApp ──
@@ -275,7 +275,7 @@ export default function DetailClient({ slug, initialProduct, initialRelated }: {
 
       const orderId = data.orderId;
       const waUrl = buildWaLink(orderId);
-      window.open(waUrl, '_blank', 'noopener,noreferrer');
+      window.location.href = waUrl;
     } catch (e: any) {
       console.error('[Order Error]', e);
       alert('Gagal membuat pesanan: ' + e.message);
@@ -393,30 +393,44 @@ export default function DetailClient({ slug, initialProduct, initialRelated }: {
 
   const handleShare = async () => {
     if (!product) return;
-    const p = product;
-    const imageUrl = images[activeImg] || p.imageUrl;
-    const baseUrl = window.location.origin + window.location.pathname;
-    const affiliateId = localStorage.getItem('inzta_affiliate');
-    const shareUrl = affiliateId ? `${baseUrl}?aff=${affiliateId}` : baseUrl;
-    const text = `*${p.name}*\n${p.description ? p.description.split('\n')[0] : ''}\n\nHarga: ${formatPrice(p.price)}\n\n${shareUrl}`;
+    const imageUrlRaw = images[activeImg] || product.imageUrl;
 
     try {
-      if (imageUrl && navigator.canShare && navigator.canShare({ files: [new File([new Blob()], 'image.jpg', { type: 'image/jpeg' })] })) {
-        const response = await fetch(imageUrl);
+      if (!imageUrlRaw) throw new Error('No image available');
+
+      let absoluteImageUrlRaw = imageUrlRaw;
+      if (!imageUrlRaw.startsWith('http')) {
+        absoluteImageUrlRaw = window.location.origin + (imageUrlRaw.startsWith('/') ? '' : '/') + imageUrlRaw;
+      }
+      const proxyUrl = `/api/proxy-image/preview.jpg?url=${encodeURIComponent(absoluteImageUrlRaw)}`;
+
+      if (navigator.canShare && navigator.canShare({ files: [new File([new Blob()], 'image.jpg', { type: 'image/jpeg' })] })) {
+        const response = await fetch(proxyUrl);
+        if (!response.ok) throw new Error('Failed to fetch image via proxy');
+        
         const blob = await response.blob();
-        const file = new File([blob], 'product.jpg', { type: blob.type });
+        const file = new File([blob], 'product.jpg', { type: blob.type || 'image/jpeg' });
 
         await navigator.share({
           files: [file],
-          title: p.name,
-          text: text,
+          title: product.name,
         });
       } else {
-        throw new Error('Web Share API not supported');
+        throw new Error('Web Share API not supported or no image');
       }
-    } catch (error) {
-      const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
-      window.open(waUrl, '_blank', 'noopener,noreferrer');
+    } catch (error: any) {
+      if (error.name !== 'AbortError') {
+        console.error('Error sharing image:', error);
+        
+        // Fallback kembali seperti versi awal jika perangkat/browser tidak mendukung
+        // Namun kali ini KITA HANYA MENGIRIM LINK SAJA agar WhatsApp memunculkan preview gambar (tanpa teks promosi)
+        const baseUrl = window.location.origin + window.location.pathname;
+        const affiliateId = localStorage.getItem('inzta_affiliate');
+        const shareUrl = affiliateId ? `${baseUrl}?aff=${affiliateId}` : baseUrl;
+        
+        const waUrl = `https://wa.me/?text=${encodeURIComponent(shareUrl)}`;
+        window.location.href = waUrl;
+      }
     }
   };
 
@@ -700,10 +714,12 @@ export default function DetailClient({ slug, initialProduct, initialRelated }: {
               {/* ── Share Section ── */}
               <div className="detail-share">
                 <button className="detail-share-btn detail-share-copy" onClick={() => {
+                  if (!product) return;
                   const baseUrl = window.location.origin + window.location.pathname;
                   const affiliateId = localStorage.getItem('inzta_affiliate');
                   const shareUrl = affiliateId ? `${baseUrl}?aff=${affiliateId}` : baseUrl;
-                  navigator.clipboard.writeText(shareUrl);
+                  const text = `*${product.name}*\n${product.description ? product.description.split('\n')[0] : ''}\n\nHarga: ${formatPrice(product.price)}\n\n${shareUrl}`;
+                  navigator.clipboard.writeText(text);
                   const toast = document.getElementById('share-toast');
                   if (toast) { toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 2000); }
                 }}>
