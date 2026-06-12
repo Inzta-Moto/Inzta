@@ -94,7 +94,7 @@ export default function HomeClient({ initialProducts, initialFeatures }: { initi
   const fallbackFeatures: Feature[] = [
     { id: '1', icon: 'shield-check', title: 'Waterproof 100%', description: 'Material tahan air premium. Barang Anda aman dalam segala kondisi cuaca.', order: 1, isActive: true },
     { id: '2', icon: 'feather', title: 'Ultra Ringan', description: 'Bobot minimal, kapasitas maksimal. Tidak menambah beban berkendara.', order: 2, isActive: true },
-    { id: '3', icon: 'lock', title: 'Pakai Lebih Tenang', description: 'Part yang hilang atau rusak tidak perlu membuat produk menganggur. Spare part tersedia dan dapat diganti sesuai kebutuhan.', order: 3, isActive: true },
+    { id: '3', icon: 'lock', title: 'Pakai Lebih Tenang', description: 'Part yang hilang atau rusak tidak perlu membuat produk menganggur, Spare part tersedia dan dapat diganti sesuai kebutuhan.', order: 3, isActive: true },
     { id: '4', icon: 'wrench', title: 'Universal Fit', description: 'Kompatibel dengan semua jenis motor. Instalasi mudah tanpa modifikasi.', order: 4, isActive: true },
   ];
   const displayFeatures = features.length > 0 ? features : fallbackFeatures;
