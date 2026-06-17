@@ -75,7 +75,7 @@ ul, ol { list-style: none; }
   font-size: clamp(30px, 4vw, 48px); font-weight: 700;
   letter-spacing: -0.03em; line-height: 1.1; margin-bottom: 12px; color: var(--text-primary);
 }
-.section-desc { font-size: 16px; font-weight: 300; color: var(--text-tertiary); max-width: 480px; line-height: 1.6; }
+.section-desc { font-size: 16px; font-weight: 400; color: var(--text-tertiary); max-width: 480px; line-height: 1.6; }
 .section { padding: 48px 0; }
 @media (min-width: 768px) { .section { padding: 72px 0; } }
 .section-header { margin-bottom: 32px; }
