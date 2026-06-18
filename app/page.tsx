@@ -59,21 +59,26 @@ export default function HomePage() {
   const [flashSaleActive, setFlashSaleActive] = useState(false);
 
   useEffect(() => {
-    // Ambil data flash sale dari server
+    let timer: ReturnType<typeof setInterval> | null = null;
+
     fetch('/api/settings')
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
       .then(data => {
         if (data.isActive && data.endsAt) {
-          setFlashSaleActive(true);
           const endTime = new Date(data.endsAt).getTime();
+          if (isNaN(endTime) || endTime <= Date.now()) return;
 
-          const timer = setInterval(() => {
-            const now = new Date().getTime();
-            const distance = endTime - now;
+          setFlashSaleActive(true);
+
+          timer = setInterval(() => {
+            const distance = endTime - Date.now();
 
             if (distance < 0) {
-              clearInterval(timer);
-              setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 }); // ✅ TAMBAHKAN days: 0
+              clearInterval(timer!);
+              setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
               setFlashSaleActive(false);
               return;
             }
@@ -85,12 +90,18 @@ export default function HomePage() {
               seconds: Math.floor((distance % (1000 * 60)) / 1000),
             });
           }, 1000);
-
         } else {
-          setFlashSaleActive(false); // Sembunyikan jika admin mematikan
+          setFlashSaleActive(false);
         }
       })
-      .catch(() => setFlashSaleActive(false));
+      .catch(err => {
+        console.error('[FlashSale] fetch error:', err);
+        // Biarkan state default false, jangan ubah jika sudah aktif
+      });
+
+    return () => {
+      if (timer) clearInterval(timer);
+    };
   }, []);
 
   // KOMPONEN KECIL UNTUK KOTAK COUNTDOWN
