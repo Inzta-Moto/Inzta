@@ -1,5 +1,4 @@
-import { Product } from '@/types';
-import { WA_NUMBER } from '@/lib/firebase'; // Import dari firebase
+import { WA_NUMBER } from '@/lib/firebase';
 
 export function formatPrice(num: number): string {
   return 'Rp ' + num.toLocaleString('id-ID');
@@ -32,14 +31,41 @@ export function calcDiscount(original: number | undefined, current: number): num
   return Math.round(((original - current) / original) * 100);
 }
 
-export function buildWaLink(product: Product, orderId?: string): string {
-  let msg = `PESANAN PRODUK\n`;
-  if (orderId) msg += `Order ID: #${orderId}\n`;
-  msg += `\n`;
-  msg += `${product.name}\n`;
-  msg += `Harga: ${formatPrice(product.price)}\n\n`;
+export function buildWaLink(
+  orderId: string,
+  items: Array<{
+    productName: string;
+    selectedVariantLabel: string | null;
+    sku: string | null;
+    quantity: number;
+    price: number;
+    subtotal: number;
+  }>,
+  totals: {
+    totalPrice: number;
+    discountAmount: number;
+    voucherCode: string | null;
+    finalPrice: number;
+  },
+): string {
+  let msg = `PESANAN PRODUK\nOrder ID: #${orderId}\n\n`;
+
+  for (const item of items) {
+    msg += `${item.productName}`;
+    if (item.selectedVariantLabel) msg += ` — ${item.selectedVariantLabel}`;
+    if (item.sku) msg += ` (SKU: ${item.sku})`;
+    msg += `\n`;
+    msg += `Jumlah: ${item.quantity} × ${formatPrice(item.price)} = ${formatPrice(item.subtotal)}\n\n`;
+  }
+
+  if (totals.discountAmount > 0) {
+    msg += `Subtotal: ${formatPrice(totals.totalPrice)}\n`;
+    if (totals.voucherCode) msg += `Voucher: ${totals.voucherCode}\n`;
+    msg += `Diskon: -${formatPrice(totals.discountAmount)}\n`;
+  }
+  msg += `Total Bayar: ${formatPrice(totals.finalPrice)}\n\n`;
   msg += `Data Pemesan:\nNama: \nNo. HP: \nAlamat: \n\nTerima kasih!`;
-  
+
   return `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(msg)}`;
 }
 
@@ -92,4 +118,31 @@ export function copyToClipboard(text: string): Promise<void> {
       }
     }
   });
+}
+
+export function optimizeCloudinaryUrl(url: string, width?: number, height?: number, crop: string = 'fill', quality: string = 'auto'): string {
+  if (!url || !url.includes('res.cloudinary.com')) return url;
+  
+  const regex = /^(https?:\/\/res\.cloudinary\.com\/[^/]+\/image\/upload\/)(.*)$/;
+  const match = url.match(regex);
+  if (!match) return url;
+  
+  const base = match[1];
+  let rest = match[2];
+  
+  // Clean existing transforms
+  const parts = rest.split('/');
+  const newParts = parts.filter(part => !/^(q_|f_|w_|h_|c_)/.test(part));
+  
+  const transforms = [`f_auto`, `q_${quality}`];
+  if (width) transforms.push(`w_${width}`);
+  if (height) transforms.push(`h_${height}`);
+  if (crop) transforms.push(`c_${crop}`);
+  
+  return `${base}${transforms.join(',')}/${newParts.join('/')}`;
+}
+
+export function generateCloudinarySrcSet(url: string, widths: number[] = [400, 800, 1200]): string {
+  if (!url || !url.includes('res.cloudinary.com')) return '';
+  return widths.map(w => `${optimizeCloudinaryUrl(url, w)} ${w}w`).join(', ');
 }

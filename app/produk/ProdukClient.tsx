@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Header from '@/components/Header';
-import Footer from '@/components/Footer';
+import dynamic from 'next/dynamic';
+const Footer = dynamic(() => import('@/components/Footer'));
 import ProductCard from '@/components/ProductCard';
 import Link from 'next/link';
 import { Product } from '@/types';
@@ -41,7 +42,11 @@ export default function ProdukClient({ initialProducts }: { initialProducts: Pro
     } else if (activeTab === 'new') {
       result = result.filter(p => p.badge && p.badge.toLowerCase().includes('new'));
     } else if (activeTab === 'diskon') {
-      result = result.filter(p => p.originalPrice && p.originalPrice > p.price);
+      result = result.filter(p => {
+        const comp = (p as any).compareAtPrice ?? (p as any).originalPrice;
+        const price = (p as any).price;
+        return comp && price && comp > price;
+      });
     }
 
     if (searchQuery.trim() !== '') {

@@ -6,7 +6,7 @@ import { db } from '@/lib/firebase';
 import Link from 'next/link';
 import { Article } from '@/types';
 import { Calendar, ArrowRight } from 'lucide-react';
-import { formatDate } from '@/lib/utils';
+import { formatDate, optimizeCloudinaryUrl, generateCloudinarySrcSet } from '@/lib/utils';
 
 export default function BlogSection() {
   const [articles, setArticles] = useState<Article[]>([]);
@@ -48,7 +48,13 @@ export default function BlogSection() {
             return (
               <Link href={`/blog/${a.slug}`} key={a.slug} className="blog-card">
                 <div className="blog-card-image">
-                  <img src={articleImage} alt={a.title} />
+                  <img 
+                    src={optimizeCloudinaryUrl(articleImage, 600)}
+                    srcSet={generateCloudinarySrcSet(articleImage, [400, 600, 800])}
+                    sizes="(max-width: 768px) 100vw, 33vw"
+                    alt={a.title} 
+                    loading="lazy" 
+                  />
                 </div>
                 <div className="blog-card-body">
                   <div className="blog-card-meta"><Calendar size={12} /> {formatDate(a.createdAt)}</div>

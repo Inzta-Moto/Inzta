@@ -4,11 +4,13 @@ import { useState, useEffect } from 'react';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import Header from '@/components/Header';
-import Footer from '@/components/Footer';
+import dynamic from 'next/dynamic';
+
+const Footer = dynamic(() => import('@/components/Footer'));
 import Link from 'next/link';
 import { Article } from '@/types';
 import { ArrowLeft, Calendar } from 'lucide-react';
-import { formatDate } from '@/lib/utils';
+import { formatDate, optimizeCloudinaryUrl, generateCloudinarySrcSet } from '@/lib/utils';
 
 export default function BlogDetailClient({ slug }: { slug: string }) {
   const [article, setArticle] = useState<Article | null>(null);
@@ -92,7 +94,12 @@ export default function BlogDetailClient({ slug }: { slug: string }) {
               <div className="blog-detail-gallery">
                 {/* Gambar Utama (Selalu Full Width Besar) */}
                 <div className="blog-detail-image-main">
-                  <img src={images[0]} alt={`${a.title} - Cover`} />
+                  <img 
+                    src={optimizeCloudinaryUrl(images[0], 1200)}
+                    srcSet={generateCloudinarySrcSet(images[0], [600, 1000, 1400])}
+                    sizes="(max-width: 768px) 100vw, 800px"
+                    alt={`${a.title} - Cover`} 
+                  />
                 </div>
 
                 {/* Gambar Tambahan (Grid Kecil di bawah) */}
@@ -100,7 +107,13 @@ export default function BlogDetailClient({ slug }: { slug: string }) {
                   <div className="blog-detail-gallery-grid">
                     {images.slice(1).map((img: string, i: number) => (
                       <div key={i} className="blog-detail-image-thumb">
-                        <img src={img} alt={`${a.title} - ${i + 2}`} />
+                        <img 
+                          src={optimizeCloudinaryUrl(img, 400)} 
+                          srcSet={generateCloudinarySrcSet(img, [200, 400, 600])}
+                          sizes="(max-width: 768px) 50vw, 300px"
+                          alt={`${a.title} - ${i + 2}`} 
+                          loading="lazy"
+                        />
                       </div>
                     ))}
                   </div>

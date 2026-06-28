@@ -5,8 +5,6 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { User } from 'lucide-react';
 import { WA_NUMBER } from '@/lib/firebase';
-import { auth } from '@/lib/firebase';
-import { onAuthStateChanged } from 'firebase/auth';
 import { clearAffiliateSession } from '@/lib/utils';
 
 interface HeaderProps {
@@ -44,14 +42,21 @@ export default function Header({ active }: HeaderProps) {
       }
     }
     
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      if (currentUser) {
-        checkSession(currentUser);
-      } else {
-        setUser(null);
-      }
+    let unsubscribe: any;
+    Promise.all([
+      import('@/lib/firebase'),
+      import('firebase/auth')
+    ]).then(([{ auth }, { onAuthStateChanged }]) => {
+      unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+        if (currentUser) {
+          checkSession(currentUser);
+        } else {
+          setUser(null);
+        }
+      });
     });
-    return () => unsubscribe();
+    
+    return () => { if (unsubscribe) unsubscribe(); };
   }, []);
 
   useEffect(() => {
@@ -71,7 +76,7 @@ export default function Header({ active }: HeaderProps) {
                 alt="INZTA Logo" 
                 width={24} 
                 height={24} 
-                className="header-logo-img" 
+                style={{ width: 'auto', height: '1.2em' }}
               />
               INZTA
             </Link>

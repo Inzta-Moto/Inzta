@@ -3,15 +3,17 @@
 import { useState, useEffect } from 'react';
 import { ArrowRight, ShieldCheck, Feather, Lock, Wrench, LucideIcon, ChevronLeft, ChevronRight } from 'lucide-react';
 import Header from '@/components/Header';
-import Footer from '@/components/Footer';
 import ProductCard from '@/components/ProductCard';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { Product, Feature } from '@/types';
+import { optimizeCloudinaryUrl, generateCloudinarySrcSet } from '@/lib/utils';
 
-import Gallery from '@/components/Gallery';
-import Testimonials from '@/components/Testimonials';
-import BlogSection from '@/components/BlogSection';
-import FAQ from '@/components/FAQ';
+const Gallery = dynamic(() => import('@/components/Gallery'));
+const Testimonials = dynamic(() => import('@/components/Testimonials'));
+const BlogSection = dynamic(() => import('@/components/BlogSection'));
+const FAQ = dynamic(() => import('@/components/FAQ'));
+const Footer = dynamic(() => import('@/components/Footer'));
 
 const heroImages = [
   'https://i.ytimg.com/vi/hrJnT58v8Ss/hq720.jpg?sqp=-oaymwE7CK4FEIIDSFryq4qpAy0IARUAAAAAGAElAADIQj0AgKJD8AEB-AH-CYAC0AWKAgwIABABGFQgXihlMA8=&rs=AOn4CLBjwCeRL8haREKtJ3qI5BUFZG6LcQ',
@@ -108,7 +110,13 @@ export default function HomeClient({ initialProducts, initialFeatures }: { initi
         <div className="hero-carousel">
           {heroImages.map((img, i) => (
             <div key={i} className={`hero-carousel-item ${i === currentSlide ? 'active' : ''}`}>
-              <img src={img} alt={`Motorcycle ${i + 1}`} />
+              <img 
+                src={optimizeCloudinaryUrl(img, 1920)}
+                srcSet={generateCloudinarySrcSet(img, [800, 1200, 1920])}
+                sizes="100vw"
+                alt={`Motorcycle ${i + 1}`} 
+                loading={i === 0 ? "eager" : "lazy"}
+              />
             </div>
           ))}
         </div>

@@ -1,6 +1,13 @@
 import { Metadata } from 'next';
+import { cache } from 'react';
 import DetailClient from './DetailClient';
 import { getAdminDb } from '@/lib/firebaseAdmin';
+
+const getCachedProduct = cache(async (slug: string) => {
+  const doc = await getAdminDb().collection('products').doc(slug).get();
+  if (!doc.exists) return null;
+  return doc.data();
+});
 
 export const dynamic = 'force-dynamic';
 
@@ -19,12 +26,11 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   };
 
   try {
-    const doc = await getAdminDb().collection('products').doc(slug).get();
-    if (!doc.exists) {
+    const data = await getCachedProduct(slug) as any;
+    if (!data) {
       return defaultMeta;
     }
 
-    const data = doc.data() as any;
     const name = data.name || 'Produk';
     const description = data.description || '';
     const images = data.images || [];
@@ -88,34 +94,38 @@ export default async function DetailPage({ params }: { params: { slug: string } 
   try {
     const db = getAdminDb();
     
-    // Ambil data produk utama
-    const doc = await db.collection('products').doc(params.slug).get();
-    if (doc.exists) {
-      const data = doc.data() as any;
+    // Ambil data produk utama dan related secara paralel
+    const [data, relSnapshot] = await Promise.all([
+      getCachedProduct(params.slug),
+      db.collection('products').where('isActive', '==', true).limit(5).get()
+    ]);
+    
+    if (data) {
+      const dataObj = data as any;
       
       // Serialize produk agar aman di-pass ke Client Component
       product = {
-        ...data,
+        ...dataObj,
         slug: params.slug,
-        createdAt: data.createdAt ? (data.createdAt.toMillis ? data.createdAt.toMillis() : data.createdAt) : null,
-        updatedAt: data.updatedAt ? (data.updatedAt.toMillis ? data.updatedAt.toMillis() : data.updatedAt) : null,
+        createdAt: dataObj.createdAt ? (dataObj.createdAt.toMillis ? dataObj.createdAt.toMillis() : dataObj.createdAt) : null,
+        updatedAt: dataObj.updatedAt ? (dataObj.updatedAt.toMillis ? dataObj.updatedAt.toMillis() : dataObj.updatedAt) : null,
       };
 
-      const imageUrl = (data.images && data.images.length > 0) ? data.images[0] : (data.imageUrl || '/logo.png');
+      const imageUrl = (dataObj.images && dataObj.images.length > 0) ? dataObj.images[0] : (dataObj.imageUrl || '/logo.png');
       
       jsonLd = {
         '@context': 'https://schema.org',
         '@type': 'Product',
-        name: data.name || 'Produk INZTA',
+        name: dataObj.name || 'Produk INZTA',
         image: imageUrl.startsWith('http') ? imageUrl : `${baseUrl}${imageUrl}`,
-        description: data.description || 'Tas motor premium INZTA',
-        sku: data.slug || params.slug,
+        description: dataObj.description || 'Tas motor premium INZTA',
+        sku: dataObj.slug || params.slug,
         offers: {
           '@type': 'Offer',
           url: `${baseUrl}/produk/${params.slug}`,
           priceCurrency: 'IDR',
-          price: data.price || 0,
-          availability: data.stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+          price: dataObj.price || 0,
+          availability: dataObj.stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
           itemCondition: 'https://schema.org/NewCondition',
         },
         brand: {
@@ -123,12 +133,6 @@ export default async function DetailPage({ params }: { params: { slug: string } 
           name: 'INZTA Moto'
         }
       };
-
-      // Ambil data related products
-      const relSnapshot = await db.collection('products')
-        .where('isActive', '==', true)
-        .limit(5)
-        .get();
         
       related = relSnapshot.docs
         .map(d => {
