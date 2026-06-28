@@ -183,7 +183,7 @@ export default function CommissionPage() {
                       // Jika ada data items (data baru)
                       c.items.map((item, i) => (
                         <div key={i} style={{ lineHeight: '1.2' }}>
-                          <div style={{ fontWeight: 600, color: '#1a1a1a', marginBottom: '2px' }}>{item.name}</div>
+                          <div style={{ fontWeight: 600, color: '#1a1a1a', marginBottom: '2px' }}>{item.productName ?? (item as any).name}</div>
                           <div style={{ fontSize: '10px', color: '#888' }}>Jumlah: {item.quantity} pcs</div>
                         </div>
                       ))

@@ -105,7 +105,10 @@ export default function AffiliateDashboardClient({
                     {c.items && c.items.length > 0 ? (
                       c.items.map((item, i) => (
                         <div key={i} style={{ lineHeight: '1.2' }}>
-                          <div style={{ fontWeight: 600, color: '#1a1a1a', marginBottom: '2px' }}>{item.name}</div>
+                          <div style={{ fontWeight: 600, color: '#1a1a1a', marginBottom: '2px' }}>{item.productName ?? (item as any).name}</div>
+                          {item.selectedVariantLabel && (
+                            <div style={{ fontSize: '10px', color: '#666', marginBottom: '2px' }}>{item.selectedVariantLabel}</div>
+                          )}
                           <div style={{ fontSize: '10px', color: '#888' }}>Jumlah: {item.quantity} pcs</div>
                         </div>
                       ))

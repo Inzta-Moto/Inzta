@@ -5,16 +5,18 @@ import { collection, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { ArrowRight, ShieldCheck, Feather, Lock, Wrench, LucideIcon, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react';
 import Header from '@/components/Header';
-import Footer from '@/components/Footer';
 import ProductCard from '@/components/ProductCard';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { Product, Feature } from '@/types';
+import { optimizeCloudinaryUrl, generateCloudinarySrcSet } from '@/lib/utils';
 
 
-import Gallery from '@/components/Gallery';
-import Testimonials from '@/components/Testimonials';
-import BlogSection from '@/components/BlogSection';
-import FAQ from '@/components/FAQ';
+const Gallery = dynamic(() => import('@/components/Gallery'));
+const Testimonials = dynamic(() => import('@/components/Testimonials'));
+const BlogSection = dynamic(() => import('@/components/BlogSection'));
+const FAQ = dynamic(() => import('@/components/FAQ'));
+const Footer = dynamic(() => import('@/components/Footer'));
 
 const heroImages = [
   'https://res.cloudinary.com/dukddlp0b/image/upload/q_auto/f_auto/v1780326022/99_u0fbp7.jpg',
@@ -32,12 +34,12 @@ export default function HomePage() {
 
 
   const typeLines = ['PRIDE WITH', 'INZTAMOTO.'];
-  const [displayedLines, setDisplayedLines] = useState(['', '']);
-  const [typeLine, setTypeLine] = useState(0);
+  const [displayedLines, setDisplayedLines] = useState(['PRIDE WITH', 'INZTAMOTO.']);
+  const [typeLine, setTypeLine] = useState(2);
   const [typeChar, setTypeChar] = useState(0);
-  const [typePhase, setTypePhase] = useState<'typing' | 'pausing' | 'erasing'>('typing');
-  const [showHeroContent, setShowHeroContent] = useState(false);
-  const [firstPassDone, setFirstPassDone] = useState(false);
+  const [typePhase, setTypePhase] = useState<'typing' | 'pausing' | 'erasing'>('pausing');
+  const [showHeroContent, setShowHeroContent] = useState(true);
+  const [firstPassDone, setFirstPassDone] = useState(true);
 
 
     // REF UNTUK CAROUSEL (Agar panah bisa menggeser card)
@@ -200,7 +202,7 @@ export default function HomePage() {
         .sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0))
         .slice(0, 10);
       setProducts(items);
-    } catch (e) { console.error('[Featured]', e); }
+    } catch (e) { /* Silently use fallback if permission denied */ }
   }
 
   async function loadFeatures() {
@@ -210,7 +212,7 @@ export default function HomePage() {
         .filter(f => f.isActive === true)
         .sort((a, b) => (a.order || 0) - (b.order || 0));
       if (items.length > 0) setFeatures(items);
-    } catch (e) { console.warn('[Features]', e); }
+    } catch (e) { /* Silently use fallback if permission denied */ }
   }
 
   const iconMap: Record<string, LucideIcon> = { 'shield-check': ShieldCheck, feather: Feather, lock: Lock, wrench: Wrench };
@@ -231,7 +233,13 @@ export default function HomePage() {
         <div className="hero-carousel">
           {heroImages.map((img, i) => (
             <div key={i} className={`hero-carousel-item ${i === currentSlide ? 'active' : ''}`}>
-              <img src={img} alt={`Motorcycle ${i + 1}`} />
+              <img 
+                src={optimizeCloudinaryUrl(img, 1920)} 
+                srcSet={generateCloudinarySrcSet(img, [600, 800, 1200, 1920])}
+                sizes="100vw"
+                alt={`Motorcycle ${i + 1}`} 
+                {...(i === 0 ? { fetchPriority: 'high' } : { loading: 'lazy' })}
+              />
             </div>
           ))}
         </div>
@@ -289,7 +297,7 @@ export default function HomePage() {
                 <div 
                   className="feature-card" 
                   key={i}
-                  style={{ backgroundImage: `url(${featureImages[i] || featureImages[0]})` }}
+                  style={{ backgroundImage: `url(${optimizeCloudinaryUrl(featureImages[i] || featureImages[0], 600)})` }}
                 >
                   <div className="feature-card-overlay"></div>
                   <div className="feature-card-content">
@@ -408,7 +416,7 @@ export default function HomePage() {
                   <div className="highlight-item-header">
                     <div className="highlight-item-left">
                       <span className="highlight-item-num">{f.num}</span>
-                      <h4 className="highlight-item-title">{f.title}</h4>
+                      <h3 className="highlight-item-title">{f.title}</h3>
                     </div>
                     <ChevronDown size={18} className="highlight-item-chevron" />
                   </div>

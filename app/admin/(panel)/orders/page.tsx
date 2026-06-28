@@ -43,7 +43,7 @@ export default function OrdersPage() {
       const q = search.trim().toUpperCase();
       result = result.filter(o =>
         o.orderId?.toUpperCase().includes(q) ||
-        o.items?.some(item => item.name.toUpperCase().includes(q))
+        o.items?.some(item => (item.productName ?? (item as any).name ?? '').toUpperCase().includes(q))
       );
     }
     return result;
@@ -290,7 +290,10 @@ export default function OrdersPage() {
                         <div className="order-items-cell">
                           {order.items?.map((item, i) => (
                             <div key={i} className="order-item-line">
-                              <span className="order-item-name">{item.name}</span>
+                              <span className="order-item-name">{item.productName ?? (item as any).name}</span>
+                              {item.selectedVariantLabel && (
+                                <span className="order-item-variant" style={{ fontSize: 11, color: '#6B7280', marginLeft: 4, display: 'block' }}>{item.selectedVariantLabel}</span>
+                              )}
                               <span className="order-item-qty">×{item.quantity} ({formatPrice(item.price)})</span>
                             </div>
                           )) || <span style={{ color: '#999' }}>-</span>}
@@ -344,7 +347,10 @@ export default function OrdersPage() {
                         <div className="order-accordion-items">
                           {order.items?.map((item, i) => (
                             <div key={i} className="order-accordion-item">
-                              <span className="order-accordion-item-name">{item.name}</span>
+                              <span className="order-accordion-item-name">{item.productName ?? (item as any).name}</span>
+                              {item.selectedVariantLabel && (
+                                <span className="order-accordion-item-variant" style={{ fontSize: 11, color: '#6B7280', display: 'block' }}>{item.selectedVariantLabel}</span>
+                              )}
                               <span className="order-accordion-item-meta">×{item.quantity} · {formatPrice(item.price)}</span>
                             </div>
                           )) || <span className="order-na">-</span>}

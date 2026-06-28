@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import '@/app/admin/admin.css';
 // ✅ TAMBAHKAN Settings DI SINI
 import { Grid, Box, FileText, Ticket, Users, DollarSign, Clipboard, ArrowLeft, X, Menu, LogOut, Settings } from 'lucide-react';
 import { auth } from '@/lib/firebase';

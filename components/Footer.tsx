@@ -41,10 +41,10 @@ export default function Footer() {
           {/* Kolom 3: Informasi */}
           <div className="footer-col">
             <div className="footer-col-title">Informasi</div>
-            <a href="#">Tentang Kami</a>
-            <a href="#">Cara Pemesanan</a>
-            <a href="#">Pengiriman</a>
-            <a href="#">FAQ</a>
+            <Link href="/">Tentang Kami</Link>
+            <Link href="/">Cara Pemesanan</Link>
+            <Link href="/">Pengiriman</Link>
+            <Link href="/">FAQ</Link>
           </div>
 
           {/* Kolom 4: Kontak */}
@@ -62,8 +62,8 @@ export default function Footer() {
         <div className="footer-bottom">
           <span className="footer-copy">&copy; {new Date().getFullYear()} INZTA. All rights reserved.</span>
           <div className="footer-bottom-links">
-            <a href="#">Privacy Policy</a>
-            <a href="#">Terms of Service</a>
+            <Link href="/">Privacy Policy</Link>
+            <Link href="/">Terms of Service</Link>
           </div>
         </div>
       </div>

@@ -34,7 +34,7 @@ export default function AffiliateTracker() {
   return (
     <div className="affiliate-loading-overlay">
       <div className="affiliate-loading-content">
-        <h1 className="affiliate-loading-text">Berkendaralah yang jauh</h1>
+        <p className="affiliate-loading-text">Berkendaralah yang jauh</p>
         <div className="affiliate-loading-bar">
           <div className="affiliate-loading-progress"></div>
         </div>

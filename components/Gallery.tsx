@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Camera, X } from 'lucide-react';
+import { optimizeCloudinaryUrl, generateCloudinarySrcSet } from '@/lib/utils';
 
 const galleryImages = [
   { src: 'https://res.cloudinary.com/dukddlp0b/image/upload/q_auto/f_auto/v1780326022/99_u0fbp7.jpg', alt: 'Pap Touring With BUBUB' },
@@ -26,7 +27,13 @@ export default function Gallery() {
         <div className="gallery-grid">
           {galleryImages.map((img, i) => (
             <div key={i} className="gallery-item" onClick={() => setSelected(img)}>
-              <img src={img.src} alt={img.alt} loading="lazy" />
+              <img 
+                src={optimizeCloudinaryUrl(img.src, 600)} 
+                srcSet={generateCloudinarySrcSet(img.src, [400, 600, 800])}
+                sizes="(max-width: 768px) 50vw, 33vw"
+                alt={img.alt} 
+                loading="lazy" 
+              />
               <div className="gallery-overlay"><Camera size={24} /></div>
             </div>
           ))}
@@ -36,7 +43,13 @@ export default function Gallery() {
       {selected && (
         <div className="gallery-lightbox" onClick={() => setSelected(null)}>
           <button className="lightbox-close" onClick={() => setSelected(null)}><X size={24} /></button>
-          <img src={selected.src} alt={selected.alt} onClick={(e) => e.stopPropagation()} />
+          <img 
+            src={optimizeCloudinaryUrl(selected.src, 1920)} 
+            srcSet={generateCloudinarySrcSet(selected.src, [800, 1200, 1920])}
+            sizes="100vw"
+            alt={selected.alt} 
+            onClick={(e) => e.stopPropagation()} 
+          />
         </div>
       )}
     </section>
