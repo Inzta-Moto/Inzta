@@ -478,7 +478,13 @@ export default function DetailClient({ slug, initialProduct, initialRelated }: {
               {/* Price box */}
               <div className="detail-price-box">
                 <div className="detail-price-label">Harga</div>
-                {resolvedCompareAtPrice && resolvedCompareAtPrice > resolvedPrice && (
+                {/*
+                  Sama seperti ProductCard.tsx: gunakan `> 0` (bukan truthy check)
+                  untuk hindari React merender literal "0" saat resolvedCompareAtPrice
+                  bernilai 0 (kasus produk legacy dengan `originalPrice = 0`).
+                  Ekspresi `0 && ...` short-circuit ke `0` → React render sebagai teks.
+                */}
+                {resolvedCompareAtPrice > 0 && resolvedCompareAtPrice > resolvedPrice && (
                   <div className="detail-price-original">{formatPrice(resolvedCompareAtPrice)}</div>
                 )}
                 <div className="detail-price-row">

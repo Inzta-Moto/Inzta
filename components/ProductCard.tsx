@@ -97,7 +97,15 @@ export default function ProductCard({ product: p, showDetails }: ProductCardProp
   const priceDisplay = () => {
     return (
       <>
-        {effectiveCompareAtPrice && effectiveCompareAtPrice > effectivePrice && (
+        {/*
+          PENTING: gunakan `> 0` bukan sekadar truthy check. Untuk produk legacy
+          dengan `originalPrice = 0`, `effectiveCompareAtPrice` bernilai 0 (number).
+          Ekspresi `0 && ... && JSX` short-circuit ke `0` (bukan false), dan React
+          merender angka `0` sebagai teks literal "0" di DOM — bikin angka nyasar
+          tepat di atas harga. Bandingkan ke `false`/`null`/`undefined` yg di-skip
+          React. Lihat produk "Costum image prodak" sebelum fix.
+        */}
+        {effectiveCompareAtPrice > 0 && effectiveCompareAtPrice > effectivePrice && (
           <div className="product-price-original">{formatPrice(effectiveCompareAtPrice)}</div>
         )}
         <div className="product-price-current">
