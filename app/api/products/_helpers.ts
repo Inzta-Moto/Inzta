@@ -1,5 +1,10 @@
 import { computePriceRange, computeTotalStock } from '@/lib/product-utils';
 
+// Re-export shared normalization helper so existing API route imports keep
+// working. Canonical source lives in `lib/product-utils.ts` karena juga dipakai
+// di server pages (lihat app/produk/[slug]/page.tsx & app/produk/page.tsx).
+export { normalizeProduct } from '@/lib/product-utils';
+
 export type ValidationError = { code: string; message: string };
 
 // ── Validation ─────────────────────────────────────────────────────────────────
@@ -126,14 +131,6 @@ export function buildVariablePayload(data: any) {
 }
 
 // ── Read Normalization ─────────────────────────────────────────────────────────
-
-// Menangani existing Firestore docs yang belum punya productType / pakai originalPrice
-export function normalizeProduct(id: string, data: Record<string, any>) {
-  return {
-    id,
-    ...data,
-    productType: data.productType ?? 'simple',
-    compareAtPrice: data.compareAtPrice ?? data.originalPrice ?? null,
-    images: data.images?.length ? data.images : data.imageUrl ? [data.imageUrl] : [],
-  };
-}
+// `normalizeProduct` dipindah ke `lib/product-utils.ts` dan di-re-export di atas
+// supaya Server Pages & API route pakai helper yang sama. Lihat komen di
+// `lib/product-utils.ts` untuk konteks kenapa normalisasi wajib di setiap baca.

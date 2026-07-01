@@ -159,3 +159,22 @@ export function normalizeOrderItem(raw: Record<string, unknown>): OrderItem {
 export function primaryImage(images: string[]): string | null {
   return images[0] ?? null;
 }
+
+// ── Read Normalization (shared antara API routes & Server Pages) ───────────────
+
+// Firestore docs lama belum punya `productType` (legacy simple products) dan
+// menggunakan `originalPrice` (bukan `compareAtPrice`). Fungsi ini dipakai di
+// SEMUA titik baca — API route, server-rendered pages, dan listing — supaya
+// bentuk data konsisten dan TypeScript discriminated union (SimpleProduct vs
+// VariableProduct) tidak rusak. Tanpa normalisasi, `productType` undefined
+// akan bikin downstream check `product.productType === 'simple'` gagal →
+// harga/stok produk legacy tampil 0.
+export function normalizeProduct(id: string, data: Record<string, any>) {
+  return {
+    id,
+    ...data,
+    productType: data.productType ?? 'simple',
+    compareAtPrice: data.compareAtPrice ?? data.originalPrice ?? null,
+    images: data.images?.length ? data.images : data.imageUrl ? [data.imageUrl] : [],
+  };
+}

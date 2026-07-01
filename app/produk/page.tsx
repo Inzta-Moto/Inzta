@@ -1,6 +1,7 @@
 import { getAdminDb } from '@/lib/firebaseAdmin';
 import ProdukClient from './ProdukClient';
 import { Product } from '@/types';
+import { normalizeProduct } from '@/lib/product-utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,8 +19,11 @@ export default async function ProdukPage() {
     products = productsSnapshot.docs
       .map(d => {
         const data = d.data();
+        // Normalisasi legacy docs (productType undefined → 'simple', dll) supaya
+        // ProductCard di listing menampilkan harga & stok yang benar.
+        const normalized = normalizeProduct(d.id, data) as any;
         return {
-          ...data,
+          ...normalized,
           slug: d.id,
           createdAt: data.createdAt ? (data.createdAt.toMillis ? data.createdAt.toMillis() : data.createdAt) : null,
           updatedAt: data.updatedAt ? (data.updatedAt.toMillis ? data.updatedAt.toMillis() : data.updatedAt) : null,

@@ -2,6 +2,7 @@ import { Metadata } from 'next';
 import { cache } from 'react';
 import DetailClient from './DetailClient';
 import { getAdminDb } from '@/lib/firebaseAdmin';
+import { normalizeProduct } from '@/lib/product-utils';
 
 const getCachedProduct = cache(async (slug: string) => {
   const doc = await getAdminDb().collection('products').doc(slug).get();
@@ -102,10 +103,17 @@ export default async function DetailPage({ params }: { params: { slug: string } 
     
     if (data) {
       const dataObj = data as any;
-      
+
+      // Normalisasi data Firestore dulu (set productType='simple' untuk legacy
+      // docs, alias compareAtPrice dari originalPrice, dll.) BARU serialize.
+      // Tanpa normalisasi, legacy products tanpa field `productType` akan bikin
+      // downstream `product.productType === 'simple'` di DetailClient gagal →
+      // harga & stok tampil 0.
+      const normalized = normalizeProduct(params.slug, dataObj) as any;
+
       // Serialize produk agar aman di-pass ke Client Component
       product = {
-        ...dataObj,
+        ...normalized,
         slug: params.slug,
         createdAt: dataObj.createdAt ? (dataObj.createdAt.toMillis ? dataObj.createdAt.toMillis() : dataObj.createdAt) : null,
         updatedAt: dataObj.updatedAt ? (dataObj.updatedAt.toMillis ? dataObj.updatedAt.toMillis() : dataObj.updatedAt) : null,
@@ -137,8 +145,11 @@ export default async function DetailPage({ params }: { params: { slug: string } 
       related = relSnapshot.docs
         .map(d => {
           const dData = d.data();
+          // Normalisasi juga untuk related products — agar ProductCard konsisten
+          // dengan harga yang benar (sebelumnya harga di kartu juga 0 untuk legacy).
+          const normalizedRel = normalizeProduct(d.id, dData) as any;
           return {
-            ...dData,
+            ...normalizedRel,
             slug: d.id,
             createdAt: dData.createdAt ? (dData.createdAt.toMillis ? dData.createdAt.toMillis() : dData.createdAt) : null,
             updatedAt: dData.updatedAt ? (dData.updatedAt.toMillis ? dData.updatedAt.toMillis() : dData.updatedAt) : null,
