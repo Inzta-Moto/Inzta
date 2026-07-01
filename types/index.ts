@@ -17,7 +17,6 @@ export interface ProductVariant {
   stock: number;
   images: string[];
   isActive: boolean;
-  isDefault: boolean;
 }
 
 export interface VariantSnapshot {

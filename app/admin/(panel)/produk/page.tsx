@@ -124,7 +124,7 @@ export default function ProductsPage() {
       const loadedAttrs: ProductAttribute[] = (p as any).attributes ?? [];
       setFAttributes(loadedAttrs);
       setAttrDrafts(Object.fromEntries(loadedAttrs.map(a => [a.id, a.values.join(', ')])));
-      setFVariants(((p as any).variants ?? []).map((v: any) => ({ ...v, isDefault: v.isDefault ?? false })));
+      setFVariants((p as any).variants ?? []);
 
       // Cek variant mana yang pernah muncul di order \u2014 hanya itu yang boleh dihapus permanen.
       // Fetch di background; UI tidak阻塞 menunggu hasilnya.
@@ -218,14 +218,6 @@ export default function ProductsPage() {
 
   const updateVariant = (variationId: string, field: keyof FormVariant, value: any) => {
     setFVariants(prev => prev.map(v => v.variationId === variationId ? { ...v, [field]: value } : v));
-  };
-
-  const setDefaultVariant = (variationId: string, checked: boolean) => {
-    if (checked) {
-      setFVariants(prev => prev.map(v => ({ ...v, isDefault: v.variationId === variationId })));
-    } else {
-      setFVariants(prev => prev.map(v => v.variationId === variationId ? { ...v, isDefault: false } : v));
-    }
   };
 
   // Hapus variant dari form state. Hanya variant yang belum pernah di-order
@@ -501,7 +493,6 @@ export default function ProductsPage() {
                         <th style={{ padding: '8px 10px', textAlign: 'left', fontWeight: 600, color: '#374151' }}>Harga Coret</th>
                         <th style={{ padding: '8px 10px', textAlign: 'left', fontWeight: 600, color: '#374151' }}>Stok</th>
                         <th style={{ padding: '8px 10px', textAlign: 'left', fontWeight: 600, color: '#374151' }}>Gambar</th>
-                        <th style={{ padding: '8px 10px', textAlign: 'center', fontWeight: 600, color: '#374151' }}>Default</th>
                         <th style={{ padding: '8px 10px', textAlign: 'center', fontWeight: 600, color: '#374151' }}>Aktif</th>
                         <th style={{ padding: '8px 10px', textAlign: 'center', fontWeight: 600, color: '#374151', width: 50 }}>Aksi</th>
                       </tr>
@@ -550,13 +541,6 @@ export default function ProductsPage() {
                                 value={v.images || []}
                                 onChange={urls => updateVariant(v.variationId, 'images', urls)}
                                 max={1}
-                              />
-                            </td>
-                            <td style={{ padding: '6px 10px', textAlign: 'center' }}>
-                              <input
-                                type="checkbox" checked={!!v.isDefault}
-                                onChange={e => setDefaultVariant(v.variationId, e.target.checked)}
-                                style={{ cursor: 'pointer', width: 16, height: 16 }}
                               />
                             </td>
                             <td style={{ padding: '6px 10px', textAlign: 'center' }}>

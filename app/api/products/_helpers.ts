@@ -99,7 +99,6 @@ export function buildVariablePayload(data: any) {
     stock: v.stock ?? 0,
     images: Array.isArray(v.images) ? v.images : [],
     isActive: Boolean(v.isActive ?? true),
-    isDefault: Boolean(v.isDefault),
   }));
 
   const { priceFrom, priceTo } = computePriceRange(variants);
