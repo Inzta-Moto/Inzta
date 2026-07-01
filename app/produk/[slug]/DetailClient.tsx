@@ -96,13 +96,29 @@ export default function DetailClient({ slug, initialProduct, initialRelated }: {
   const resolvedStock = useMemo(() => {
     if (!product) return 0;
     if (product.productType === 'simple') return (product as SimpleProduct).stock;
-    return selectedVariant?.stock ?? 0;
+    // Variable: prefer selected variant's stock
+    if (selectedVariant) return selectedVariant.stock ?? 0;
+    // Backward-compat fallback untuk produk lama yang dimigrasi dari simple
+    // ke variable: jika kombinasi atribut customer tidak match variant manapun
+    // (mis. variants belum di-generate, atau stock per-variant 0), fallback ke
+    // top-level product.stock legacy supaya stok admin tetap terlihat.
+    return (product as any).stock ?? 0;
   }, [product, selectedVariant]);
 
   const selectionComplete = useMemo(() => {
     if (!product || product.productType !== 'variable') return true;
     return isSelectionComplete(product.attributes, selectedAttributes);
   }, [product, selectedAttributes]);
+
+  // Untuk produk variabel: cek apakah kombinasi atribut yang dipilih user
+  // benar-benar punya variant yang match di database. Penting untuk membedakan
+  // "varian tidak tersedia" (kombinasi tidak ada) vs "stok habis" (variant
+  // ada tapi stoknya 0). Tanpa cek ini, kedua kondisi tampil sebagai "Habis".
+  const variantExists = useMemo(() => {
+    if (!product || product.productType !== 'variable') return true;
+    if (!selectionComplete) return true; // belum lengkap \u2014 tidak relevan
+    return selectedVariant !== null;
+  }, [product, selectionComplete, selectedVariant]);
 
   // ── Lightbox ───────────────────────────────────────────────────────────────
   const [lightbox, setLightbox] = useState<boolean>(false);
@@ -366,13 +382,21 @@ export default function DetailClient({ slug, initialProduct, initialRelated }: {
 
   // Stock/availability
   const stockForDisplay = isVariable
-    ? (selectionComplete ? resolvedStock : (vp!.totalStock ?? 0))
+    ? (selectionComplete
+        ? resolvedStock
+        : ((vp as any).totalStock ?? (product as any).stock ?? 0))
     : resolvedStock;
   const stockLabel = !selectionComplete ? null : stockForDisplay <= 10 ? `Sisa ${stockForDisplay} unit` : 'Tersedia';
   const stockCls = stockForDisplay <= 10 ? 'low-stock' : 'in-stock';
 
-  const canOrder = selectionComplete && (isVariable ? resolvedStock > 0 : resolvedStock > 0);
-  const maxQuantity = selectionComplete ? resolvedStock : 0;
+  // Untuk produk variable: hanya boleh order kalau variantExists (kombinasi atribut
+  // benar-benar punya variant di DB) DAN stok > 0. Tanpa cek variantExists, fallback
+  // resolvedStock dari legacy product.stock akan keliru meng-enable tombol order.
+  const canOrder = selectionComplete
+    && (isVariable ? (variantExists && resolvedStock > 0) : resolvedStock > 0);
+  const maxQuantity = (selectionComplete && (!isVariable || variantExists))
+    ? resolvedStock
+    : 0;
 
   const trustItems: { icon: LucideIcon; title: string; desc: string }[] = [
     { icon: Truck, title: 'Pengiriman Cepat', desc: 'Paket dikirim 1-2 hari kerja' },
@@ -533,7 +557,13 @@ export default function DetailClient({ slug, initialProduct, initialRelated }: {
                 <div className="detail-stock">
                   <span className={`detail-stock-dot ${stockCls}`} />
                   <span className="detail-stock-text">
-                    <strong>{stockForDisplay === 0 ? 'Habis' : (stockLabel ?? 'Tersedia')}</strong>
+                    <strong>
+                      {isVariable && !variantExists
+                        ? 'Varian tidak tersedia'
+                        : stockForDisplay === 0
+                          ? 'Habis'
+                          : (stockLabel ?? 'Tersedia')}
+                    </strong>
                   </span>
                 </div>
               )}
@@ -617,6 +647,8 @@ export default function DetailClient({ slug, initialProduct, initialRelated }: {
                     <><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: 'spin 1.5s linear infinite' }}><path d="M21 12a9 9 0 1 1-6.219-8.56" /></svg>Memproses...</>
                   ) : !selectionComplete ? (
                     'Pilih variasi terlebih dahulu'
+                  ) : isVariable && !variantExists ? (
+                    'Varian tidak tersedia'
                   ) : resolvedStock === 0 ? (
                     'Stok Habis'
                   ) : (

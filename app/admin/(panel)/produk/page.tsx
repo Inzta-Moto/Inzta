@@ -367,6 +367,7 @@ export default function ProductsPage() {
                     <div className="form-group">
                       <label className="form-label">Stok *</label>
                       <input type="number" className="form-input" min={0} value={fStock} onChange={e => setFStock(parseInt(e.target.value) || 0)} />
+                      <small className="prod-form-hint">Stok untuk produk tanpa variasi. Jika produk punya variasi, stok diatur per variant di tabel bawah.</small>
                     </div>
                   )}
                   <div className="form-group">
