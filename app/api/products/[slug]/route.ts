@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getAdminDb } from '@/lib/firebaseAdmin';
+import { requireAdmin } from '@/lib/auth';
 import {
   normalizeProduct,
   validateSimpleProduct,
@@ -30,6 +31,9 @@ export async function PUT(
   request: Request,
   { params }: { params: { slug: string } },
 ) {
+  const auth = await requireAdmin();
+  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
+
   try {
     const data = await request.json();
 
@@ -114,6 +118,9 @@ export async function DELETE(
   _request: Request,
   { params }: { params: { slug: string } },
 ) {
+  const auth = await requireAdmin();
+  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
+
   try {
     await getAdminDb().collection('products').doc(params.slug).delete();
     return NextResponse.json({ status: 'success' });

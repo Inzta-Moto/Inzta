@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getAdminDb } from '@/lib/firebaseAdmin';
+import { requireAdmin } from '@/lib/auth';
+import { SLUG_PATTERN } from '@/lib/article-input';
 import {
   normalizeProduct,
   validateSimpleProduct,
@@ -22,6 +24,9 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const auth = await requireAdmin();
+  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
+
   try {
     const data = await request.json();
 
@@ -30,6 +35,16 @@ export async function POST(request: Request) {
         { code: 'MISSING_FIELDS', message: 'Slug dan nama produk wajib diisi' },
         { status: 400 },
       );
+
+    // New products need a clean slug; an existing legacy slug can still be saved over.
+    if (!SLUG_PATTERN.test(data.slug)) {
+      const existing = await getAdminDb().collection('products').doc(data.slug).get();
+      if (!existing.exists)
+        return NextResponse.json(
+          { code: 'INVALID_SLUG', message: 'Slug hanya boleh huruf kecil, angka, dan tanda hubung tunggal' },
+          { status: 400 },
+        );
+    }
 
     if (!['simple', 'variable'].includes(data.productType))
       return NextResponse.json(

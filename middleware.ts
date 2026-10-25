@@ -40,6 +40,15 @@ export function middleware(request: NextRequest) {
     }
   }
 
+  // Defense in depth for catalog and blog writes; GET stays public and the handlers do the real check.
+  const isCatalogApi =
+    request.nextUrl.pathname.startsWith('/api/articles') || request.nextUrl.pathname.startsWith('/api/products');
+  if (isCatalogApi && !['GET', 'HEAD', 'OPTIONS'].includes(request.method)) {
+    if (!adminSession) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+  }
+
   // Protect /api/affiliate routes
   if (request.nextUrl.pathname.startsWith('/api/affiliate')) {
     if (!affiliateSession) {
@@ -51,5 +60,12 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/api/admin/:path*', '/affiliate/:path*', '/api/affiliate/:path*'],
+  matcher: [
+    '/admin/:path*',
+    '/api/admin/:path*',
+    '/affiliate/:path*',
+    '/api/affiliate/:path*',
+    '/api/articles/:path*',
+    '/api/products/:path*',
+  ],
 };

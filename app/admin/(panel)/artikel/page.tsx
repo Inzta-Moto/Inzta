@@ -83,17 +83,21 @@ export default function ArticlesPage() {
     };
 
     try {
-      if (editSlug && editSlug !== slug) { 
-        await fetch('/api/articles/' + editSlug, { method: 'DELETE' }); 
-      }
-      
       const res = await fetch('/api/articles', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
       });
-      
-      if (!res.ok) throw new Error('Gagal menyimpan');
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || 'Gagal menyimpan');
+      }
+
+      // Delete the old slug only after the new one is saved, so a rejected save never loses the article.
+      if (editSlug && editSlug !== slug) {
+        await fetch('/api/articles/' + editSlug, { method: 'DELETE' });
+      }
       
       closeModal(); loadArticles();
     } catch (err: any) { setFormError('Error: ' + err.message); }

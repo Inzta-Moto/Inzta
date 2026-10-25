@@ -276,17 +276,19 @@ export default function ProductsPage() {
       let url = '/api/products';
       let method = 'POST';
 
-      if (formView === 'edit') {
-        if (editSlug && editSlug !== fSlug) {
-          await fetch('/api/products/' + editSlug, { method: 'DELETE' });
-        } else {
-          url = '/api/products/' + (editSlug || fSlug);
-          method = 'PUT';
-        }
+      const renamedFrom = formView === 'edit' && editSlug && editSlug !== fSlug ? editSlug : null;
+      if (formView === 'edit' && !renamedFrom) {
+        url = '/api/products/' + (editSlug || fSlug);
+        method = 'PUT';
       }
 
       const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
       if (!res.ok) { const err = await res.json(); throw new Error(err.message || err.error || 'Failed to save'); }
+
+      // Delete the old slug only after the new one is saved, so a rejected save never loses the product.
+      if (renamedFrom) {
+        await fetch('/api/products/' + renamedFrom, { method: 'DELETE' });
+      }
 
       loadProducts();
       setFormView('list');
