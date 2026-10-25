@@ -5,6 +5,8 @@ import { Article } from '@/types';
 import { formatDate } from '@/lib/utils';
 import { Edit2, Trash2 } from 'lucide-react';
 import ImageUpload from '@/components/ImageUpload';
+import { toSlug } from '@/lib/slug';
+import { readAdminError } from '@/lib/admin-messages';
 
 export default function ArticlesPage() {
   const [articles, setArticles] = useState<Article[]>([]);
@@ -58,12 +60,10 @@ export default function ArticlesPage() {
       const res = await fetch('/api/articles/' + deleteTarget.slug, { method: 'DELETE' });
       if (res.ok) {
         closeDelete(); loadArticles(); 
+      } else {
+        alert(await readAdminError(res));
       }
     } catch (e: any) { alert(e.message); }
-  };
-
-  const autoSlug = (title: string) => {
-    return title.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').trim();
   };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
@@ -83,20 +83,33 @@ export default function ArticlesPage() {
     };
 
     try {
-      if (editSlug && editSlug !== slug) { 
-        await fetch('/api/articles/' + editSlug, { method: 'DELETE' }); 
-      }
-      
-      const res = await fetch('/api/articles', {
-        method: 'POST',
+      // Edit in place with PUT; a new article or a renamed slug is created with POST, which refuses taken slugs.
+      const editInPlace = editSlug && editSlug === slug;
+      const res = await fetch(editInPlace ? '/api/articles/' + editSlug : '/api/articles', {
+        method: editInPlace ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
       });
-      
-      if (!res.ok) throw new Error('Gagal menyimpan');
+
+      if (!res.ok) {
+        setFormError(await readAdminError(res));
+        setSaving(false);
+        return;
+      }
+
+      // Delete the old slug only after the new one is saved, so a rejected save never loses the article.
+      if (editSlug && editSlug !== slug) {
+        const del = await fetch('/api/articles/' + editSlug, { method: 'DELETE' });
+        if (!del.ok) {
+          loadArticles();
+          setFormError(`Tersimpan dengan slug baru, tetapi slug lama "${editSlug}" gagal dihapus. Hapus manual dari daftar.`);
+          setSaving(false);
+          return;
+        }
+      }
       
       closeModal(); loadArticles();
-    } catch (err: any) { setFormError('Error: ' + err.message); }
+    } catch (err: any) { setFormError('Gagal terhubung ke server: ' + err.message); }
     setSaving(false);
   };
 
@@ -172,8 +185,8 @@ export default function ArticlesPage() {
               <div className="form-row">
                 <div className="form-group" style={{ flex: 2 }}>
                   <label className="form-label">Judul Artikel *</label>
-                  <input name="title" className="form-input" required defaultValue={modal.title || ''} 
-                    onChange={(e) => { if (!modal.slug) { (document.getElementById('art-slug') as HTMLInputElement).value = autoSlug(e.target.value); } }} 
+                  <input name="title" className="form-input" required maxLength={150} defaultValue={modal.title || ''} 
+                    onChange={(e) => { if (!modal.slug) { (document.getElementById('art-slug') as HTMLInputElement).value = toSlug(e.target.value); } }} 
                   />
                 </div>
                 <div className="form-group" style={{ flex: 1 }}>
@@ -184,7 +197,7 @@ export default function ArticlesPage() {
 
               <div className="form-group">
                 <label className="form-label">Excerpt (Ringkasan Pendek) *</label>
-                <input name="excerpt" className="form-input" required defaultValue={modal.excerpt || ''} placeholder="Teks singkat yang muncul di halaman list blog..." />
+                <input name="excerpt" className="form-input" required maxLength={300} defaultValue={modal.excerpt || ''} placeholder="Teks singkat yang muncul di halaman list blog..." />
               </div>
 
               <div className="form-group">
@@ -197,7 +210,7 @@ export default function ArticlesPage() {
                 <ImageUpload value={imageUrls} onChange={setImageUrls} max={5} />
               </div>
 
-              {formError && <div className="form-error">{formError}</div>}
+              {formError && <div className="form-error" role="alert">{formError}</div>}
               <div className="modal-footer">
                 <button type="button" className="btn btn-ghost" onClick={closeModal} style={{ fontSize: 11, padding: '8px 16px' }}>Batal</button>
                 <button type="submit" className="btn btn-primary" disabled={saving} style={{ fontSize: 11, padding: '8px 16px' }}>{saving ? 'Menyimpan...' : 'Simpan'}</button>

@@ -1,10 +1,12 @@
 'use client';
 
-import { useState, useEffect, FormEvent, useMemo } from 'react';
+import { useState, useEffect, FormEvent, useMemo, useRef } from 'react';
 import { formatPrice, calcDiscount, optimizeCloudinaryUrl } from '@/lib/utils';
 import { generateVariants, computePriceRange, countCombinations } from '@/lib/product-utils';
 import type { Product, ProductAttribute, ProductVariant } from '@/types';
 import ImageUpload from '@/components/ImageUpload';
+import { toSlug } from '@/lib/slug';
+import { readAdminError } from '@/lib/admin-messages';
 import { Edit2, Trash2, Package, ChevronDown, Tag, Layers, DollarSign, Archive, ArrowLeft, Save, Plus, X } from 'lucide-react';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -13,8 +15,8 @@ type FormVariant = ProductVariant & { _dirty?: boolean };
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
-const generateSlug = (text: string) =>
-  text.toString().toLowerCase().trim().replace(/\s+/g, '-').replace(/[^\w-]+/g, '').replace(/--+/g, '-').replace(/^-+/, '').replace(/-+$/, '');
+// Same rules as the API's slug check, so a generated slug is never rejected on save.
+const generateSlug = toSlug;
 
 const getCategoryLabel = (cat: string) => ({ hardcase: 'Hardcase', softcase: 'Softcase', tank: 'Tank Bag' } as any)[cat] || cat;
 
@@ -35,6 +37,7 @@ export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [deleteTarget, setDeleteTarget] = useState<{ slug: string; name: string } | null>(null);
   const [formError, setFormError] = useState<string>('');
+  const formErrorRef = useRef<HTMLDivElement>(null);
   const [saving, setSaving] = useState<boolean>(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [expandedProducts, setExpandedProducts] = useState<Set<string>>(new Set());
@@ -74,6 +77,14 @@ export default function ProductsPage() {
   const [attrDrafts, setAttrDrafts] = useState<Record<string, string>>({});
 
   useEffect(() => { loadProducts(); }, []);
+
+  // The Save button is fixed at the bottom of a long form, so bring the error into view when it appears.
+  useEffect(() => {
+    if (formError) {
+      formErrorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      formErrorRef.current?.focus({ preventScroll: true });
+    }
+  }, [formError]);
 
   async function loadProducts() {
     try {
@@ -160,7 +171,7 @@ export default function ProductsPage() {
     try {
       const res = await fetch('/api/products/' + deleteTarget.slug, { method: 'DELETE' });
       if (res.ok) { closeDelete(); loadProducts(); }
-      else { const err = await res.json(); alert(err.error || 'Failed to delete'); }
+      else { alert(await readAdminError(res)); }
     } catch (e: any) { alert(e.message); }
   };
 
@@ -276,23 +287,33 @@ export default function ProductsPage() {
       let url = '/api/products';
       let method = 'POST';
 
-      if (formView === 'edit') {
-        if (editSlug && editSlug !== fSlug) {
-          await fetch('/api/products/' + editSlug, { method: 'DELETE' });
-        } else {
-          url = '/api/products/' + (editSlug || fSlug);
-          method = 'PUT';
-        }
+      const renamedFrom = formView === 'edit' && editSlug && editSlug !== fSlug ? editSlug : null;
+      if (formView === 'edit' && !renamedFrom) {
+        url = '/api/products/' + (editSlug || fSlug);
+        method = 'PUT';
       }
 
       const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
-      if (!res.ok) { const err = await res.json(); throw new Error(err.message || err.error || 'Failed to save'); }
+      if (!res.ok) {
+        setFormError(await readAdminError(res));
+        return;
+      }
+
+      // Delete the old slug only after the new one is saved, so a rejected save never loses the product.
+      if (renamedFrom) {
+        const del = await fetch('/api/products/' + renamedFrom, { method: 'DELETE' });
+        if (!del.ok) {
+          loadProducts();
+          setFormError(`Tersimpan dengan slug baru, tetapi produk lama "${renamedFrom}" gagal dihapus. Hapus manual dari daftar agar stok tidak ganda.`);
+          return;
+        }
+      }
 
       loadProducts();
       setFormView('list');
     } catch (err: any) {
       console.error(err);
-      setFormError('Gagal menyimpan: ' + err.message);
+      setFormError('Gagal terhubung ke server: ' + err.message);
     } finally {
       setSaving(false);
     }
@@ -314,7 +335,7 @@ export default function ProductsPage() {
           <div style={{ width: 100 }} />
         </div>
 
-        {formError && <div className="form-error prod-form-error">{formError}</div>}
+        {formError && <div ref={formErrorRef} tabIndex={-1} role="alert" className="form-error prod-form-error">{formError}</div>}
 
         <form onSubmit={handleSubmit} className="prod-form-layout">
           <div className="prod-form-main">

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getAdminAuth, getAdminDb } from '@/lib/firebaseAdmin';
 import { cookies } from 'next/headers';
+import { isAllowedAdmin } from '@/lib/auth';
 
 export async function POST(request: Request) {
   try {
@@ -20,6 +21,13 @@ export async function POST(request: Request) {
     const decodedToken = await adminAuth.verifyIdToken(idToken);
     const uid = decodedToken.uid;
     const email = decodedToken.email;
+
+    // The role in the body is only a request; admin is granted from the verified token and the allowlist.
+    if (role === 'admin' && !isAllowedAdmin(decodedToken)) {
+      console.warn('Admin session refused: account not in allowlist', { uid });
+      cookies().delete('admin_session');
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
 
     // Set session expiration to 5 days
     const expiresIn = 60 * 60 * 24 * 5 * 1000;

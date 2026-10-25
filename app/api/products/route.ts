@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getAdminDb } from '@/lib/firebaseAdmin';
+import { requireAdmin } from '@/lib/auth';
+import { isValidSlug } from '@/lib/slug';
+import { isAlreadyExists } from '@/lib/firestore-errors';
 import {
   normalizeProduct,
   validateSimpleProduct,
@@ -22,12 +25,21 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const auth = await requireAdmin();
+  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
+
   try {
     const data = await request.json();
 
     if (!data.slug || !data.name)
       return NextResponse.json(
         { code: 'MISSING_FIELDS', message: 'Slug dan nama produk wajib diisi' },
+        { status: 400 },
+      );
+
+    if (!isValidSlug(data.slug))
+      return NextResponse.json(
+        { code: 'INVALID_SLUG', message: 'Slug hanya boleh huruf kecil, angka, dan tanda hubung tunggal' },
         { status: 400 },
       );
 
@@ -50,10 +62,17 @@ export async function POST(request: Request) {
         ? buildSimplePayload(data)
         : buildVariablePayload(data);
 
-    await getAdminDb().collection('products').doc(data.slug).set(payload);
+    // Create only: create() fails atomically if the slug is taken, so adding or renaming a product can
+    // never overwrite another product's price, stock, and variants. Edits go through PUT.
+    await getAdminDb().collection('products').doc(data.slug).create(payload);
 
     return NextResponse.json({ status: 'success', product: payload }, { status: 201 });
   } catch (error: any) {
+    if (isAlreadyExists(error))
+      return NextResponse.json(
+        { code: 'SLUG_TAKEN', message: 'Slug sudah dipakai produk lain. Ubah nama atau slug produk.' },
+        { status: 409 },
+      );
     console.error('Error creating product:', error);
     return NextResponse.json({ error: 'Failed to create product' }, { status: 500 });
   }

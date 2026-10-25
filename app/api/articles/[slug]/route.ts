@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getAdminDb } from '@/lib/firebaseAdmin';
+import { requireAdmin } from '@/lib/auth';
+import { parseArticleInput } from '@/lib/article-input';
 
 export async function GET(request: Request, { params }: { params: { slug: string } }) {
   try {
@@ -11,21 +13,40 @@ export async function GET(request: Request, { params }: { params: { slug: string
   }
 }
 
+// Edits in place. The document ID is the slug, so renaming goes through POST (new slug) + DELETE (old slug).
 export async function PUT(request: Request, { params }: { params: { slug: string } }) {
+  const auth = await requireAdmin();
+  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
+
   try {
-    const data = await request.json();
-    await getAdminDb().collection('articles').doc(params.slug).set(data, { merge: true });
+    const ref = getAdminDb().collection('articles').doc(params.slug);
+    const existing = await ref.get();
+    if (!existing.exists) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+
+    const body = await request.json().catch(() => null);
+    // Legacy slugs created before the slug rule can still be edited in place.
+    const parsed = parseArticleInput({ ...(body ?? {}), slug: params.slug }, { allowLegacySlug: true });
+    if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 });
+
+    const now = new Date().toISOString();
+    const createdAt = existing.data()?.createdAt ?? now;
+    await ref.set({ ...parsed.value, createdAt, updatedAt: now }, { merge: true });
     return NextResponse.json({ status: 'success' }, { status: 200 });
   } catch (error: any) {
+    console.error('Update article error:', { slug: params.slug, error });
     return NextResponse.json({ error: 'Failed' }, { status: 500 });
   }
 }
 
 export async function DELETE(request: Request, { params }: { params: { slug: string } }) {
+  const auth = await requireAdmin();
+  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
+
   try {
     await getAdminDb().collection('articles').doc(params.slug).delete();
     return NextResponse.json({ status: 'success' }, { status: 200 });
   } catch (error: any) {
+    console.error('Delete article error:', { slug: params.slug, error });
     return NextResponse.json({ error: 'Failed' }, { status: 500 });
   }
 }

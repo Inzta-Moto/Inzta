@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "test:auth": "node tests/f000-auth.cjs"
   },
   "dependencies": {
     "browser-image-compression": "^2.0.2",

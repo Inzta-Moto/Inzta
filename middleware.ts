@@ -19,12 +19,8 @@ export function middleware(request: NextRequest) {
     }
   }
 
-  // If user is already logged in and tries to access /admin/login, redirect to /admin
-  if (request.nextUrl.pathname === '/admin/login') {
-    if (adminSession) {
-      return NextResponse.redirect(new URL('/admin', request.url));
-    }
-  }
+  // /admin/login is always reachable: a cookie that exists but is no longer accepted (expired, revoked,
+  // or not in ADMIN_EMAILS) would otherwise bounce between /admin and /admin/login forever.
 
   // If user is already logged in and tries to access /affiliate/login, redirect to /affiliate/dashboard
   if (request.nextUrl.pathname === '/affiliate/login') {
@@ -35,6 +31,15 @@ export function middleware(request: NextRequest) {
 
   // Protect /api/admin routes
   if (request.nextUrl.pathname.startsWith('/api/admin')) {
+    if (!adminSession) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+  }
+
+  // Defense in depth for catalog and blog writes; GET stays public and the handlers do the real check.
+  const isCatalogApi =
+    request.nextUrl.pathname.startsWith('/api/articles') || request.nextUrl.pathname.startsWith('/api/products');
+  if (isCatalogApi && !['GET', 'HEAD', 'OPTIONS'].includes(request.method)) {
     if (!adminSession) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -51,5 +56,12 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/api/admin/:path*', '/affiliate/:path*', '/api/affiliate/:path*'],
+  matcher: [
+    '/admin/:path*',
+    '/api/admin/:path*',
+    '/affiliate/:path*',
+    '/api/affiliate/:path*',
+    '/api/articles/:path*',
+    '/api/products/:path*',
+  ],
 };
