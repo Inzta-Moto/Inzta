@@ -29,6 +29,9 @@ export default function AdminLogin() {
 
       if (response.ok) {
         router.replace('/admin');
+      } else if (response.status === 403) {
+        setError('Akun ini tidak punya akses admin. Hubungi Tim Developer.');
+        setLoading(false);
       } else {
         setError('Gagal membuat sesi admin.');
         setLoading(false);

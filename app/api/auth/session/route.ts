@@ -24,6 +24,8 @@ export async function POST(request: Request) {
 
     // The role in the body is only a request; admin is granted from the verified token and the allowlist.
     if (role === 'admin' && !isAllowedAdmin(decodedToken)) {
+      console.warn('Admin session refused: account not in allowlist', { uid });
+      cookies().delete('admin_session');
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

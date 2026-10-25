@@ -57,13 +57,16 @@ export async function PUT(
     if (validationError)
       return NextResponse.json(validationError, { status: 400 });
 
+    const productRef = getAdminDb().collection('products').doc(params.slug);
+    const currentSnap = await productRef.get();
+    if (!currentSnap.exists)
+      return NextResponse.json({ error: 'Product not found' }, { status: 404 });
+
     // ── Validasi variant removal ────────────────────────────────────────────
     // Variant yang pernah muncul di order tidak boleh dihapus permanen
     // karena akan merusak jejak historis order. Admin harus menonaktifkan
     // (isActive=false) sebagai gantinya.
     if (data.productType === 'variable') {
-      const productRef = getAdminDb().collection('products').doc(params.slug);
-      const currentSnap = await productRef.get();
       const currentVariants: any[] = currentSnap.exists
         ? (Array.isArray((currentSnap.data() as any)?.variants) ? (currentSnap.data() as any).variants : [])
         : [];
@@ -98,10 +101,11 @@ export async function PUT(
       }
     }
 
+    // The document ID is the source of truth for the slug; a different body slug would break product links.
     const payload =
       data.productType === 'simple'
-        ? buildSimplePayload(data)
-        : buildVariablePayload(data);
+        ? buildSimplePayload({ ...data, slug: params.slug })
+        : buildVariablePayload({ ...data, slug: params.slug });
 
     // Full overwrite — bukan merge, supaya field lama dari tipe sebelumnya
     // (contoh: price/stock di variable product) benar-benar terhapus.

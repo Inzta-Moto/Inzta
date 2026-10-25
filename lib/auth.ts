@@ -1,15 +1,19 @@
 import { cookies } from 'next/headers';
+import type { DecodedIdToken } from 'firebase-admin/auth';
 import { getAdminAuth } from './firebaseAdmin';
 
 export type AdminCheck =
-  | { ok: true; uid: string; email: string }
+  | { ok: true; uid: string; email: string; decoded: DecodedIdToken }
   | { ok: false; status: 401 | 403; error: string };
 
 function adminEmails(): string[] {
-  return (process.env.ADMIN_EMAILS || '')
+  const list = (process.env.ADMIN_EMAILS || '')
     .split(',')
     .map((e) => e.trim().toLowerCase())
     .filter(Boolean);
+  // Logged so a missing Vercel variable is distinguishable from "not an admin"; no values are printed.
+  if (list.length === 0) console.error('ADMIN_EMAILS is empty; admin access is denied for everyone');
+  return list;
 }
 
 /**
@@ -29,7 +33,7 @@ export async function requireAdmin(): Promise<AdminCheck> {
   const sessionCookie = cookies().get('admin_session')?.value;
   if (!sessionCookie) return { ok: false, status: 401, error: 'Unauthorized' };
 
-  let decoded;
+  let decoded: DecodedIdToken;
   try {
     decoded = await getAdminAuth().verifySessionCookie(sessionCookie, true);
   } catch (error) {
@@ -37,28 +41,18 @@ export async function requireAdmin(): Promise<AdminCheck> {
     return { ok: false, status: 401, error: 'Unauthorized' };
   }
 
-  if (!isAllowedAdmin(decoded)) return { ok: false, status: 403, error: 'Forbidden' };
-  return { ok: true, uid: decoded.uid, email: decoded.email || '' };
+  if (!isAllowedAdmin(decoded)) {
+    console.warn('Admin access denied: account not in allowlist', { uid: decoded.uid });
+    return { ok: false, status: 403, error: 'Forbidden' };
+  }
+  return { ok: true, uid: decoded.uid, email: decoded.email || '', decoded };
 }
 
 // Kept for the existing /api/admin routes and the admin dashboard, which expect this shape.
 export async function verifyAdminSession() {
-  const sessionCookie = cookies().get('admin_session')?.value;
-
-  if (!sessionCookie) {
-    return { error: 'No session cookie' };
-  }
-
-  try {
-    const decodedClaims = await getAdminAuth().verifySessionCookie(sessionCookie, true);
-    if (!isAllowedAdmin(decodedClaims)) {
-      return { error: 'Forbidden' };
-    }
-    return { uid: decodedClaims.uid, decodedClaims };
-  } catch (error) {
-    console.error('Verify Admin Session Error:', error);
-    return { error: 'Invalid or expired session' };
-  }
+  const auth = await requireAdmin();
+  if (!auth.ok) return { error: auth.error, status: auth.status };
+  return { uid: auth.uid, decodedClaims: auth.decoded };
 }
 
 export async function verifyAffiliateSession() {

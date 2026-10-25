@@ -19,12 +19,8 @@ export function middleware(request: NextRequest) {
     }
   }
 
-  // If user is already logged in and tries to access /admin/login, redirect to /admin
-  if (request.nextUrl.pathname === '/admin/login') {
-    if (adminSession) {
-      return NextResponse.redirect(new URL('/admin', request.url));
-    }
-  }
+  // /admin/login is always reachable: a cookie that exists but is no longer accepted (expired, revoked,
+  // or not in ADMIN_EMAILS) would otherwise bounce between /admin and /admin/login forever.
 
   // If user is already logged in and tries to access /affiliate/login, redirect to /affiliate/dashboard
   if (request.nextUrl.pathname === '/affiliate/login') {

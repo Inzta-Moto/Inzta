@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getAdminDb } from '@/lib/firebaseAdmin';
 import { requireAdmin } from '@/lib/auth';
 import { parseArticleInput } from '@/lib/article-input';
+import { isAlreadyExists } from '@/lib/firestore-errors';
 
 export async function GET() {
   try {
@@ -13,31 +14,26 @@ export async function GET() {
   }
 }
 
-// The admin panel uses POST for both create and edit, so an existing document keeps its createdAt.
+// Create only. Editing an existing article goes through PUT /api/articles/[slug], so a new or
+// renamed article can never silently overwrite another one that already uses the slug.
 export async function POST(request: Request) {
   const auth = await requireAdmin();
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
   try {
     const body = await request.json().catch(() => null);
-    const slug = typeof body?.slug === 'string' ? body.slug.trim() : '';
-    if (!slug) {
-      return NextResponse.json({ error: 'slug: required' }, { status: 400 });
-    }
-
-    const ref = getAdminDb().collection('articles').doc(slug);
-    const existing = await ref.get();
-
-    const parsed = parseArticleInput(body, { allowLegacySlug: existing.exists });
+    const parsed = parseArticleInput(body);
     if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 });
 
     const now = new Date().toISOString();
-    const createdAt = existing.exists ? existing.data()?.createdAt ?? now : now;
-    const item = { ...parsed.value, createdAt, updatedAt: now };
-
-    await ref.set(item, { merge: true });
-    return NextResponse.json({ status: 'success', item }, { status: existing.exists ? 200 : 201 });
+    const item = { ...parsed.value, createdAt: now, updatedAt: now };
+    // create() fails atomically when the document exists, unlike a get() followed by set().
+    await getAdminDb().collection('articles').doc(parsed.value.slug).create(item);
+    return NextResponse.json({ status: 'success', item }, { status: 201 });
   } catch (error: any) {
+    if (isAlreadyExists(error)) {
+      return NextResponse.json({ error: 'slug: sudah dipakai artikel lain' }, { status: 409 });
+    }
     console.error('Create article error:', error);
     return NextResponse.json({ error: 'Failed to create article' }, { status: 500 });
   }

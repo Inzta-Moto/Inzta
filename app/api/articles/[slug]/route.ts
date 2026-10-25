@@ -13,6 +13,7 @@ export async function GET(request: Request, { params }: { params: { slug: string
   }
 }
 
+// Edits in place. The document ID is the slug, so renaming goes through POST (new slug) + DELETE (old slug).
 export async function PUT(request: Request, { params }: { params: { slug: string } }) {
   const auth = await requireAdmin();
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
@@ -23,7 +24,7 @@ export async function PUT(request: Request, { params }: { params: { slug: string
     if (!existing.exists) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
     const body = await request.json().catch(() => null);
-    // The document ID is the slug, so PUT edits in place; renaming goes through DELETE + POST.
+    // Legacy slugs created before the slug rule can still be edited in place.
     const parsed = parseArticleInput({ ...(body ?? {}), slug: params.slug }, { allowLegacySlug: true });
     if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 });
 
@@ -32,7 +33,7 @@ export async function PUT(request: Request, { params }: { params: { slug: string
     await ref.set({ ...parsed.value, createdAt, updatedAt: now }, { merge: true });
     return NextResponse.json({ status: 'success' }, { status: 200 });
   } catch (error: any) {
-    console.error('Update article error:', error);
+    console.error('Update article error:', { slug: params.slug, error });
     return NextResponse.json({ error: 'Failed' }, { status: 500 });
   }
 }
@@ -45,7 +46,7 @@ export async function DELETE(request: Request, { params }: { params: { slug: str
     await getAdminDb().collection('articles').doc(params.slug).delete();
     return NextResponse.json({ status: 'success' }, { status: 200 });
   } catch (error: any) {
-    console.error('Delete article error:', error);
+    console.error('Delete article error:', { slug: params.slug, error });
     return NextResponse.json({ error: 'Failed' }, { status: 500 });
   }
 }
