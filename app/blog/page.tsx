@@ -1,27 +1,17 @@
-'use client';
-
-import { useState, useEffect } from 'react';
-import { collection, getDocs } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 import Header from '@/components/Header';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 
 const Footer = dynamic(() => import('@/components/Footer'));
-import { Article } from '@/types';
-import { Calendar, ArrowLeft } from 'lucide-react';
+import { Calendar } from 'lucide-react';
 import { formatDate, optimizeCloudinaryUrl, generateCloudinarySrcSet } from '@/lib/utils';
+import { getArticles } from '@/lib/public-content';
 
-export default function BlogPage() {
-  const [articles, setArticles] = useState<Article[]>([]);
+// ISR: rendered on the server so Google sees every article; admin writes call revalidatePath.
+export const revalidate = 3600;
 
-  useEffect(() => {
-    const load = async () => {
-      const snap = await getDocs(collection(db, 'articles'));
-      setArticles(snap.docs.map(d => d.data() as Article).sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)));
-    };
-    load();
-  }, []);
+export default async function BlogPage() {
+  const articles = await getArticles();
 
   return (
     <>
@@ -40,7 +30,7 @@ export default function BlogPage() {
         <div className="container">
           <div className="blog-grid blog-grid-full">
             {articles.length === 0 ? <p className="empty-state">Belum ada artikel.</p> : articles.map(a => {
-              const articleImage = (a as any).images?.[0] || a.imageUrl || 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80';
+              const articleImage = a.images?.[0] || a.imageUrl || 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80';
               
               return (
                 <Link href={`/blog/${a.slug}`} key={a.slug} className="blog-card">

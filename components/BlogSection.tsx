@@ -1,28 +1,9 @@
-'use client';
-
-import { useState, useEffect } from 'react';
-import { collection, getDocs } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 import Link from 'next/link';
-import { Article } from '@/types';
+import { PublicArticle } from '@/types';
 import { Calendar, ArrowRight } from 'lucide-react';
 import { formatDate, optimizeCloudinaryUrl, generateCloudinarySrcSet } from '@/lib/utils';
 
-export default function BlogSection() {
-  const [articles, setArticles] = useState<Article[]>([]);
-
-  useEffect(() => {
-    const load = async () => {
-      const snap = await getDocs(collection(db, 'articles'));
-      setArticles(
-        snap.docs.map(d => d.data() as Article)
-          .sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0))
-          .slice(0, 3)
-      );
-    };
-    load();
-  }, []);
-
+export default function BlogSection({ articles }: { articles: PublicArticle[] }) {
   return (
     <section className="section blog-section">
       <div className="container">
@@ -43,7 +24,7 @@ export default function BlogSection() {
           {articles.length === 0 ? (
             <p className="empty-state">Belum ada artikel.</p>
           ) : articles.map(a => {
-            const articleImage = (a as any).images?.[0] || a.imageUrl || 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80';
+            const articleImage = a.images?.[0] || a.imageUrl || 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80';
             
             return (
               <Link href={`/blog/${a.slug}`} key={a.slug} className="blog-card">

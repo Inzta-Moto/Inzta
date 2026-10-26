@@ -3,6 +3,7 @@ import { getAdminDb } from '@/lib/firebaseAdmin';
 import { requireAdmin } from '@/lib/auth';
 import { isValidSlug } from '@/lib/slug';
 import { isAlreadyExists } from '@/lib/firestore-errors';
+import { revalidateProductPaths } from '@/lib/revalidate';
 import {
   normalizeProduct,
   validateSimpleProduct,
@@ -65,6 +66,7 @@ export async function POST(request: Request) {
     // Create only: create() fails atomically if the slug is taken, so adding or renaming a product can
     // never overwrite another product's price, stock, and variants. Edits go through PUT.
     await getAdminDb().collection('products').doc(data.slug).create(payload);
+    revalidateProductPaths();
 
     return NextResponse.json({ status: 'success', product: payload }, { status: 201 });
   } catch (error: any) {
