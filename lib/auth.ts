@@ -20,11 +20,14 @@ function adminEmails(): string[] {
  * Admin status comes only from server-side sources: the `admin` custom claim or the
  * ADMIN_EMAILS allowlist. An empty allowlist denies everyone (fail closed), so a missing
  * Vercel variable can never turn every Firebase user into an admin.
+ * The allowlist also requires a verified email (M1): sign-up is open for affiliates, so if
+ * an admin account were deleted, a re-registered account with the same email would be
+ * unverified and stay locked out.
  */
-export function isAllowedAdmin(decoded: { email?: string; admin?: unknown }): boolean {
+export function isAllowedAdmin(decoded: { email?: string; email_verified?: boolean; admin?: unknown }): boolean {
   if (decoded.admin === true) return true;
   const email = decoded.email?.toLowerCase();
-  if (!email) return false;
+  if (!email || decoded.email_verified !== true) return false;
   return adminEmails().includes(email);
 }
 

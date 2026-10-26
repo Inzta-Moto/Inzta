@@ -11,12 +11,14 @@ const ts = require(path.join(ROOT, 'node_modules/typescript'));
 const jar = new Map();
 const docs = new Map();
 const sessions = {
-  'cookie-admin': { uid: 'u-admin', email: 'Admin@Inzta.id' },
+  'cookie-admin': { uid: 'u-admin', email: 'Admin@Inzta.id', email_verified: true },
+  'cookie-admin-unverified': { uid: 'u-admin2', email: 'admin@inzta.id', email_verified: false },
   'cookie-affiliate': { uid: 'u-aff', email: 'aff@example.com' },
   'cookie-claim': { uid: 'u-claim', email: 'other@example.com', admin: true },
 };
 const idTokens = {
-  'token-admin': { uid: 'u-admin', email: 'admin@inzta.id' },
+  'token-admin': { uid: 'u-admin', email: 'admin@inzta.id', email_verified: true },
+  'token-admin-unverified': { uid: 'u-admin2', email: 'admin@inzta.id', email_verified: false },
   'token-affiliate': { uid: 'u-aff', email: 'aff@example.com' },
 };
 let writes = 0;
@@ -104,12 +106,14 @@ const simpleProduct = { slug: 'tas-uji', name: 'Tas uji', productType: 'simple',
 (async () => {
   process.env.ADMIN_EMAILS = 'admin@inzta.id';
 
-  await check('isAllowedAdmin: allowlist is case-insensitive', () => assert.strictEqual(isAllowedAdmin({ email: 'ADMIN@inzta.id' }), true));
+  await check('isAllowedAdmin: allowlist is case-insensitive', () => assert.strictEqual(isAllowedAdmin({ email: 'ADMIN@inzta.id', email_verified: true }), true));
+  await check('isAllowedAdmin: allowlisted but unverified email denied (M1)', () => assert.strictEqual(isAllowedAdmin({ email: 'admin@inzta.id', email_verified: false }), false));
+  await check('isAllowedAdmin: allowlisted, email_verified missing denied (M1)', () => assert.strictEqual(isAllowedAdmin({ email: 'admin@inzta.id' }), false));
   await check('isAllowedAdmin: admin claim passes', () => assert.strictEqual(isAllowedAdmin({ email: 'x@y.z', admin: true }), true));
   await check('isAllowedAdmin: other email denied', () => assert.strictEqual(isAllowedAdmin({ email: 'aff@example.com' }), false));
   await check('isAllowedAdmin: empty ADMIN_EMAILS fails closed', () => {
     const saved = process.env.ADMIN_EMAILS; process.env.ADMIN_EMAILS = '';
-    try { assert.strictEqual(isAllowedAdmin({ email: 'admin@inzta.id' }), false); } finally { process.env.ADMIN_EMAILS = saved; }
+    try { assert.strictEqual(isAllowedAdmin({ email: 'admin@inzta.id', email_verified: true }), false); } finally { process.env.ADMIN_EMAILS = saved; }
   });
 
   const writeCases = [
@@ -129,6 +133,14 @@ const simpleProduct = { slug: 'tas-uji', name: 'Tas uji', productType: 'simple',
   await check('session: affiliate token asking role admin -> 403, no admin cookie', async () => {
     jar.clear(); const r = await session.POST(req({ idToken: 'token-affiliate', role: 'admin' }));
     assert.strictEqual(r.status, 403); assert.ok(!jar.has('admin_session'));
+  });
+  await check('session: allowlisted but unverified token asking role admin -> 403, no admin cookie (M1)', async () => {
+    jar.clear(); const r = await session.POST(req({ idToken: 'token-admin-unverified', role: 'admin' }));
+    assert.strictEqual(r.status, 403); assert.ok(!jar.has('admin_session'));
+  });
+  await check('POST /api/articles: unverified allowlisted session -> 403, no write (M1)', async () => {
+    as('cookie-admin-unverified'); const w = writes; const r = await articles.POST(req(validArticle));
+    assert.strictEqual(r.status, 403); assert.strictEqual(writes, w);
   });
   await check('session: allowed admin -> 200 with admin cookie', async () => {
     jar.clear(); const r = await session.POST(req({ idToken: 'token-admin', role: 'admin' }));
