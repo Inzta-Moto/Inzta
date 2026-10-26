@@ -1,7 +1,7 @@
 import { cache } from 'react';
 import { getAdminDb, hasAdminCredentials } from '@/lib/firebaseAdmin';
 import { normalizeProduct } from '@/lib/product-utils';
-import { Article, Feature, Product, PublicArticle } from '@/types';
+import { Article, ArticleCard, Product, PublicArticle } from '@/types';
 
 // Server-only reads for public pages (F-001). Pages using these are ISR, so Firestore is read once per
 // regeneration instead of once per visitor. F-010 adds its published-only filter here, not in the pages.
@@ -23,11 +23,15 @@ export function toMillis(value: unknown): number | null {
   return null;
 }
 
-// Without credentials (local or CI build without secrets) pages render empty so the build passes.
+// Without credentials (local or CI build without secrets) pages render empty so the build passes, except
+// on Vercel Production, where an empty home page and a 404 for every article would be cached for an hour.
 // With credentials, errors propagate on purpose: a failed build keeps the previous deployment, and a
 // failed background regeneration keeps the last good page in the ISR cache instead of an empty one.
 async function readPublic<T>(label: string, read: () => Promise<T>, empty: T): Promise<T> {
   if (!hasAdminCredentials()) {
+    if (process.env.VERCEL_ENV === 'production') {
+      throw new Error(`[public-content] ${label}: Firebase Admin credentials missing in production`);
+    }
     console.warn(`[public-content] ${label}: no Firebase Admin credentials, rendering empty`);
     return empty;
   }
@@ -44,7 +48,11 @@ function toPublicArticle(id: string, data: Record<string, any>): PublicArticle {
   };
 }
 
-const byNewest = (a: { createdAt: number | null }, b: { createdAt: number | null }) =>
+export function toArticleCard(a: PublicArticle): ArticleCard {
+  return { slug: a.slug, title: a.title, excerpt: a.excerpt, images: a.images, imageUrl: a.imageUrl, createdAt: a.createdAt };
+}
+
+const byNewest =(a: { createdAt: number | null }, b: { createdAt: number | null }) =>
   (b.createdAt ?? 0) - (a.createdAt ?? 0);
 
 export async function getActiveProducts(): Promise<Product[]> {
@@ -61,16 +69,6 @@ export async function getActiveProducts(): Promise<Product[]> {
         } as unknown as Product & { createdAt: number | null };
       })
       .sort(byNewest);
-  }, []);
-}
-
-export async function getActiveFeatures(): Promise<Feature[]> {
-  return readPublic('features', async () => {
-    const snap = await getAdminDb().collection('features').get();
-    return snap.docs
-      .map(d => ({ id: d.id, ...d.data() } as Feature))
-      .filter(f => f.isActive === true)
-      .sort((a, b) => (a.order || 0) - (b.order || 0));
   }, []);
 }
 

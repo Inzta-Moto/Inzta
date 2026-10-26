@@ -6,7 +6,7 @@ import Header from '@/components/Header';
 import ProductCard from '@/components/ProductCard';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { Product, Feature, PublicArticle } from '@/types';
+import { Product, Feature, ArticleCard } from '@/types';
 import { optimizeCloudinaryUrl, generateCloudinarySrcSet } from '@/lib/utils';
 
 
@@ -23,8 +23,8 @@ const heroImages = [
   'https://res.cloudinary.com/dukddlp0b/image/upload/q_auto/f_auto/v1780670761/099_oaaken.jpg',
 ];
 
-// Products, features, and articles come from the server render (app/page.tsx, ISR) so they are in the HTML.
-export default function HomeClient({ products, features, articles }: { products: Product[]; features: Feature[]; articles: PublicArticle[] }) {
+// Products and articles come from the server render (app/page.tsx, ISR) so they are in the HTML.
+export default function HomeClient({ products, articles }: { products: Product[]; articles: ArticleCard[] }) {
   const [currentSlide, setCurrentSlide] = useState<number>(0);
   const [openFeature, setOpenFeature] = useState<number | null>(0);
 
@@ -195,7 +195,9 @@ export default function HomeClient({ products, features, articles }: { products:
     { icon: 'lock', title: 'Pakai Lebih Tenang', description: 'Dirancang untuk perjalanan panjang dengan ketersediaan spare part yang mudah diganti saat diperlukan.', order: 3, isActive: true },
     { icon: 'wrench', title: 'Universal Fit', description: 'Kompatibel dengan semua jenis motor. Instalasi mudah tanpa modifikasi.', order: 4, isActive: true },
   ];
-  const displayFeatures = features.length > 0 ? features : fallbackFeatures;
+  // firestore.rules denies public reads of `features`, so the client read on main always fell back to
+  // these cards. F-001 keeps that behaviour instead of exposing the collection through the Admin SDK.
+  const displayFeatures = fallbackFeatures;
 
   return (
     <>

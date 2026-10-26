@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Header from '@/components/Header';
 import dynamic from 'next/dynamic';
 
@@ -10,9 +11,12 @@ import { ArrowLeft, Calendar } from 'lucide-react';
 import { formatDate, optimizeCloudinaryUrl, generateCloudinarySrcSet } from '@/lib/utils';
 
 // The article comes from the server render (page.tsx, ISR); a missing slug is handled there with notFound().
-// articleUrl replaces window.location.href, which does not exist during the server render.
 export default function BlogDetailClient({ article, articleUrl }: { article: PublicArticle; articleUrl: string }) {
   const a = article;
+  // window does not exist during the server render; after mount the share links use the address bar
+  // again, so an affiliate's ?aff= code stays in the shared link as before F-001.
+  const [shareUrl, setShareUrl] = useState(articleUrl);
+  useEffect(() => setShareUrl(window.location.href), []);
   // Kompatibel: ambil array images, fallback ke imageUrl lama jika belum diupdate
   const images = a.images || (a.imageUrl ? [a.imageUrl] : []);
 
@@ -84,7 +88,7 @@ export default function BlogDetailClient({ article, articleUrl }: { article: Pub
             <button
               className="detail-share-btn detail-share-copy"
               onClick={() => {
-                navigator.clipboard.writeText(articleUrl);
+                navigator.clipboard.writeText(shareUrl);
                 const toast = document.getElementById('share-toast-blog');
                 if (toast) { toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 2000); }
               }}
@@ -96,7 +100,7 @@ export default function BlogDetailClient({ article, articleUrl }: { article: Pub
               <span>Salin Link</span>
             </button>
             <a
-              href={`https://wa.me/?text=${encodeURIComponent(`*${a.title}*\n\n${a.content?.split('\n')[0] || ''}\n\nBaca selengkapnya: ${articleUrl}`)}`}
+              href={`https://wa.me/?text=${encodeURIComponent(`*${a.title}*\n\n${a.content?.split('\n')[0] || ''}\n\nBaca selengkapnya: ${shareUrl}`)}`}
               target="_blank"
               rel="noopener noreferrer"
               className="detail-share-btn detail-share-wa"

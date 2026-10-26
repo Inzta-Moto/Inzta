@@ -1,9 +1,9 @@
 import Link from 'next/link';
-import { PublicArticle } from '@/types';
+import { ArticleCard } from '@/types';
 import { Calendar, ArrowRight } from 'lucide-react';
 import { formatDate, optimizeCloudinaryUrl, generateCloudinarySrcSet } from '@/lib/utils';
 
-export default function BlogSection({ articles }: { articles: PublicArticle[] }) {
+export default function BlogSection({ articles }: { articles: ArticleCard[] }) {
   return (
     <section className="section blog-section">
       <div className="container">

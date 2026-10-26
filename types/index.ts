@@ -143,6 +143,9 @@ export interface PublicArticle extends Omit<Article, 'createdAt' | 'updatedAt'> 
   updatedAt: number | null;
 }
 
+// Only what a blog card renders, so list sections do not ship full article content to the browser.
+export type ArticleCard = Pick<PublicArticle, 'slug' | 'title' | 'excerpt' | 'images' | 'imageUrl' | 'createdAt'>;
+
 export interface Voucher {
   code: string;
   type: 'percentage' | 'fixed';

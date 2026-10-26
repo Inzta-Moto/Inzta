@@ -108,9 +108,6 @@ function seed() {
   docs.set('products/tas-aktif', { name: 'Tas Aktif', isActive: true, price: 100000, stock: 3, createdAt: '2026-09-01T00:00:00.000Z', updatedAt: '2026-10-26T01:00:00.000Z' });
   docs.set('products/tas-lama', { name: 'Tas Lama', isActive: true, price: 90000, stock: 1, createdAt: timestamp('2026-06-01T00:00:00Z') });
   docs.set('products/tas-nonaktif', { name: 'Tas Nonaktif', isActive: false, price: 1, stock: 0, updatedAt: '2026-12-01T00:00:00.000Z' });
-  docs.set('features/b', { icon: 'lock', title: 'Dua', description: '', order: 2, isActive: true });
-  docs.set('features/a', { icon: 'feather', title: 'Satu', description: '', order: 1, isActive: true });
-  docs.set('features/off', { icon: 'wrench', title: 'Mati', description: '', order: 0, isActive: false });
 }
 
 (async () => {
@@ -147,9 +144,11 @@ function seed() {
     assert.strictEqual(list[0].productType, 'simple');
     assert.strictEqual(list[1].createdAt, Date.parse('2026-06-01T00:00:00Z'));
   });
-  await check('getActiveFeatures: only active, sorted by order', async () => {
-    const list = await content.getActiveFeatures();
-    assert.deepStrictEqual(list.map(f => f.title), ['Satu', 'Dua']);
+  await check('toArticleCard: only card fields, no article content', async () => {
+    const [first] = await content.getArticles();
+    const card = content.toArticleCard(first);
+    assert.deepStrictEqual(Object.keys(card).sort(), ['createdAt', 'excerpt', 'imageUrl', 'images', 'slug', 'title']);
+    assert.ok(!('content' in card));
   });
   await check('getArticle: existing slug -> article, missing slug -> null', async () => {
     assert.strictEqual((await content.getArticle('new-iso')).title, 'Baru');
@@ -161,9 +160,15 @@ function seed() {
     await quiet(async () => {
       assert.deepStrictEqual(await content.getArticles(), []);
       assert.deepStrictEqual(await content.getActiveProducts(), []);
-      assert.deepStrictEqual(await content.getActiveFeatures(), []);
       assert.strictEqual(await content.getArticle('new-iso'), null);
     });
+  });
+  await check('failure policy: no credentials on Vercel Production -> throws instead of caching empty pages', async () => {
+    state.credentials = false; process.env.VERCEL_ENV = 'production';
+    try {
+      await assert.rejects(() => content.getArticles(), /credentials missing in production/);
+      await assert.rejects(() => content.getArticle('new-iso'), /credentials missing in production/);
+    } finally { delete process.env.VERCEL_ENV; }
   });
   await check('failure policy: credentials present and read fails -> throws (ISR keeps last good page)', async () => {
     state.failReads = true;
@@ -229,7 +234,7 @@ function seed() {
     assert.strictEqual((await products.POST(req(simpleProduct))).status, 401);
     assert.deepStrictEqual(revalidated, []);
   });
-  await check('revalidate: failure is logged and the saved write still returns success', async () => {
+  await check('revalidate: a synchronous revalidatePath error does not fail the saved write', async () => {
     asAdmin(); state.failRevalidate = true;
     const r = await quiet(() => articles.POST(req({ ...validArticle, slug: 'tetap-tersimpan' })));
     assert.strictEqual(r.status, 201);
