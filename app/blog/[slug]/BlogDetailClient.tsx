@@ -1,67 +1,24 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { useEffect, useState } from 'react';
 import Header from '@/components/Header';
 import dynamic from 'next/dynamic';
 
 const Footer = dynamic(() => import('@/components/Footer'));
 import Link from 'next/link';
-import { Article } from '@/types';
+import { PublicArticle } from '@/types';
 import { ArrowLeft, Calendar } from 'lucide-react';
 import { formatDate, optimizeCloudinaryUrl, generateCloudinarySrcSet } from '@/lib/utils';
 
-export default function BlogDetailClient({ slug }: { slug: string }) {
-  const [article, setArticle] = useState<Article | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (slug) loadArticle();
-  }, [slug]);
-
-  async function loadArticle() {
-    try {
-      const docSnap = await getDoc(doc(db, 'articles', slug));
-      if (docSnap.exists()) {
-        setArticle(docSnap.data() as Article);
-      } else {
-        setError("Artikel tidak ada di dalam database.");
-      }
-    } catch (e: any) {
-      console.error('[Blog Detail Error]', e);
-      setError(e.message || "Gagal memuat data artikel. Cek koneksi internet Anda.");
-    }
-    setLoading(false);
-  }
-
-  if (loading) return (
-    <>
-      <Header active="blog" />
-      <section className="section"><div className="container"><div className="detail-skeleton"><div className="detail-skeleton-image" /><div className="detail-skeleton-info" /></div></div></section>
-      <Footer />
-    </>
-  );
-
-  if (error || !article) return (
-    <>
-      <Header active="blog" />
-      <section className="section">
-        <div className="container">
-          <div className="empty-state">
-            <p>{error || "Artikel tidak ditemukan"}</p>
-            <Link href="/blog" style={{ marginTop: '1rem', display: 'inline-block', color: '#0070f3' }}>Kembali ke Blog</Link>
-          </div>
-        </div>
-      </section>
-      <Footer />
-    </>
-  );
-
+// The article comes from the server render (page.tsx, ISR); a missing slug is handled there with notFound().
+export default function BlogDetailClient({ article, articleUrl }: { article: PublicArticle; articleUrl: string }) {
   const a = article;
+  // window does not exist during the server render; after mount the share links use the address bar
+  // again, so an affiliate's ?aff= code stays in the shared link as before F-001.
+  const [shareUrl, setShareUrl] = useState(articleUrl);
+  useEffect(() => setShareUrl(window.location.href), []);
   // Kompatibel: ambil array images, fallback ke imageUrl lama jika belum diupdate
-  const images = (a as any).images || (a.imageUrl ? [a.imageUrl] : []);
+  const images = a.images || (a.imageUrl ? [a.imageUrl] : []);
 
   return (
     <>
@@ -131,7 +88,7 @@ export default function BlogDetailClient({ slug }: { slug: string }) {
             <button
               className="detail-share-btn detail-share-copy"
               onClick={() => {
-                navigator.clipboard.writeText(window.location.href);
+                navigator.clipboard.writeText(shareUrl);
                 const toast = document.getElementById('share-toast-blog');
                 if (toast) { toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 2000); }
               }}
@@ -143,7 +100,7 @@ export default function BlogDetailClient({ slug }: { slug: string }) {
               <span>Salin Link</span>
             </button>
             <a
-              href={`https://wa.me/?text=${encodeURIComponent(`*${a.title}*\n\n${a.content?.split('\n')[0] || ''}\n\nBaca selengkapnya: ${window.location.href}`)}`}
+              href={`https://wa.me/?text=${encodeURIComponent(`*${a.title}*\n\n${a.content?.split('\n')[0] || ''}\n\nBaca selengkapnya: ${shareUrl}`)}`}
               target="_blank"
               rel="noopener noreferrer"
               className="detail-share-btn detail-share-wa"

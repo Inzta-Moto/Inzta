@@ -91,6 +91,7 @@ export function buildSimplePayload(data: any) {
     stock: data.stock,
     sku: data.sku ?? null,
     createdAt: data.createdAt ?? new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
   };
 }
 
@@ -127,6 +128,7 @@ export function buildVariablePayload(data: any) {
     priceTo,
     totalStock,
     createdAt: data.createdAt ?? new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
   };
 }
 

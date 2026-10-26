@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getAdminDb } from '@/lib/firebaseAdmin';
 import { requireAdmin } from '@/lib/auth';
+import { revalidateProductPaths } from '@/lib/revalidate';
 import {
   normalizeProduct,
   validateSimpleProduct,
@@ -110,6 +111,7 @@ export async function PUT(
     // Full overwrite — bukan merge, supaya field lama dari tipe sebelumnya
     // (contoh: price/stock di variable product) benar-benar terhapus.
     await getAdminDb().collection('products').doc(params.slug).set(payload);
+    revalidateProductPaths();
 
     return NextResponse.json({ status: 'success' });
   } catch (error: any) {
@@ -127,6 +129,7 @@ export async function DELETE(
 
   try {
     await getAdminDb().collection('products').doc(params.slug).delete();
+    revalidateProductPaths();
     return NextResponse.json({ status: 'success' });
   } catch (error: any) {
     console.error('Error deleting product:', error);

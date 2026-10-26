@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { WA_NUMBER } from '@/lib/firebase';
+import { WA_NUMBER } from '@/lib/constants';
 
 export default function Footer() {
   return (

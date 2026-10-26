@@ -40,3 +40,5 @@ if (!admin.apps.length) {
 // Export getter to avoid throwing during next build when env vars are missing
 export const getAdminDb = () => admin.firestore();
 export const getAdminAuth = () => admin.auth();
+// False when no credentials were found (local or CI build without secrets); public pages then render empty.
+export const hasAdminCredentials = () => admin.apps.length > 0;

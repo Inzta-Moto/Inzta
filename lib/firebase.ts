@@ -11,8 +11,7 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
 };
 
-// WA_NUMBER DIDEKLARASIKAN DI SINI
-export const WA_NUMBER: string = process.env.NEXT_PUBLIC_WA_NUMBER || "6283804058329";
+export { WA_NUMBER } from './constants';
 
 
 let app;

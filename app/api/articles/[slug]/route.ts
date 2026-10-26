@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getAdminDb } from '@/lib/firebaseAdmin';
 import { requireAdmin } from '@/lib/auth';
 import { parseArticleInput } from '@/lib/article-input';
+import { revalidateArticlePaths } from '@/lib/revalidate';
 
 export async function GET(request: Request, { params }: { params: { slug: string } }) {
   try {
@@ -31,6 +32,7 @@ export async function PUT(request: Request, { params }: { params: { slug: string
     const now = new Date().toISOString();
     const createdAt = existing.data()?.createdAt ?? now;
     await ref.set({ ...parsed.value, createdAt, updatedAt: now }, { merge: true });
+    revalidateArticlePaths(params.slug);
     return NextResponse.json({ status: 'success' }, { status: 200 });
   } catch (error: any) {
     console.error('Update article error:', { slug: params.slug, error });
@@ -44,6 +46,7 @@ export async function DELETE(request: Request, { params }: { params: { slug: str
 
   try {
     await getAdminDb().collection('articles').doc(params.slug).delete();
+    revalidateArticlePaths(params.slug);
     return NextResponse.json({ status: 'success' }, { status: 200 });
   } catch (error: any) {
     console.error('Delete article error:', { slug: params.slug, error });

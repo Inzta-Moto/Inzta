@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { User } from 'lucide-react';
-import { WA_NUMBER } from '@/lib/firebase';
+import { WA_NUMBER } from '@/lib/constants';
 import { clearAffiliateSession } from '@/lib/utils';
 
 interface HeaderProps {

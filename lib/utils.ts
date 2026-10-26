@@ -1,4 +1,4 @@
-import { WA_NUMBER } from '@/lib/firebase';
+import { WA_NUMBER } from '@/lib/constants';
 
 export function formatPrice(num: number): string {
   return 'Rp ' + num.toLocaleString('id-ID');
@@ -23,7 +23,8 @@ export function formatDate(val: any, options: Intl.DateTimeFormatOptions = { day
   }
   
   if (isNaN(date.getTime())) return '-';
-  return date.toLocaleDateString('id-ID', options);
+  // Fixed zone: server renders (UTC on Vercel) and browsers must print the same day.
+  return date.toLocaleDateString('id-ID', { timeZone: 'Asia/Jakarta', ...options });
 }
 
 export function calcDiscount(original: number | undefined, current: number): number {

@@ -3,6 +3,7 @@ import { getAdminDb } from '@/lib/firebaseAdmin';
 import { requireAdmin } from '@/lib/auth';
 import { parseArticleInput } from '@/lib/article-input';
 import { isAlreadyExists } from '@/lib/firestore-errors';
+import { revalidateArticlePaths } from '@/lib/revalidate';
 
 export async function GET() {
   try {
@@ -29,6 +30,7 @@ export async function POST(request: Request) {
     const item = { ...parsed.value, createdAt: now, updatedAt: now };
     // create() fails atomically when the document exists, unlike a get() followed by set().
     await getAdminDb().collection('articles').doc(parsed.value.slug).create(item);
+    revalidateArticlePaths(parsed.value.slug);
     return NextResponse.json({ status: 'success', item }, { status: 201 });
   } catch (error: any) {
     if (isAlreadyExists(error)) {

@@ -127,10 +127,24 @@ export interface Article {
   slug: string;
   excerpt: string;
   content: string;
+  images?: string[];
   imageUrl?: string;
   author?: string;
-  createdAt?: { seconds: number; nanoseconds: number };
+  // Legacy documents hold a Firestore Timestamp; writes since F-000 store an ISO string.
+  createdAt?: StoredDate;
+  updatedAt?: StoredDate;
 }
+
+export type StoredDate = { seconds: number; nanoseconds: number } | string | number;
+
+// Article as passed from server pages to client components: dates as epoch milliseconds.
+export interface PublicArticle extends Omit<Article, 'createdAt' | 'updatedAt'> {
+  createdAt: number | null;
+  updatedAt: number | null;
+}
+
+// Only what a blog card renders, so list sections do not ship full article content to the browser.
+export type ArticleCard = Pick<PublicArticle, 'slug' | 'title' | 'excerpt' | 'images' | 'imageUrl' | 'createdAt'>;
 
 export interface Voucher {
   code: string;

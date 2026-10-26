@@ -47,6 +47,8 @@ const fakeAuth = {
 };
 const stubs = {
   'next/headers': { cookies: () => ({ get: (n) => (jar.has(n) ? { value: jar.get(n) } : undefined), set: (n, v) => jar.set(n, v), delete: (n) => jar.delete(n) }) },
+  // Write routes revalidate ISR pages since F-001; that behaviour is tested in tests/f001-content.cjs.
+  'next/cache': { revalidatePath: () => {} },
   [path.join(ROOT, 'lib/firebaseAdmin')]: { getAdminDb: () => fakeDb, getAdminAuth: () => fakeAuth },
 };
 

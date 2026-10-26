@@ -1,69 +1,56 @@
 import { MetadataRoute } from 'next';
-import { getAdminDb } from '@/lib/firebaseAdmin';
+import { getActiveProducts, getArticles, newestDate } from '@/lib/public-content';
+
+// ISR like the pages it lists; article and product writes call revalidatePath('/sitemap.xml').
+export const revalidate = 3600;
+
+// lastModified is omitted when a document has no date, because the request time would tell Google
+// that every URL changed at every crawl.
+const lastModified = (ms: number | null) => (ms === null ? {} : { lastModified: new Date(ms) });
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://inzta.id';
+
+  // Errors propagate (see lib/public-content.ts) so a failed read keeps the last good sitemap.
+  const [products, articles] = await Promise.all([getActiveProducts(), getArticles()]);
 
   // Halaman statis
   const staticRoutes: MetadataRoute.Sitemap = [
     {
       url: baseUrl,
-      lastModified: new Date(),
+      ...lastModified(newestDate([...products, ...articles])),
       changeFrequency: 'daily',
       priority: 1,
     },
     {
       url: `${baseUrl}/produk`,
-      lastModified: new Date(),
+      ...lastModified(newestDate(products)),
       changeFrequency: 'daily',
       priority: 0.9,
     },
     {
       url: `${baseUrl}/blog`,
-      lastModified: new Date(),
+      ...lastModified(newestDate(articles)),
       changeFrequency: 'weekly',
       priority: 0.8,
     },
   ];
 
   // Halaman dinamis produk
-  const dynamicRoutes: MetadataRoute.Sitemap = [];
+  const productRoutes: MetadataRoute.Sitemap = products.map(p => ({
+    url: `${baseUrl}/produk/${p.slug}`,
+    ...lastModified(newestDate([p])),
+    changeFrequency: 'weekly',
+    priority: 0.8,
+  }));
 
-  try {
-    const productsSnapshot = await getAdminDb().collection('products').where('isActive', '==', true).get();
-    
-    productsSnapshot.forEach((doc) => {
-      // id dokumen adalah slugnya
-      const slug = doc.id;
-      
-      dynamicRoutes.push({
-        url: `${baseUrl}/produk/${slug}`,
-        lastModified: new Date(), // Idealnya diambil dari properti updatedAt di DB jika ada
-        changeFrequency: 'weekly',
-        priority: 0.8,
-      });
-    });
-  } catch (error) {
-    console.error('Error generating sitemap for products:', error);
-  }
+  // Every article is public until F-010 adds the draft status; its filter goes into getArticles().
+  const articleRoutes: MetadataRoute.Sitemap = articles.map(a => ({
+    url: `${baseUrl}/blog/${a.slug}`,
+    ...lastModified(newestDate([a])),
+    changeFrequency: 'monthly',
+    priority: 0.7,
+  }));
 
-  // Halaman dinamis blog (opsional jika blog sudah ada kontennya)
-  try {
-    const blogsSnapshot = await getAdminDb().collection('articles').where('isPublished', '==', true).get();
-    
-    blogsSnapshot.forEach((doc) => {
-      const slug = doc.id;
-      
-      dynamicRoutes.push({
-        url: `${baseUrl}/blog/${slug}`,
-        lastModified: new Date(), 
-        changeFrequency: 'monthly',
-        priority: 0.7,
-      });
-    });
-  } catch (error) {
-    console.error('Error generating sitemap for blogs:', error);
-  }
-
-  return [...staticRoutes, ...dynamicRoutes];
+  return [...staticRoutes, ...productRoutes, ...articleRoutes];
 }
