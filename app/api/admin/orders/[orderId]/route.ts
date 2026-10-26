@@ -3,6 +3,7 @@ import { getAdminDb } from '@/lib/firebaseAdmin';
 import * as admin from 'firebase-admin';
 import { verifyAdminSession } from '@/lib/auth';
 import { computeTotalStock } from '@/lib/product-utils';
+import { revalidateProductPaths } from '@/lib/revalidate';
 import type { InventorySnapshotItem } from '@/types';
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -200,6 +201,7 @@ export async function PATCH(
         });
       });
 
+      revalidateProductPaths(); // stock changed; the home page shows "Sisa N unit"
       return NextResponse.json({ status: 'success' });
     }
 
@@ -333,6 +335,7 @@ export async function PATCH(
         });
       });
 
+      revalidateProductPaths(); // stock changed; the home page shows "Sisa N unit"
       return NextResponse.json({ status: 'success' });
     }
 
@@ -425,6 +428,7 @@ export async function DELETE(
         if (commRef) transaction.delete(commRef);
         transaction.delete(orderRef);
       });
+      revalidateProductPaths();
     } else {
       // Non-completed order: batch sederhana (tidak ada stock/commission)
       const batch = db.batch();

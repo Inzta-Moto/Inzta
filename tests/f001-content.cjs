@@ -43,6 +43,8 @@ const fakeDb = {
     get: async () => snapshotOf(col),
     where: (field, op, value) => ({ get: async () => snapshotOf(col, d => d[field] === value), limit: () => ({ get: async () => snapshotOf(col, d => d[field] === value) }) }),
   }),
+  // Enough for the order status revert path; not atomic.
+  runTransaction: async (fn) => fn({ get: (ref) => ref.get(), update: (ref, v) => ref.set(v, { merge: true }), delete: (ref) => ref.delete() }),
 };
 const fakeAuth = {
   verifySessionCookie: async (c) => { if (c !== 'cookie-admin') throw new Error('invalid'); return { uid: 'u-admin', email: 'admin@inzta.id' }; },
@@ -89,6 +91,7 @@ const articles = require(path.join(ROOT, 'app/api/articles/route.ts'));
 const article = require(path.join(ROOT, 'app/api/articles/[slug]/route.ts'));
 const products = require(path.join(ROOT, 'app/api/products/route.ts'));
 const product = require(path.join(ROOT, 'app/api/products/[slug]/route.ts'));
+const order = require(path.join(ROOT, 'app/api/admin/orders/[orderId]/route.ts'));
 
 const results = [];
 async function check(name, fn) {
@@ -227,6 +230,16 @@ function seed() {
     assert.deepStrictEqual(revalidated, ['/', '/sitemap.xml']);
     revalidated.length = 0; assert.strictEqual((await product.DELETE(req({}), { params: { slug: 'tas-uji' } })).status, 200);
     assert.deepStrictEqual(revalidated, ['/', '/sitemap.xml']);
+  });
+  await check('revalidate: order status change revalidates home and sitemap (stock); failed change does not', async () => {
+    asAdmin();
+    docs.set('orders/o-1', { status: 'pending', items: [] });
+    revalidated.length = 0; assert.strictEqual((await order.PATCH(req({ status: 'cancelled' }), { params: { orderId: 'o-1' } })).status, 200);
+    assert.deepStrictEqual(revalidated, ['/', '/sitemap.xml']);
+    assert.strictEqual(docs.get('orders/o-1').status, 'cancelled');
+    revalidated.length = 0;
+    assert.strictEqual((await quiet(() => order.PATCH(req({ status: 'cancelled' }), { params: { orderId: 'tidak-ada' } }))).status, 500);
+    assert.deepStrictEqual(revalidated, []);
   });
   await check('revalidate: rejected write (no cookie) revalidates nothing', async () => {
     jar.clear(); revalidated.length = 0;
