@@ -134,6 +134,7 @@ export default function ArticleEditor({ slug: routeSlug }: { slug?: string }) {
   const [tab, setTab] = useState<'write' | 'preview'>('write');
   const [preview, setPreview] = useState<{ html: string; warnings: RenderWarning[] } | null>(null);
   const [previewState, setPreviewState] = useState<'idle' | 'loading' | 'error'>('idle');
+  const [previewError, setPreviewError] = useState('');
   const [busy, setBusy] = useState<null | 'save' | 'publish' | 'unpublish'>(null);
   const [message, setMessage] = useState<Message | null>(null);
   const [dialog, setDialog] = useState<Dialog | null>(null);
@@ -245,7 +246,8 @@ export default function ArticleEditor({ slug: routeSlug }: { slug?: string }) {
       }
       const body = await readJson(res);
       if (!res.ok) {
-        const text = res.status === 409 && (!server || renaming) ? 'Slug ini sudah dipakai artikel lain. Ganti slug lalu simpan lagi.' : adminErrorMessage(res.status, body.error);
+        const local = autosave.status.state === 'saved' ? ' Salinan lokal di browser ini masih ada.' : '';
+        const text = res.status === 409 && (!server || renaming) ? 'Slug ini sudah dipakai artikel lain. Ganti slug lalu simpan lagi.' : adminErrorMessage(res.status, body.error) + (res.status >= 500 ? local : '');
         setMessage({ kind: 'error', text, checks: body.checks });
         return null;
       }
@@ -355,7 +357,7 @@ export default function ArticleEditor({ slug: routeSlug }: { slug?: string }) {
       if (!res.ok) {
         setPreviewState('error');
         setPreview(null);
-        setMessage({ kind: 'error', text: body.error ? adminErrorMessage(res.status, body.error) : 'Pratinjau gagal dibuat. Coba lagi.' });
+        setPreviewError(body.error ? adminErrorMessage(res.status, body.error) : 'Pratinjau gagal dibuat. Coba lagi.');
         return;
       }
       setPreview(body);
@@ -363,6 +365,7 @@ export default function ArticleEditor({ slug: routeSlug }: { slug?: string }) {
     } catch (e: any) {
       setPreviewState('error');
       setPreview(null);
+      setPreviewError('Pratinjau gagal dimuat. Cek koneksi, lalu klik Pratinjau lagi.');
     }
   }
 
@@ -538,6 +541,7 @@ export default function ArticleEditor({ slug: routeSlug }: { slug?: string }) {
         {/* Inside the sticky bar so a rejected save or publish is visible from anywhere on the page. */}
         {message && (
           <div className={`article-editor-message ${message.kind === 'error' ? 'form-error' : 'article-editor-ok'}`} role={message.kind === 'error' ? 'alert' : 'status'}>
+            <button type="button" className="article-editor-message-close" onClick={() => setMessage(null)} aria-label="Tutup pesan">&times;</button>
             {message.text}
             {message.checks && message.checks.length > 0 && (
               <ul className="article-editor-errors">{message.checks.map(c => <li key={c.id}>{c.label}{c.detail ? `: ${c.detail}` : ''}</li>)}</ul>
@@ -609,7 +613,7 @@ export default function ArticleEditor({ slug: routeSlug }: { slug?: string }) {
             </div>
             <div role="tabpanel" id="panel-preview" aria-labelledby="tab-preview" className="article-editor-preview-wrap" hidden={tab !== 'preview'}>
                 {previewState === 'loading' && <p className="article-editor-help">Menyiapkan pratinjau...</p>}
-                {previewState === 'error' && <p className="form-error" role="alert">Pratinjau gagal dimuat. Cek koneksi, lalu klik Pratinjau lagi.</p>}
+                {previewState === 'error' && <p className="form-error" role="alert">{previewError}</p>}
                 {preview && preview.warnings.length > 0 && (
                   <ul className="article-editor-warnings">
                     {preview.warnings.map((w, i) => <li key={i}>{warningText(w)}</li>)}

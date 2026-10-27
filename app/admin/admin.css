@@ -359,7 +359,10 @@ select.form-input { appearance: none; background-image: url("data:image/svg+xml,
 /* .admin-topbar is 73 px tall with the mobile menu button and about 54 px without it. */
 @media (min-width: 768px) { .article-editor-topbar { top: 54px; } }
 .article-editor-blocked { font-size: 12px; font-weight: 600; color: #92400E; text-decoration: underline; }
-.article-editor-message { flex-basis: 100%; max-height: 40vh; overflow-y: auto; }
+.article-editor-message { position: relative; flex-basis: 100%; max-height: 40vh; overflow-y: auto; padding-right: 36px; }
+.article-editor-message-close { position: absolute; top: 4px; right: 4px; width: 28px; height: 28px; font-size: 18px; line-height: 1; color: inherit; background: none; border: none; cursor: pointer; }
+/* Panel headings are anchor targets (e.g. #panel-checklist); keep them clear of the two sticky bars. */
+.article-panel-title { scroll-margin-top: 160px; }
 .article-editor-body-label { margin-bottom: -10px; }
 .article-editor-tablist { display: flex; gap: 4px; }
 .article-editor-back { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; color: var(--text-secondary); }
@@ -389,9 +392,13 @@ select.form-input { appearance: none; background-image: url("data:image/svg+xml,
 .md-toolbar { display: flex; flex-wrap: wrap; gap: 2px; margin-left: auto; }
 .md-toolbar-btn { position: relative; width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; color: var(--text-secondary); background: none; border: 1px solid transparent; border-radius: 4px; cursor: pointer; }
 .md-toolbar-btn:hover { background: var(--bg-white); border-color: var(--border-light); color: var(--text-primary); }
-.md-toolbar-btn[data-tip]:hover::after, .md-toolbar-btn[data-tip]:focus-visible::after { content: attr(data-tip); position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); z-index: 10; padding: 4px 8px; margin-bottom: 4px; font-size: 11px; font-weight: 500; white-space: nowrap; color: var(--text-inverse); background: var(--text-primary); border-radius: 4px; }
-/* Bridge between button and tooltip so the pointer can move onto the tooltip without it disappearing. */
-.md-toolbar-btn[data-tip]:hover::before { content: ''; position: absolute; bottom: 100%; left: 0; right: 0; height: 6px; }
+.md-toolbar-btn[data-tip]:focus-visible::after { content: attr(data-tip); position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); z-index: 10; padding: 4px 8px; margin-bottom: 4px; font-size: 11px; font-weight: 500; white-space: nowrap; color: var(--text-inverse); background: var(--text-primary); border-radius: 4px; }
+/* Hover tooltips only for a mouse: on touch, :hover sticks after a tap and the tooltip would catch the next tap.
+   The bridge lets the pointer move onto the tooltip without it disappearing. */
+@media (hover: hover) and (pointer: fine) {
+  .md-toolbar-btn[data-tip]:hover::after { content: attr(data-tip); position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); z-index: 10; padding: 4px 8px; margin-bottom: 4px; font-size: 11px; font-weight: 500; white-space: nowrap; color: var(--text-inverse); background: var(--text-primary); border-radius: 4px; }
+  .md-toolbar-btn[data-tip]:hover::before { content: ''; position: absolute; bottom: 100%; left: 0; right: 0; height: 6px; }
+}
 .md-toolbar-btn:last-child[data-tip]::after { left: auto; right: 0; transform: none; }
 .md-toolbar.tips-hidden .md-toolbar-btn::after, .md-toolbar.tips-hidden .md-toolbar-btn::before { content: none; }
 .article-editor-textarea { display: block; min-height: 420px; padding: 16px; font-size: 15px; line-height: 1.7; border: none; border-radius: 0; background: var(--bg-white); resize: none; overflow: hidden; }

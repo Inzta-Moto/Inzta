@@ -8,7 +8,7 @@ import type { ChecklistItem, PublicArticle } from '@/types';
 // never filter drafts, so they must only run behind requireAdmin().
 
 // Shown to the admin as is (lib/admin-messages.ts passes server messages through), so each says what to do next.
-export const ARTICLE_SERVER_FAIL = 'Server gagal memproses artikel. Isi Anda masih tersimpan di browser ini; coba lagi beberapa menit lagi, dan hubungi Tim Developer bila berulang.';
+export const ARTICLE_SERVER_FAIL = 'Server gagal memproses artikel. Coba lagi beberapa menit lagi, dan hubungi Tim Developer bila berulang.';
 export const ARTICLE_NOT_FOUND = 'Artikel tidak ditemukan. Mungkin sudah dihapus di tab lain; salin isi Anda dulu, lalu buat artikel baru.';
 
 /** API shape: the stored fields with every date as epoch milliseconds, so the editor can echo

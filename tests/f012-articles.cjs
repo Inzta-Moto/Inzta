@@ -15,7 +15,7 @@ const versions = new Map();
 const jar = new Map();
 const revalidated = [];
 const counters = { reads: 0, writes: 0 };
-const state = { failRevalidate: false, beforeUpdate: null };
+const state = { failRevalidate: false, beforeUpdate: null, failGet: false };
 
 function bump(key) { versions.set(key, (versions.get(key) || 0) + 1); }
 function docRef(col, id) {
@@ -23,6 +23,7 @@ function docRef(col, id) {
   return {
     get: async () => {
       counters.reads++;
+      if (state.failGet) throw new Error('14 UNAVAILABLE: firestore down');
       return { exists: docs.has(key), id, data: () => docs.get(key), updateTime: docs.has(key) ? { v: versions.get(key) } : undefined };
     },
     create: async (value) => {
@@ -331,6 +332,10 @@ const ready = {
     as('cookie-admin');
     const r = await publish.POST(req({}), p('tidak-ada'));
     assert.match((await json(r)).error, /tidak ditemukan/);
+    state.failGet = true;
+    const r500 = await quiet(() => publish.POST(req({}), p('tas-samping-xsr-155')));
+    assert.strictEqual(r500.status, 500);
+    assert.match((await json(r500)).error, /Server gagal memproses artikel/);
   });
   await check('GET single: draft -> 404 for the public, 200 for an admin', async () => {
     as(null); assert.strictEqual((await article.GET(req({}, 'GET'), p('draf-kosong'))).status, 404);

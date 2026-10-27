@@ -42,7 +42,9 @@ export default function Dialog({ title, onClose, returnFocusRef, children, foote
     document.addEventListener('keydown', onKey);
     return () => {
       document.removeEventListener('keydown', onKey);
-      (returnFocusRef?.current || previous)?.focus();
+      // The textarea stays mounted but hidden on the Pratinjau tab; focusing it there would drop focus.
+      const target = returnFocusRef?.current;
+      (target && target.offsetParent !== null ? target : previous)?.focus();
     };
   }, [returnFocusRef]);
 

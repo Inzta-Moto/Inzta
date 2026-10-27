@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Bold, Heading2, Heading3, ImagePlus, Italic, Link2, List, ListOrdered } from 'lucide-react';
 
 export type ToolbarAction = 'h2' | 'h3' | 'bold' | 'italic' | 'ul' | 'ol' | 'link' | 'image';
@@ -19,13 +19,23 @@ const BUTTONS: { action: ToolbarAction; label: string; tip: string; icon: JSX.El
 export default function MarkdownToolbar({ onAction, disabled }: { onAction: (a: ToolbarAction) => void; disabled?: boolean }) {
   // Escape hides the tooltips until the pointer or focus leaves the toolbar (WCAG 1.4.13).
   const [tipsHidden, setTipsHidden] = useState(false);
+  const [hovered, setHovered] = useState(false);
+  // Toolbar buttons keep focus in the textarea (mousedown is prevented), so a mouse user's Escape never
+  // reaches the toolbar; listen on the document while the pointer is over it.
+  useEffect(() => {
+    if (!hovered) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setTipsHidden(true); };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [hovered]);
   return (
     <div
       className={`md-toolbar${tipsHidden ? ' tips-hidden' : ''}`}
       role="toolbar"
       aria-label="Format teks"
       onKeyDown={e => { if (e.key === 'Escape') setTipsHidden(true); }}
-      onMouseLeave={() => setTipsHidden(false)}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => { setHovered(false); setTipsHidden(false); }}
       onBlur={e => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setTipsHidden(false); }}
     >
       {BUTTONS.map(b => (

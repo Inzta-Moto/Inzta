@@ -40,7 +40,8 @@ export function runChecklist(article: ChecklistInput, opts: ChecklistOptions = {
 
   if (markdown) {
     const unrenderable = (opts.renderWarnings || []).some(w => w.kind === 'render-error');
-    blocking.push(item('C-4', 'Isi artikel terisi dan bisa diproses', Boolean(content.trim()) && !unrenderable,
+    // The editor has no renderer, so it cannot see render-error; the server adds it at publish (design.md).
+    blocking.push(item('C-4', 'Isi artikel terisi', Boolean(content.trim()) && !unrenderable,
       unrenderable ? 'Isi tidak bisa diproses: daftar atau kutipan bersarang terlalu dalam. Rapikan strukturnya.' : undefined));
     const coverOk = isAllowedImageUrl(article.coverImage) && Boolean((article.coverAlt || '').trim());
     blocking.push(item('C-5', 'Gambar sampul diunggah dan punya teks alt', coverOk));
