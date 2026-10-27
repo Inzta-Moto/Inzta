@@ -122,29 +122,59 @@ export interface Feature {
   isActive: boolean;
 }
 
+export type ArticleStatus = 'draft' | 'published';
+export type ContentFormat = 'plain' | 'markdown';
+
 export interface Article {
   title: string;
   slug: string;
   excerpt: string;
   content: string;
+  // Missing on documents written before F-012: no contentFormat means 'plain', no status means 'published'.
+  contentFormat?: ContentFormat;
+  status?: ArticleStatus;
+  coverImage?: string;
+  coverAlt?: string;
+  metaTitle?: string;
+  metaDescription?: string;
+  // Legacy gallery, used only by 'plain' articles.
   images?: string[];
   imageUrl?: string;
   author?: string;
+  source?: 'admin' | 'automation';
   // Legacy documents hold a Firestore Timestamp; writes since F-000 store an ISO string.
   createdAt?: StoredDate;
   updatedAt?: StoredDate;
+  // First publish; kept on unpublish so the slug stays locked.
+  publishedAt?: StoredDate;
 }
 
 export type StoredDate = { seconds: number; nanoseconds: number } | string | number;
 
 // Article as passed from server pages to client components: dates as epoch milliseconds.
-export interface PublicArticle extends Omit<Article, 'createdAt' | 'updatedAt'> {
+export interface PublicArticle extends Omit<Article, 'createdAt' | 'updatedAt' | 'publishedAt'> {
   createdAt: number | null;
   updatedAt: number | null;
+  publishedAt: number | null;
 }
 
 // Only what a blog card renders, so list sections do not ship full article content to the browser.
-export type ArticleCard = Pick<PublicArticle, 'slug' | 'title' | 'excerpt' | 'images' | 'imageUrl' | 'createdAt'>;
+export type ArticleCard = Pick<
+  PublicArticle,
+  'slug' | 'title' | 'excerpt' | 'images' | 'imageUrl' | 'coverImage' | 'coverAlt' | 'createdAt' | 'publishedAt'
+>;
+
+export interface ChecklistItem {
+  id: string;
+  label: string;
+  ok: boolean;
+  detail?: string;
+}
+
+export interface ChecklistResult {
+  blocking: ChecklistItem[];
+  warnings: ChecklistItem[];
+}
 
 export interface Voucher {
   code: string;
