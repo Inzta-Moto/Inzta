@@ -9,20 +9,34 @@ import Link from 'next/link';
 import { PublicArticle } from '@/types';
 import { ArrowLeft, Calendar } from 'lucide-react';
 import { formatDate, optimizeCloudinaryUrl, generateCloudinarySrcSet } from '@/lib/utils';
+import { formatOf, publicDate } from '@/lib/article-format';
+
+interface BlogDetailProps {
+  // Without content: the body arrives as bodyHtml, rendered and sanitized on the server (lib/markdown.ts).
+  article: Omit<PublicArticle, 'content'>;
+  bodyHtml: string;
+  articleUrl: string;
+  // Admin preview of a draft (/admin/pratinjau/{slug}).
+  previewBanner?: boolean;
+}
 
 // The article comes from the server render (page.tsx, ISR); a missing slug is handled there with notFound().
-export default function BlogDetailClient({ article, articleUrl }: { article: PublicArticle; articleUrl: string }) {
+export default function BlogDetailClient({ article, bodyHtml, articleUrl, previewBanner }: BlogDetailProps) {
   const a = article;
+  const isMarkdown = formatOf(a) === 'markdown';
   // window does not exist during the server render; after mount the share links use the address bar
   // again, so an affiliate's ?aff= code stays in the shared link as before F-001.
   const [shareUrl, setShareUrl] = useState(articleUrl);
   useEffect(() => setShareUrl(window.location.href), []);
-  // Kompatibel: ambil array images, fallback ke imageUrl lama jika belum diupdate
-  const images = a.images || (a.imageUrl ? [a.imageUrl] : []);
+  // Plain (legacy) articles keep their gallery; Markdown articles show one cover and inline images.
+  const images = isMarkdown ? [] : a.images || (a.imageUrl ? [a.imageUrl] : []);
 
   return (
     <>
       <Header active="blog" />
+      {previewBanner && (
+        <div className="article-preview-banner" role="status">Pratinjau, belum tayang. Halaman ini hanya terlihat oleh admin.</div>
+      )}
       
       <section className="detail-page-header">
         <div className="container">
@@ -43,8 +57,21 @@ export default function BlogDetailClient({ article, articleUrl }: { article: Pub
           <div className="blog-detail-header">
             <h1 className="blog-detail-title">{a.title}</h1>
             <div className="blog-card-meta" style={{ marginBottom: '24px' }}>
-              <Calendar size={14} /> {formatDate(a.createdAt, { day: 'numeric', month: 'long', year: 'numeric' })}
+              <Calendar size={14} /> {formatDate(publicDate(a), { day: 'numeric', month: 'long', year: 'numeric' })}
             </div>
+
+            {isMarkdown && a.coverImage && (
+              <div className="blog-detail-gallery">
+                <div className="blog-detail-image-main">
+                  <img
+                    src={optimizeCloudinaryUrl(a.coverImage, 1200)}
+                    srcSet={generateCloudinarySrcSet(a.coverImage, [600, 1000, 1400])}
+                    sizes="(max-width: 768px) 100vw, 800px"
+                    alt={a.coverAlt || ''}
+                  />
+                </div>
+              </div>
+            )}
             
             {/* GALLERY GAMBAR (1 BESAR, SISANYA KECIL) */}
             {images.length > 0 && (
@@ -79,9 +106,10 @@ export default function BlogDetailClient({ article, articleUrl }: { article: Pub
             )}
           </div>
           
-          <div className="blog-detail-content">
-            {a.content}
-          </div>
+          <div
+            className={`blog-detail-content article-body${isMarkdown ? '' : ' article-body-plain'}`}
+            dangerouslySetInnerHTML={{ __html: bodyHtml }}
+          />
           
           {/* ── Share Section ── */}
           <div className="detail-share" style={{ marginTop: '48px' }}>
@@ -100,7 +128,7 @@ export default function BlogDetailClient({ article, articleUrl }: { article: Pub
               <span>Salin Link</span>
             </button>
             <a
-              href={`https://wa.me/?text=${encodeURIComponent(`*${a.title}*\n\n${a.content?.split('\n')[0] || ''}\n\nBaca selengkapnya: ${shareUrl}`)}`}
+              href={`https://wa.me/?text=${encodeURIComponent(`*${a.title}*\n\n${a.excerpt ? `${a.excerpt}\n\n` : ''}Baca selengkapnya: ${shareUrl}`)}`}
               target="_blank"
               rel="noopener noreferrer"
               className="detail-share-btn detail-share-wa"

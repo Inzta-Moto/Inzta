@@ -44,7 +44,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.8,
   }));
 
-  // Every article is public until F-010 adds the draft status; its filter goes into getArticles().
+  // getArticles() returns published articles only (F-012), so drafts never reach the sitemap.
   const articleRoutes: MetadataRoute.Sitemap = articles.map(a => ({
     url: `${baseUrl}/blog/${a.slug}`,
     ...lastModified(newestDate([a])),
