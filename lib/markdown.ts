@@ -36,7 +36,12 @@ function safeHref(href: string): { href: string; external: boolean } | null {
 }
 
 const SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
-  allowedTags: ['h2', 'h3', 'p', 'ul', 'ol', 'li', 'strong', 'em', 'a', 'img', 'figure', 'figcaption', 'br'],
+  // Tables: spec amendment 2026-10-27 (Sehan), tags only. marked's align attributes are not on the
+  // allowlist, so they are dropped like any other attribute.
+  allowedTags: [
+    'h2', 'h3', 'p', 'ul', 'ol', 'li', 'strong', 'em', 'a', 'img', 'figure', 'figcaption', 'br',
+    'table', 'thead', 'tbody', 'tr', 'th', 'td',
+  ],
   allowedAttributes: {
     a: ['href', 'rel', 'target'],
     img: ['src', 'srcset', 'sizes', 'alt', 'loading', 'decoding'],

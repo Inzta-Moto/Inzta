@@ -2681,6 +2681,10 @@ ul, ol { list-style: none; }
 .article-body figure { margin: 2em 0; }
 .article-body img { display: block; width: 100%; height: auto; border-radius: 8px; border: 1px solid var(--border-light); }
 .article-body figcaption { margin-top: 0.5em; font-size: 0.875em; color: var(--text-tertiary); }
+/* Tables (amendment 2026-10-27): the sanitizer allows no wrapper, so the table itself scrolls sideways on phones. */
+.article-body table { display: block; max-width: 100%; overflow-x: auto; border-collapse: collapse; font-size: 0.9375em; line-height: 1.5; }
+.article-body th, .article-body td { padding: 0.6em 0.8em; text-align: left; vertical-align: top; border: 1px solid var(--border-light); min-width: 8em; }
+.article-body th { color: var(--text-primary); background: var(--bg-subtle); }
 /* Plain (legacy) articles keep the pre-F-012 type size and full width; only paragraph spacing changes. */
 .article-body.article-body-plain { max-width: none; font-size: 16px; line-height: 1.8; }
 .article-preview-banner { margin-bottom: 24px; padding: 10px 16px; font-size: 13px; font-weight: 600; color: var(--text-primary); background: var(--accent-light); border: 1px solid var(--accent-border); border-radius: 8px; }

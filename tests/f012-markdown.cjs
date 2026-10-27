@@ -35,7 +35,7 @@ const md = (content) => renderArticle({ content, contentFormat: 'markdown' });
 const CLD = 'https://res.cloudinary.com/dukddlp0b/image/upload/v1/inzta/foto.jpg';
 const count = (html, re) => (html.match(re) || []).length;
 // Every tag and attribute in the output must be on the allowlist of requirement 4.3 / 4.10.
-const ALLOWED = { h2: [], h3: [], p: [], ul: [], ol: [], li: [], strong: [], em: [], br: [], figure: [], figcaption: [], a: ['href', 'rel', 'target'], img: ['src', 'srcset', 'sizes', 'alt', 'loading', 'decoding'] };
+const ALLOWED = { h2: [], h3: [], p: [], ul: [], ol: [], li: [], strong: [], em: [], br: [], figure: [], figcaption: [], table: [], thead: [], tbody: [], tr: [], th: [], td: [], a: ['href', 'rel', 'target'], img: ['src', 'srcset', 'sizes', 'alt', 'loading', 'decoding'] };
 function assertAllowlisted(html) {
   for (const m of html.matchAll(/<([a-zA-Z0-9]+)([^>]*)>/g)) {
     const tag = m[1].toLowerCase();
@@ -121,7 +121,24 @@ check('sanitizer layer alone: foreign src or srcset candidate, javascript: href,
     assert.ok(!/evil|\.\.|onerror|style|class/.test(out), `${img} -> ${out}`);
   }
   assert.strictEqual(sanitizeArticleHtml('<a href="javascript:alert(1)" onclick="x">a</a>'), '<a>a</a>');
-  assert.strictEqual(sanitizeArticleHtml('<h1 id="x">a</h1><table><tr><td>b</td></tr></table>'), 'ab');
+  assert.strictEqual(sanitizeArticleHtml('<h1 id="x">a</h1><table class="t" style="x"><tr onclick="x"><td align="left" colspan="9">b</td></tr></table>'), 'a<table><tr><td>b</td></tr></table>');
+});
+// Tables: spec amendment 2026-10-27 (approved by Sehan)
+check('tables: GFM table -> table/thead/tbody/tr/th/td without attributes (alignment dropped)', () => {
+  const { html, warnings } = md('| Posisi | Kapasitas |\n|:---|---:|\n| Depan | **4,4 liter** |\n| [Belakang](/produk/side-bag-inzta-universal-motor) | 7 liter |');
+  assert.deepStrictEqual(warnings, []);
+  assert.ok(/<table>\s*<thead>\s*<tr>\s*<th>Posisi<\/th>/.test(html), html);
+  assert.ok(html.includes('<td><strong>4,4 liter</strong></td>'));
+  assert.ok(html.includes('<td><a href="/produk/side-bag-inzta-universal-motor">Belakang</a></td>'));
+  assert.ok(!/align=|style=/.test(html), html);
+  assertAllowlisted(html);
+});
+check('tables: attacks inside cells (raw HTML, javascript: link, image) are neutralised', () => {
+  const src = '| A | B |\n|---|---|\n| <img src=x onerror=alert(1)> | [x](javascript:alert(1)) |\n| <script>alert(1)</script> | ![a](https://evil.example/a.jpg) |';
+  const { html, warnings } = md(src);
+  assert.ok(!/onerror|<script|javascript:|evil\.example|<img/i.test(html), html);
+  assert.ok(warnings.some(w => w.kind === 'raw-html') && warnings.some(w => w.kind === 'image-host'));
+  assertAllowlisted(html);
 });
 check('caption (Markdown title) -> figcaption, quotes and markup escaped', () => {
   const { html } = md(`![Alt "kutip" & <b>](${CLD} "Foto: \\"Tim\\" & <i>INZTA</i>")`);
@@ -206,6 +223,9 @@ check('K-02 "Naskah": h2 and h3, 4 figures, product links, lists, no h1, no raw 
   assert.ok(count(html, /<h2>/g) >= 6 && count(html, /<h3>/g) >= 2);
   assert.ok(html.includes('<a href="/produk/side-bag-inzta-xsr-155">'));
   assert.ok(/<ol>/.test(html));
+  // Both K-02 comparison tables render as tables, not as run-together text (amendment 2026-10-27).
+  assert.strictEqual(count(html, /<table>/g), 2);
+  assert.ok(html.includes('<th>Posisi</th>') && !/\|---/.test(html));
   assert.ok(!/(^|\s)##\s|\*\*|!\[/.test(html.replace(/<[^>]+>/g, ' ')), 'raw Markdown left in text');
   assertAllowlisted(html);
 });
