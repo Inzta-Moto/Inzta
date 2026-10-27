@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, DragEvent, ChangeEvent } from 'react';
-import imageCompression from 'browser-image-compression';
+import { ACCEPTED_IMAGE_TYPES, uploadImage } from '@/lib/cloudinary-upload';
 
 interface ImageUploadProps {
   value: string[];
@@ -15,49 +15,17 @@ export default function ImageUpload({ value, onChange, max = 1 }: ImageUploadPro
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFile = async (file: File) => {
-    if (!file.type.startsWith('image/')) { alert('Format harus gambar (JPG, PNG, WebP)'); return; }
-    if (file.size > 5 * 1024 * 1024) { alert('Ukuran maksimal 5MB'); return; }
     if (value.length >= max) { alert(`Maksimal ${max} gambar`); return; }
 
     setUploading(true);
     setProgress(0);
-
-    let fileToUpload = file;
     try {
-      const options = {
-        maxSizeMB: 1, // Kompresi hingga maksimal ~1MB
-        maxWidthOrHeight: 1920, // Batas resolusi HD
-        useWebWorker: true,
-        initialQuality: 0.85 // Kualitas 85% untuk menjaga ketajaman
-      };
-      const compressedFile = await imageCompression(file, options);
-      if (compressedFile.size < file.size) {
-        fileToUpload = compressedFile;
-      }
+      const { url } = await uploadImage(file, setProgress);
+      onChange([...value, url]);
     } catch (error) {
-      console.error('Error compressing image:', error);
+      alert(error instanceof Error ? error.message : 'Upload gagal. Coba lagi.');
     }
-
-    const formData = new FormData();
-    formData.append('file', fileToUpload);
-    formData.append('upload_preset', 'inztaa');
-
-    const xhr = new XMLHttpRequest();
-    xhr.upload.addEventListener('progress', (e) => {
-      if (e.lengthComputable) setProgress(Math.round((e.loaded / e.total) * 100));
-    });
-
-    xhr.onload = () => {
-      if (xhr.status === 200) {
-        const res = JSON.parse(xhr.responseText);
-        onChange([...value, res.secure_url]);
-      } else { alert('Upload gagal. Coba lagi.'); }
-      setUploading(false);
-    };
-
-    xhr.onerror = () => { alert('Jaringan error saat upload.'); setUploading(false); };
-    xhr.open('POST', 'https://api.cloudinary.com/v1_1/dukddlp0b/image/upload');
-    xhr.send(formData);
+    setUploading(false);
   };
 
   const handleDrop = (e: DragEvent<HTMLDivElement>) => {
@@ -95,7 +63,7 @@ export default function ImageUpload({ value, onChange, max = 1 }: ImageUploadPro
         >
           <input
             type="file" ref={fileInputRef} onChange={handleChange}
-            accept="image/jpeg,image/png,image/webp" style={{ display: 'none' }}
+            accept={ACCEPTED_IMAGE_TYPES} style={{ display: 'none' }}
           />
           {uploading ? (
             <div className="upload-progress">

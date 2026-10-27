@@ -37,7 +37,7 @@ export const statusOf = (a: Pick<Article, 'status'>): ArticleStatus => a.status 
 export const formatOf = (a: Pick<Article, 'contentFormat'>): ContentFormat => a.contentFormat ?? 'plain';
 
 // Legacy published articles have no publishedAt but may be indexed, so they count as published once.
-export const isEverPublished = (a: Pick<Article, 'status' | 'publishedAt'>): boolean =>
+export const isEverPublished = (a: { status?: ArticleStatus; publishedAt?: unknown }): boolean =>
   Boolean(a.publishedAt) || statusOf(a) === 'published';
 
 export const publicDate = (a: { publishedAt?: number | null; createdAt?: number | null }): number | null =>
