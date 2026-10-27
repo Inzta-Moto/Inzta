@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 
 const faqs = [
@@ -12,6 +12,17 @@ const faqs = [
 
 export default function FAQ() {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
+
+  // FAQ is loaded with next/dynamic, so a client navigation to /#faq finds no target when Next.js
+  // scrolls and stays at the top. Scroll once this section exists, on the next frame and without the
+  // global smooth scroll, which the router's own scroll would otherwise cancel.
+  useEffect(() => {
+    if (window.location.hash !== '#faq') return;
+    const frame = requestAnimationFrame(() => {
+      document.getElementById('faq')?.scrollIntoView({ behavior: 'instant' as ScrollBehavior });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, []);
 
   return (
     <section id="faq" className="section faq-section" style={{ scrollMarginTop: 64 }}>
