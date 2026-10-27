@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { User } from 'lucide-react';
 import { WA_NUMBER } from '@/lib/constants';
+import { SOCIAL_LINKS } from '@/lib/social-links';
 import { clearAffiliateSession } from '@/lib/utils';
 
 interface HeaderProps {
@@ -138,9 +139,9 @@ export default function Header({ active }: HeaderProps) {
           
           <div className="mobile-panel-footer">
             <div className="mobile-social-row">
-              <a href="https://instagram.com/inzta.id" target="_blank" rel="noopener noreferrer" aria-label="Instagram">IG</a>
+              <a href={SOCIAL_LINKS.instagram} target="_blank" rel="noopener noreferrer" aria-label="Instagram">IG</a>
               <a href={`https://wa.me/${WA_NUMBER}`} target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">WA</a>
-              <a href="https://tiktok.com/@inzta.id" target="_blank" rel="noopener noreferrer" aria-label="TikTok">FB</a>
+              <a href={SOCIAL_LINKS.tiktok} target="_blank" rel="noopener noreferrer" aria-label="TikTok">TT</a>
             </div>
             <p className="mobile-copyright">&copy; {new Date().getFullYear()} INZTA</p>
           </div>

@@ -14,7 +14,7 @@ export default function FAQ() {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
   return (
-    <section className="section faq-section">
+    <section id="faq" className="section faq-section" style={{ scrollMarginTop: 64 }}>
       <div className="container">
         <div className="section-header">
           <p className="section-eyebrow">FAQ</p>
