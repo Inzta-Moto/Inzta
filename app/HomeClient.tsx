@@ -8,6 +8,7 @@ import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { Product, Feature, ArticleCard } from '@/types';
 import { optimizeCloudinaryUrl, generateCloudinarySrcSet } from '@/lib/utils';
+import { getFlashSaleTimeLeft } from '@/lib/flash-sale';
 
 
 const Gallery = dynamic(() => import('@/components/Gallery'));
@@ -58,38 +59,44 @@ export default function HomeClient({ products, articles }: { products: Product[]
   const [flashSaleActive, setFlashSaleActive] = useState(false);
 
   useEffect(() => {
+    // The fetch can resolve after unmount, so the interval is tracked here and cleared in cleanup.
+    let cancelled = false;
+    let timer: ReturnType<typeof setInterval> | undefined;
+
     // Ambil data flash sale dari server
     fetch('/api/settings')
       .then(res => res.json())
       .then(data => {
-        if (data.isActive && data.endsAt) {
-          setFlashSaleActive(true);
-          const endTime = new Date(data.endsAt).getTime();
-
-          const timer = setInterval(() => {
-            const now = new Date().getTime();
-            const distance = endTime - now;
-
-            if (distance < 0) {
-              clearInterval(timer);
-              setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 }); // ✅ TAMBAHKAN days: 0
-              setFlashSaleActive(false);
-              return;
-            }
-
-            setTimeLeft({
-              days: Math.floor(distance / (1000 * 60 * 60 * 24)),
-              hours: Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
-              minutes: Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)),
-              seconds: Math.floor((distance % (1000 * 60)) / 1000),
-            });
-          }, 1000);
-
-        } else {
-          setFlashSaleActive(false); // Sembunyikan jika admin mematikan
+        if (cancelled) return;
+        // An expired, missing, or invalid endsAt keeps the banner off; no zero timer is ever painted.
+        const initial = data.isActive ? getFlashSaleTimeLeft(data.endsAt) : null;
+        if (!initial) {
+          setFlashSaleActive(false); // Sembunyikan jika admin mematikan atau sudah berakhir
+          return;
         }
+
+        setTimeLeft(initial);
+        setFlashSaleActive(true);
+
+        timer = setInterval(() => {
+          const next = getFlashSaleTimeLeft(data.endsAt);
+          if (!next) {
+            clearInterval(timer);
+            setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+            setFlashSaleActive(false);
+            return;
+          }
+          setTimeLeft(next);
+        }, 1000);
       })
-      .catch(() => setFlashSaleActive(false));
+      .catch(() => {
+        if (!cancelled) setFlashSaleActive(false);
+      });
+
+    return () => {
+      cancelled = true;
+      if (timer) clearInterval(timer);
+    };
   }, []);
 
   // KOMPONEN KECIL UNTUK KOTAK COUNTDOWN
