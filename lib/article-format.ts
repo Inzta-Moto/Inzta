@@ -1,8 +1,37 @@
-import type { Article, ArticleStatus, ContentFormat } from '@/types';
+import type { Article, ArticleStatus, ContentFormat, PublicArticle } from '@/types';
 import { ALLOWED_IMAGE_PREFIX } from '@/lib/constants';
 
 // Pure helpers shared by the editor (browser), the API, and the renderer. No dependencies, so importing
 // this file never pulls marked or sanitize-html into a client bundle.
+
+// Stored dates are Firestore Timestamps (legacy) or ISO strings (since F-000); pages and the API use ms.
+export function toMillis(value: unknown): number | null {
+  if (value === null || value === undefined) return null;
+  if (typeof value === 'number') return Number.isFinite(value) ? value : null;
+  if (typeof value === 'string') {
+    const ms = Date.parse(value);
+    return Number.isNaN(ms) ? null : ms;
+  }
+  if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value.getTime();
+  if (typeof value === 'object') {
+    const v = value as { toMillis?: () => number; seconds?: number; _seconds?: number };
+    if (typeof v.toMillis === 'function') return v.toMillis();
+    if (typeof v.seconds === 'number') return v.seconds * 1000;
+    if (typeof v._seconds === 'number') return v._seconds * 1000;
+  }
+  return null;
+}
+
+export function toPublicArticle(id: string, data: Record<string, any>): PublicArticle {
+  const { createdAt, updatedAt, publishedAt, ...rest } = data as Article;
+  return {
+    ...rest,
+    slug: id,
+    createdAt: toMillis(createdAt),
+    updatedAt: toMillis(updatedAt),
+    publishedAt: toMillis(publishedAt),
+  };
+}
 
 export const statusOf = (a: Pick<Article, 'status'>): ArticleStatus => a.status ?? 'published';
 export const formatOf = (a: Pick<Article, 'contentFormat'>): ContentFormat => a.contentFormat ?? 'plain';

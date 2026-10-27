@@ -1,27 +1,13 @@
 import { cache } from 'react';
 import { getAdminDb, hasAdminCredentials } from '@/lib/firebaseAdmin';
 import { normalizeProduct } from '@/lib/product-utils';
+import { publicDate, statusOf, toMillis, toPublicArticle } from '@/lib/article-format';
 import { Article, ArticleCard, Product, PublicArticle } from '@/types';
 
-// Server-only reads for public pages (F-001). Pages using these are ISR, so Firestore is read once per
-// regeneration instead of once per visitor. F-010 adds its published-only filter here, not in the pages.
+export { toMillis, toPublicArticle };
 
-export function toMillis(value: unknown): number | null {
-  if (value === null || value === undefined) return null;
-  if (typeof value === 'number') return Number.isFinite(value) ? value : null;
-  if (typeof value === 'string') {
-    const ms = Date.parse(value);
-    return Number.isNaN(ms) ? null : ms;
-  }
-  if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value.getTime();
-  if (typeof value === 'object') {
-    const v = value as { toMillis?: () => number; seconds?: number; _seconds?: number };
-    if (typeof v.toMillis === 'function') return v.toMillis();
-    if (typeof v.seconds === 'number') return v.seconds * 1000;
-    if (typeof v._seconds === 'number') return v._seconds * 1000;
-  }
-  return null;
-}
+// Server-only reads for public pages (F-001). Pages using these are ISR, so Firestore is read once per
+// regeneration instead of once per visitor. The published-only filter (F-012) lives here and nowhere else.
 
 // Without credentials (local or CI build without secrets) pages render empty so the build passes, except
 // on Vercel Production, where an empty home page and a 404 for every article would be cached for an hour.
@@ -38,19 +24,22 @@ async function readPublic<T>(label: string, read: () => Promise<T>, empty: T): P
   return read();
 }
 
-function toPublicArticle(id: string, data: Record<string, any>): PublicArticle {
-  const { createdAt, updatedAt, ...rest } = data as Article;
+export function toArticleCard(a: PublicArticle): ArticleCard {
   return {
-    ...rest,
-    slug: id,
-    createdAt: toMillis(createdAt),
-    updatedAt: toMillis(updatedAt),
+    slug: a.slug,
+    title: a.title,
+    excerpt: a.excerpt,
+    images: a.images,
+    imageUrl: a.imageUrl,
+    coverImage: a.coverImage,
+    coverAlt: a.coverAlt,
+    createdAt: a.createdAt,
+    publishedAt: a.publishedAt,
   };
 }
 
-export function toArticleCard(a: PublicArticle): ArticleCard {
-  return { slug: a.slug, title: a.title, excerpt: a.excerpt, images: a.images, imageUrl: a.imageUrl, createdAt: a.createdAt };
-}
+// Legacy documents have no status and are published (requirement 1.2).
+const isPublished = (a: Pick<Article, 'status'>) => statusOf(a) === 'published';
 
 const byNewest =(a: { createdAt: number | null }, b: { createdAt: number | null }) =>
   (b.createdAt ?? 0) - (a.createdAt ?? 0);
@@ -72,18 +61,26 @@ export async function getActiveProducts(): Promise<Product[]> {
   }, []);
 }
 
+// Drafts are filtered in memory after the same collection read: legacy documents have no status field,
+// and a Firestore where('status', '==', 'published') would skip them.
 export async function getArticles(): Promise<PublicArticle[]> {
   return readPublic('articles', async () => {
     const snap = await getAdminDb().collection('articles').get();
-    return snap.docs.map(d => toPublicArticle(d.id, d.data())).sort(byNewest);
+    return snap.docs
+      .map(d => toPublicArticle(d.id, d.data()))
+      .filter(isPublished)
+      .sort((a, b) => (publicDate(b) ?? 0) - (publicDate(a) ?? 0));
   }, []);
 }
 
-// cache() lets generateMetadata and the page share one read per render.
+// cache() lets generateMetadata and the page share one read per render. A draft is null, so
+// /blog/{slug} is a 404 for everyone; admins preview drafts on /admin/pratinjau/{slug}.
 export const getArticle = cache(async (slug: string): Promise<PublicArticle | null> => {
   return readPublic('article', async () => {
     const doc = await getAdminDb().collection('articles').doc(slug).get();
-    return doc.exists ? toPublicArticle(doc.id, doc.data() ?? {}) : null;
+    if (!doc.exists) return null;
+    const article = toPublicArticle(doc.id, doc.data() ?? {});
+    return isPublished(article) ? article : null;
   }, null);
 });
 
