@@ -7,7 +7,11 @@ const Footer = dynamic(() => import('@/components/Footer'));
 import ProductCard from '@/components/ProductCard';
 import Link from 'next/link';
 import { Product } from '@/types';
+import { optimizeCloudinaryUrl, generateCloudinarySrcSet } from '@/lib/utils';
 import { ArrowLeft, Search, SlidersHorizontal, X } from 'lucide-react';
+
+// Served from INZTA's own Cloudinary account instead of a hot-linked Shopee CDN file (F-003, req 2.10).
+const HEADER_IMAGE = 'https://res.cloudinary.com/dukddlp0b/image/upload/q_auto/f_auto/v1780333698/03_iwohfu.jpg';
 
 export default function ProdukClient({ initialProducts }: { initialProducts: Product[] }) {
   const [allProducts] = useState<Product[]>(initialProducts);
@@ -86,7 +90,12 @@ export default function ProdukClient({ initialProducts }: { initialProducts: Pro
 
       <section className="page-header page-header-with-bg produk-hero">
         <div className="page-header-bg">
-          <img src="https://down-id.img.susercontent.com/file/id-11134207-7r98x-lsd01sx4skwped" alt="Motorcycle" />
+          <img
+            src={optimizeCloudinaryUrl(HEADER_IMAGE, 1920)}
+            srcSet={generateCloudinarySrcSet(HEADER_IMAGE, [600, 800, 1200, 1920])}
+            sizes="100vw"
+            alt="Motor touring dengan tank bag, side bag, dan tas belakang INZTA, parkir di depan tulisan Cangar"
+          />
         </div>
         <div className="hero-overlay"></div>
         <div className="container">
