@@ -1,15 +1,13 @@
 import { Marked, type Tokens, type Token } from 'marked';
 import sanitizeHtml from 'sanitize-html';
-import type { ContentFormat } from '@/types';
+import type { ContentFormat, RenderWarning } from '@/types';
 import { formatOf, isAllowedImageUrl, isPlaceholderImage } from '@/lib/article-format';
 import { generateCloudinarySrcSet, optimizeCloudinaryUrl } from '@/lib/utils';
 
 // Server only (F-012 requirement 4.1): imported by server pages and route handlers, never by a client
 // component, so neither library reaches the browser bundle. The build gate greps .next/static to prove it.
 
-export type RenderWarning =
-  | { kind: 'image-host' | 'placeholder' | 'inline-image'; src: string; alt: string }
-  | { kind: 'raw-html' };
+export type { RenderWarning };
 
 export interface RenderResult {
   html: string;
@@ -138,7 +136,14 @@ function renderMarkdown(content: string): RenderResult {
     },
   });
 
-  const html = md.parse(content) as string;
+  let html: string;
+  try {
+    html = md.parse(content) as string;
+  } catch (error) {
+    // Deeply nested lists or quotes overflow marked's recursion; the checklist blocks publishing on this.
+    console.error('renderArticle: Markdown could not be parsed', { length: content.length, error: (error as Error)?.message });
+    return { html: '', warnings: [{ kind: 'render-error' }] };
+  }
   return { html: sanitizeArticleHtml(html), warnings };
 }
 

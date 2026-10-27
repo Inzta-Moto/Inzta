@@ -7,6 +7,7 @@ import { formatDate } from '@/lib/utils';
 import { readAdminError } from '@/lib/admin-messages';
 import { statusOf } from '@/lib/article-format';
 import type { ArticleStatus } from '@/types';
+import Dialog from './_editor/Dialog';
 
 // Shape returned by GET /api/articles for an admin: stored fields with dates as epoch milliseconds.
 interface ArticleRow {
@@ -29,6 +30,8 @@ export default function ArticlesPage() {
   const [articles, setArticles] = useState<ArticleRow[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [loadError, setLoadError] = useState('');
+  // GET /api/articles hides drafts from anyone the server does not accept as admin.
+  const [sessionRejected, setSessionRejected] = useState(false);
   const [filter, setFilter] = useState<Filter>('all');
   const [deleteTarget, setDeleteTarget] = useState<{ slug: string; title: string } | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -45,6 +48,7 @@ export default function ArticlesPage() {
         (a: ArticleRow, b: ArticleRow) => (b.updatedAt ?? b.createdAt ?? 0) - (a.updatedAt ?? a.createdAt ?? 0),
       );
       setArticles(items);
+      setSessionRejected(data.viewer !== 'admin');
       setLoadError('');
     } catch (e: any) {
       setLoadError('Gagal memuat artikel: ' + e.message);
@@ -94,6 +98,11 @@ export default function ArticlesPage() {
       </div>
 
       {loadError && <div className="form-error" role="alert" style={{ marginBottom: 16 }}>{loadError}</div>}
+      {sessionRejected && (
+        <div className="form-error" role="alert" style={{ marginBottom: 16 }}>
+          Sesi admin tidak berlaku, jadi draf tidak ditampilkan. Masuk lagi di /admin/login lalu muat ulang halaman ini.
+        </div>
+      )}
 
       <div className="admin-table-wrap">
         <table className="admin-table">
@@ -138,19 +147,19 @@ export default function ArticlesPage() {
       )}
 
       {deleteTarget && (
-        <div className="modal-overlay" style={{ display: 'flex' }} onClick={e => { if (e.target === e.currentTarget) setDeleteTarget(null); }}>
-          <div className="modal modal-sm" role="dialog" aria-modal="true" aria-labelledby="hapus-artikel-title">
-            <div className="modal-header">
-              <h2 className="modal-title" id="hapus-artikel-title">Hapus Artikel</h2>
-              <button className="modal-close" onClick={() => setDeleteTarget(null)} aria-label="Tutup">&times;</button>
-            </div>
-            <div className="modal-body"><p className="modal-text">Yakin hapus artikel <strong>{deleteTarget.title}</strong>?</p></div>
-            <div className="modal-footer">
-              <button className="btn btn-ghost" onClick={() => setDeleteTarget(null)} style={{ fontSize: 11, padding: '8px 16px' }}>Batal</button>
+        // Same confirmation and API as before (11.3), now with focus trap, Escape, and focus return.
+        <Dialog
+          title="Hapus Artikel"
+          onClose={() => setDeleteTarget(null)}
+          footer={
+            <>
+              <button className="btn btn-ghost" onClick={() => setDeleteTarget(null)} style={{ fontSize: 11, padding: '8px 16px' }} data-autofocus>Batal</button>
               <button className="btn btn-primary" style={{ fontSize: 11, padding: '8px 16px', background: '#EF4444' }} onClick={handleDelete}><Trash2 size={12} /> Hapus</button>
-            </div>
-          </div>
-        </div>
+            </>
+          }
+        >
+          <p className="modal-text">Yakin hapus artikel <strong>{deleteTarget.title}</strong>?</p>
+        </Dialog>
       )}
     </>
   );

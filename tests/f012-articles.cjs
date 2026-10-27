@@ -316,6 +316,22 @@ const ready = {
     const all = (await json(await articles.GET())).items.map(i => i.slug);
     assert.ok(all.includes('draf-kosong') && all.includes('gasber-16'));
   });
+  await check('GET list: viewer says whether the session was accepted as admin (drafts hidden otherwise)', async () => {
+    as(null); assert.strictEqual((await json(await articles.GET())).viewer, 'public');
+    as('cookie-admin'); assert.strictEqual((await json(await articles.GET())).viewer, 'admin');
+  });
+  await check('publish: a body marked cannot parse -> 400 with C-4, not a 500', async () => {
+    as('cookie-admin');
+    docs.set('articles/terlalu-dalam', { ...ready, slug: 'terlalu-dalam', content: '- '.repeat(5000) + 'x', status: 'draft', contentFormat: 'markdown' });
+    const r = await quiet(() => publish.POST(req({}), p('terlalu-dalam')));
+    assert.strictEqual(r.status, 400);
+    assert.ok((await json(r)).checks.some(c => c.id === 'C-4'));
+  });
+  await check('API errors are Indonesian with a next step (404 and 500)', async () => {
+    as('cookie-admin');
+    const r = await publish.POST(req({}), p('tidak-ada'));
+    assert.match((await json(r)).error, /tidak ditemukan/);
+  });
   await check('GET single: draft -> 404 for the public, 200 for an admin', async () => {
     as(null); assert.strictEqual((await article.GET(req({}, 'GET'), p('draf-kosong'))).status, 404);
     as('cookie-admin'); assert.strictEqual((await article.GET(req({}, 'GET'), p('draf-kosong'))).status, 200);

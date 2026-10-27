@@ -65,8 +65,9 @@ export default function BlogDetailClient({ article, bodyHtml, articleUrl, previe
                 <div className="blog-detail-image-main">
                   <img
                     src={optimizeCloudinaryUrl(a.coverImage, 1200)}
-                    srcSet={generateCloudinarySrcSet(a.coverImage, [600, 1000, 1400])}
-                    sizes="(max-width: 768px) 100vw, 800px"
+                    srcSet={generateCloudinarySrcSet(a.coverImage, [600, 1000, 1200, 1600])}
+                    // Matches the rendered width: .container is 1280 px with 48 px side padding from 768 px.
+                    sizes="(max-width: 767px) calc(100vw - 48px), min(calc(100vw - 96px), 1184px)"
                     alt={a.coverAlt || ''}
                   />
                 </div>

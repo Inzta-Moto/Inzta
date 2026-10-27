@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { ARTICLE_NOT_FOUND as NOT_FOUND, ARTICLE_SERVER_FAIL as SERVER_FAIL } from '@/lib/admin-articles';
 import { getAdminDb } from '@/lib/firebaseAdmin';
 import { requireAdmin } from '@/lib/auth';
 import { parseArticleInput } from '@/lib/article-input';
@@ -12,14 +13,14 @@ const STALE_MESSAGE = 'Artikel ini sudah diubah di tempat lain. Muat ulang versi
 export async function GET(request: Request, { params }: { params: { slug: string } }) {
   try {
     const doc = await getAdminDb().collection('articles').doc(params.slug).get();
-    if (!doc.exists) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    if (!doc.exists) return NextResponse.json({ error: NOT_FOUND }, { status: 404 });
     const data = doc.data() ?? {};
     if (statusOf(data) !== 'published' && !(await requireAdmin()).ok) {
-      return NextResponse.json({ error: 'Not found' }, { status: 404 });
+      return NextResponse.json({ error: NOT_FOUND }, { status: 404 });
     }
     return NextResponse.json({ item: serializeArticle(doc.id, data) }, { status: 200 });
   } catch (error: any) {
-    return NextResponse.json({ error: 'Failed' }, { status: 500 });
+    return NextResponse.json({ error: SERVER_FAIL }, { status: 500 });
   }
 }
 
@@ -32,7 +33,7 @@ export async function PUT(request: Request, { params }: { params: { slug: string
   try {
     const ref = getAdminDb().collection('articles').doc(params.slug);
     const existing = await ref.get();
-    if (!existing.exists) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    if (!existing.exists) return NextResponse.json({ error: NOT_FOUND }, { status: 404 });
     const stored = existing.data() ?? {};
 
     const body = await request.json().catch(() => null);
@@ -70,7 +71,7 @@ export async function PUT(request: Request, { params }: { params: { slug: string
   } catch (error: any) {
     if (isStaleWrite(error)) return NextResponse.json({ error: STALE_MESSAGE }, { status: 409 });
     console.error('Update article error:', { slug: params.slug, error });
-    return NextResponse.json({ error: 'Failed' }, { status: 500 });
+    return NextResponse.json({ error: SERVER_FAIL }, { status: 500 });
   }
 }
 
@@ -84,6 +85,6 @@ export async function DELETE(request: Request, { params }: { params: { slug: str
     return NextResponse.json({ status: 'success' }, { status: 200 });
   } catch (error: any) {
     console.error('Delete article error:', { slug: params.slug, error });
-    return NextResponse.json({ error: 'Failed' }, { status: 500 });
+    return NextResponse.json({ error: SERVER_FAIL }, { status: 500 });
   }
 }

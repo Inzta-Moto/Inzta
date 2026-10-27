@@ -203,6 +203,19 @@ check('a 50,000-character body renders in under a second', () => {
   assert.ok(count(html, /<h2>/g) > 50);
 });
 
+check('deep nesting that overflows marked returns a render-error warning instead of throwing, and blocks publishing', () => {
+  const quietErr = console.error; console.error = () => {};
+  try {
+    for (const src of ['> '.repeat(5000) + 'x', '- '.repeat(5000) + 'x']) {
+      const r = md(src);
+      assert.strictEqual(r.html, '');
+      assert.deepStrictEqual(r.warnings, [{ kind: 'render-error' }]);
+    }
+    const failedIds = runChecklist({ title: 't', slug: 's', excerpt: 'e', content: '> '.repeat(5000), contentFormat: 'markdown' }, { renderWarnings: [{ kind: 'render-error' }] }).blocking.filter(c => !c.ok).map(c => c.id);
+    assert.ok(failedIds.includes('C-4'), failedIds.join());
+  } finally { console.error = quietErr; }
+});
+
 // Real naskah from the article pipeline
 const fixture = (name) => fs.readFileSync(path.join(ROOT, 'tests/fixtures', name), 'utf8');
 check('K-06 "Naskah": 4 figures, no h1, no raw Markdown, /produk link kept, no warnings', () => {

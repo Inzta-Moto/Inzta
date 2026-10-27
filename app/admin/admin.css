@@ -349,12 +349,19 @@ select.form-input { appearance: none; background-image: url("data:image/svg+xml,
 
 
 /* Article editor (F-012). Full page: content column plus settings panel, which moves under the content
-   below 1024 px. Built only on the existing variables so the redesign can restyle it. */
+   below 1024 px. Layout and neutrals use the existing variables; status colours (error, success, warning)
+   reuse the hex values the admin already uses, since :root has no status tokens. */
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 .article-filter { margin-bottom: 16px; }
 .article-editor { display: flex; flex-direction: column; gap: 16px; }
 .article-editor-stack { display: flex; flex-direction: column; gap: 12px; }
 .article-editor-topbar { position: sticky; top: 73px; z-index: 40; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 12px 16px; background: var(--bg-white); border: 1px solid var(--border-light); border-radius: 8px; box-shadow: var(--shadow-sm); }
+/* .admin-topbar is 73 px tall with the mobile menu button and about 54 px without it. */
+@media (min-width: 768px) { .article-editor-topbar { top: 54px; } }
+.article-editor-blocked { font-size: 12px; font-weight: 600; color: #92400E; text-decoration: underline; }
+.article-editor-message { flex-basis: 100%; max-height: 40vh; overflow-y: auto; }
+.article-editor-body-label { margin-bottom: -10px; }
+.article-editor-tablist { display: flex; gap: 4px; }
 .article-editor-back { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; color: var(--text-secondary); }
 .article-editor-back:hover { color: var(--text-primary); }
 .article-editor-autosave { font-size: 12px; color: var(--text-tertiary); }
@@ -376,15 +383,20 @@ select.form-input { appearance: none; background-image: url("data:image/svg+xml,
 .article-counter.is-over { color: #92400E; font-weight: 600; }
 .article-editor-body { border: 1px solid var(--border-light); border-radius: 8px; background: var(--bg-white); }
 .article-editor-tabs { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; padding: 8px; border-bottom: 1px solid var(--border-light); background: var(--bg-subtle); border-radius: 8px 8px 0 0; }
-.article-editor-tabs > [role="tab"] { padding: 6px 12px; font-size: 12px; font-weight: 600; color: var(--text-secondary); border: 1px solid transparent; border-radius: 4px; background: none; cursor: pointer; }
-.article-editor-tabs > [role="tab"].is-active { color: var(--text-primary); background: var(--bg-white); border-color: var(--border-light); }
-.article-editor-tabs > [role="tab"]:focus-visible, .md-toolbar-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.article-editor-tabs [role="tab"] { padding: 6px 12px; font-size: 12px; font-weight: 600; color: var(--text-secondary); border: 1px solid transparent; border-radius: 4px; background: none; cursor: pointer; }
+.article-editor-tabs [role="tab"].is-active { color: var(--text-primary); background: var(--bg-white); border-color: var(--border-light); }
+.article-editor-tabs [role="tab"]:focus-visible, .md-toolbar-btn:focus-visible { outline: 2px solid var(--text-primary); outline-offset: 2px; }
 .md-toolbar { display: flex; flex-wrap: wrap; gap: 2px; margin-left: auto; }
 .md-toolbar-btn { position: relative; width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; color: var(--text-secondary); background: none; border: 1px solid transparent; border-radius: 4px; cursor: pointer; }
 .md-toolbar-btn:hover { background: var(--bg-white); border-color: var(--border-light); color: var(--text-primary); }
-.md-toolbar-btn[data-tip]:hover::after, .md-toolbar-btn[data-tip]:focus-visible::after { content: attr(data-tip); position: absolute; top: calc(100% + 6px); left: 50%; transform: translateX(-50%); z-index: 10; padding: 4px 8px; font-size: 11px; font-weight: 500; white-space: nowrap; color: var(--text-inverse); background: var(--text-primary); border-radius: 4px; pointer-events: none; }
+.md-toolbar-btn[data-tip]:hover::after, .md-toolbar-btn[data-tip]:focus-visible::after { content: attr(data-tip); position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); z-index: 10; padding: 4px 8px; margin-bottom: 4px; font-size: 11px; font-weight: 500; white-space: nowrap; color: var(--text-inverse); background: var(--text-primary); border-radius: 4px; }
+/* Bridge between button and tooltip so the pointer can move onto the tooltip without it disappearing. */
+.md-toolbar-btn[data-tip]:hover::before { content: ''; position: absolute; bottom: 100%; left: 0; right: 0; height: 6px; }
+.md-toolbar-btn:last-child[data-tip]::after { left: auto; right: 0; transform: none; }
+.md-toolbar.tips-hidden .md-toolbar-btn::after, .md-toolbar.tips-hidden .md-toolbar-btn::before { content: none; }
 .article-editor-textarea { display: block; min-height: 420px; padding: 16px; font-size: 15px; line-height: 1.7; border: none; border-radius: 0; background: var(--bg-white); resize: none; overflow: hidden; }
 .article-editor-textarea:focus { box-shadow: none; }
+.article-editor-body:focus-within { border-color: var(--text-secondary); box-shadow: 0 0 0 1px var(--text-secondary); }
 .article-editor-preview-wrap { padding: 16px 20px; min-height: 420px; }
 .article-editor-warnings { margin-bottom: 16px; padding: 10px 12px 10px 28px; font-size: 12px; color: #92400E; list-style: disc; background: var(--accent-light); border: 1px solid var(--accent-border); border-radius: 4px; }
 .article-editor-footer { padding: 8px 16px; font-size: 12px; color: var(--text-tertiary); border-top: 1px solid var(--border-light); background: var(--bg-subtle); border-radius: 0 0 8px 8px; }

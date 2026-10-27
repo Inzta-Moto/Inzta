@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { Bold, Heading2, Heading3, ImagePlus, Italic, Link2, List, ListOrdered } from 'lucide-react';
 
 export type ToolbarAction = 'h2' | 'h3' | 'bold' | 'italic' | 'ul' | 'ol' | 'link' | 'image';
@@ -16,8 +17,17 @@ const BUTTONS: { action: ToolbarAction; label: string; tip: string; icon: JSX.El
 ];
 
 export default function MarkdownToolbar({ onAction, disabled }: { onAction: (a: ToolbarAction) => void; disabled?: boolean }) {
+  // Escape hides the tooltips until the pointer or focus leaves the toolbar (WCAG 1.4.13).
+  const [tipsHidden, setTipsHidden] = useState(false);
   return (
-    <div className="md-toolbar" role="toolbar" aria-label="Format teks">
+    <div
+      className={`md-toolbar${tipsHidden ? ' tips-hidden' : ''}`}
+      role="toolbar"
+      aria-label="Format teks"
+      onKeyDown={e => { if (e.key === 'Escape') setTipsHidden(true); }}
+      onMouseLeave={() => setTipsHidden(false)}
+      onBlur={e => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setTipsHidden(false); }}
+    >
       {BUTTONS.map(b => (
         <button
           key={b.action}

@@ -1,4 +1,4 @@
-import type { Article, ChecklistItem, ChecklistResult } from '@/types';
+import type { Article, ChecklistItem, ChecklistResult, RenderWarning } from '@/types';
 import { RESERVED_ARTICLE_SLUGS } from '@/lib/constants';
 import { SLUG_PATTERN } from '@/lib/slug';
 import { extractBodyImages, formatOf, hasH1, isAllowedImageUrl } from '@/lib/article-format';
@@ -12,14 +12,11 @@ export const COVER_MIN_WIDTH = 1200;
 export type ChecklistInput = Pick<Article, 'title' | 'slug' | 'excerpt' | 'content'> &
   Partial<Pick<Article, 'contentFormat' | 'coverImage' | 'coverAlt' | 'metaTitle' | 'metaDescription'>>;
 
-// Kinds match RenderWarning in lib/markdown.ts; declared here so this file stays free of marked.
-type RenderWarningLike = { kind: string; src?: string; alt?: string };
-
 export interface ChecklistOptions {
   // Measured in the editor from the loaded image; unknown on the server, so W-4 is editor only.
   coverWidth?: number | null;
   // renderArticle() warnings, added on the server so a case the image regex misses still blocks.
-  renderWarnings?: RenderWarningLike[];
+  renderWarnings?: RenderWarning[];
   // The stored document ID of an existing article, which may predate the slug rule (F-000).
   legacySlugOk?: boolean;
 }
@@ -42,7 +39,9 @@ export function runChecklist(article: ChecklistInput, opts: ChecklistOptions = {
   blocking.push(item('C-3', 'Ringkasan (excerpt) terisi', Boolean((article.excerpt || '').trim())));
 
   if (markdown) {
-    blocking.push(item('C-4', 'Isi artikel terisi', Boolean(content.trim())));
+    const unrenderable = (opts.renderWarnings || []).some(w => w.kind === 'render-error');
+    blocking.push(item('C-4', 'Isi artikel terisi dan bisa diproses', Boolean(content.trim()) && !unrenderable,
+      unrenderable ? 'Isi tidak bisa diproses: daftar atau kutipan bersarang terlalu dalam. Rapikan strukturnya.' : undefined));
     const coverOk = isAllowedImageUrl(article.coverImage) && Boolean((article.coverAlt || '').trim());
     blocking.push(item('C-5', 'Gambar sampul diunggah dan punya teks alt', coverOk));
 

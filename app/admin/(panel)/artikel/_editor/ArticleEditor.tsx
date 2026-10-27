@@ -20,7 +20,7 @@ import {
   statusOf,
   type BodyImage,
 } from '@/lib/article-format';
-import type { ArticleStatus, ChecklistItem, ContentFormat } from '@/types';
+import type { ArticleStatus, ChecklistItem, ContentFormat, RenderWarning } from '@/types';
 import MarkdownToolbar, { type ToolbarAction } from './MarkdownToolbar';
 import LinkDialog from './LinkDialog';
 import ImageDialog, { type ImageDialogValue } from './ImageDialog';
@@ -89,11 +89,30 @@ const timeOf = (ms: number) => new Date(ms).toLocaleTimeString('id-ID', { timeZo
 const dateTimeOf = (ms: number | null | undefined) =>
   ms ? `${formatDate(ms, { day: 'numeric', month: 'short', year: 'numeric' })} ${timeOf(ms)}` : '-';
 
-const WARNING_TEXT: Record<string, string> = {
-  placeholder: 'Gambar belum diunggah, tidak tampil',
-  'image-host': 'Gambar bukan dari panel INZTA, dibuang',
-  'inline-image': 'Gambar menempel di teks, dibuang. Beri baris kosong sebelum dan sesudahnya',
-};
+function warningText(w: RenderWarning): string {
+  switch (w.kind) {
+    case 'raw-html': return 'Kode HTML di isi dibuang';
+    case 'render-error': return 'Isi tidak bisa diproses: daftar atau kutipan bersarang terlalu dalam';
+    case 'placeholder': return `Gambar belum diunggah, tidak tampil: ${w.alt || w.src}`;
+    case 'image-host': return `Gambar bukan dari panel INZTA, dibuang: ${w.alt || w.src}`;
+    case 'inline-image': return `Gambar menempel di teks, dibuang. Beri baris kosong sebelum dan sesudahnya: ${w.alt || w.src}`;
+  }
+}
+
+// A message that has to survive router.replace, which remounts the editor for the new slug.
+const FLASH_KEY = 'inzta-artikel-flash';
+function setFlash(message: Message) {
+  try { window.sessionStorage.setItem(FLASH_KEY, JSON.stringify(message)); } catch { /* storage off: message is lost */ }
+}
+function takeFlash(): Message | null {
+  try {
+    const raw = window.sessionStorage.getItem(FLASH_KEY);
+    window.sessionStorage.removeItem(FLASH_KEY);
+    return raw ? (JSON.parse(raw) as Message) : null;
+  } catch {
+    return null;
+  }
+}
 
 async function readJson(res: Response): Promise<any> {
   return res.json().catch(() => ({}));
@@ -113,7 +132,7 @@ export default function ArticleEditor({ slug: routeSlug }: { slug?: string }) {
   const [loadError, setLoadError] = useState('');
   const [slugTouched, setSlugTouched] = useState(false);
   const [tab, setTab] = useState<'write' | 'preview'>('write');
-  const [preview, setPreview] = useState<{ html: string; warnings: { kind: string; src?: string; alt?: string }[] } | null>(null);
+  const [preview, setPreview] = useState<{ html: string; warnings: RenderWarning[] } | null>(null);
   const [previewState, setPreviewState] = useState<'idle' | 'loading' | 'error'>('idle');
   const [busy, setBusy] = useState<null | 'save' | 'publish' | 'unpublish'>(null);
   const [message, setMessage] = useState<Message | null>(null);
@@ -134,9 +153,15 @@ export default function ArticleEditor({ slug: routeSlug }: { slug?: string }) {
     [draft, coverWidth, isMarkdown, server],
   );
   const ready = canPublish(checklist);
+  const failedCount = checklist.blocking.filter(c => !c.ok).length;
 
   const autosave = useAutosave(key, draft, dirty, server?.updatedAt ?? null, !loading && !restore && !loadError);
   useUnsavedGuard(dirty);
+
+  useEffect(() => {
+    const flash = takeFlash();
+    if (flash) setMessage(flash);
+  }, []);
 
   // Opening the editor costs one read (requirement 12.4); a newer local copy is offered, never applied silently.
   useEffect(() => {
@@ -156,7 +181,8 @@ export default function ArticleEditor({ slug: routeSlug }: { slug?: string }) {
         const res = await fetch(`/api/articles/${encodeURIComponent(routeSlug)}`, { cache: 'no-store' });
         const body = await readJson(res);
         if (cancelled) return;
-        if (res.status === 404) setLoadError('Artikel tidak ditemukan. Mungkin sudah dihapus atau slug-nya berubah.');
+        // Drafts are a 404 for non-admins (2.7), so a rejected session looks the same as a missing article.
+        if (res.status === 404) setLoadError('Artikel tidak ditemukan, atau sesi admin sudah habis. Bila artikel ini memang ada, masuk lagi di /admin/login lalu buka ulang.');
         else if (!res.ok) setLoadError(adminErrorMessage(res.status, body.error));
         else {
           const item = body.item as ServerArticle;
@@ -186,7 +212,7 @@ export default function ArticleEditor({ slug: routeSlug }: { slug?: string }) {
   // The textarea grows with its content, so the page scrolls instead of a small inner box.
   useEffect(() => {
     const ta = textareaRef.current;
-    if (!ta) return;
+    if (!ta || tab !== 'write') return;
     ta.style.height = 'auto';
     ta.style.height = `${ta.scrollHeight + 2}px`;
   }, [draft.content, tab]);
@@ -199,8 +225,9 @@ export default function ArticleEditor({ slug: routeSlug }: { slug?: string }) {
     setDraft(d => ({ ...d, title, slug: !server && !slugTouched ? toSlug(title) : d.slug }));
   };
 
-  // Saves the current draft and returns the stored article, or null after showing why it failed.
-  async function save(): Promise<ServerArticle | null> {
+  // Saves the current draft and returns the stored article (plus a warning when a rename left the old
+  // document behind), or null after showing why it failed.
+  async function save(): Promise<{ item: ServerArticle; warning?: string } | null> {
     const snapshot = draftRef.current;
     const payload = { ...snapshot };
     try {
@@ -223,56 +250,77 @@ export default function ArticleEditor({ slug: routeSlug }: { slug?: string }) {
         return null;
       }
       const item = body.item as ServerArticle;
-      if (renaming && server) {
-        // The old document goes only after the new one is saved, so a failed save never loses the article.
-        const del = await fetch(`/api/articles/${encodeURIComponent(server.slug)}`, { method: 'DELETE' });
-        if (!del.ok) setMessage({ kind: 'error', text: `Tersimpan dengan slug baru, tetapi slug lama "${server.slug}" gagal dihapus. Hapus manual dari daftar.` });
-      }
+      // From here the new document exists, so the editor follows it whatever happens to the old one.
       setServer(item);
       // Keep anything typed while the request was running; otherwise take the server's trimmed values.
       if (sameDraft(draftRef.current, snapshot)) setDraft(toDraft(item));
       autosave.clear(key);
       clearLocalCopy(localKey());
-      return item;
+      let warning: string | undefined;
+      if (renaming && server) {
+        // The old document goes only after the new one is saved, so a failed save never loses the article.
+        const leftover = `Tersimpan dengan slug baru, tetapi draf lama "${server.slug}" belum terhapus. Hapus draf lama itu dari daftar artikel.`;
+        try {
+          const del = await fetch(`/api/articles/${encodeURIComponent(server.slug)}`, { method: 'DELETE' });
+          if (!del.ok) warning = leftover;
+        } catch {
+          warning = leftover;
+        }
+      }
+      return { item, warning };
     } catch (e: any) {
       setMessage({ kind: 'error', text: 'Gagal terhubung ke server: ' + e.message });
       return null;
     }
   }
 
-  const goToSlug = (slug: string) => {
-    if (slug !== routeSlug) router.replace(`/admin/artikel/${slug}`);
+  // Shows the message here, or carries it over the remount when the route changes to the new slug.
+  const finish = (slug: string, msg: Message) => {
+    if (slug !== routeSlug) {
+      setFlash(msg);
+      router.replace(`/admin/artikel/${slug}`);
+    } else {
+      setMessage(msg);
+    }
   };
 
   async function onSave() {
     setBusy('save'); setMessage(null);
-    const item = await save();
+    const saved = await save();
     setBusy(null);
-    if (!item) return;
-    setMessage({ kind: 'ok', text: statusOf(item) === 'published' ? 'Perubahan tersimpan dan sudah tayang.' : 'Draf tersimpan.' });
-    goToSlug(item.slug);
+    if (!saved) return;
+    const { item, warning } = saved;
+    finish(item.slug, warning
+      ? { kind: 'error', text: warning }
+      : { kind: 'ok', text: statusOf(item) === 'published' ? 'Perubahan tersimpan dan sudah tayang.' : 'Draf tersimpan.' });
   }
 
   async function onPublish() {
     if (!ready) return;
     setBusy('publish'); setMessage(null);
     let current = server;
-    if (!current || dirty) current = await save();
+    let warning: string | undefined;
+    if (!current || dirty) {
+      const saved = await save();
+      current = saved?.item ?? null;
+      warning = saved?.warning;
+    }
     if (!current) { setBusy(null); return; }
+    let msg: Message;
     try {
       const res = await fetch(`/api/articles/${encodeURIComponent(current.slug)}/publish`, { method: 'POST' });
       const body = await readJson(res);
       if (!res.ok) {
-        setMessage({ kind: 'error', text: adminErrorMessage(res.status, body.error), checks: body.checks });
+        msg = { kind: 'error', text: adminErrorMessage(res.status, body.error), checks: body.checks };
       } else {
         setServer(body.item);
-        setMessage({ kind: 'ok', text: 'Artikel terbit. Halaman blog dan sitemap diperbarui.' });
+        msg = { kind: 'ok', text: 'Artikel terbit. Halaman blog dan sitemap diperbarui.' };
       }
     } catch (e: any) {
-      setMessage({ kind: 'error', text: 'Gagal terhubung ke server: ' + e.message });
+      msg = { kind: 'error', text: 'Gagal terhubung ke server: ' + e.message };
     }
     setBusy(null);
-    goToSlug(current.slug);
+    finish(current.slug, warning ? { kind: 'error', text: `${msg.text} ${warning}`, checks: msg.checks } : msg);
   }
 
   async function onUnpublish() {
@@ -306,15 +354,15 @@ export default function ArticleEditor({ slug: routeSlug }: { slug?: string }) {
       const body = await readJson(res);
       if (!res.ok) {
         setPreviewState('error');
-        setPreview({ html: '', warnings: [] });
-        setMessage({ kind: 'error', text: adminErrorMessage(res.status, body.error) });
+        setPreview(null);
+        setMessage({ kind: 'error', text: body.error ? adminErrorMessage(res.status, body.error) : 'Pratinjau gagal dibuat. Coba lagi.' });
         return;
       }
       setPreview(body);
       setPreviewState('idle');
     } catch (e: any) {
       setPreviewState('error');
-      setMessage({ kind: 'error', text: 'Pratinjau gagal: ' + e.message });
+      setPreview(null);
     }
   }
 
@@ -330,6 +378,16 @@ export default function ArticleEditor({ slug: routeSlug }: { slug?: string }) {
       savedSelection.current = { start: s, end: e };
       setDialog(action === 'link' ? { type: 'link', text: value.slice(s, e) } : { type: 'image' });
     }
+  }
+
+  // Tab pattern: arrow keys move between Tulis and Pratinjau; only the selected tab is in the Tab order.
+  function onTabKey(e: KeyboardEvent<HTMLDivElement>) {
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight' && e.key !== 'Home' && e.key !== 'End') return;
+    e.preventDefault();
+    const next = e.key === 'Home' ? 'write' : e.key === 'End' ? 'preview' : tab === 'write' ? 'preview' : 'write';
+    if (next === 'preview') showPreview();
+    else setTab('write');
+    document.getElementById(next === 'preview' ? 'tab-preview' : 'tab-write')?.focus();
   }
 
   function onKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
@@ -444,6 +502,10 @@ export default function ArticleEditor({ slug: routeSlug }: { slug?: string }) {
         <Link href="/admin/artikel" className="article-editor-back"><ArrowLeft size={16} /> Semua artikel</Link>
         <span className={`table-badge ${status === 'published' ? 'table-badge-active' : 'table-badge-inactive'}`}>{status === 'published' ? 'Terbit' : 'Draf'}</span>
         <span className={`article-editor-autosave${autosave.status.state === 'off' ? ' is-off' : ''}`} aria-live="polite">{autosaveText}</span>
+        {/* A disabled button cannot be focused or show a tooltip on touch, so the reason is visible text. */}
+        {server && !ready && (
+          <a id="publish-blocked" className="article-editor-blocked" href="#panel-checklist">{failedCount} cek belum lolos, lihat checklist</a>
+        )}
         <div className="article-editor-actions">
           {server && status === 'published' && (
             <a className="btn btn-ghost" href={`/blog/${server.slug}`} target="_blank" rel="noopener" style={{ fontSize: 11, padding: '8px 14px' }}>Lihat di situs</a>
@@ -456,7 +518,7 @@ export default function ArticleEditor({ slug: routeSlug }: { slug?: string }) {
               <button type="button" className="btn btn-ghost" onClick={onUnpublish} disabled={working} style={{ fontSize: 11, padding: '8px 14px' }}>
                 {busy === 'unpublish' ? 'Menarik...' : 'Tarik ke draf'}
               </button>
-              <button type="button" className="btn btn-primary" onClick={onSave} disabled={working || !dirty || !ready} title={ready ? undefined : 'Lengkapi checklist dulu'} style={{ fontSize: 11, padding: '8px 14px' }}>
+              <button type="button" className="btn btn-primary" onClick={onSave} disabled={working || !dirty || !ready} aria-describedby={ready ? undefined : 'publish-blocked'} style={{ fontSize: 11, padding: '8px 14px' }}>
                 {busy === 'save' ? 'Menyimpan...' : 'Simpan perubahan'}
               </button>
             </>
@@ -466,13 +528,22 @@ export default function ArticleEditor({ slug: routeSlug }: { slug?: string }) {
                 {busy === 'save' ? 'Menyimpan...' : 'Simpan draf'}
               </button>
               {server && (
-                <button type="button" className="btn btn-primary" onClick={onPublish} disabled={working || !ready} title={ready ? undefined : 'Lengkapi checklist dulu'} style={{ fontSize: 11, padding: '8px 14px' }}>
+                <button type="button" className="btn btn-primary" onClick={onPublish} disabled={working || !ready} aria-describedby={ready ? undefined : 'publish-blocked'} style={{ fontSize: 11, padding: '8px 14px' }}>
                   {busy === 'publish' ? 'Menerbitkan...' : 'Terbitkan'}
                 </button>
               )}
             </>
           )}
         </div>
+        {/* Inside the sticky bar so a rejected save or publish is visible from anywhere on the page. */}
+        {message && (
+          <div className={`article-editor-message ${message.kind === 'error' ? 'form-error' : 'article-editor-ok'}`} role={message.kind === 'error' ? 'alert' : 'status'}>
+            {message.text}
+            {message.checks && message.checks.length > 0 && (
+              <ul className="article-editor-errors">{message.checks.map(c => <li key={c.id}>{c.label}{c.detail ? `: ${c.detail}` : ''}</li>)}</ul>
+            )}
+          </div>
+        )}
       </div>
 
       {restore && (
@@ -485,15 +556,6 @@ export default function ArticleEditor({ slug: routeSlug }: { slug?: string }) {
             <button type="button" className="btn btn-primary" onClick={onRestore} style={{ fontSize: 11, padding: '6px 14px' }}>Pulihkan</button>
             <button type="button" className="btn btn-ghost" onClick={onDiscard} style={{ fontSize: 11, padding: '6px 14px' }}>Buang</button>
           </div>
-        </div>
-      )}
-
-      {message && (
-        <div className={message.kind === 'error' ? 'form-error' : 'article-editor-ok'} role={message.kind === 'error' ? 'alert' : 'status'}>
-          {message.text}
-          {message.checks && message.checks.length > 0 && (
-            <ul className="article-editor-errors">{message.checks.map(c => <li key={c.id}>{c.label}{c.detail ? `: ${c.detail}` : ''}</li>)}</ul>
-          )}
         </div>
       )}
 
@@ -521,15 +583,17 @@ export default function ArticleEditor({ slug: routeSlug }: { slug?: string }) {
             </div>
           )}
 
+          <label className="form-label article-editor-body-label" htmlFor="article-content">Isi artikel *</label>
           <div className="article-editor-body">
-            <div className="article-editor-tabs" role="tablist" aria-label="Mode isi">
-              <button type="button" role="tab" id="tab-write" aria-selected={tab === 'write'} aria-controls="panel-write" className={tab === 'write' ? 'is-active' : ''} onClick={() => setTab('write')}>Tulis</button>
-              <button type="button" role="tab" id="tab-preview" aria-selected={tab === 'preview'} aria-controls="panel-preview" className={tab === 'preview' ? 'is-active' : ''} onClick={showPreview}>Pratinjau</button>
+            <div className="article-editor-tabs">
+              <div role="tablist" aria-label="Mode isi" className="article-editor-tablist" onKeyDown={onTabKey}>
+                <button type="button" role="tab" id="tab-write" aria-selected={tab === 'write'} aria-controls="panel-write" tabIndex={tab === 'write' ? 0 : -1} className={tab === 'write' ? 'is-active' : ''} onClick={() => setTab('write')}>Tulis</button>
+                <button type="button" role="tab" id="tab-preview" aria-selected={tab === 'preview'} aria-controls="panel-preview" tabIndex={tab === 'preview' ? 0 : -1} className={tab === 'preview' ? 'is-active' : ''} onClick={showPreview}>Pratinjau</button>
+              </div>
               {tab === 'write' && isMarkdown && <MarkdownToolbar onAction={onToolbar} />}
             </div>
-            {tab === 'write' ? (
-              <div role="tabpanel" id="panel-write" aria-labelledby="tab-write">
-                <label className="sr-only" htmlFor="article-content">Isi artikel</label>
+            {/* Both panels stay in the DOM so aria-controls always points at an element. */}
+            <div role="tabpanel" id="panel-write" aria-labelledby="tab-write" hidden={tab !== 'write'}>
                 <textarea
                   id="article-content"
                   ref={textareaRef}
@@ -542,23 +606,20 @@ export default function ArticleEditor({ slug: routeSlug }: { slug?: string }) {
                   spellCheck
                   placeholder={isMarkdown ? 'Tulis isi artikel. Baris kosong memisahkan paragraf. Pakai toolbar untuk subjudul, daftar, link, dan gambar.' : 'Setiap baris menjadi satu paragraf.'}
                 />
-              </div>
-            ) : (
-              <div role="tabpanel" id="panel-preview" aria-labelledby="tab-preview" className="article-editor-preview-wrap">
+            </div>
+            <div role="tabpanel" id="panel-preview" aria-labelledby="tab-preview" className="article-editor-preview-wrap" hidden={tab !== 'preview'}>
                 {previewState === 'loading' && <p className="article-editor-help">Menyiapkan pratinjau...</p>}
+                {previewState === 'error' && <p className="form-error" role="alert">Pratinjau gagal dimuat. Cek koneksi, lalu klik Pratinjau lagi.</p>}
                 {preview && preview.warnings.length > 0 && (
                   <ul className="article-editor-warnings">
-                    {preview.warnings.map((w, i) => (
-                      <li key={i}>{w.kind === 'raw-html' ? 'Kode HTML di isi dibuang' : `${WARNING_TEXT[w.kind] || w.kind}: ${w.alt || w.src}`}</li>
-                    ))}
+                    {preview.warnings.map((w, i) => <li key={i}>{warningText(w)}</li>)}
                   </ul>
                 )}
                 {preview && previewState !== 'loading' && (
                   // Already sanitized by the server (lib/markdown.ts); the client does not transform it.
                   <div className={`article-body${isMarkdown ? '' : ' article-body-plain'}`} dangerouslySetInnerHTML={{ __html: preview.html }} />
                 )}
-              </div>
-            )}
+            </div>
             <p className="article-editor-footer">
               {words.toLocaleString('id-ID')} kata · ±{readingMinutes(words)} menit baca · {images.length} gambar
             </p>

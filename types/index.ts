@@ -164,6 +164,14 @@ export type ArticleCard = Pick<
   'slug' | 'title' | 'excerpt' | 'images' | 'imageUrl' | 'coverImage' | 'coverAlt' | 'createdAt' | 'publishedAt'
 >;
 
+// Warnings from renderArticle() (lib/markdown.ts). Shared with the checklist and the editor, so a new kind
+// has to be handled everywhere the compiler sees it.
+export type RenderWarning =
+  | { kind: 'image-host' | 'placeholder' | 'inline-image'; src: string; alt: string }
+  | { kind: 'raw-html' }
+  // marked could not parse the body (e.g. nesting deep enough to overflow the stack).
+  | { kind: 'render-error' };
+
 export interface ChecklistItem {
   id: string;
   label: string;

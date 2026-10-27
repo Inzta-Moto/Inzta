@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { ARTICLE_NOT_FOUND as NOT_FOUND, ARTICLE_SERVER_FAIL as SERVER_FAIL } from '@/lib/admin-articles';
 import { getAdminDb } from '@/lib/firebaseAdmin';
 import { requireAdmin } from '@/lib/auth';
 import { revalidateArticlePaths } from '@/lib/revalidate';
@@ -15,7 +16,7 @@ export async function POST(request: Request, { params }: { params: { slug: strin
   try {
     const ref = getAdminDb().collection('articles').doc(params.slug);
     const existing = await ref.get();
-    if (!existing.exists) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    if (!existing.exists) return NextResponse.json({ error: NOT_FOUND }, { status: 404 });
     const stored = existing.data() ?? {};
 
     const checks = serverPublishFailures({
@@ -42,7 +43,7 @@ export async function POST(request: Request, { params }: { params: { slug: strin
   } catch (error: any) {
     if (isStaleWrite(error)) return NextResponse.json({ error: STALE_MESSAGE }, { status: 409 });
     console.error('Publish article error:', { slug: params.slug, error });
-    return NextResponse.json({ error: 'Failed' }, { status: 500 });
+    return NextResponse.json({ error: SERVER_FAIL }, { status: 500 });
   }
 }
 
@@ -54,7 +55,7 @@ export async function DELETE(request: Request, { params }: { params: { slug: str
   try {
     const ref = getAdminDb().collection('articles').doc(params.slug);
     const existing = await ref.get();
-    if (!existing.exists) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    if (!existing.exists) return NextResponse.json({ error: NOT_FOUND }, { status: 404 });
     const stored = existing.data() ?? {};
 
     const now = new Date().toISOString();
@@ -65,6 +66,6 @@ export async function DELETE(request: Request, { params }: { params: { slug: str
     return NextResponse.json({ status: 'success', item: serializeArticle(params.slug, { ...stored, ...update }) }, { status: 200 });
   } catch (error: any) {
     console.error('Unpublish article error:', { slug: params.slug, error });
-    return NextResponse.json({ error: 'Failed' }, { status: 500 });
+    return NextResponse.json({ error: SERVER_FAIL }, { status: 500 });
   }
 }

@@ -3,7 +3,7 @@ import { getAdminDb } from '@/lib/firebaseAdmin';
 import { requireAdmin } from '@/lib/auth';
 import { parseArticleInput } from '@/lib/article-input';
 import { isAlreadyExists } from '@/lib/firestore-errors';
-import { serializeArticle } from '@/lib/admin-articles';
+import { ARTICLE_SERVER_FAIL, serializeArticle } from '@/lib/admin-articles';
 import { statusOf } from '@/lib/article-format';
 
 // Admins get drafts too; anyone else gets published articles only. A failed admin check is not an
@@ -15,9 +15,11 @@ export async function GET() {
     const items = snapshot.docs
       .filter(doc => isAdmin || statusOf(doc.data()) === 'published')
       .map(doc => serializeArticle(doc.id, doc.data()));
-    return NextResponse.json({ items }, { status: 200 });
+    // viewer tells the admin list that a rejected session is why drafts are missing; it says nothing about anyone else.
+    return NextResponse.json({ items, viewer: isAdmin ? 'admin' : 'public' }, { status: 200 });
   } catch (error: any) {
-    return NextResponse.json({ error: 'Failed to fetch articles' }, { status: 500 });
+    console.error('List articles error:', error);
+    return NextResponse.json({ error: 'Gagal memuat artikel. Muat ulang halaman beberapa saat lagi.' }, { status: 500 });
   }
 }
 
@@ -52,6 +54,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'slug: sudah dipakai artikel lain' }, { status: 409 });
     }
     console.error('Create article error:', error);
-    return NextResponse.json({ error: 'Failed to create article' }, { status: 500 });
+    return NextResponse.json({ error: ARTICLE_SERVER_FAIL }, { status: 500 });
   }
 }

@@ -13,7 +13,7 @@ interface SeoPanelProps {
 
 function Counter({ length, guide }: { length: number; guide: number }) {
   return (
-    <span className={`article-counter${length > guide ? ' is-over' : ''}`} aria-live="polite">
+    <span className={`article-counter${length > guide ? ' is-over' : ''}`}>
       {length}/{guide}
     </span>
   );
