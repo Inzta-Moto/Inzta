@@ -34,9 +34,6 @@ export default function BlogDetailClient({ article, bodyHtml, articleUrl, previe
   return (
     <>
       <Header active="blog" />
-      {previewBanner && (
-        <div className="article-preview-banner" role="status">Pratinjau, belum tayang. Halaman ini hanya terlihat oleh admin.</div>
-      )}
       
       <section className="detail-page-header">
         <div className="container">
@@ -54,6 +51,9 @@ export default function BlogDetailClient({ article, bodyHtml, articleUrl, previe
       
       <section className="section blog-detail">
         <div className="container">
+          {previewBanner && (
+            <p className="article-preview-banner" role="status">Pratinjau, belum tayang. Halaman ini hanya terlihat oleh admin.</p>
+          )}
           <div className="blog-detail-header">
             <h1 className="blog-detail-title">{a.title}</h1>
             <div className="blog-card-meta" style={{ marginBottom: '24px' }}>
