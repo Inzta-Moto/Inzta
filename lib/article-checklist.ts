@@ -1,7 +1,7 @@
 import type { Article, ChecklistItem, ChecklistResult, RenderWarning } from '@/types';
 import { RESERVED_ARTICLE_SLUGS } from '@/lib/constants';
 import { SLUG_PATTERN } from '@/lib/slug';
-import { MAX_EMBEDS, extractBodyImages, formatOf, hasH1, isAllowedImageUrl } from '@/lib/article-format';
+import { MAX_EMBEDS, extractBodyImages, formatOf, hasH1, isAllowedImageUrl, siteLinks } from '@/lib/article-format';
 
 // Pre-publish checks (F-012 requirement 10), pure so the editor, PUT on a published article, and the
 // publish route all apply the same rules. Meta lengths follow ADR-0014: a guideline, never a block.
@@ -19,6 +19,11 @@ export interface ChecklistOptions {
   renderWarnings?: RenderWarning[];
   // The stored document ID of an existing article, which may predate the slug rule (F-000).
   legacySlugOk?: boolean;
+  // F-013 phase C4: markers whose product or article would not show (missing, inactive, draft, this article),
+  // from the server resolver at publish or from the editor's list (C-9, requirement 22.1).
+  missingEmbeds?: string[];
+  // Slugs of active products and published articles, known in the editor only (W-5, requirement 22.2).
+  publicTargets?: { produk: string[]; artikel: string[] };
 }
 
 const item = (id: string, label: string, ok: boolean, detail?: string): ChecklistItem =>
@@ -73,7 +78,8 @@ export function runChecklist(article: ChecklistInput, opts: ChecklistOptions = {
     // F-013 phase C (K-5): marker problems come from the renderer, so like C-4 they are seen on the server.
     // Listed only when the body has a marker, so articles without cards keep their checklist.
     const embedProblems = warnings.filter((w): w is Extract<RenderWarning, { marker: string }> => 'marker' in w);
-    if (embedProblems.length || /\[\[(?:produk|artikel):/i.test(content)) {
+    const missing = Array.from(new Set(opts.missingEmbeds || []));
+    if (embedProblems.length || missing.length || /\[\[(?:produk|artikel):/i.test(content)) {
       const detail = (kind: string, text: string) => {
         const markers = embedProblems.filter(w => w.kind === kind).map(w => w.marker);
         return markers.length ? `${text}: ${listNames(markers)}` : '';
@@ -82,6 +88,7 @@ export function runChecklist(article: ChecklistInput, opts: ChecklistOptions = {
         detail('embed-inline', 'harus di baris sendiri, diapit baris kosong'),
         detail('embed-invalid', 'slug hanya huruf kecil, angka, dan tanda hubung'),
         detail('embed-limit', `lebih dari ${MAX_EMBEDS} penanda, tidak ditampilkan`),
+        missing.length ? `tidak ada, nonaktif, belum terbit, atau artikel ini sendiri: ${listNames(missing)}` : '',
       ].filter(Boolean);
       blocking.push(item('C-9', 'Penanda produk dan artikel ([[produk:…]], [[artikel:…]]) valid', problems.length === 0, problems.join('; ')));
     }
@@ -101,6 +108,13 @@ export function runChecklist(article: ChecklistInput, opts: ChecklistOptions = {
   if (markdown && article.showCover !== false && isAllowedImageUrl(article.coverImage)) {
     const twice = images.some(i => i.url === article.coverImage);
     warnings.push(item('W-6', 'Foto sampul tidak tampil dua kali', !twice, 'Gambar sampul juga ada di isi. Matikan "Tampilkan sampul di halaman artikel" atau hapus gambar itu dari isi.'));
+  }
+  // F-013 phase C4 (22.2): a link in the text to an INZTA page that is not public would be a 404 or a dead end.
+  if (markdown && opts.publicTargets) {
+    const targets = opts.publicTargets;
+    const links = siteLinks(content);
+    const dead = Array.from(new Set(links.filter(l => !targets[l.kind].includes(l.slug)).map(l => l.path)));
+    if (links.length) warnings.push(item('W-5', 'Link ke artikel dan produk INZTA menuju halaman yang tayang', dead.length === 0, `Belum tayang atau tidak ada: ${listNames(dead)}`));
   }
 
   return { blocking, warnings };

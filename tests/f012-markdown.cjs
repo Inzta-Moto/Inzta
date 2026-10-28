@@ -826,6 +826,30 @@ check('F-013 C: C-9 fails on each embed warning and is absent without markers', 
   assert.ok(canPublish(runChecklist({ ...ok, content: '## A\n\nLihat [[produk:a]].' }, { coverWidth: 1200 })));
 });
 
+// F-013 phase C4 (requirements 22.1, 22.2).
+check('F-013 C4: C-9 fails on missing targets given by the server or the editor, deduplicated', () => {
+  const content = '## A\n\nTeks.\n\n[[produk:a]]\n\n[[artikel:b]]';
+  const r = runChecklist({ ...ok, content }, { coverWidth: 1200, renderWarnings: md(content).warnings, missingEmbeds: ['[[produk:a]]', '[[produk:a]]'] });
+  assert.deepStrictEqual(failed(r), ['C-9']);
+  assert.strictEqual(r.blocking.find(c => c.id === 'C-9').detail, 'tidak ada, nonaktif, belum terbit, atau artikel ini sendiri: [[produk:a]]');
+  assert.ok(canPublish(runChecklist({ ...ok, content }, { coverWidth: 1200, missingEmbeds: [] })));
+});
+check('F-013 C4: siteLinks finds /blog and /produk links outside code, with titles and <...>; not anchors or queries', () => {
+  const content = '[a](/blog/satu) [b](/produk/dua "Judul") [c](</blog/tiga>) [d](/produk/empat#x) [e](/produk?x=1) [f](https://inzta.id/blog/lima)\n\n```\n[g](/blog/enam)\n```';
+  assert.deepStrictEqual(fmt.siteLinks(content).map(l => `${l.kind}:${l.slug}`), ['artikel:satu', 'produk:dua', 'artikel:tiga']);
+});
+check('F-013 C4: W-5 lists links to pages that are not public; absent without the editor list or without links', () => {
+  const content = '## A\n\nLihat [tas](/produk/tas-aktif), [lama](/produk/tas-nonaktif), dan [draf](/blog/draf-x). Lagi [draf](/blog/draf-x).';
+  const targets = { produk: ['tas-aktif'], artikel: ['terbit'] };
+  const r = runChecklist({ ...ok, content }, { coverWidth: 1200, publicTargets: targets });
+  assert.deepStrictEqual(warned(r), ['W-5']);
+  assert.strictEqual(r.warnings.find(c => c.id === 'W-5').detail, 'Belum tayang atau tidak ada: /produk/tas-nonaktif, /blog/draf-x');
+  assert.ok(canPublish(r), 'W-5 is a warning only');
+  assert.ok(!runChecklist({ ...ok, content }, { coverWidth: 1200 }).warnings.some(c => c.id === 'W-5'));
+  assert.ok(!runChecklist({ ...ok, content: '## A\n\nTanpa link.' }, { coverWidth: 1200, publicTargets: targets }).warnings.some(c => c.id === 'W-5'));
+  assert.deepStrictEqual(warned(runChecklist({ ...ok, content: '## A\n\n[tas](/produk/tas-aktif)' }, { coverWidth: 1200, publicTargets: targets })), []);
+});
+
 for (const [s, n] of results) console.log(`${s}  ${n}`);
 const failedCount = results.filter(([s]) => s === 'FAIL').length;
 console.log(`\n${results.length - failedCount}/${results.length} passed`);

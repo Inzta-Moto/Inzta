@@ -184,8 +184,9 @@ export default function ArticleEditor({ slug: routeSlug }: { slug?: string }) {
       .catch(() => setCatalogError('Daftar produk dan artikel gagal dimuat. Tutup dialog, cek koneksi, lalu coba lagi.'))
       .finally(() => { c.loading = false; });
   }, []);
-  // An article that already has cards needs the list for their names; others read it on the first dialog.
-  const hasCards = /\[\[(?:produk|artikel):/i.test(draft.content);
+  // An article that already has cards or INZTA links needs the list (card names, C-9, W-5); others read it on
+  // the first dialog.
+  const hasCards = /\[\[(?:produk|artikel):|\]\(\s*<?\/(?:blog|produk)\//i.test(draft.content);
   useEffect(() => { if (hasCards && draft.contentFormat === 'markdown') ensureCatalog(); }, [hasCards, draft.contentFormat, ensureCatalog]);
   // What the card nodes in the editor show; stable for the editor's life.
   const catalogSource = useMemo<EmbedCatalogSource>(() => ({
@@ -208,9 +209,20 @@ export default function ArticleEditor({ slug: routeSlug }: { slug?: string }) {
   const slugLocked = server ? isEverPublished(server) : false;
   const images = useMemo(() => (isMarkdown ? extractBodyImages(draft.content) : []), [draft.content, isMarkdown]);
   const words = useMemo(() => countWords(draft.content), [draft.content]);
+  // F-013 phase C4: with the list loaded, cards to non-public targets fail C-9 here as they will on the server,
+  // and links to non-public INZTA pages give W-5. Marker lines are the editor's own canonical output.
+  const cardChecks = useMemo(() => {
+    if (!catalog || !isMarkdown) return {};
+    const open = (kind: EmbedMdKind) => pickable(catalog[kind], kind, draft.slug).filter(i => !i.unavailable).map(i => i.slug);
+    const publicTargets = { produk: open('produk'), artikel: open('artikel') };
+    const missingEmbeds = Array.from(draft.content.matchAll(/^[ \t]*\[\[(produk|artikel):([a-z0-9]+(?:-[a-z0-9]+)*)\]\][ \t]*$/gm))
+      .filter(m => !publicTargets[m[1] as EmbedMdKind].includes(m[2]))
+      .map(m => m[0].trim());
+    return { publicTargets, missingEmbeds };
+  }, [catalog, isMarkdown, draft.content, draft.slug]);
   const checklist = useMemo(
-    () => runChecklist(draft, { coverWidth: isMarkdown ? coverWidth : null, legacySlugOk: Boolean(server && draft.slug === server.slug) }),
-    [draft, coverWidth, isMarkdown, server],
+    () => runChecklist(draft, { coverWidth: isMarkdown ? coverWidth : null, legacySlugOk: Boolean(server && draft.slug === server.slug), ...cardChecks }),
+    [draft, coverWidth, isMarkdown, server, cardChecks],
   );
   const ready = canPublish(checklist);
   const failedCount = checklist.blocking.filter(c => !c.ok).length;

@@ -14,6 +14,7 @@ const docs = new Map();
 const versions = new Map();
 const jar = new Map();
 const revalidated = [];
+const revalidateTypes = [];
 const counters = { reads: 0, writes: 0 };
 const state = { failRevalidate: false, beforeUpdate: null, failGet: false };
 
@@ -43,6 +44,8 @@ function docRef(col, id) {
   };
 }
 const fakeDb = {
+  // F-013 phase C4: the card resolver reads every target in one call.
+  getAll: async (...refs) => Promise.all(refs.map(r => r.get())),
   collection: (col) => ({
     doc: (id) => docRef(col, id),
     get: async () => {
@@ -59,7 +62,7 @@ const fakeAuth = { verifySessionCookie: async (c) => { if (!sessions[c]) throw n
 const stubs = {
   react: { cache: (fn) => fn },
   'next/headers': { cookies: () => ({ get: (n) => (jar.has(n) ? { value: jar.get(n) } : undefined), set: () => {}, delete: () => {} }) },
-  'next/cache': { revalidatePath: (p) => { if (state.failRevalidate) throw new Error('revalidate down'); revalidated.push(p); } },
+  'next/cache': { revalidatePath: (p, type) => { if (state.failRevalidate) throw new Error('revalidate down'); revalidated.push(p); if (type) revalidateTypes.push(`${p}:${type}`); } },
   [path.join(ROOT, 'lib/firebaseAdmin')]: { getAdminDb: () => fakeDb, getAdminAuth: () => fakeAuth, hasAdminCredentials: () => true },
 };
 
@@ -109,7 +112,7 @@ const json = (r) => r.json();
 const as = (cookie) => { jar.clear(); if (cookie) jar.set('admin_session', cookie); };
 const quiet = async (fn) => { const w = console.warn, e = console.error; console.warn = console.error = () => {}; try { return await fn(); } finally { console.warn = w; console.error = e; } };
 const p = (slug) => ({ params: { slug } });
-const paths = (slug) => ['/', '/blog', `/blog/${slug}`, '/sitemap.xml'];
+const paths = (slug) => ['/', '/blog', `/blog/${slug}`, '/sitemap.xml', '/blog/[slug]'];  // F-013 C4 (K-10): every article page
 
 const CLD = 'https://res.cloudinary.com/dukddlp0b/image/upload/v1/inzta/foto.jpg';
 const ready = {
@@ -401,6 +404,47 @@ const ready = {
     const src = docs.get('articles/tas-samping-xsr-155').content;
     const body = await json(await preview.POST(req({ content: src, contentFormat: 'markdown' })));
     assert.strictEqual(body.html, renderArticle({ content: src, contentFormat: 'markdown' }).html);
+  });
+
+  // F-013 phase C4 (requirements 22.1, 22.3): cards must point to a public product or article to publish.
+  const CARDS = (extra) => `## Pilih posisi\n\nIsi.\n\n[[produk:tas-aktif]]\n\n[[artikel:artikel-terbit]]\n\n${extra}`;
+  const seedTargets = () => {
+    docs.set('products/tas-aktif', { name: 'Tas Aktif', isActive: true, price: 100000, stock: 2 });
+    docs.set('products/tas-nonaktif', { name: 'Tas Nonaktif', isActive: false, price: 100000, stock: 2 });
+    docs.set('articles/artikel-terbit', { ...ready, slug: 'artikel-terbit', status: 'published', contentFormat: 'markdown' });
+    docs.set('articles/artikel-draf', { ...ready, slug: 'artikel-draf', status: 'draft', contentFormat: 'markdown' });
+  };
+  await check('C4 publish: cards to an active product and a published article pass; all article pages revalidated as a page', async () => {
+    as('cookie-admin'); seedTargets(); revalidated.length = 0; revalidateTypes.length = 0;
+    docs.set('articles/kartu-ok', { ...ready, slug: 'kartu-ok', status: 'draft', contentFormat: 'markdown', content: CARDS('Penutup.') }); bump('articles/kartu-ok');
+    const r = await publish.POST(req({}), p('kartu-ok'));
+    assert.strictEqual(r.status, 200, JSON.stringify(await r.clone().json()));
+    assert.deepStrictEqual(revalidateTypes, ['/blog/[slug]:page']);
+  });
+  for (const [name, marker] of [['inactive product', '[[produk:tas-nonaktif]]'], ['draft article', '[[artikel:artikel-draf]]'], ['missing product', '[[produk:tidak-ada]]'], ['the article itself', '[[artikel:kartu-buruk]]']]) {
+    await check(`C4 publish: a card to a ${name} -> 400 with C-9, nothing written`, async () => {
+      as('cookie-admin'); seedTargets(); revalidated.length = 0;
+      docs.set('articles/kartu-buruk', { ...ready, slug: 'kartu-buruk', status: 'draft', contentFormat: 'markdown', content: CARDS(marker) }); bump('articles/kartu-buruk');
+      const r = await publish.POST(req({}), p('kartu-buruk'));
+      assert.strictEqual(r.status, 400);
+      const body = await r.json();
+      const c9 = body.checks.find(c => c.id === 'C-9');
+      assert.ok(c9 && c9.detail.includes(marker), JSON.stringify(body.checks));
+      assert.deepStrictEqual(body.checks.map(c => c.id), ['C-9']);
+      assert.strictEqual(docs.get('articles/kartu-buruk').status, 'draft');
+      assert.deepStrictEqual(revalidated, []);
+    });
+  }
+  await check('C4 PUT on a published article: adding a card to an inactive product -> 400, content unchanged', async () => {
+    as('cookie-admin'); seedTargets();
+    docs.set('articles/terbit-kartu', { ...ready, slug: 'terbit-kartu', status: 'published', contentFormat: 'markdown', publishedAt: '2026-10-28T00:00:00.000Z' }); bump('articles/terbit-kartu');
+    const before = docs.get('articles/terbit-kartu').content;
+    const r = await article.PUT(req({ ...ready, slug: 'terbit-kartu', content: CARDS('[[produk:tas-nonaktif]]') }, 'PUT'), p('terbit-kartu'));
+    assert.strictEqual(r.status, 400);
+    assert.ok((await r.json()).checks.some(c => c.id === 'C-9'));
+    assert.strictEqual(docs.get('articles/terbit-kartu').content, before);
+    const ok = await article.PUT(req({ ...ready, slug: 'terbit-kartu', content: CARDS('Penutup.') }, 'PUT'), p('terbit-kartu'));
+    assert.strictEqual(ok.status, 200);
   });
 
   for (const [s, n] of results) console.log(`${s}  ${n}`);
