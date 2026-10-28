@@ -50,6 +50,9 @@ export default function VisualEditor({ value, onChange, onReady, onLink, onEditI
         'aria-labelledby': 'article-content-label',
         spellcheck: 'true',
       },
+      // The caret scrolls clear of the sticky admin bar and toolbar (up to ~200 px on phones, requirement 9.9).
+      scrollThreshold: { top: 200, right: 0, bottom: 40, left: 0 },
+      scrollMargin: { top: 200, right: 0, bottom: 40, left: 0 },
       handleKeyDown: (_view, e) => {
         if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'k') {
           e.preventDefault();

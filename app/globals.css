@@ -2717,6 +2717,23 @@ ul, ol { list-style: none; }
 .article-body table { display: block; max-width: 100%; overflow-x: auto; border-collapse: collapse; font-size: 0.9375em; line-height: 1.5; }
 .article-body th, .article-body td { padding: 0.6em 0.8em; text-align: left; vertical-align: top; border: 1px solid var(--border-light); min-width: 8em; }
 .article-body th { color: var(--text-primary); background: var(--bg-subtle); }
+/* F-013 (requirement 4.10): on phones each body row becomes a card. The first cell is the card title; the others show
+   their column heading from data-label (written by lib/markdown.ts). The heading row stays for screen readers only.
+   Not in the visual editor, whose tables have no data-label and must stay editable as a grid. */
+@media (max-width: 767px) {
+  .article-body:not(.article-editor-visual) table,
+  .article-body:not(.article-editor-visual) tbody,
+  .article-body:not(.article-editor-visual) tr,
+  .article-body:not(.article-editor-visual) td { display: block; min-width: 0; }
+  .article-body:not(.article-editor-visual) table { overflow: visible; font-size: 1em; }
+  .article-body:not(.article-editor-visual) thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .article-body:not(.article-editor-visual) tr { padding: 0.4em 1em; border: 1px solid var(--border-light); border-radius: 8px; background: var(--bg-white); }
+  .article-body:not(.article-editor-visual) tr + tr { margin-top: 0.75em; }
+  .article-body:not(.article-editor-visual) td { padding: 0.5em 0; border: 0; }
+  .article-body:not(.article-editor-visual) td + td { border-top: 1px solid var(--border-light); }
+  .article-body:not(.article-editor-visual) td:first-child { font-weight: 600; color: var(--text-primary); }
+  .article-body:not(.article-editor-visual) td + td[data-label]::before { content: attr(data-label); display: block; margin-bottom: 0.15em; font-size: 0.8125em; font-weight: 600; color: var(--text-tertiary); }
+}
 /* F-013: image layout. Classes come only from lib/markdown.ts and pass the sanitizer allowlist. */
 .article-body::after { content: ''; display: table; clear: both; }  /* contain floats without a BFC */
 .article-body h2,
