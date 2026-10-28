@@ -855,6 +855,55 @@ check('F-013 C4: W-5 lists links to pages that are not public; absent without th
   assert.deepStrictEqual(warned(runChecklist({ ...ok, content: '## A\n\n[tas](/produk/tas-aktif)' }, { coverWidth: 1200, publicTargets: targets })), []);
 });
 
+// F-013 phase C: extractEmbeds() (no parser) must find exactly the cards renderArticle() makes.
+const cardsOf = (content) => md(content).blocks.filter(b => b.type !== 'html').map(b => `${b.type === 'product' ? 'produk' : 'artikel'}:${b.slug}`);
+const embedsOf = (content) => fmt.extractEmbeds(content).map(e => `${e.kind}:${e.slug}`);
+const EMBED_CASES = [
+  ['canonical, between paragraphs', 'A.\n\n[[produk:a]]\n\nB.\n\n[[artikel:b]]'],
+  ['start and end of the body', '[[produk:a]]\n\nTeks.\n\n[[artikel:b]]'],
+  ['adjacent markers', '[[produk:a]]\n\n[[produk:b]]'],
+  ['keyword case, spaces around', '  [[PRODUK:a]]  \n\n[[Artikel:b]]'],
+  ['right after and before a heading', '## Judul\n[[produk:a]]\n## Lanjut'],
+  ['next to code fences', '```\nkode\n```\n[[produk:a]]\n```\nlagi\n```'],
+  ['after a list, not indented', '- satu\n- dua\n\n[[produk:a]]'],
+  ['in a list item (indented after a blank line)', '- satu\n\n  [[produk:a]]'],
+  ['in a list continuation', '- satu\n  lanjut\n\n  [[produk:a]]'],
+  ['in a quote', '> [[produk:a]]'],
+  ['in a table', '| a |\n|---|\n| [[produk:a]] |'],
+  ['line after a table (becomes a row)', '| a |\n|---|\n| 1 |\n[[produk:a]]'],
+  ['setext heading underline', '[[produk:a]]\n---'],
+  ['text right above', 'Teks\n[[produk:a]]'],
+  ['text right below', '[[produk:a]]\nteks'],
+  ['in a sentence', 'Lihat [[produk:a]] ya.'],
+  ['fenced code', '```\n[[produk:a]]\n```'],
+  ['indented code (4 spaces)', 'Teks.\n\n    [[produk:a]]'],
+  ['top-level, indented 2, after a paragraph', 'Teks.\n\n  [[produk:a]]'],
+  ['invalid slug', '[[produk:A_B]]'],
+  ['escaped', '\\[\\[produk:a\\]\\]'],
+  ['CRLF line ends', 'A.\r\n\r\n[[produk:a]]\r\n\r\nB.'],
+];
+for (const [name, content] of EMBED_CASES) {
+  check(`F-013 C: extractEmbeds agrees with renderArticle: ${name}`, () => {
+    assert.deepStrictEqual(embedsOf(content), cardsOf(content), content);
+  });
+}
+check('F-013 C: extractEmbeds gives line numbers and canonical markers', () => {
+  assert.deepStrictEqual(fmt.extractEmbeds('A.\n\n[[PRODUK:a]]\n\nB.\n\n[[artikel:b]]'), [
+    { kind: 'produk', slug: 'a', line: 3, marker: '[[produk:a]]' },
+    { kind: 'artikel', slug: 'b', line: 7, marker: '[[artikel:b]]' },
+  ]);
+  assert.deepStrictEqual(fmt.extractEmbeds(''), []);
+});
+check('F-013 C: with the editor list (publicTargets), C-9 fails on cards to non-public targets; the server list wins', () => {
+  const content = '## A\n\nTeks.\n\n[[produk:aktif]]\n\n[[produk:nonaktif]]\n\n[[artikel:draf]]';
+  const targets = { produk: ['aktif'], artikel: [] };
+  const r = runChecklist({ ...ok, content }, { coverWidth: 1200, publicTargets: targets });
+  assert.deepStrictEqual(failed(r), ['C-9']);
+  assert.ok(r.blocking.find(c => c.id === 'C-9').detail.endsWith('[[produk:nonaktif]], [[artikel:draf]]'));
+  assert.ok(canPublish(runChecklist({ ...ok, content }, { coverWidth: 1200, publicTargets: targets, missingEmbeds: [] })), 'server answer wins');
+  assert.ok(canPublish(runChecklist({ ...ok, content: '## A\n\nLihat [[produk:nonaktif]] ya.' }, { coverWidth: 1200, publicTargets: targets })), 'inline markers are the renderer\'s job (embed-inline), not a card');
+});
+
 for (const [s, n] of results) console.log(`${s}  ${n}`);
 const failedCount = results.filter(([s]) => s === 'FAIL').length;
 console.log(`\n${results.length - failedCount}/${results.length} passed`);

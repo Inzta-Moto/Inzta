@@ -70,10 +70,12 @@ interface PickerProps {
   error?: string;
   value: string;
   onChange: (item: CatalogItem) => void;
+  // The card dialog focuses the search box when the list arrives after the dialog opened (focus was on Tutup).
+  focusOnLoad?: boolean;
 }
 
 /** Search box and a radio list (Tab into the list, arrow keys between items). */
-export function CatalogPicker({ kind, items, error, value, onChange }: PickerProps) {
+export function CatalogPicker({ kind, items, error, value, onChange, focusOnLoad }: PickerProps) {
   const id = useId();
   const [query, setQuery] = useState('');
   const noun = kind === 'produk' ? 'produk' : 'artikel';
@@ -88,7 +90,7 @@ export function CatalogPicker({ kind, items, error, value, onChange }: PickerPro
     <div className="article-editor-stack">
       <div className="form-group">
         <label className="form-label" htmlFor={`${id}-q`}>Cari {noun}</label>
-        <input id={`${id}-q`} className="form-input" value={query} onChange={e => setQuery(e.target.value)} type="search" autoComplete="off" data-autofocus />
+        <input id={`${id}-q`} className="form-input" value={query} onChange={e => setQuery(e.target.value)} type="search" autoComplete="off" data-autofocus autoFocus={focusOnLoad} />
       </div>
       <fieldset className="article-editor-picker">
         <legend className="form-label">Pilih {noun}</legend>
@@ -150,7 +152,7 @@ export default function EmbedDialog({ kind, initialSlug, currentSlug, catalog, c
             ? 'Kartu menampilkan foto, nama, harga, dan stok terbaru produk, dengan tombol ke halaman produk.'
             : 'Kartu "Baca juga" menampilkan judul, ringkasan, dan sampul artikel yang sudah terbit.'}
         </p>
-        <CatalogPicker kind={kind} items={items} error={catalogError} value={slug} onChange={i => { setSlug(i.slug); setError(''); }} />
+        <CatalogPicker kind={kind} items={items} error={catalogError} value={slug} onChange={i => { setSlug(i.slug); setError(''); }} focusOnLoad />
         {error && <div className="form-error" role="alert">{error}</div>}
       </form>
     </Dialog>
