@@ -67,3 +67,7 @@ export async function resolveEmbeds(blocks: RenderBlock[], opts: { exclude?: str
     return out;
   }, EMPTY);
 }
+
+/** Blocks for the public page: cards without public data are left out, so their slugs never reach the browser. */
+export const visibleBlocks = (blocks: RenderBlock[], embeds: ArticleEmbeds): RenderBlock[] =>
+  blocks.filter(b => b.type === 'html' || Boolean(b.type === 'product' ? embeds.products[b.slug] : embeds.articles[b.slug]));

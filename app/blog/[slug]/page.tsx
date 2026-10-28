@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import BlogDetailClient from './BlogDetailClient';
 import { getArticle } from '@/lib/public-content';
 import { renderArticle } from '@/lib/markdown';
-import { resolveEmbeds } from '@/lib/article-embeds';
+import { resolveEmbeds, visibleBlocks } from '@/lib/article-embeds';
 import { firstLineSummary } from '@/lib/article-format';
 import { optimizeCloudinaryUrl } from '@/lib/utils';
 import type { PublicArticle } from '@/types';
@@ -84,5 +84,5 @@ export default async function BlogDetailPage({ params }: { params: { slug: strin
   const { blocks } = renderArticle(article);
   const embeds = await resolveEmbeds(blocks, { exclude: article.slug });
   const { content, ...rest } = article;
-  return <BlogDetailClient article={rest} blocks={blocks} embeds={embeds} articleUrl={`${siteUrl}/blog/${params.slug}`} />;
+  return <BlogDetailClient article={rest} blocks={visibleBlocks(blocks, embeds)} embeds={embeds} articleUrl={`${siteUrl}/blog/${params.slug}`} />;
 }

@@ -61,7 +61,7 @@ export async function loadCatalog(): Promise<Catalog> {
 /** The article being edited is never a target: a card or link to itself makes no sense. */
 export function pickable(items: CatalogItem[], kind: EmbedMdKind, currentSlug: string): CatalogItem[] {
   if (kind !== 'artikel' || !currentSlug) return items;
-  return items.map(i => (i.slug === currentSlug ? { ...i, unavailable: 'Artikel ini' } : i));
+  return items.map(i => (i.slug === currentSlug ? { ...i, unavailable: 'Artikel ini' } : i)).sort(byAvailableThenTitle);
 }
 
 interface PickerProps {

@@ -317,6 +317,11 @@ function seed() {
     state.credentials = true; state.failReads = true;
     await assert.rejects(() => embeds.resolveEmbeds(blocks('product:tas-aktif')), /UNAVAILABLE/);
   });
+  await check('embeds: visibleBlocks drops cards without public data (no slug of an inactive product in the page)', () => {
+    const r = { products: { a: {} }, articles: { b: {} } };
+    const bl = [{ type: 'html', html: '<p>x</p>' }, ...blocks('product:a', 'product:nonaktif', 'article:b', 'article:draf')];
+    assert.deepStrictEqual(embeds.visibleBlocks(bl, r).map(x => x.slug || 'html'), ['html', 'a', 'b']);
+  });
   await check('embeds: prices and stock follow ProductCard (K-8, K-9)', () => {
     const P = (p) => embeds.toProductEmbed({ slug: 's', name: 'N', images: [], ...p });
     assert.deepStrictEqual(P({ productType: 'simple', price: 100, compareAtPrice: 80, stock: 0 }), { slug: 's', name: 'N', image: null, price: 100, priceTo: null, compareAtPrice: null, inStock: false });
