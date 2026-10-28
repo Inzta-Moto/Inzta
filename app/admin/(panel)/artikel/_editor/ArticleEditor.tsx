@@ -136,6 +136,7 @@ export default function ArticleEditor({ slug: routeSlug }: { slug?: string }) {
   const router = useRouter();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const coverButtonRef = useRef<HTMLButtonElement>(null);
+  const topbarRef = useRef<HTMLDivElement>(null);
   const [editor, setEditor] = useState<Editor | null>(null);
   // Dialogs return focus to the editor; ProseMirror puts its own selection back when it regains focus.
   const editorFocusRef = useMemo(() => ({ get current() { try { return editor?.view.dom ?? null; } catch { return null; } } }) as RefObject<HTMLElement>, [editor]);
@@ -215,6 +216,17 @@ export default function ArticleEditor({ slug: routeSlug }: { slug?: string }) {
     })();
     return () => { cancelled = true; };
   }, [routeSlug, key]);
+
+  // The sticky toolbar sits under the sticky action bar on wider screens; the bar's height changes with messages
+  // and wrapping, so it is measured (F-013 requirement 9.9, admin.css --editor-topbar-h).
+  useEffect(() => {
+    const bar = topbarRef.current;
+    if (!bar || typeof ResizeObserver === 'undefined') return;
+    const root = bar.parentElement;
+    const observer = new ResizeObserver(() => root?.style.setProperty('--editor-topbar-h', `${bar.offsetHeight}px`));
+    observer.observe(bar);
+    return () => observer.disconnect();
+  }, [loading, loadError]);
 
   // The cover's real width, for the 1200 px link-preview warning (W-4).
   useEffect(() => {
@@ -538,7 +550,7 @@ export default function ArticleEditor({ slug: routeSlug }: { slug?: string }) {
 
   return (
     <div className="article-editor">
-      <div className="article-editor-topbar">
+      <div className="article-editor-topbar" ref={topbarRef}>
         <Link href="/admin/artikel" className="article-editor-back"><ArrowLeft size={16} /> Semua artikel</Link>
         <span className={`table-badge ${status === 'published' ? 'table-badge-active' : 'table-badge-inactive'}`}>{status === 'published' ? 'Terbit' : 'Draf'}</span>
         <span className={`article-editor-autosave${autosave.status.state === 'off' ? ' is-off' : ''}`} aria-live="polite">{autosaveText}</span>
