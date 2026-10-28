@@ -15,6 +15,8 @@ interface ArticleBodyProps {
 }
 
 const THUMB_SIZES = '(max-width: 767px) 72px, 96px';
+// "Rp" and the amount never split over two lines on a narrow card.
+const rp = (n: number) => formatPrice(n).replace(' ', '\u00a0');
 
 function Thumb({ src }: { src: string | null }) {
   if (!src) return null;
@@ -45,11 +47,12 @@ export function ArticleProductCard({ product: p }: { product: ProductEmbed }) {
               {p.compareAtPrice !== null && (
                 <s className="article-embed-compare">
                   <span className="article-embed-sr">Harga normal </span>
-                  {formatPrice(p.compareAtPrice)}
+                  {rp(p.compareAtPrice)}
                 </s>
               )}
-              {formatPrice(p.price)}
-              {p.priceTo !== null && ` – ${formatPrice(p.priceTo)}`}
+              {p.compareAtPrice !== null && ' '}
+              {rp(p.price)}
+              {p.priceTo !== null && ` – ${rp(p.priceTo)}`}
             </span>
           )}
           {!p.inStock && <span className="article-embed-stock">Stok habis</span>}
