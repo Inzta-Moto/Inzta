@@ -37,13 +37,22 @@ function check(name, fn) {
 const md = (content) => renderArticle({ content, contentFormat: 'markdown' });
 const CLD = 'https://res.cloudinary.com/dukddlp0b/image/upload/v1/inzta/foto.jpg';
 const count = (html, re) => (html.match(re) || []).length;
-// Every tag and attribute in the output must be on the allowlist of requirement 4.3 / 4.10.
-const ALLOWED = { h2: [], h3: [], p: [], ul: [], ol: [], li: [], strong: [], em: [], br: [], figure: [], figcaption: [], table: [], thead: [], tbody: [], tr: [], th: [], td: [], a: ['href', 'rel', 'target'], img: ['src', 'srcset', 'sizes', 'alt', 'loading', 'decoding'] };
+// Every tag and attribute in the output must be on the allowlist of requirement 4.3 / 4.10, amended by
+// F-013 3.5 / 8.3: `class` on <figure> only, and only with the five image-layout classes.
+const ALLOWED = { h2: [], h3: [], p: [], ul: [], ol: [], li: [], strong: [], em: [], br: [], figure: ['class'], figcaption: [], table: [], thead: [], tbody: [], tr: [], th: [], td: [], a: ['href', 'rel', 'target'], img: ['src', 'srcset', 'sizes', 'alt', 'loading', 'decoding'] };
+const FIGURE_CLASS_SET = ['article-figure--kiri', 'article-figure--kanan', 'article-figure--kecil', 'article-figure--sedang', 'article-figure--besar'];
 function assertAllowlisted(html) {
   for (const m of html.matchAll(/<([a-zA-Z0-9]+)([^>]*)>/g)) {
     const tag = m[1].toLowerCase();
     assert.ok(tag in ALLOWED, `tag <${tag}> not allowed in: ${html.slice(0, 200)}`);
     for (const a of m[2].matchAll(/([a-zA-Z-:]+)=/g)) assert.ok(ALLOWED[tag].includes(a[1].toLowerCase()), `attribute ${a[1]} on <${tag}>`);
+    if (tag === 'figure') {
+      for (const c of m[2].matchAll(/\bclass="([^"]*)"/gi)) {
+        const values = c[1].split(/\s+/).filter(Boolean);
+        assert.ok(values.length > 0, `empty class on <figure>`);
+        for (const v of values) assert.ok(FIGURE_CLASS_SET.includes(v), `class ${v} on <figure>`);
+      }
+    }
   }
 }
 
@@ -452,6 +461,142 @@ check('checklist: legacy plain article runs only C-1 to C-3', () => {
 check('checklist: legacy slug passes C-2 only for an existing document', () => {
   assert.ok(failed(runChecklist({ ...ok, slug: 'Legacy_Slug' })).includes('C-2'));
   assert.ok(!failed(runChecklist({ ...ok, slug: 'Legacy_Slug' }, { legacySlugOk: true })).includes('C-2'));
+});
+
+// F-013 renderer and sanitizer (requirements 2.8, 2.9, 3.1–3.7, 7.4, 8.1, 8.3)
+const figureOf = (html) => (html.match(/<figure[^>]*>/) || [''])[0];
+const sizesOf = (html) => (html.match(/ sizes="([^"]*)"/) || [, ''])[1];
+const SIZES_BY = { kecil: '(max-width: 768px) 100vw, 240px', sedang: '(max-width: 768px) 100vw, 364px', besar: '(max-width: 768px) 100vw, 546px', penuh: '(max-width: 768px) 100vw, 720px' };
+check('F-013 render: all 12 posisi x ukuran combinations -> figure classes and sizes', () => {
+  const plainFigure = md(`![Alt](${CLD} "Cap")`).html;
+  let n = 0;
+  for (const posisi of POS) for (const ukuran of UK) {
+    const { html, warnings } = md(`![Alt](${CLD} "Cap"){posisi=${posisi} ukuran=${ukuran}}`);
+    const l = fmt.resolveLayout({ posisi, ukuran });
+    const classes = [l.posisi !== 'tengah' ? `article-figure--${l.posisi}` : '', l.ukuran !== 'penuh' ? `article-figure--${l.ukuran}` : ''].filter(Boolean);
+    assert.deepStrictEqual(warnings, [], `${posisi}/${ukuran}`);
+    assert.strictEqual(figureOf(html), classes.length ? `<figure class="${classes.join(' ')}">` : '<figure>', `${posisi}/${ukuran}: ${html}`);
+    assert.strictEqual(sizesOf(html), SIZES_BY[l.ukuran], `${posisi}/${ukuran}`);
+    assert.ok(!/[{}]|posisi|ukuran=/.test(html), `${posisi}/${ukuran}: ${html}`);
+    assert.ok(html.includes('alt="Alt"') && html.includes('<figcaption>Cap</figcaption>'));
+    // Apart from class and sizes, the figure is F-012's (3.3, 3.7).
+    const normalised = html.replace(/ class="[^"]*"/, '').replace(/ sizes="[^"]*"/, ` sizes="${SIZES_BY.penuh}"`);
+    assert.strictEqual(normalised, plainFigure, `${posisi}/${ukuran}`);
+    if (l.ukuran === 'penuh') assert.strictEqual(html, plainFigure, `${posisi}/${ukuran} is the default layout`);
+    assertAllowlisted(html);
+    n++;
+  }
+  assert.strictEqual(n, 12);
+});
+check('F-013 render: resolution table rows -> classes; default and recognised-but-empty blocks give F-012 HTML', () => {
+  const plain = md(`![Alt](${CLD})`).html;
+  for (const [block, , , classes] of RESOLUTION) {
+    if (/[*]/.test(block)) continue; // not a block for marked (2.9); covered by the malformed-block case
+    for (const sep of ['', ' ', '\t']) {
+      const { html, warnings } = md(`![Alt](${CLD})${sep}{${block}}`);
+      assert.deepStrictEqual(warnings, [], `{${block}}`);
+      assert.strictEqual(figureOf(html), classes.length ? `<figure class="${classes.join(' ')}">` : '<figure>', `{${block}} -> ${html}`);
+      if (!classes.length) assert.strictEqual(html, plain, `{${block}}`);
+      assert.ok(!/[{}]/.test(html), `{${block}} -> ${html}`);
+      assertAllowlisted(html);
+    }
+  }
+});
+check('F-013 render: a block is stripped wherever the image is, and warnings stay as without it (2.8, 3.7)', () => {
+  const B = '{posisi=kanan ukuran=kecil}';
+  const cases = [
+    ['placeholder', (b) => `![Tank bag](../images/K-03/tk5.jpg)${b}`],
+    ['GAMBAR-N', (b) => `![Foto](GAMBAR-2 "nanti")${b}`],
+    ['foreign host', (b) => `![x](https://evil.example/a.jpg)${b}`],
+    ['inline with text', (b) => `Lihat ![a](${CLD})${b} ini.`],
+    ['inline at paragraph end', (b) => `Lihat ini ![a](${CLD})${b}`],
+    ['list item', (b) => `- ![b](${CLD})${b}\n- dua`],
+    ['ordered list', (b) => `1. teks ![b](${CLD})${b} lanjut`],
+    ['link', (b) => `[![c](${CLD})${b}](/produk)`],
+    ['emphasis', (b) => `*![c](${CLD})${b}* teks`],
+    ['heading', (b) => `## Judul ![c](${CLD})${b}`],
+    ['table cell', (b) => `| A | B |\n|---|---|\n| ![a](${CLD})${b} | x |`],
+    ['table header', (b) => `| ![a](${CLD})${b} | B |\n|---|---|\n| y | x |`],
+    ['table cell with text', (b) => `| A |\n|---|\n| teks ![a](${CLD})${b} lanjut |`],
+  ];
+  for (const [name, build] of cases) {
+    const without = md(build(''));
+    const withBlock = md(build(B));
+    assert.ok(!/[{}]|posisi|ukuran/.test(withBlock.html), `${name}: ${withBlock.html}`);
+    assert.strictEqual(withBlock.html, without.html, name);
+    assert.deepStrictEqual(withBlock.warnings, without.warnings, name);
+    assert.ok(withBlock.warnings.length >= 1 && !/<img/.test(withBlock.html), `${name}: image must still be dropped`);
+    assertAllowlisted(withBlock.html);
+  }
+});
+check('F-013 render: malformed blocks are text and make the image inline-dropped with a warning (2.9)', () => {
+  for (const src of [
+    `![a](${CLD}){posisi=*kanan*}`,
+    `![a](${CLD}){posisi=kiri_x ukuran=*besar*}`,
+    `![a](${CLD})\n{posisi=kanan}`,
+    `![a](${CLD}){posisi=kiri}\nbaris berikut`,
+    `![a](${CLD}){posisi=kiri`,
+  ]) {
+    const { html, warnings } = md(src);
+    assert.ok(!/<img|<figure/.test(html), `${JSON.stringify(src)} -> ${html}`);
+    assert.deepStrictEqual(warnings.map(w => w.kind), ['inline-image'], JSON.stringify(src));
+    assert.ok(!/class=/.test(html), html);
+    assertAllowlisted(html);
+  }
+  // Text in braces that is not a block stays visible (it is ordinary text, not a layout).
+  assert.ok(md(`![a](${CLD}){posisi=*kanan*}`).html.includes('{posisi=<em>kanan</em>}'));
+  assert.ok(md(`![a](${CLD})\n{posisi=kanan}`).html.includes('{posisi=kanan}'));
+  // The checklist blocks publishing on the renderer warning (C-6).
+  const content = `## A\n\n![Alt](${CLD}){posisi=*kanan*}`;
+  assert.ok(failed(runChecklist({ ...ok, content }, { renderWarnings: md(content).warnings })).includes('C-6'));
+});
+check('F-013 render: attack blocks never become attributes, classes, or styles', () => {
+  const plain = md(`![Alt](${CLD})`).html;
+  for (const block of [
+    '{class=x}', '{.kelas}', '{#id}', '{style=color:red}', '{onerror=alert(1)}', '{onload=alert(1) posisi=kiri}',
+    '{posisi=kanan" onload="x}', "{posisi=kanan' onload='x}", '{posisi=kanan><script>alert(1)</script>}', '{ukuran=kecil&quot; onload=x}',
+    '{posisi=article-figure--kanan}', '{class=article-figure--kiri}',
+  ]) {
+    const { html } = md(`![Alt](${CLD})${block}`);
+    assert.ok(!/onload|onerror|style=|<script|id=|kelas|class="(?!article-figure--)/i.test(html), `${block} -> ${html}`);
+    assertAllowlisted(html);
+    if (!/posisi=kiri\b/.test(block) && !/[<>]/.test(block)) assert.strictEqual(html, plain, block);
+  }
+  // A recognised item next to junk still works; the junk does not.
+  assert.strictEqual(figureOf(md(`![Alt](${CLD}){onload=alert(1) posisi=kiri}`).html), '<figure class="article-figure--kiri article-figure--sedang">');
+});
+check('F-013 sanitizer alone: only the five classes, only on <figure>', () => {
+  const { sanitizeArticleHtml } = require(path.join(ROOT, 'lib/markdown.ts'));
+  assert.strictEqual(
+    sanitizeArticleHtml(`<figure class="article-figure--kanan evil article-figure--sedang" style="x" id="y"><img class="article-figure--kanan" src="${CLD}" alt="a"></figure>`),
+    `<figure class="article-figure--kanan article-figure--sedang"><img src="${CLD}" alt="a" /></figure>`,
+  );
+  assert.strictEqual(sanitizeArticleHtml('<figure class="evil">x</figure>'), '<figure>x</figure>');
+  assert.strictEqual(sanitizeArticleHtml('<figure class="article-figure--*">x</figure>'), '<figure>x</figure>');
+  assert.strictEqual(sanitizeArticleHtml('<figure class="ARTICLE-FIGURE--KANAN article-figure--kanan-x">x</figure>'), '<figure>x</figure>');
+  for (const tag of ['p', 'a', 'figcaption', 'h2', 'li', 'td', 'table', 'strong']) {
+    const out = sanitizeArticleHtml(`<${tag} class="article-figure--kanan evil">x</${tag}>`);
+    assert.ok(!/class/.test(out), `${tag}: ${out}`);
+  }
+  assert.ok(!/class/.test(sanitizeArticleHtml(`<img class="article-figure--kanan" src="${CLD}" alt="a">`)));
+});
+check('F-013 allowlist check: accepts class on <figure> only, with the five classes only (8.3)', () => {
+  assertAllowlisted('<figure class="article-figure--kiri article-figure--kecil"><img src="x" alt="a" /></figure>');
+  assertAllowlisted('<figure><img src="x" alt="a" /></figure>');
+  for (const bad of ['<figure class="evil">', '<figure class="article-figure--kiri x">', '<figure class="">', '<p class="article-figure--kiri">', '<img class="article-figure--kiri">', '<a class="article-figure--kiri">']) {
+    assert.throws(() => assertAllowlisted(bad), undefined, bad);
+  }
+});
+check('F-013 checklist: a recognised attribute block triggers no check (7.4)', () => {
+  for (const block of ['{posisi=kanan ukuran=sedang}', '{posisi=kiri}', '{ukuran=kecil}', '{}', ' {posisi=tengah ukuran=besar}']) {
+    const content = `## A\n\nTeks.\n\n![Alt](${CLD})${block}\n\nLanjut.`;
+    const r = runChecklist({ ...ok, content }, { coverWidth: 1200, renderWarnings: md(content).warnings });
+    assert.deepStrictEqual(failed(r), [], block);
+    assert.deepStrictEqual(warned(r), [], block);
+  }
+  const placeholder = `## A\n\n![Alt](../images/K-03/a.jpg){posisi=kiri ukuran=kecil}`;
+  const r = runChecklist({ ...ok, content: placeholder }, { renderWarnings: md(placeholder).warnings });
+  assert.deepStrictEqual(failed(r), ['C-7'], 'a block does not hide a placeholder');
 });
 
 for (const [s, n] of results) console.log(`${s}  ${n}`);
