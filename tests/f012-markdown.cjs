@@ -296,6 +296,113 @@ check('firstLineSummary: skips headings and images, strips Markdown, cuts near 1
   assert.ok(s.length <= 161 && s.endsWith('…'));
 });
 
+// F-013 pure helpers (requirements 2.1–2.7, 3.8, 5.9, 8.2)
+const POS = ['kiri', 'tengah', 'kanan'];
+const UK = ['kecil', 'sedang', 'besar', 'penuh'];
+const layoutOf = (block) => fmt.resolveLayout(fmt.parseImageAttrs(block));
+// Rows of the resolution table in design.md ("Attribute syntax"): block content -> [posisi, ukuran, classes].
+const RESOLUTION = [
+  ['', 'tengah', 'penuh', []],
+  ['posisi=kanan ukuran=sedang', 'kanan', 'sedang', ['article-figure--kanan', 'article-figure--sedang']],
+  ['posisi=kiri ukuran=kecil', 'kiri', 'kecil', ['article-figure--kiri', 'article-figure--kecil']],
+  ['posisi=tengah ukuran=besar', 'tengah', 'besar', ['article-figure--besar']],
+  ['posisi=kiri', 'kiri', 'sedang', ['article-figure--kiri', 'article-figure--sedang']],
+  ['ukuran=kecil', 'tengah', 'kecil', ['article-figure--kecil']],
+  ['posisi=kanan ukuran=penuh', 'tengah', 'penuh', []],
+  ['Posisi=KANAN  ukuran=Sedang', 'kanan', 'sedang', ['article-figure--kanan', 'article-figure--sedang']],
+  ['\tposisi=kanan\tukuran=kecil ', 'kanan', 'kecil', ['article-figure--kanan', 'article-figure--kecil']],
+  ['posisi=atas lebar=300 .kelas #id', 'tengah', 'penuh', []],
+  ['posisi="kanan"', 'tengah', 'penuh', []],
+  ["posisi='kanan' ukuran=\"kecil\"", 'tengah', 'penuh', []],
+  ['posisi=kiri posisi=kanan', 'kanan', 'sedang', ['article-figure--kanan', 'article-figure--sedang']],
+  ['posisi=kanan posisi=atas', 'kanan', 'sedang', ['article-figure--kanan', 'article-figure--sedang']],
+  ['posisi kanan =kiri ukuran= ukuran', 'tengah', 'penuh', []],
+  ['posisi=*kanan*', 'tengah', 'penuh', []],
+  ['class=x style=color:red onerror=alert(1) id=y', 'tengah', 'penuh', []],
+  ['posisi=kanan" onload="x', 'tengah', 'penuh', []],
+];
+check('F-013 helpers: resolution table (defaults, penuh rule, case, spaces, unknown, quoted, repeated, attack items)', () => {
+  for (const [block, posisi, ukuran, classes] of RESOLUTION) {
+    const l = layoutOf(block);
+    assert.deepStrictEqual(l, { posisi, ukuran }, `{${block}}`);
+    assert.deepStrictEqual(fmt.layoutClasses(l), classes, `{${block}}`);
+    for (const c of fmt.layoutClasses(l)) assert.ok(fmt.FIGURE_CLASSES.includes(c), c);
+  }
+  assert.deepStrictEqual(fmt.parseImageAttrs('posisi=atas ukuran=besar'), { ukuran: 'besar' });
+  assert.deepStrictEqual(fmt.resolveLayout({ posisi: 'atas', ukuran: 'x' }), fmt.DEFAULT_LAYOUT, 'runtime values outside the lists');
+  assert.deepStrictEqual(fmt.resolveLayout(undefined), fmt.DEFAULT_LAYOUT);
+  assert.deepStrictEqual(fmt.DEFAULT_LAYOUT, { posisi: 'tengah', ukuran: 'penuh' });
+  assert.deepStrictEqual([...fmt.FIGURE_CLASSES], ['article-figure--kiri', 'article-figure--kanan', 'article-figure--kecil', 'article-figure--sedang', 'article-figure--besar']);
+});
+check('F-013 helpers: ATTR_BLOCK_RE accepts spaces or tabs before "{", not a line break or nested braces', () => {
+  assert.strictEqual(fmt.ATTR_BLOCK_RE.exec('{posisi=kiri} lanjut')[1], 'posisi=kiri');
+  assert.strictEqual(fmt.ATTR_BLOCK_RE.exec(' \t{posisi=kiri}')[1], 'posisi=kiri');
+  assert.strictEqual(fmt.ATTR_BLOCK_RE.exec('{}')[1], '');
+  for (const t of ['\n{posisi=kiri}', 'x{posisi=kiri}', '{posisi=\nkiri}', '{a{b}}', '{posisi=kiri']) assert.strictEqual(fmt.ATTR_BLOCK_RE.exec(t), null, JSON.stringify(t));
+});
+check('F-013 helpers: canonical block, classes, and sizes per layout', () => {
+  assert.strictEqual(fmt.layoutBlock(fmt.DEFAULT_LAYOUT), '');
+  assert.strictEqual(fmt.layoutBlock({ posisi: 'kanan', ukuran: 'sedang' }), '{posisi=kanan ukuran=sedang}');
+  assert.strictEqual(fmt.layoutBlock({ posisi: 'tengah', ukuran: 'besar' }), '{posisi=tengah ukuran=besar}');
+  assert.strictEqual(fmt.layoutBlock({ posisi: 'kiri', ukuran: 'penuh' }), '', 'penuh never floats, so it is the default');
+  assert.deepStrictEqual(UK.map(u => fmt.layoutSizes({ posisi: 'tengah', ukuran: u })), [
+    '(max-width: 768px) 100vw, 240px', '(max-width: 768px) 100vw, 364px', '(max-width: 768px) 100vw, 546px', '(max-width: 768px) 100vw, 720px',
+  ]);
+  assert.strictEqual(fmt.layoutSizes(fmt.DEFAULT_LAYOUT), '(max-width: 768px) 100vw, 720px');
+});
+check('F-013 helpers: imageMarkdown() writes the canonical block, none for the default or without a layout', () => {
+  const url = 'https://res.cloudinary.com/dukddlp0b/image/upload/v1/inzta/xsr.jpg';
+  assert.strictEqual(fmt.imageMarkdown(url, 'Tas samping XSR 155', 'Foto: INZTA', { posisi: 'kanan', ukuran: 'sedang' }),
+    `![Tas samping XSR 155](${url} "Foto: INZTA"){posisi=kanan ukuran=sedang}`);
+  assert.strictEqual(fmt.imageMarkdown(url, 'a', '', { posisi: 'kiri', ukuran: 'kecil' }), `![a](${url}){posisi=kiri ukuran=kecil}`);
+  assert.strictEqual(fmt.imageMarkdown(url, 'a', 'c', fmt.DEFAULT_LAYOUT), `![a](${url} "c")`);
+  assert.strictEqual(fmt.imageMarkdown(url, 'a', 'c'), `![a](${url} "c")`);
+  assert.strictEqual(fmt.imageMarkdown(url, ''), `![](${url})`, '"Ubah ke Markdown" gallery images: no block (5.9)');
+});
+check('F-013 helpers: parse -> serialize -> parse is stable for all 12 posisi x ukuran combinations', () => {
+  let n = 0;
+  for (const posisi of POS) for (const ukuran of UK) {
+    const first = fmt.resolveLayout({ posisi, ukuran });
+    const block = fmt.layoutBlock(first);
+    const second = layoutOf(block.slice(1, -1));
+    assert.deepStrictEqual(second, first, `${posisi}/${ukuran}`);
+    assert.strictEqual(fmt.layoutBlock(second), block, `${posisi}/${ukuran}`);
+    const markdown = fmt.imageMarkdown(CLD, 'Alt', 'Cap', first);
+    const [img] = fmt.extractBodyImages(markdown);
+    assert.deepStrictEqual([img.raw, img.layout, img.alt, img.caption], [markdown, first, 'Alt', 'Cap'], `${posisi}/${ukuran}`);
+    assert.strictEqual(fmt.imageMarkdown(img.url, img.alt, img.caption, img.layout), markdown, `${posisi}/${ukuran}`);
+    n++;
+  }
+  assert.strictEqual(n, 12);
+});
+check('F-013 helpers: extractBodyImages includes the block in raw and offsets and resolves the layout', () => {
+  const a = `![Satu](${CLD} "Cap 1"){posisi=kanan ukuran=sedang}`;
+  const b = `![Dua](../images/K-03/tk5.jpg) \t{Posisi=KIRI}`;
+  const c = `![Tiga](${CLD})\n{posisi=kiri}`;
+  const content = `Intro\n\n${a}\n\n\`\`\`\n![kode](${CLD}){posisi=kiri}\n\`\`\`\n\n${b}\n\n${c}\n\nTeks ![Empat](${CLD}){ukuran=kecil} lanjut`;
+  const imgs = fmt.extractBodyImages(content);
+  assert.deepStrictEqual(imgs.map(i => [i.kind, i.alt, i.caption, i.line, i.layout.posisi, i.layout.ukuran]), [
+    ['allowed', 'Satu', 'Cap 1', 3, 'kanan', 'sedang'],
+    ['placeholder', 'Dua', '', 9, 'kiri', 'sedang'],
+    ['allowed', 'Tiga', '', 11, 'tengah', 'penuh'],
+    ['allowed', 'Empat', '', 14, 'tengah', 'kecil'],
+  ]);
+  assert.deepStrictEqual(imgs.map(i => i.raw), [a, b, `![Tiga](${CLD})`, `![Empat](${CLD}){ukuran=kecil}`]);
+  for (const i of imgs) assert.strictEqual(content.slice(i.start, i.end), i.raw);
+  // Replacing raw swaps image and block together, so no old block stays behind (editor replaceImage()).
+  const replaced = content.slice(0, imgs[0].start) + fmt.imageMarkdown(CLD, 'Satu', 'Cap 1') + content.slice(imgs[0].end);
+  assert.ok(!replaced.includes('posisi=kanan'), replaced);
+  assert.deepStrictEqual(fmt.extractBodyImages(replaced)[0].layout, fmt.DEFAULT_LAYOUT);
+});
+check('F-013 helpers: countWords and firstLineSummary ignore block contents', () => {
+  const plain = `Tas samping untuk XSR.\n\n![Alt](${CLD} "Cap")`;
+  const withBlock = `Tas samping untuk XSR.\n\n![Alt](${CLD} "Cap"){posisi=kanan ukuran=sedang}`;
+  assert.strictEqual(fmt.countWords(withBlock), fmt.countWords(plain));
+  assert.strictEqual(fmt.countWords(withBlock), 4);
+  assert.strictEqual(fmt.firstLineSummary(`![a](${CLD}){posisi=kiri}\n\nIsi pertama.`), 'Isi pertama.');
+  assert.strictEqual(fmt.firstLineSummary(`Lihat ![a](${CLD}){posisi=kiri ukuran=kecil} foto ini.`), 'Lihat  foto ini.');
+});
+
 // Checklist (requirement 10)
 const ok = {
   title: 'Tas samping XSR 155', slug: 'tas-samping-xsr-155', excerpt: 'Ringkasan', content: `## A\n\n![Alt](${CLD})`,

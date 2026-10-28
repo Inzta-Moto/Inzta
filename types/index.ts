@@ -164,6 +164,15 @@ export type ArticleCard = Pick<
   'slug' | 'title' | 'excerpt' | 'images' | 'imageUrl' | 'coverImage' | 'coverAlt' | 'createdAt' | 'publishedAt'
 >;
 
+// F-013: layout of one body image, written as an attribute block after the Markdown image
+// (`![alt](url "caption"){posisi=kanan ukuran=sedang}`). Parsed and resolved in lib/article-format.ts.
+export type ImagePosition = 'kiri' | 'tengah' | 'kanan';
+export type ImageSize = 'kecil' | 'sedang' | 'besar' | 'penuh';
+export interface ImageLayout {
+  posisi: ImagePosition;
+  ukuran: ImageSize;
+}
+
 // Warnings from renderArticle() (lib/markdown.ts). Shared with the checklist and the editor, so a new kind
 // has to be handled everywhere the compiler sees it.
 export type RenderWarning =
