@@ -49,7 +49,8 @@ export default function BlogDetailClient({ article, bodyHtml, articleUrl, previe
         </div>
       </section>
       
-      <section className="section blog-detail">
+      {/* F-013: Markdown articles share one centered reading column; plain articles keep F-012's layout (P-4). */}
+      <section className={`section blog-detail${isMarkdown ? ' blog-detail--column' : ''}`}>
         <div className="container">
           {previewBanner && (
             <p className="article-preview-banner" role="status">Pratinjau, belum tayang. Halaman ini hanya terlihat oleh admin.</p>
@@ -144,7 +145,7 @@ export default function BlogDetailClient({ article, bodyHtml, articleUrl, previe
           {/* Toast feedback salin link */}
           <div id="share-toast-blog" className="toast">✓ Link berhasil disalin!</div>
 
-          <div style={{ marginTop: '24px' }}>
+          <div className="blog-detail-back" style={{ marginTop: '24px' }}>
             <Link href="/blog" className="btn btn-ghost">
               <ArrowLeft size={16} style={{ marginRight: '8px' }} /> Kembali ke Blog
             </Link>

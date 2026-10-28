@@ -418,6 +418,12 @@ select.form-input { appearance: none; background-image: url("data:image/svg+xml,
 .article-image-preview.is-small { min-height: 120px; }
 .article-image-preview.is-small img { max-height: 160px; }
 .article-editor-check { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-secondary); }
+/* F-013: Posisi and Ukuran in the image dialog. Native radios (Tab into the group, arrows inside it). */
+.article-editor-choice { min-width: 0; border: 0; }
+.article-editor-choice-options { display: flex; flex-wrap: wrap; gap: 8px 16px; }
+.article-editor-choice label { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-secondary); cursor: pointer; }
+.article-editor-choice input[type="radio"] { margin: 0; }
+.article-editor-choice input[type="radio"]:focus-visible { outline: 2px solid var(--text-primary); outline-offset: 2px; }
 .article-editor-dialog { max-width: 560px; }
 .article-snippet { display: flex; flex-direction: column; gap: 2px; padding: 12px; background: var(--bg-main); border: 1px solid var(--border-light); border-radius: 6px; overflow-wrap: anywhere; }
 .article-snippet-url { font-size: 12px; color: var(--text-tertiary); }

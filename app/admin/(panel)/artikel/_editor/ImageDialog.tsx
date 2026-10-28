@@ -2,7 +2,8 @@
 
 import { ChangeEvent, FormEvent, RefObject, useRef, useState } from 'react';
 import { ACCEPTED_IMAGE_TYPES, uploadImage } from '@/lib/cloudinary-upload';
-import { isAllowedImageUrl } from '@/lib/article-format';
+import { DEFAULT_LAYOUT, changeLayout, isAllowedImageUrl, resolveLayout } from '@/lib/article-format';
+import type { ImageLayout, ImagePosition, ImageSize } from '@/types';
 import Dialog from './Dialog';
 
 export interface ImageDialogValue {
@@ -11,31 +12,51 @@ export interface ImageDialogValue {
   caption: string;
   width?: number;
   asCover: boolean;
+  // F-013: resolved layout; DEFAULT_LAYOUT for the cover dialog, which has no layout choice.
+  layout: ImageLayout;
 }
 
 interface ImageDialogProps {
   title: string;
   // 'body' inserts or edits an image in the article; 'cover' sets the cover (no caption).
   kind: 'body' | 'cover';
-  initial?: { url?: string; alt?: string; caption?: string; fileName?: string };
+  initial?: { url?: string; alt?: string; caption?: string; fileName?: string; layout?: ImageLayout };
   returnFocusRef?: RefObject<HTMLElement>;
   onClose: () => void;
   onConfirm: (value: ImageDialogValue) => void;
 }
 
-// Follows the mockup's "Pengaturan gambar" panel without size, float, and link options (design.md).
+const POSITION_OPTIONS: [ImagePosition, string][] = [['kiri', 'Kiri'], ['tengah', 'Tengah'], ['kanan', 'Kanan']];
+const SIZE_OPTIONS: [ImageSize, string][] = [['kecil', 'Kecil 33%'], ['sedang', 'Sedang 50%'], ['besar', 'Besar 75%'], ['penuh', 'Penuh 100%']];
+// "Sedang 50%" -> "Sedang", for the spoken announcement.
+const optionName = <T extends string>(options: [T, string][], value: T) => (options.find(([v]) => v === value)?.[1] ?? value).split(' ')[0];
+
+// Follows the mockup's "Pengaturan gambar" panel. F-013 adds Posisi and Ukuran for body images; link
+// options are still out of scope (design.md).
 export default function ImageDialog({ title, kind, initial, returnFocusRef, onClose, onConfirm }: ImageDialogProps) {
   const startUrl = initial?.url && isAllowedImageUrl(initial.url) ? initial.url : '';
   const [url, setUrl] = useState(startUrl);
   const [alt, setAlt] = useState(initial?.alt || '');
   const [caption, setCaption] = useState(initial?.caption || '');
   const [asCover, setAsCover] = useState(false);
+  const [layout, setLayout] = useState<ImageLayout>(() => resolveLayout(initial?.layout ?? DEFAULT_LAYOUT));
+  // Spoken by the live region below when a choice also changes the other setting (5.2); review WEB-03.
+  const [announcement, setAnnouncement] = useState('');
   const [info, setInfo] = useState<{ name: string; size: number; width: number; height: number } | null>(null);
   const [progress, setProgress] = useState<number | null>(null);
   const [error, setError] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
 
   const uploading = progress !== null;
+  const narrow = layout.ukuran === 'besar' && layout.posisi !== 'tengah';
+
+  const chooseLayout = (change: Partial<ImageLayout>) => {
+    const next = changeLayout(layout, change);
+    setLayout(next);
+    if (change.posisi && next.ukuran !== layout.ukuran) setAnnouncement(`Ukuran diubah ke ${optionName(SIZE_OPTIONS, next.ukuran)}.`);
+    else if (change.ukuran && next.posisi !== layout.posisi) setAnnouncement(`Posisi diubah ke ${optionName(POSITION_OPTIONS, next.posisi)}.`);
+    else setAnnouncement('');
+  };
   const pendingFile = initial?.fileName && !startUrl ? initial.fileName : '';
 
   const onFile = async (e: ChangeEvent<HTMLInputElement>) => {
@@ -60,7 +81,14 @@ export default function ImageDialog({ title, kind, initial, returnFocusRef, onCl
     if (uploading) return;
     if (!url) return setError('Unggah gambar dulu.');
     if (!alt.trim()) return setError('Teks alt wajib diisi.');
-    onConfirm({ url, alt: alt.trim(), caption: kind === 'body' ? caption.trim() : '', width: info?.width, asCover });
+    onConfirm({
+      url,
+      alt: alt.trim(),
+      caption: kind === 'body' ? caption.trim() : '',
+      width: info?.width,
+      asCover,
+      layout: kind === 'body' ? layout : DEFAULT_LAYOUT,
+    });
   };
 
   return (
@@ -107,6 +135,49 @@ export default function ImageDialog({ title, kind, initial, returnFocusRef, onCl
               <label className="form-label" htmlFor="image-caption">Caption (opsional)</label>
               <input id="image-caption" className="form-input" value={caption} onChange={e => setCaption(e.target.value)} maxLength={300} />
               <p className="article-editor-help">Tampil di bawah gambar.</p>
+            </div>
+            <fieldset className="article-editor-choice" aria-describedby="image-layout-phone image-layout-status">
+              <legend className="form-label">Posisi</legend>
+              <div className="article-editor-choice-options">
+                {POSITION_OPTIONS.map(([value, label]) => (
+                  <label key={value}>
+                    <input
+                      type="radio"
+                      name="image-posisi"
+                      value={value}
+                      checked={layout.posisi === value}
+                      onChange={() => chooseLayout({ posisi: value })}
+                    />
+                    {label}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+            <fieldset className="article-editor-choice" aria-describedby="image-layout-phone image-layout-status">
+              <legend className="form-label">Ukuran</legend>
+              <div className="article-editor-choice-options">
+                {SIZE_OPTIONS.map(([value, label]) => (
+                  <label key={value}>
+                    <input
+                      type="radio"
+                      name="image-ukuran"
+                      value={value}
+                      checked={layout.ukuran === value}
+                      onChange={() => chooseLayout({ ukuran: value })}
+                    />
+                    {label}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+            <div>
+              <p id="image-layout-phone" className="article-editor-help">Di HP gambar selalu tampil selebar layar.</p>
+              {/* Always mounted so screen readers hear changes (review WEB-03). Without the warning it has no
+                  class, so its empty box adds no margin and the dialog looks as before. */}
+              <p id="image-layout-status" role="status" aria-live="polite" className={narrow ? 'article-editor-help is-warn' : undefined}>
+                {announcement && <span className="sr-only">{announcement} </span>}
+                {narrow && 'Teks di sampingnya akan sempit.'}
+              </p>
             </div>
             <label className="article-editor-check">
               <input type="checkbox" checked={asCover} onChange={e => setAsCover(e.target.checked)} /> Jadikan juga gambar sampul
