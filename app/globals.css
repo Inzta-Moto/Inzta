@@ -2658,9 +2658,10 @@ ul, ol { list-style: none; }
 }
 
 /* Article body (F-012): HTML from lib/markdown.ts. Scoped to .article-body and built on the :root
-   variables so the visual redesign can restyle it, or override the two local properties, without
-   touching the renderer. Links use --text-primary with an accent underline because --accent-hover on
-   --bg-main is below 4.5:1 for body text. */
+   variables so the visual redesign can restyle it, or override --article-flow here and --article-measure
+   on .blog-detail (so the title stays aligned with the body), without touching the renderer. Links use
+   --text-primary with an accent underline because --accent-hover on --bg-main is below 4.5:1 for body
+   text. */
 /* F-013: one reading column for the body and, for Markdown articles, the text around it. 45.5rem is
    728 px at the default root size, within 1 px of F-012's 68ch at 17 px. A rem value (not ch) lets the
    title, which has its own font size, share the exact width. */
