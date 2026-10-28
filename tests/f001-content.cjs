@@ -13,6 +13,7 @@ const docs = new Map();
 const jar = new Map();
 const revalidated = [];
 const state = { credentials: true, failReads: false, failRevalidate: false };
+const getAllCalls = [];
 
 function snapshotOf(col, filter) {
   if (state.failReads) throw new Error('14 UNAVAILABLE: firestore down');
@@ -47,6 +48,11 @@ const fakeDb = {
     get: async () => snapshotOf(col),
     where: (field, op, value) => ({ get: async () => snapshotOf(col, d => d[field] === value), limit: () => ({ get: async () => snapshotOf(col, d => d[field] === value) }) }),
   }),
+  // F-013 phase C resolver: one call for every referenced document, snapshots in ref order.
+  getAll: async (...refs) => {
+    getAllCalls.push(refs.length);
+    return Promise.all(refs.map(r => r.get()));
+  },
   // Enough for the order status revert path; not atomic.
   runTransaction: async (fn) => fn({ get: (ref) => ref.get(), update: (ref, v) => ref.set(v, { merge: true }), delete: (ref) => ref.delete() }),
 };
@@ -96,6 +102,8 @@ const article = require(path.join(ROOT, 'app/api/articles/[slug]/route.ts'));
 const products = require(path.join(ROOT, 'app/api/products/route.ts'));
 const product = require(path.join(ROOT, 'app/api/products/[slug]/route.ts'));
 const order = require(path.join(ROOT, 'app/api/admin/orders/[orderId]/route.ts'));
+const embeds = require(path.join(ROOT, 'lib/article-embeds.ts'));
+const preview = require(path.join(ROOT, 'app/api/admin/articles/preview/route.ts'));
 
 const results = [];
 async function check(name, fn) {
@@ -274,6 +282,69 @@ function seed() {
     const r = await quiet(() => articles.POST(req({ ...validArticle, slug: 'tetap-tersimpan' })));
     assert.strictEqual(r.status, 201);
     assert.ok(docs.has('articles/tetap-tersimpan'));
+  });
+
+  // F-013 phase C (requirements 14, 17.4): card data for [[produk:…]] and [[artikel:…]] markers.
+  const blocks = (...refs) => refs.map(r => { const [type, slug] = r.split(':'); return { type, slug }; });
+  await check('embeds: one getAll for all markers; inactive, draft, missing, and self left out', async () => {
+    seed(); getAllCalls.length = 0;
+    const r = await embeds.resolveEmbeds(
+      [{ type: 'html', html: '<p>x</p>' }, ...blocks('product:tas-aktif', 'product:tas-nonaktif', 'product:tidak-ada', 'product:tas-aktif', 'article:terbit-lama-dibuat', 'article:draf-rahasia', 'article:legacy-timestamp', 'article:tidak-ada', 'article:diri-sendiri')],
+      { exclude: 'diri-sendiri' },
+    );
+    assert.deepStrictEqual(getAllCalls, [7]);
+    assert.deepStrictEqual(Object.keys(r.products), ['tas-aktif']);
+    assert.deepStrictEqual(Object.keys(r.articles).sort(), ['legacy-timestamp', 'terbit-lama-dibuat']);
+    docs.set('articles/diri-sendiri', { title: 'Diri', excerpt: 'x', content: 'y', status: 'published' });
+    const self = await embeds.resolveEmbeds(blocks('article:diri-sendiri'), { exclude: 'diri-sendiri' });
+    assert.deepStrictEqual(self.articles, {});
+  });
+  await check('embeds: card fields only, JSON-safe, image and date from the article', async () => {
+    seed();
+    docs.set('articles/terbit-lama-dibuat', { ...docs.get('articles/terbit-lama-dibuat'), coverImage: 'https://res.cloudinary.com/dukddlp0b/image/upload/v1/c.jpg', coverAlt: 'Sampul' });
+    docs.set('products/tas-aktif', { ...docs.get('products/tas-aktif'), description: 'rahasia', sku: 'S-1', images: ['https://res.cloudinary.com/dukddlp0b/image/upload/v1/p.jpg'], compareAtPrice: 150000 });
+    const r = await embeds.resolveEmbeds(blocks('product:tas-aktif', 'article:terbit-lama-dibuat'));
+    assert.deepStrictEqual(r.products['tas-aktif'], { slug: 'tas-aktif', name: 'Tas Aktif', image: 'https://res.cloudinary.com/dukddlp0b/image/upload/v1/p.jpg', price: 100000, priceTo: null, compareAtPrice: 150000, inStock: true });
+    assert.deepStrictEqual(r.articles['terbit-lama-dibuat'], { slug: 'terbit-lama-dibuat', title: 'Terbit', excerpt: 'e', image: 'https://res.cloudinary.com/dukddlp0b/image/upload/v1/c.jpg', date: Date.parse('2026-10-22T00:00:00.000Z') });
+    assert.deepStrictEqual(JSON.parse(JSON.stringify(r)), r);
+  });
+  await check('embeds: no marker -> no read; no credentials -> no cards; read error propagates', async () => {
+    seed(); getAllCalls.length = 0;
+    assert.deepStrictEqual(await embeds.resolveEmbeds([{ type: 'html', html: '<p>x</p>' }]), { products: {}, articles: {} });
+    assert.deepStrictEqual(getAllCalls, []);
+    state.credentials = false;
+    assert.deepStrictEqual(await quiet(() => embeds.resolveEmbeds(blocks('product:tas-aktif'))), { products: {}, articles: {} });
+    state.credentials = true; state.failReads = true;
+    await assert.rejects(() => embeds.resolveEmbeds(blocks('product:tas-aktif')), /UNAVAILABLE/);
+  });
+  await check('embeds: prices and stock follow ProductCard (K-8, K-9)', () => {
+    const P = (p) => embeds.toProductEmbed({ slug: 's', name: 'N', images: [], ...p });
+    assert.deepStrictEqual(P({ productType: 'simple', price: 100, compareAtPrice: 80, stock: 0 }), { slug: 's', name: 'N', image: null, price: 100, priceTo: null, compareAtPrice: null, inStock: false });
+    assert.strictEqual(P({ productType: 'simple', price: 100 }).inStock, true, 'legacy without stock counts as available');
+    const v = P({ productType: 'variable', priceFrom: 100, priceTo: 200, totalStock: 5, variants: [{ isActive: true, compareAtPrice: 250 }, { isActive: false, compareAtPrice: 999 }, { isActive: true, compareAtPrice: null }] });
+    assert.deepStrictEqual([v.price, v.priceTo, v.compareAtPrice, v.inStock], [100, 200, 250, true]);
+    const same = P({ productType: 'variable', priceFrom: 100, priceTo: 100, totalStock: 0, variants: [] });
+    assert.deepStrictEqual([same.price, same.priceTo, same.compareAtPrice, same.inStock], [100, null, null, false]);
+    const none = P({ productType: 'variable', priceFrom: null, priceTo: null, variants: [] });
+    assert.deepStrictEqual([none.price, none.priceTo], [null, null]);
+    assert.strictEqual(P({ images: ['javascript:alert(1)'] }).image, null);
+    assert.strictEqual(P({ images: ['http://x/y.jpg'] }).image, null);
+  });
+  await check('preview route: returns blocks and embeds, excludes the edited slug, survives a failed read', async () => {
+    seed(); asAdmin();
+    const body = { content: '[[produk:tas-aktif]]\n\n[[artikel:terbit-lama-dibuat]]', contentFormat: 'markdown', slug: 'terbit-lama-dibuat' };
+    const res = await preview.POST(req(body));
+    assert.strictEqual(res.status, 200);
+    const json = await res.json();
+    assert.deepStrictEqual(json.blocks, [{ type: 'product', slug: 'tas-aktif' }, { type: 'article', slug: 'terbit-lama-dibuat' }]);
+    assert.deepStrictEqual(Object.keys(json.embeds.products), ['tas-aktif']);
+    assert.deepStrictEqual(json.embeds.articles, {});
+    state.failReads = true;
+    const failed = await quiet(() => preview.POST(req({ ...body, slug: '../x' })));
+    assert.strictEqual(failed.status, 200);
+    assert.deepStrictEqual((await failed.json()).embeds, { products: {}, articles: {} });
+    jar.clear();
+    assert.strictEqual((await preview.POST(req(body))).status, 401);
   });
 
   for (const [s, n] of results) console.log(`${s}  ${n}`);

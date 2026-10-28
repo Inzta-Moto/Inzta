@@ -20,7 +20,8 @@ import {
   statusOf,
   type BodyImage,
 } from '@/lib/article-format';
-import type { ArticleStatus, ChecklistItem, ContentFormat, RenderWarning } from '@/types';
+import type { ArticleEmbeds, ArticleStatus, ChecklistItem, ContentFormat, RenderBlock, RenderWarning } from '@/types';
+import ArticleBody from '@/components/ArticleBody';
 import MarkdownToolbar, { type ToolbarAction } from './MarkdownToolbar';
 import LinkDialog from './LinkDialog';
 import ImageDialog, { type ImageDialogValue } from './ImageDialog';
@@ -96,6 +97,9 @@ function warningText(w: RenderWarning): string {
     case 'placeholder': return `Gambar belum diunggah, tidak tampil: ${w.alt || w.src}`;
     case 'image-host': return `Gambar bukan dari panel INZTA, dibuang: ${w.alt || w.src}`;
     case 'inline-image': return `Gambar menempel di teks, dibuang. Beri baris kosong sebelum dan sesudahnya: ${w.alt || w.src}`;
+    case 'embed-inline': return `Penanda harus di baris sendiri, diapit baris kosong; tampil sebagai teks: ${w.marker}`;
+    case 'embed-invalid': return `Slug penanda hanya boleh huruf kecil, angka, dan tanda hubung; tampil sebagai teks: ${w.marker}`;
+    case 'embed-limit': return `Lebih dari 10 kartu produk/artikel; penanda ini tidak ditampilkan: ${w.marker}`;
   }
 }
 
@@ -132,7 +136,7 @@ export default function ArticleEditor({ slug: routeSlug }: { slug?: string }) {
   const [loadError, setLoadError] = useState('');
   const [slugTouched, setSlugTouched] = useState(false);
   const [tab, setTab] = useState<'write' | 'preview'>('write');
-  const [preview, setPreview] = useState<{ html: string; warnings: RenderWarning[] } | null>(null);
+  const [preview, setPreview] = useState<{ blocks: RenderBlock[]; embeds: ArticleEmbeds; warnings: RenderWarning[] } | null>(null);
   const [previewState, setPreviewState] = useState<'idle' | 'loading' | 'error'>('idle');
   const [previewError, setPreviewError] = useState('');
   const [busy, setBusy] = useState<null | 'save' | 'publish' | 'unpublish'>(null);
@@ -351,7 +355,7 @@ export default function ArticleEditor({ slug: routeSlug }: { slug?: string }) {
       const res = await fetch('/api/admin/articles/preview', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: draftRef.current.content, contentFormat: draftRef.current.contentFormat }),
+        body: JSON.stringify({ content: draftRef.current.content, contentFormat: draftRef.current.contentFormat, slug: draftRef.current.slug }),
       });
       const body = await readJson(res);
       if (!res.ok) {
@@ -626,7 +630,7 @@ export default function ArticleEditor({ slug: routeSlug }: { slug?: string }) {
                 )}
                 {preview && previewState !== 'loading' && (
                   // Already sanitized by the server (lib/markdown.ts); the client does not transform it.
-                  <div className={`article-body${isMarkdown ? '' : ' article-body-plain'}`} dangerouslySetInnerHTML={{ __html: preview.html }} />
+                  <ArticleBody blocks={preview.blocks} embeds={preview.embeds} className={`article-body${isMarkdown ? '' : ' article-body-plain'}`} adminPreview />
                 )}
             </div>
             <p className="article-editor-footer">

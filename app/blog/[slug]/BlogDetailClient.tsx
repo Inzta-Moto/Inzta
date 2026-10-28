@@ -6,22 +6,27 @@ import dynamic from 'next/dynamic';
 
 const Footer = dynamic(() => import('@/components/Footer'));
 import Link from 'next/link';
-import { PublicArticle } from '@/types';
+import { ArticleEmbeds, PublicArticle, RenderBlock } from '@/types';
+import ArticleBody from '@/components/ArticleBody';
 import { ArrowLeft, Calendar } from 'lucide-react';
 import { formatDate, optimizeCloudinaryUrl, generateCloudinarySrcSet } from '@/lib/utils';
 import { formatOf, publicDate } from '@/lib/article-format';
 
 interface BlogDetailProps {
-  // Without content: the body arrives as bodyHtml, rendered and sanitized on the server (lib/markdown.ts).
+  // Without content: the body arrives as blocks, rendered and sanitized on the server (lib/markdown.ts),
+  // with the product and article cards resolved there too (lib/article-embeds.ts).
   article: Omit<PublicArticle, 'content'>;
-  bodyHtml: string;
+  blocks: RenderBlock[];
+  embeds: ArticleEmbeds;
   articleUrl: string;
   // Admin preview of a draft (/admin/pratinjau/{slug}).
   previewBanner?: boolean;
+  // Any /admin/pratinjau page: shows a note where a card is missing.
+  adminPreview?: boolean;
 }
 
 // The article comes from the server render (page.tsx, ISR); a missing slug is handled there with notFound().
-export default function BlogDetailClient({ article, bodyHtml, articleUrl, previewBanner }: BlogDetailProps) {
+export default function BlogDetailClient({ article, blocks, embeds, articleUrl, previewBanner, adminPreview }: BlogDetailProps) {
   const a = article;
   const isMarkdown = formatOf(a) === 'markdown';
   // window does not exist during the server render; after mount the share links use the address bar
@@ -108,9 +113,11 @@ export default function BlogDetailClient({ article, bodyHtml, articleUrl, previe
             )}
           </div>
           
-          <div
+          <ArticleBody
+            blocks={blocks}
+            embeds={embeds}
             className={`blog-detail-content article-body${isMarkdown ? '' : ' article-body-plain'}`}
-            dangerouslySetInnerHTML={{ __html: bodyHtml }}
+            adminPreview={adminPreview}
           />
           
           {/* ── Share Section ── */}
