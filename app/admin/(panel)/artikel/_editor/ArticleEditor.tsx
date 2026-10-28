@@ -1,6 +1,6 @@
 'use client';
 
-import { KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { KeyboardEvent, RefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
@@ -23,13 +23,16 @@ import {
   type BodyImage,
 } from '@/lib/article-format';
 import type { ArticleStatus, ChecklistItem, ContentFormat, RenderWarning } from '@/types';
-import MarkdownToolbar, { type ToolbarAction } from './MarkdownToolbar';
+import type { Editor } from '@tiptap/react';
+import MarkdownToolbar from './MarkdownToolbar';
+import VisualEditor, { splittableDepth } from './VisualEditor';
+import { NodeSelection } from '@tiptap/pm/state';
+import { imageOccurrence } from './markdown-doc';
 import LinkDialog from './LinkDialog';
 import ImageDialog, { type ImageDialogValue } from './ImageDialog';
 import BodyImagesPanel from './BodyImagesPanel';
 import SeoPanel from './SeoPanel';
 import ChecklistPanel from './ChecklistPanel';
-import { applyEdit, blockEdit, encodeLinkUrl, escapeLinkText, headingEdit, insertionPoint, listEdit, wrapEdit } from './markdown-edit';
 import { clearLocalCopy, localKey, readLocalCopy, useAutosave, type LocalCopy } from './useAutosave';
 import { useUnsavedGuard } from './useUnsavedGuard';
 
@@ -60,9 +63,11 @@ interface ServerArticle extends Partial<Draft> {
   publishedAt: number | null;
 }
 
+// F-013 phase B: link and new-image dialogs remember the editor range they act on; `pos` is an image node
+// opened from the editor, `image` one opened from the side panel.
 type Dialog =
-  | { type: 'link'; text: string }
-  | { type: 'image'; image?: BodyImage }
+  | { type: 'link'; text: string; url?: string; from: number; to: number }
+  | { type: 'image'; image?: BodyImage; pos?: number; at?: number }
   | { type: 'cover' };
 
 type Message = { kind: 'error' | 'ok'; text: string; checks?: ChecklistItem[] };
@@ -131,7 +136,9 @@ export default function ArticleEditor({ slug: routeSlug }: { slug?: string }) {
   const router = useRouter();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const coverButtonRef = useRef<HTMLButtonElement>(null);
-  const savedSelection = useRef({ start: 0, end: 0 });
+  const [editor, setEditor] = useState<Editor | null>(null);
+  // Dialogs return focus to the editor; ProseMirror puts its own selection back when it regains focus.
+  const editorFocusRef = useMemo(() => ({ get current() { try { return editor?.view.dom ?? null; } catch { return null; } } }) as RefObject<HTMLElement>, [editor]);
 
   const [draft, setDraft] = useState<Draft>(EMPTY);
   const draftRef = useRef(draft);
@@ -378,24 +385,6 @@ export default function ArticleEditor({ slug: routeSlug }: { slug?: string }) {
     }
   }
 
-  function onToolbar(action: ToolbarAction) {
-    const ta = textareaRef.current;
-    if (!ta) return;
-    const { selectionStart: s, selectionEnd: e, value } = ta;
-    if (action === 'h2' || action === 'h3') applyEdit(ta, headingEdit(value, s, e, action === 'h2' ? 2 : 3));
-    else if (action === 'bold') applyEdit(ta, wrapEdit(value, s, e, '**', 'teks tebal'));
-    else if (action === 'italic') applyEdit(ta, wrapEdit(value, s, e, '*', 'teks miring'));
-    else if (action === 'ul' || action === 'ol') applyEdit(ta, listEdit(value, s, e, action === 'ol'));
-    else {
-      // A new image goes after the selection, never over it: after "Edit gambar" or "Baris N" the
-      // selection is a whole image, and replacing it would silently drop that image (F-013 A7b). A caret
-      // inside an image moves to its end, so the image and its layout block stay together (review ERR-01).
-      const at = insertionPoint(value, e);
-      savedSelection.current = action === 'link' ? { start: s, end: e } : { start: at, end: at };
-      setDialog(action === 'link' ? { type: 'link', text: value.slice(s, e) } : { type: 'image' });
-    }
-  }
-
   // Tab pattern: arrow keys move between Tulis and Pratinjau; only the selected tab is in the Tab order.
   function onTabKey(e: KeyboardEvent<HTMLDivElement>) {
     if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight' && e.key !== 'Home' && e.key !== 'End') return;
@@ -406,49 +395,71 @@ export default function ArticleEditor({ slug: routeSlug }: { slug?: string }) {
     document.getElementById(next === 'preview' ? 'tab-preview' : 'tab-write')?.focus();
   }
 
-  function onKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
-    if (!(e.ctrlKey || e.metaKey) || e.shiftKey || e.altKey) return;
-    const k = e.key.toLowerCase();
-    if (k === 'b' || k === 'i' || k === 'k') {
-      e.preventDefault();
-      onToolbar(k === 'b' ? 'bold' : k === 'i' ? 'italic' : 'link');
-    }
+  const onContent = useCallback((md: string) => set('content', md), [set]);
+  const onEditorReady = useCallback((ed: Editor | null) => setEditor(ed), []);
+
+  function openLink() {
+    // A selected image is a node, not text; linking it would replace it with the link text (review REV-06).
+    if (!editor || editor.state.selection instanceof NodeSelection) return;
+    const href = editor.getAttributes('link').href as string | undefined;
+    // A caret inside a link edits the whole link.
+    if (href && editor.state.selection.empty) editor.chain().extendMarkRange('link').run();
+    const { from, to } = editor.state.selection;
+    setDialog({ type: 'link', text: editor.state.doc.textBetween(from, to, ' '), url: href, from, to });
   }
 
   function insertLink(text: string, url: string) {
+    const current = dialog;
     setDialog(null);
-    const ta = textareaRef.current;
-    if (!ta) return;
-    const { start, end } = savedSelection.current;
-    const md = `[${escapeLinkText(text)}](${encodeLinkUrl(url)})`;
-    applyEdit(ta, { start, end, text: md, selectStart: start + md.length, selectEnd: start + md.length });
+    if (!editor || current?.type !== 'link') return;
+    const { from, to } = current;
+    const chain = editor.chain().focus();
+    if (from !== to && editor.state.doc.textBetween(from, to, ' ').trim() === text) chain.setTextSelection({ from, to }).setLink({ href: url }).run();
+    else chain.insertContentAt({ from, to }, { type: 'text', text, marks: [{ type: 'link', attrs: { href: url } }] }).run();
   }
 
-  // Edits rewrite that exact match (by offsets and original text), so a duplicate image elsewhere stays.
+  function removeLink() {
+    const current = dialog;
+    setDialog(null);
+    if (!editor || current?.type !== 'link') return;
+    editor.chain().focus().setTextSelection({ from: current.from, to: current.to }).unsetLink().run();
+  }
+
+  // A new image goes after the selection, never over it: a selected image stays (A7b, ERR-01; requirement 9.6).
+  // Inside a raw block or a table it goes after that whole block, which it would otherwise split (review REV-02).
+  function openImage() {
+    if (!editor) return;
+    const { selection } = editor.state;
+    const depth = splittableDepth(selection);
+    setDialog({ type: 'image', at: depth ? selection.$to.after(depth) : selection.to });
+  }
+  const onEditImage = (pos: number) => setDialog({ type: 'image', pos });
+
+  // Panel edits rewrite that exact match (by offsets and original text), so a duplicate image elsewhere stays;
+  // the visual editor then reloads the changed Markdown as one undo step.
   function replaceImage(image: BodyImage, markdown: string): boolean {
     const content = draftRef.current.content;
     if (content.slice(image.start, image.end) !== image.raw) {
       setMessage({ kind: 'error', text: 'Isi artikel berubah sejak gambar dibuka. Buka lagi dari daftar gambar.' });
       return false;
     }
-    const ta = textareaRef.current;
-    if (ta && tab === 'write') applyEdit(ta, { start: image.start, end: image.end, text: markdown, selectStart: image.start, selectEnd: image.start + markdown.length });
-    else set('content', content.slice(0, image.start) + markdown + content.slice(image.end));
+    set('content', content.slice(0, image.start) + markdown + content.slice(image.end));
     return true;
   }
 
   function onImageConfirm(value: ImageDialogValue) {
     const current = dialog;
     setDialog(null);
-    // F-013: the canonical attribute block for the chosen layout, none for the default (5.3, 5.4).
-    const md = imageMarkdown(value.url, value.alt, value.caption, value.layout);
-    if (current?.type === 'image' && current.image) {
-      if (!replaceImage(current.image, md)) return;
-    } else {
-      const ta = textareaRef.current;
-      if (!ta) return;
-      const { start, end } = savedSelection.current;
-      applyEdit(ta, blockEdit(ta.value, start, end, md));
+    if (current?.type !== 'image') return;
+    const attrs = { src: value.url, alt: value.alt, caption: value.caption, posisi: value.layout.posisi, ukuran: value.layout.ukuran };
+    if (current.image) {
+      // F-013: the canonical attribute block for the chosen layout, none for the default (5.3, 5.4).
+      if (!replaceImage(current.image, imageMarkdown(value.url, value.alt, value.caption, value.layout))) return;
+    } else if (editor && current.pos !== undefined) {
+      const pos = current.pos;
+      editor.chain().focus().command(({ tr }) => { tr.setNodeMarkup(pos, undefined, attrs); return true; }).setNodeSelection(pos).run();
+    } else if (editor) {
+      editor.chain().focus().insertContentAt(current.at ?? editor.state.selection.to, { type: 'articleImage', attrs }).run();
     }
     if (value.asCover) {
       setDraft(d => ({ ...d, coverImage: value.url, coverAlt: d.coverAlt || value.alt }));
@@ -456,15 +467,21 @@ export default function ArticleEditor({ slug: routeSlug }: { slug?: string }) {
     }
   }
 
+  // "Lihat" in the side panel: select that image in the editor (same src and alt, n-th occurrence).
   function jumpTo(image: BodyImage) {
     setTab('write');
+    if (!editor) return;
+    const nth = imageOccurrence(images, image);
+    let found = -1;
+    let seen = 0;
+    editor.state.doc.descendants((node, pos) => {
+      if (found >= 0) return false;
+      if (node.type.name === 'articleImage' && node.attrs.src === image.url && node.attrs.alt === image.alt && seen++ === nth) found = pos;
+      return true;
+    });
     requestAnimationFrame(() => {
-      const ta = textareaRef.current;
-      if (!ta) return;
-      ta.focus();
-      ta.setSelectionRange(image.start, image.end);
-      const lineHeight = parseFloat(getComputedStyle(ta).lineHeight) || 24;
-      window.scrollTo({ top: ta.getBoundingClientRect().top + window.scrollY + (image.line - 1) * lineHeight - 160, behavior: 'smooth' });
+      if (found >= 0) editor.chain().focus().setNodeSelection(found).scrollIntoView().run();
+      else setMessage({ kind: 'error', text: 'Gambar ini ada di dalam blok Markdown mentah, jadi tidak bisa dipilih. Cari teksnya di editor.' });
     });
   }
 
@@ -511,6 +528,12 @@ export default function ArticleEditor({ slug: routeSlug }: { slug?: string }) {
       : dirty && autosave.status.state === 'saved' ? `Tersimpan lokal ${timeOf(autosave.status.at)}`
         : dirty ? 'Belum disimpan' : 'Semua tersimpan';
   const working = busy !== null;
+  // The image dialog for a node opened from the editor reads that node's attributes.
+  const node = dialog?.type === 'image' && dialog.pos !== undefined ? editor?.state.doc.nodeAt(dialog.pos)?.attrs : undefined;
+  const imageInitial = dialog?.type !== 'image' ? undefined
+    : dialog.image ? { url: dialog.image.url, alt: dialog.image.alt, caption: dialog.image.caption, fileName: dialog.image.fileName, layout: dialog.image.layout }
+      : node ? { url: node.src, alt: node.alt, caption: node.caption, fileName: String(node.src).split(/[/\\]/).pop(), layout: { posisi: node.posisi, ukuran: node.ukuran } }
+        : undefined;
   const serverNewer = Boolean(restore && server && (server.updatedAt ?? 0) > (restore.baseUpdatedAt ?? 0));
 
   return (
@@ -601,29 +624,33 @@ export default function ArticleEditor({ slug: routeSlug }: { slug?: string }) {
             </div>
           )}
 
-          <label className="form-label article-editor-body-label" htmlFor="article-content">Isi artikel *</label>
+          <label className="form-label article-editor-body-label" htmlFor={isMarkdown ? undefined : 'article-content'} id="article-content-label">Isi artikel *</label>
           <div className="article-editor-body">
             <div className="article-editor-tabs">
               <div role="tablist" aria-label="Mode isi" className="article-editor-tablist" onKeyDown={onTabKey}>
                 <button type="button" role="tab" id="tab-write" aria-selected={tab === 'write'} aria-controls="panel-write" tabIndex={tab === 'write' ? 0 : -1} className={tab === 'write' ? 'is-active' : ''} onClick={() => setTab('write')}>Tulis</button>
                 <button type="button" role="tab" id="tab-preview" aria-selected={tab === 'preview'} aria-controls="panel-preview" tabIndex={tab === 'preview' ? 0 : -1} className={tab === 'preview' ? 'is-active' : ''} onClick={showPreview}>Pratinjau</button>
               </div>
-              {tab === 'write' && isMarkdown && <MarkdownToolbar onAction={onToolbar} />}
+              {tab === 'write' && isMarkdown && <MarkdownToolbar editor={editor} onLink={openLink} onImage={openImage} />}
             </div>
             {/* Both panels stay in the DOM so aria-controls always points at an element. */}
             <div role="tabpanel" id="panel-write" aria-labelledby="tab-write" hidden={tab !== 'write'}>
+              {isMarkdown ? (
+                // F-013 phase B: the visual editor; content stays Markdown (requirements 9.1, 10.1).
+                <VisualEditor value={draft.content} onChange={onContent} onReady={onEditorReady} onLink={openLink} onEditImage={onEditImage} />
+              ) : (
                 <textarea
                   id="article-content"
                   ref={textareaRef}
                   className="form-input article-editor-textarea"
                   value={draft.content}
                   onChange={e => set('content', e.target.value)}
-                  onKeyDown={isMarkdown ? onKeyDown : undefined}
                   rows={16}
                   maxLength={50000}
                   spellCheck
-                  placeholder={isMarkdown ? 'Tulis isi artikel. Baris kosong memisahkan paragraf. Pakai toolbar untuk subjudul, daftar, link, dan gambar.' : 'Setiap baris menjadi satu paragraf.'}
+                  placeholder="Setiap baris menjadi satu paragraf."
                 />
+              )}
             </div>
             <div role="tabpanel" id="panel-preview" aria-labelledby="tab-preview" className="article-editor-preview-wrap" hidden={tab !== 'preview'}>
                 {previewState === 'loading' && <p className="article-editor-help">Menyiapkan pratinjau...</p>}
@@ -646,6 +673,8 @@ export default function ArticleEditor({ slug: routeSlug }: { slug?: string }) {
             </div>
             <p className="article-editor-footer">
               {words.toLocaleString('id-ID')} kata · ±{readingMinutes(words)} menit baca · {images.length} gambar
+              {/* The textarea's maxLength is gone for the visual editor; the server still rejects more (review REV-10). */}
+              {draft.content.length > 50000 && <span className="is-warn"> · Isi melebihi 50.000 karakter, tidak bisa disimpan. Pecah jadi dua artikel.</span>}
             </p>
           </div>
         </div>
@@ -751,14 +780,14 @@ export default function ArticleEditor({ slug: routeSlug }: { slug?: string }) {
       </div>
 
       {dialog?.type === 'link' && (
-        <LinkDialog initialText={dialog.text} returnFocusRef={textareaRef} onClose={() => setDialog(null)} onInsert={insertLink} />
+        <LinkDialog initialText={dialog.text} initialUrl={dialog.url} returnFocusRef={editorFocusRef} onClose={() => setDialog(null)} onInsert={insertLink} onRemove={removeLink} />
       )}
       {dialog?.type === 'image' && (
         <ImageDialog
-          title={dialog.image ? (dialog.image.kind === 'allowed' ? 'Edit gambar' : 'Unggah gambar') : 'Sisipkan gambar'}
+          title={imageInitial ? (isAllowedImageUrl(imageInitial.url) ? 'Edit gambar' : 'Unggah gambar') : 'Sisipkan gambar'}
           kind="body"
-          initial={dialog.image ? { url: dialog.image.url, alt: dialog.image.alt, caption: dialog.image.caption, fileName: dialog.image.fileName, layout: dialog.image.layout } : undefined}
-          returnFocusRef={textareaRef}
+          initial={imageInitial}
+          returnFocusRef={editorFocusRef}
           onClose={() => setDialog(null)}
           onConfirm={onImageConfirm}
         />

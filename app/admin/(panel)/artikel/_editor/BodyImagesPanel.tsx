@@ -44,8 +44,9 @@ export default function BodyImagesPanel({ images, onEdit, onJump }: BodyImagesPa
               <button type="button" className="btn btn-ghost" onClick={() => onEdit(img)} style={{ fontSize: 11, padding: '4px 10px' }}>
                 {img.kind === 'allowed' ? 'Edit' : 'Unggah'}
               </button>
-              <button type="button" className="btn btn-ghost" onClick={() => onJump(img)} style={{ fontSize: 11, padding: '4px 10px' }}>
-                Baris {img.line}
+              {/* F-013 phase B (B-8): line numbers mean nothing in the visual editor; this selects the image there. */}
+              <button type="button" className="btn btn-ghost" onClick={() => onJump(img)} aria-label={`Lihat gambar ${img.index + 1} di editor`} style={{ fontSize: 11, padding: '4px 10px' }}>
+                Lihat
               </button>
             </div>
           </div>

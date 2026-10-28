@@ -9,9 +9,15 @@
     "test:auth": "node tests/f000-auth.cjs",
     "test:content": "node tests/f001-content.cjs",
     "test:markdown": "node tests/f012-markdown.cjs",
-    "test:articles": "node tests/f012-articles.cjs"
+    "test:articles": "node tests/f012-articles.cjs",
+    "test:editor": "node tests/f013-editor.cjs"
   },
   "dependencies": {
+    "@tiptap/core": "3.32.0",
+    "@tiptap/extension-table": "3.32.0",
+    "@tiptap/pm": "3.32.0",
+    "@tiptap/react": "3.32.0",
+    "@tiptap/starter-kit": "3.32.0",
     "browser-image-compression": "^2.0.2",
     "firebase": "^10.12.0",
     "firebase-admin": "^13.10.0",

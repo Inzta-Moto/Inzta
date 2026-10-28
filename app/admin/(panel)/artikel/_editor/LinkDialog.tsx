@@ -6,15 +6,18 @@ import { isAllowedLinkUrl } from './markdown-edit';
 
 interface LinkDialogProps {
   initialText: string;
+  // F-013 phase B: the href when the selection is already a link, which also offers "Hapus link".
+  initialUrl?: string;
   returnFocusRef: RefObject<HTMLElement>;
   onClose: () => void;
   onInsert: (text: string, url: string) => void;
+  onRemove?: () => void;
 }
 
 // Only http(s) and site paths, matching what the renderer keeps (requirement 4.6 and 7.3).
-export default function LinkDialog({ initialText, returnFocusRef, onClose, onInsert }: LinkDialogProps) {
+export default function LinkDialog({ initialText, initialUrl, returnFocusRef, onClose, onInsert, onRemove }: LinkDialogProps) {
   const [text, setText] = useState(initialText);
-  const [url, setUrl] = useState('');
+  const [url, setUrl] = useState(initialUrl || '');
   const [error, setError] = useState('');
 
   const submit = (e?: FormEvent) => {
@@ -26,13 +29,16 @@ export default function LinkDialog({ initialText, returnFocusRef, onClose, onIns
 
   return (
     <Dialog
-      title="Sisipkan link"
+      title={initialUrl ? 'Ubah link' : 'Sisipkan link'}
       onClose={onClose}
       returnFocusRef={returnFocusRef}
       footer={
         <>
+          {initialUrl && onRemove && (
+            <button type="button" className="btn btn-ghost" onClick={onRemove} style={{ fontSize: 11, padding: '8px 16px', marginRight: 'auto' }}>Hapus link</button>
+          )}
           <button type="button" className="btn btn-ghost" onClick={onClose} style={{ fontSize: 11, padding: '8px 16px' }}>Batal</button>
-          <button type="submit" form="link-dialog-form" className="btn btn-primary" style={{ fontSize: 11, padding: '8px 16px' }}>Sisipkan</button>
+          <button type="submit" form="link-dialog-form" className="btn btn-primary" style={{ fontSize: 11, padding: '8px 16px' }}>{initialUrl ? 'Simpan' : 'Sisipkan'}</button>
         </>
       }
     >
