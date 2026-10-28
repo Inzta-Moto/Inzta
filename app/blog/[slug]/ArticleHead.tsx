@@ -1,7 +1,7 @@
 import type { PublicArticle } from '@/types';
 import { formatDate, optimizeCloudinaryUrl, generateCloudinarySrcSet } from '@/lib/utils';
 import { publicDate } from '@/lib/article-format';
-import { DEFAULT_AUTHOR } from '@/lib/article-input';
+import { DEFAULT_AUTHOR } from '@/lib/constants';
 
 type HeadFields = Pick<
   PublicArticle,

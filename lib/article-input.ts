@@ -1,6 +1,6 @@
 import type { ContentFormat } from '@/types';
 import { SLUG_PATTERN } from './slug';
-import { RESERVED_ARTICLE_SLUGS } from './constants';
+import { DEFAULT_AUTHOR, RESERVED_ARTICLE_SLUGS } from './constants';
 import { isAllowedImageUrl } from './article-format';
 
 export { SLUG_PATTERN };
@@ -20,9 +20,6 @@ export type ArticleFields = {
   metaTitle: string;
   metaDescription: string;
 };
-
-// F-013 phase A2 (H-3): an empty author is stored as the default, so readers never see a blank byline.
-export const DEFAULT_AUTHOR = 'Tim INZTA';
 
 export type ArticleInputResult =
   | { ok: true; value: ArticleFields }

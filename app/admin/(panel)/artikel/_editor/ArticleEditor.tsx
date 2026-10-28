@@ -9,7 +9,7 @@ import { toSlug } from '@/lib/slug';
 import { formatDate } from '@/lib/utils';
 import { adminErrorMessage } from '@/lib/admin-messages';
 import { canPublish, runChecklist } from '@/lib/article-checklist';
-import { DEFAULT_AUTHOR } from '@/lib/article-input';
+import { DEFAULT_AUTHOR } from '@/lib/constants';
 import ArticleHead from '@/app/blog/[slug]/ArticleHead';
 import {
   countWords,
@@ -451,7 +451,7 @@ export default function ArticleEditor({ slug: routeSlug }: { slug?: string }) {
       applyEdit(ta, blockEdit(ta.value, start, end, md));
     }
     if (value.asCover) {
-      setDraft(d => ({ ...d, coverImage: value.url, coverAlt: d.coverAlt || value.alt, coverCaption: d.coverCaption || value.caption }));
+      setDraft(d => ({ ...d, coverImage: value.url, coverAlt: d.coverAlt || value.alt }));
       if (value.width) setCoverWidth(value.width);
     }
   }
@@ -661,8 +661,9 @@ export default function ArticleEditor({ slug: routeSlug }: { slug?: string }) {
             </dl>
             <div className="form-group">
               <label className="form-label" htmlFor="article-author">Penulis</label>
-              <input id="article-author" className="form-input" value={draft.author} maxLength={80} placeholder={DEFAULT_AUTHOR} aria-describedby="article-author-help" onChange={e => set('author', e.target.value)} />
-              <p className="article-editor-help" id="article-author-help">Tampil di bawah judul: "Oleh {draft.author.trim() || DEFAULT_AUTHOR}". Kosong berarti {DEFAULT_AUTHOR}.</p>
+              <input id="article-author" className="form-input" value={draft.author} maxLength={80} placeholder={DEFAULT_AUTHOR} aria-describedby={isMarkdown ? 'article-author-help' : undefined} onChange={e => set('author', e.target.value)} />
+              {/* Plain articles show no byline (12.5), so the hint is for Markdown articles only (review N-2). */}
+              {isMarkdown && <p className="article-editor-help" id="article-author-help">Tampil di bawah judul: "Oleh {draft.author.trim() || DEFAULT_AUTHOR}". Kosong berarti {DEFAULT_AUTHOR}.</p>}
             </div>
           </section>
 
