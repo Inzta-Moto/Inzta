@@ -39,7 +39,7 @@ const CLD = 'https://res.cloudinary.com/dukddlp0b/image/upload/v1/inzta/foto.jpg
 const count = (html, re) => (html.match(re) || []).length;
 // Every tag and attribute in the output must be on the allowlist of requirement 4.3 / 4.10, amended by
 // F-013 3.5 / 8.3: `class` on <figure> only, and only with the five image-layout classes.
-const ALLOWED = { h2: [], h3: [], p: [], ul: [], ol: [], li: [], strong: [], em: [], br: [], figure: ['class'], figcaption: [], table: [], thead: [], tbody: [], tr: [], th: [], td: [], a: ['href', 'rel', 'target'], img: ['src', 'srcset', 'sizes', 'alt', 'loading', 'decoding'] };
+const ALLOWED = { h2: [], h3: [], p: [], ul: [], ol: [], li: [], strong: [], em: [], br: [], figure: ['class'], figcaption: [], table: [], thead: [], tbody: [], tr: [], th: [], td: ['data-label'], a: ['href', 'rel', 'target'], img: ['src', 'srcset', 'sizes', 'alt', 'loading', 'decoding'] };
 const FIGURE_CLASS_SET = ['article-figure--kiri', 'article-figure--kanan', 'article-figure--kecil', 'article-figure--sedang', 'article-figure--besar'];
 function assertAllowlisted(html) {
   for (const m of html.matchAll(/<([a-zA-Z0-9]+)([^>]*)>/g)) {
@@ -154,14 +154,30 @@ check('sanitizer layer alone: foreign src or srcset candidate, javascript: href,
   assert.strictEqual(sanitizeArticleHtml('<h1 id="x">a</h1><table class="t" style="x"><tr onclick="x"><td align="left" colspan="9">b</td></tr></table>'), 'a<table><tr><td>b</td></tr></table>');
 });
 // Tables: spec amendment 2026-10-27 (approved by Sehan)
-check('tables: GFM table -> table/thead/tbody/tr/th/td without attributes (alignment dropped)', () => {
+check('tables: GFM table -> table/thead/tbody/tr/th/td, alignment dropped, body cells carry their column heading (F-013 4.10)', () => {
   const { html, warnings } = md('| Posisi | Kapasitas |\n|:---|---:|\n| Depan | **4,4 liter** |\n| [Belakang](/produk/side-bag-inzta-universal-motor) | 7 liter |');
   assert.deepStrictEqual(warnings, []);
   assert.ok(/<table>\s*<thead>\s*<tr>\s*<th>Posisi<\/th>/.test(html), html);
-  assert.ok(html.includes('<td><strong>4,4 liter</strong></td>'));
-  assert.ok(html.includes('<td><a href="/produk/side-bag-inzta-universal-motor">Belakang</a></td>'));
+  assert.ok(html.includes('<td data-label="Kapasitas"><strong>4,4 liter</strong></td>'), html);
+  assert.ok(html.includes('<td data-label="Posisi"><a href="/produk/side-bag-inzta-universal-motor">Belakang</a></td>'), html);
+  assert.ok(!/<th [^>]*data-label/.test(html), html);
   assert.ok(!/align=|style=/.test(html), html);
   assertAllowlisted(html);
+});
+check('F-013 4.10: data-label is plain escaped text; formatting, quotes, and attack headings cannot break out', () => {
+  const { html } = md('| **Tebal** [link](/x) | "kutip" <b>x</b> | `k` "><img src=x onerror=alert(1)> |\n|---|---|---|\n| 1 | 2 | 3 |\n\n| | B |\n|---|---|\n| tanpa judul | 2 |');
+  assert.ok(html.includes('<td data-label="Tebal link">1</td>'), html);
+  assert.ok(html.includes('<td data-label="&quot;kutip&quot; x">2</td>'), html);
+  assert.ok(html.includes('<td data-label="k &quot;&gt;">3</td>'), html);
+  assert.ok(!/onerror|<img|<b>/i.test(html), html);
+  assert.ok(html.includes('<td>tanpa judul</td>'), 'empty heading writes no data-label: ' + html);
+  assertAllowlisted(html);
+});
+check('F-013 4.10: the sanitizer keeps data-label on td only, and no other data-* attribute', () => {
+  const { sanitizeArticleHtml } = require(path.join(ROOT, 'lib/markdown.ts'));
+  const out = sanitizeArticleHtml('<table><tbody><tr><td data-label="A" data-x="1" class="c">1</td></tr></tbody></table><p data-label="p">x</p><th data-label="h">h</th>');
+  assert.ok(out.includes('<td data-label="A">1</td>'), out);
+  assert.ok(!/data-x|class=|<p data-label/.test(out), out);
 });
 check('tables: attacks inside cells (raw HTML, javascript: link, image) are neutralised', () => {
   const src = '| A | B |\n|---|---|\n| <img src=x onerror=alert(1)> | [x](javascript:alert(1)) |\n| <script>alert(1)</script> | ![a](https://evil.example/a.jpg) |';

@@ -52,6 +52,9 @@ const SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
   allowedAttributes: {
     a: ['href', 'rel', 'target'],
     img: ['src', 'srcset', 'sizes', 'alt', 'loading', 'decoding'],
+    // F-013 (requirement 4.10): the column heading of a body cell, shown as a label when a table becomes cards
+    // on phones. Plain text written by the table renderer below; no other data-* attribute is allowed.
+    td: ['data-label'],
   },
   // F-013 requirement 3.5: the five image-layout classes, on <figure> only. `class` is deliberately not in
   // allowedAttributes, so any other class, and a class on any other tag, is removed.
@@ -150,6 +153,24 @@ function renderMarkdown(content: string): RenderResult {
         }
         const inner = this.parser.parseInline(tokens);
         return inner.trim() ? `<p>${inner}</p>\n` : '';
+      },
+      // F-013 (4.10): marked's table markup, plus each body cell's column heading as data-label for the phone
+      // card layout. Alignment is not written; the sanitizer dropped it anyway.
+      table({ header, rows }: Tokens.Table) {
+        const headings = header.map(cell => this.parser.parseInline(cell.tokens));
+        // The label is the heading as the reader sees it: rendered (raw HTML already dropped), tags removed. That
+        // text is already HTML-escaped, so only the attribute quote needs escaping.
+        const labels = headings.map(h => h.replace(/<[^>]*>/g, '').replace(/"/g, '&quot;').trim());
+        const head = headings.map(h => `<th>${h}</th>\n`).join('');
+        const body = rows
+          .map(row => {
+            const cells = row
+              .map((cell, i) => `<td${labels[i] ? ` data-label="${labels[i]}"` : ''}>${this.parser.parseInline(cell.tokens)}</td>\n`)
+              .join('');
+            return `<tr>\n${cells}</tr>\n`;
+          })
+          .join('');
+        return `<table>\n<thead>\n<tr>\n${head}</tr>\n</thead>\n${body ? `<tbody>${body}</tbody>` : ''}</table>\n`;
       },
       // Reached only for images that do not stand alone in a paragraph (with text, in a list, in a link).
       image({ href, tokens }: Tokens.Image) {
