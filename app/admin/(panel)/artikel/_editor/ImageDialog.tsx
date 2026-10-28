@@ -28,6 +28,8 @@ interface ImageDialogProps {
 
 const POSITION_OPTIONS: [ImagePosition, string][] = [['kiri', 'Kiri'], ['tengah', 'Tengah'], ['kanan', 'Kanan']];
 const SIZE_OPTIONS: [ImageSize, string][] = [['kecil', 'Kecil 33%'], ['sedang', 'Sedang 50%'], ['besar', 'Besar 75%'], ['penuh', 'Penuh 100%']];
+// "Sedang 50%" -> "Sedang", for the spoken announcement.
+const optionName = <T extends string>(options: [T, string][], value: T) => (options.find(([v]) => v === value)?.[1] ?? value).split(' ')[0];
 
 // Follows the mockup's "Pengaturan gambar" panel. F-013 adds Posisi and Ukuran for body images; link
 // options are still out of scope (design.md).
@@ -38,12 +40,23 @@ export default function ImageDialog({ title, kind, initial, returnFocusRef, onCl
   const [caption, setCaption] = useState(initial?.caption || '');
   const [asCover, setAsCover] = useState(false);
   const [layout, setLayout] = useState<ImageLayout>(() => resolveLayout(initial?.layout ?? DEFAULT_LAYOUT));
+  // Spoken by the live region below when a choice also changes the other setting (5.2); review WEB-03.
+  const [announcement, setAnnouncement] = useState('');
   const [info, setInfo] = useState<{ name: string; size: number; width: number; height: number } | null>(null);
   const [progress, setProgress] = useState<number | null>(null);
   const [error, setError] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
 
   const uploading = progress !== null;
+  const narrow = layout.ukuran === 'besar' && layout.posisi !== 'tengah';
+
+  const chooseLayout = (change: Partial<ImageLayout>) => {
+    const next = changeLayout(layout, change);
+    setLayout(next);
+    if (change.posisi && next.ukuran !== layout.ukuran) setAnnouncement(`Ukuran diubah ke ${optionName(SIZE_OPTIONS, next.ukuran)}.`);
+    else if (change.ukuran && next.posisi !== layout.posisi) setAnnouncement(`Posisi diubah ke ${optionName(POSITION_OPTIONS, next.posisi)}.`);
+    else setAnnouncement('');
+  };
   const pendingFile = initial?.fileName && !startUrl ? initial.fileName : '';
 
   const onFile = async (e: ChangeEvent<HTMLInputElement>) => {
@@ -123,7 +136,7 @@ export default function ImageDialog({ title, kind, initial, returnFocusRef, onCl
               <input id="image-caption" className="form-input" value={caption} onChange={e => setCaption(e.target.value)} maxLength={300} />
               <p className="article-editor-help">Tampil di bawah gambar.</p>
             </div>
-            <fieldset className="article-editor-choice">
+            <fieldset className="article-editor-choice" aria-describedby="image-layout-phone image-layout-status">
               <legend className="form-label">Posisi</legend>
               <div className="article-editor-choice-options">
                 {POSITION_OPTIONS.map(([value, label]) => (
@@ -133,14 +146,14 @@ export default function ImageDialog({ title, kind, initial, returnFocusRef, onCl
                       name="image-posisi"
                       value={value}
                       checked={layout.posisi === value}
-                      onChange={() => setLayout(l => changeLayout(l, { posisi: value }))}
+                      onChange={() => chooseLayout({ posisi: value })}
                     />
                     {label}
                   </label>
                 ))}
               </div>
             </fieldset>
-            <fieldset className="article-editor-choice">
+            <fieldset className="article-editor-choice" aria-describedby="image-layout-phone image-layout-status">
               <legend className="form-label">Ukuran</legend>
               <div className="article-editor-choice-options">
                 {SIZE_OPTIONS.map(([value, label]) => (
@@ -150,7 +163,7 @@ export default function ImageDialog({ title, kind, initial, returnFocusRef, onCl
                       name="image-ukuran"
                       value={value}
                       checked={layout.ukuran === value}
-                      onChange={() => setLayout(l => changeLayout(l, { ukuran: value }))}
+                      onChange={() => chooseLayout({ ukuran: value })}
                     />
                     {label}
                   </label>
@@ -158,10 +171,13 @@ export default function ImageDialog({ title, kind, initial, returnFocusRef, onCl
               </div>
             </fieldset>
             <div>
-              <p className="article-editor-help">Di HP gambar selalu tampil selebar layar.</p>
-              {layout.ukuran === 'besar' && layout.posisi !== 'tengah' && (
-                <p className="article-editor-help is-warn">Teks di sampingnya akan sempit.</p>
-              )}
+              <p id="image-layout-phone" className="article-editor-help">Di HP gambar selalu tampil selebar layar.</p>
+              {/* Always mounted so screen readers hear changes (review WEB-03). Without the warning it has no
+                  class, so its empty box adds no margin and the dialog looks as before. */}
+              <p id="image-layout-status" role="status" aria-live="polite" className={narrow ? 'article-editor-help is-warn' : undefined}>
+                {announcement && <span className="sr-only">{announcement} </span>}
+                {narrow && 'Teks di sampingnya akan sempit.'}
+              </p>
             </div>
             <label className="article-editor-check">
               <input type="checkbox" checked={asCover} onChange={e => setAsCover(e.target.checked)} /> Jadikan juga gambar sampul
