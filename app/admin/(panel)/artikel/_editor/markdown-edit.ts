@@ -1,6 +1,8 @@
 // Toolbar transforms for the Markdown textarea. Each returns the replacement for a range of the text plus
 // the selection to restore, so applyEdit() can insert it in a way the browser's undo history keeps.
 
+import { extractBodyImages } from '@/lib/article-format';
+
 export interface TextEdit {
   start: number;
   end: number;
@@ -81,6 +83,16 @@ export function blockEdit(value: string, start: number, end: number, block: stri
   const text = lead + block + trail;
   const selectStart = start + lead.length + block.length;
   return { start, end, text, selectStart, selectEnd: selectStart };
+}
+
+/**
+ * Where "Sisipkan gambar" inserts for a caret at `pos`: after the whole image when the caret is strictly
+ * inside one (alt, URL, caption, or between ")" and its "{...}" block), else `pos`. Inserting inside an image
+ * would split it, e.g. leave "{posisi=kanan}" as a paragraph of its own and drop the layout (review ERR-01).
+ */
+export function insertionPoint(value: string, pos: number): number {
+  const image = extractBodyImages(value).find(img => img.start < pos && pos < img.end);
+  return image ? image.end : pos;
 }
 
 // Link text must not close the brackets early; URLs must not contain spaces or unbalanced parentheses.
