@@ -1,8 +1,11 @@
 import { Marked, type Tokens, type Token } from 'marked';
 import sanitizeHtml from 'sanitize-html';
-import type { ContentFormat, RenderWarning } from '@/types';
+import type { ContentFormat, RenderBlock, RenderWarning } from '@/types';
 import {
   DEFAULT_LAYOUT,
+  EMBED_LINE_RE,
+  EMBED_TEXT_RE,
+  MAX_EMBEDS,
   FIGURE_CLASSES,
   formatOf,
   isAllowedImageUrl,
@@ -12,14 +15,18 @@ import {
 } from '@/lib/article-format';
 import { attachImageLayouts, type LayoutImage } from '@/lib/markdown-layout';
 import { generateCloudinarySrcSet, optimizeCloudinaryUrl } from '@/lib/utils';
+import { SLUG_PATTERN } from '@/lib/slug';
 
 // Server only (F-012 requirement 4.1): imported by server pages and route handlers, never by a client
 // component, so neither library reaches the browser bundle. The build gate greps .next/static to prove it.
 
-export type { RenderWarning };
+export type { RenderBlock, RenderWarning };
 
 export interface RenderResult {
+  // All HTML blocks joined; markers add nothing, so callers that ignore cards keep working (13.3).
   html: string;
+  // F-013 phase C: HTML blocks and product/article cards in Markdown order.
+  blocks: RenderBlock[];
   warnings: RenderWarning[];
 }
 
@@ -187,15 +194,46 @@ function renderMarkdown(content: string): RenderResult {
     },
   });
 
-  let html: string;
+  // md.parse() is lexer -> walkTokens -> parser; the same steps run here by hand so the top-level tokens can
+  // be cut at each marker (13.2). Without markers the one group gives md.parse()'s exact string.
+  const blocks: RenderBlock[] = [];
   try {
-    html = md.parse(content) as string;
+    const tokens = md.lexer(content);
+    md.walkTokens(tokens, md.defaults.walkTokens!);
+    let group: Token[] = [];
+    let embeds = 0;
+    const flush = () => {
+      // Each block is sanitized on its own, last (F-012 4.9).
+      const html = group.length ? sanitizeArticleHtml(md.parser(group)) : '';
+      if (html) blocks.push({ type: 'html', html });
+      group = [];
+    };
+    for (const token of tokens) {
+      const m = token.type === 'paragraph' ? EMBED_LINE_RE.exec(token.raw.trim()) : null;
+      if (m && SLUG_PATTERN.test(m[2])) {
+        const marker = token.raw.trim();
+        if (++embeds > MAX_EMBEDS) {
+          warnings.push({ kind: 'embed-limit', marker });
+          continue;
+        }
+        flush();
+        blocks.push({ type: m[1].toLowerCase() === 'produk' ? 'product' : 'article', slug: m[2] });
+        continue;
+      }
+      if (m) warnings.push({ kind: 'embed-invalid', marker: token.raw.trim() });
+      else if (token.type !== 'code') {
+        for (const x of token.raw.matchAll(EMBED_TEXT_RE)) warnings.push({ kind: 'embed-inline', marker: x[0] });
+      }
+      group.push(token);
+    }
+    flush();
   } catch (error) {
     // Deeply nested lists or quotes overflow marked's recursion; the checklist blocks publishing on this.
     console.error('renderArticle: Markdown could not be parsed', { length: content.length, error: (error as Error)?.message });
-    return { html: '', warnings: [{ kind: 'render-error' }] };
+    return { html: '', blocks: [], warnings: [{ kind: 'render-error' }] };
   }
-  return { html: sanitizeArticleHtml(html), warnings };
+  const html = blocks.map(b => (b.type === 'html' ? b.html : '')).join('');
+  return { html, blocks, warnings };
 }
 
 function renderPlain(content: string): string {
@@ -216,5 +254,6 @@ function renderPlain(content: string): string {
 export function renderArticle(input: { content?: string | null; contentFormat?: ContentFormat }): RenderResult {
   const content = typeof input.content === 'string' ? input.content : '';
   if (formatOf(input) === 'markdown') return renderMarkdown(content);
-  return { html: renderPlain(content), warnings: [] };
+  const html = renderPlain(content);
+  return { html, blocks: html ? [{ type: 'html', html }] : [], warnings: [] };
 }

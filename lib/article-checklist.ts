@@ -1,7 +1,7 @@
 import type { Article, ChecklistItem, ChecklistResult, RenderWarning } from '@/types';
 import { RESERVED_ARTICLE_SLUGS } from '@/lib/constants';
 import { SLUG_PATTERN } from '@/lib/slug';
-import { extractBodyImages, formatOf, hasH1, isAllowedImageUrl } from '@/lib/article-format';
+import { MAX_EMBEDS, extractBodyImages, formatOf, hasH1, isAllowedImageUrl } from '@/lib/article-format';
 
 // Pre-publish checks (F-012 requirement 10), pure so the editor, PUT on a published article, and the
 // publish route all apply the same rules. Meta lengths follow ADR-0014: a guideline, never a block.
@@ -69,6 +69,22 @@ export function runChecklist(article: ChecklistInput, opts: ChecklistOptions = {
       ),
     );
     blocking.push(item('C-8', 'Tidak ada heading "#" (H1) di isi; judul sudah jadi H1', !hasH1(content)));
+
+    // F-013 phase C (K-5): marker problems come from the renderer, so like C-4 they are seen on the server.
+    // Listed only when the body has a marker, so articles without cards keep their checklist.
+    const embedProblems = warnings.filter((w): w is Extract<RenderWarning, { marker: string }> => 'marker' in w);
+    if (embedProblems.length || /\[\[(?:produk|artikel):/i.test(content)) {
+      const detail = (kind: string, text: string) => {
+        const markers = embedProblems.filter(w => w.kind === kind).map(w => w.marker);
+        return markers.length ? `${text}: ${listNames(markers)}` : '';
+      };
+      const problems = [
+        detail('embed-inline', 'harus di baris sendiri, diapit baris kosong'),
+        detail('embed-invalid', 'slug hanya huruf kecil, angka, dan tanda hubung'),
+        detail('embed-limit', `lebih dari ${MAX_EMBEDS} penanda, tidak ditampilkan`),
+      ].filter(Boolean);
+      blocking.push(item('C-9', 'Penanda produk dan artikel ([[produk:…]], [[artikel:…]]) valid', problems.length === 0, problems.join('; ')));
+    }
   }
 
   const metaTitle = (article.metaTitle || '').trim();
