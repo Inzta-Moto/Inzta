@@ -373,7 +373,7 @@ check('F-013 helpers: canonical block, classes, and sizes per layout', () => {
   assert.strictEqual(fmt.layoutBlock({ posisi: 'tengah', ukuran: 'besar' }), '{posisi=tengah ukuran=besar}');
   assert.strictEqual(fmt.layoutBlock({ posisi: 'kiri', ukuran: 'penuh' }), '', 'penuh never floats, so it is the default');
   assert.deepStrictEqual(UK.map(u => fmt.layoutSizes({ posisi: 'tengah', ukuran: u })), [
-    '(max-width: 768px) 100vw, 240px', '(max-width: 768px) 100vw, 364px', '(max-width: 768px) 100vw, 546px', '(max-width: 768px) 100vw, 720px',
+    '(max-width: 767px) 100vw, 240px', '(max-width: 767px) 100vw, 364px', '(max-width: 767px) 100vw, 546px', '(max-width: 768px) 100vw, 720px',
   ]);
   assert.strictEqual(fmt.layoutSizes(fmt.DEFAULT_LAYOUT), '(max-width: 768px) 100vw, 720px');
 });
@@ -589,7 +589,8 @@ check('checklist: legacy slug passes C-2 only for an existing document', () => {
 // F-013 renderer and sanitizer (requirements 2.8, 2.9, 3.1–3.7, 7.4, 8.1, 8.3)
 const figureOf = (html) => (html.match(/<figure[^>]*>/) || [''])[0];
 const sizesOf = (html) => (html.match(/ sizes="([^"]*)"/) || [, ''])[1];
-const SIZES_BY = { kecil: '(max-width: 768px) 100vw, 240px', sedang: '(max-width: 768px) 100vw, 364px', besar: '(max-width: 768px) 100vw, 546px', penuh: '(max-width: 768px) 100vw, 720px' };
+// Review WEB-01 (amendment 3.4, 2026-10-28): kecil/sedang/besar use the 767 px phone breakpoint; penuh keeps F-012's string.
+const SIZES_BY = { kecil: '(max-width: 767px) 100vw, 240px', sedang: '(max-width: 767px) 100vw, 364px', besar: '(max-width: 767px) 100vw, 546px', penuh: '(max-width: 768px) 100vw, 720px' };
 check('F-013 render: all 12 posisi x ukuran combinations -> figure classes and sizes', () => {
   const plainFigure = md(`![Alt](${CLD} "Cap")`).html;
   let n = 0;

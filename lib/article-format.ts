@@ -166,11 +166,13 @@ export function layoutClasses(layout: Partial<ImageLayout> | null | undefined): 
   return classes;
 }
 
-// Figure width in the 728 px reading column; penuh keeps F-012's exact string (requirement 3.4).
+// Figure width in the 728 px reading column. Smaller sizes switch to 100vw at the CSS phone breakpoint
+// (767 px, requirement 4.6), so a 768 px viewport picks the small candidate; penuh keeps F-012's exact
+// string so default-layout HTML stays byte-identical (requirements 3.3, 3.4, amended for review WEB-01).
 const SIZES_ATTR: Record<ImageSize, string> = {
-  kecil: '(max-width: 768px) 100vw, 240px',
-  sedang: '(max-width: 768px) 100vw, 364px',
-  besar: '(max-width: 768px) 100vw, 546px',
+  kecil: '(max-width: 767px) 100vw, 240px',
+  sedang: '(max-width: 767px) 100vw, 364px',
+  besar: '(max-width: 767px) 100vw, 546px',
   penuh: '(max-width: 768px) 100vw, 720px',
 };
 
