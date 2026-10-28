@@ -444,6 +444,37 @@ check('F-013 helpers: changeLayout() couples Posisi and Ukuran as the image dial
   assert.deepStrictEqual(fmt.changeLayout(L('kanan', 'kecil'), { posisi: 'atas', ukuran: 'x' }), L('kanan', 'kecil'));
   assert.deepStrictEqual(fmt.DEFAULT_LAYOUT, { posisi: 'tengah', ukuran: 'penuh' });
 });
+check('F-013 helpers: placeholder upload keeps alt, caption, and layout, written canonically (5.4, 5.5)', () => {
+  // The editor's path, without React: extractBodyImages() -> dialog initial.layout -> upload -> imageMarkdown()
+  // with the dialog layout -> replaceImage() swaps exactly `raw` (block included).
+  const upload = (content, img, url) => {
+    assert.strictEqual(content.slice(img.start, img.end), img.raw);
+    const layout = fmt.resolveLayout(img.layout ?? fmt.DEFAULT_LAYOUT); // ImageDialog's initial state
+    return content.slice(0, img.start) + fmt.imageMarkdown(url, img.alt, img.caption, layout) + content.slice(img.end);
+  };
+  const cases = [
+    ['{posisi=kiri ukuran=kecil}', '{posisi=kiri ukuran=kecil}', { posisi: 'kiri', ukuran: 'kecil' }],
+    [' {Posisi=KANAN  lebar=300 ukuran=Besar}', '{posisi=kanan ukuran=besar}', { posisi: 'kanan', ukuran: 'besar' }],
+    ['{posisi=kanan}', '{posisi=kanan ukuran=sedang}', { posisi: 'kanan', ukuran: 'sedang' }],
+    ['', '', fmt.DEFAULT_LAYOUT],
+    ['{posisi=kanan ukuran=penuh}', '', fmt.DEFAULT_LAYOUT],
+  ];
+  for (const [block, canonical, layout] of cases) {
+    const content = `Intro TK5.\n\n![Tank bag TK5 di tangki NMAX](../images/K-03/tk5.jpg "Foto: INZTA")${block}\n\nPenutup.`;
+    const [before] = fmt.extractBodyImages(content);
+    assert.deepStrictEqual([before.kind, before.fileName, before.layout], ['placeholder', 'tk5.jpg', layout], block);
+    assert.deepStrictEqual(md(content).warnings.map(w => w.kind), ['placeholder'], block);
+    const after = upload(content, before, CLD);
+    assert.strictEqual(after, `Intro TK5.\n\n![Tank bag TK5 di tangki NMAX](${CLD} "Foto: INZTA")${canonical}\n\nPenutup.`, block);
+    const [img] = fmt.extractBodyImages(after);
+    assert.deepStrictEqual([img.kind, img.alt, img.caption, img.layout], ['allowed', 'Tank bag TK5 di tangki NMAX', 'Foto: INZTA', layout], block);
+    const out = md(after);
+    assert.deepStrictEqual(out.warnings, [], block);
+    const cls = fmt.layoutClasses(layout);
+    assert.ok(out.html.includes(cls.length ? `<figure class="${cls.join(' ')}">` : '<figure><img'), `${block}: ${out.html}`);
+    assert.ok(!out.html.includes('{'), block);
+  }
+});
 
 // Checklist (requirement 10)
 const ok = {
