@@ -6,6 +6,7 @@ import {
   BetweenHorizontalEnd,
   BetweenVerticalEnd,
   Bold,
+  FileText,
   Grid2x2X,
   Heading2,
   Heading3,
@@ -15,6 +16,7 @@ import {
   List,
   ListOrdered,
   Redo2,
+  ShoppingBag,
   Table,
   TableColumnsSplit,
   TableRowsSplit,
@@ -30,7 +32,7 @@ interface Button {
   run?: (c: Chain) => Chain;
   // For aria-pressed (requirement 9.3).
   active?: (e: Editor) => boolean;
-  dialog?: 'link' | 'image';
+  dialog?: 'link' | 'image' | 'produk' | 'artikel';
   // Undo and redo start disabled: a freshly loaded document has no history.
   history?: true;
 }
@@ -45,6 +47,9 @@ const MAIN: Button[] = [
   { label: 'Daftar bernomor', tip: 'Daftar bernomor', icon: <ListOrdered size={16} />, run: c => c.toggleOrderedList(), active: e => e.isActive('orderedList') },
   { label: 'Link', tip: 'Link (Ctrl+K)', icon: <Link2 size={16} />, dialog: 'link', active: e => e.isActive('link') },
   { label: 'Sisipkan gambar', tip: 'Sisipkan gambar', icon: <ImagePlus size={16} />, dialog: 'image' },
+  // F-013 phase C3 (21.2): cards between paragraphs.
+  { label: 'Sisipkan produk', tip: 'Kartu produk', icon: <ShoppingBag size={16} />, dialog: 'produk' },
+  { label: 'Sisipkan artikel', tip: 'Kartu Baca juga', icon: <FileText size={16} />, dialog: 'artikel' },
   { label: 'Sisipkan tabel', tip: 'Tabel 3×3', icon: <Table size={16} />, run: c => c.insertTable({ rows: 3, cols: 3, withHeaderRow: true }) },
   { label: 'Urungkan', tip: 'Urungkan (Ctrl+Z)', icon: <Undo2 size={16} />, run: c => c.undo(), history: true },
   { label: 'Ulangi', tip: 'Ulangi (Ctrl+Shift+Z)', icon: <Redo2 size={16} />, run: c => c.redo(), history: true },
@@ -61,9 +66,10 @@ interface ToolbarProps {
   editor: Editor | null;
   onLink: () => void;
   onImage: () => void;
+  onEmbed: (kind: 'produk' | 'artikel') => void;
 }
 
-export default function MarkdownToolbar({ editor, onLink, onImage }: ToolbarProps) {
+export default function MarkdownToolbar({ editor, onLink, onImage, onEmbed }: ToolbarProps) {
   // Escape hides the tooltips until the pointer or focus leaves the toolbar (WCAG 1.4.13).
   const [tipsHidden, setTipsHidden] = useState(false);
   const [hovered, setHovered] = useState(false);
@@ -94,6 +100,7 @@ export default function MarkdownToolbar({ editor, onLink, onImage }: ToolbarProp
     if (!editor) return;
     if (b.dialog === 'link') onLink();
     else if (b.dialog === 'image') onImage();
+    else if (b.dialog === 'produk' || b.dialog === 'artikel') onEmbed(b.dialog);
     else if (b.run) b.run(editor.chain().focus()).run();
   };
 
