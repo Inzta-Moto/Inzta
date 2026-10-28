@@ -263,7 +263,7 @@ export function imageMarkdown(url: string, alt: string, caption?: string, layout
   return `![${escapeAlt(alt)}](${url}${title})${layout ? layoutBlock(layout) : ''}`;
 }
 
-// F-013 phase C markers (requirement 12): EMBED_LINE_RE is a whole trimmed paragraph, EMBED_TEXT_RE any
+// F-013 phase C markers (requirement 17): EMBED_LINE_RE is a whole trimmed paragraph, EMBED_TEXT_RE any
 // marker text. The keyword is case-insensitive; the slug is checked against SLUG_PATTERN by the renderer.
 export const EMBED_LINE_RE = /^\[\[(produk|artikel):([^\]\s]*)\]\]$/i;
 export const EMBED_TEXT_RE = /\[\[(?:produk|artikel):[^\]\n]*\]\]/gi;

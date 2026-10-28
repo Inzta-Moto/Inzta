@@ -23,7 +23,7 @@ import { SLUG_PATTERN } from '@/lib/slug';
 export type { RenderBlock, RenderWarning };
 
 export interface RenderResult {
-  // All HTML blocks joined; markers add nothing, so callers that ignore cards keep working (13.3).
+  // All HTML blocks joined; markers add nothing, so callers that ignore cards keep working (18.3).
   html: string;
   // F-013 phase C: HTML blocks and product/article cards in Markdown order.
   blocks: RenderBlock[];
@@ -195,7 +195,7 @@ function renderMarkdown(content: string): RenderResult {
   });
 
   // md.parse() is lexer -> walkTokens -> parser; the same steps run here by hand so the top-level tokens can
-  // be cut at each marker (13.2). Without markers the one group gives md.parse()'s exact string.
+  // be cut at each marker (18.2). Without markers the one group gives md.parse()'s exact string.
   const blocks: RenderBlock[] = [];
   try {
     const tokens = md.lexer(content);

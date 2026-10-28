@@ -4,7 +4,7 @@ import { normalizeProduct } from '@/lib/product-utils';
 import { publicDate, statusOf, toPublicArticle } from '@/lib/article-format';
 import type { ArticleEmbed, ArticleEmbeds, ProductEmbed, RenderBlock } from '@/types';
 
-// Server only (F-013 phase C, requirement 14): card data for the [[produk:…]] and [[artikel:…]] markers of
+// Server only (F-013 phase C, requirement 19): card data for the [[produk:…]] and [[artikel:…]] markers of
 // one article. Inactive products, unpublished articles, missing documents, and the article itself are left
 // out, so their markers render nothing on the public page (K-4).
 
@@ -45,7 +45,7 @@ export function toArticleEmbed(id: string, data: Record<string, any>): ArticleEm
 
 const EMPTY: ArticleEmbeds = { products: {}, articles: {} };
 
-/** One getAll for every marker of the article; no read at all without markers (14.1). */
+/** One getAll for every marker of the article; no read at all without markers (19.1). */
 export async function resolveEmbeds(blocks: RenderBlock[], opts: { exclude?: string } = {}): Promise<ArticleEmbeds> {
   const products = Array.from(new Set(blocks.flatMap(b => (b.type === 'product' ? [b.slug] : []))));
   const articles = Array.from(new Set(blocks.flatMap(b => (b.type === 'article' && b.slug !== opts.exclude ? [b.slug] : []))));

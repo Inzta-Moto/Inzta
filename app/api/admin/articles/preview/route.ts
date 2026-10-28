@@ -30,7 +30,7 @@ export async function POST(request: Request) {
   const content = typeof body.content === 'string' ? body.content : '';
   const contentFormat = body.contentFormat === 'markdown' ? 'markdown' : 'plain';
   const result = renderArticle({ content, contentFormat });
-  // The article being edited never shows itself as "Baca juga". A failed read only drops the cards (14.4).
+  // The article being edited never shows itself as "Baca juga". A failed read only drops the cards (19.4).
   let embeds: ArticleEmbeds = { products: {}, articles: {} };
   try {
     embeds = await resolveEmbeds(result.blocks, { exclude: isValidSlug(body.slug) ? body.slug : undefined });

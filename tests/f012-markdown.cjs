@@ -713,7 +713,7 @@ check('F-013 checklist: a recognised attribute block triggers no check (7.4)', (
   assert.deepStrictEqual(failed(r), ['C-7'], 'a block does not hide a placeholder');
 });
 
-// F-013 phase C: [[produk:…]] and [[artikel:…]] markers (requirements 12, 13, 17.1, 17.4).
+// F-013 phase C: [[produk:…]] and [[artikel:…]] markers (requirements 17, 18, 22.1, 22.4).
 const htmlOf = (blocks) => blocks.filter(b => b.type === 'html').map(b => b.html).join('');
 const kinds = (warnings) => warnings.map(w => w.kind);
 check('F-013 C: markers become blocks in Markdown order; html is the joined HTML blocks', () => {

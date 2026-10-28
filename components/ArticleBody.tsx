@@ -3,7 +3,7 @@ import type { ArticleEmbed, ArticleEmbeds, ProductEmbed, RenderBlock } from '@/t
 import { formatPrice, generateCloudinarySrcSet, optimizeCloudinaryUrl } from '@/lib/utils';
 
 // F-013 phase C: the article body for the public page, /admin/pratinjau, and the editor's Pratinjau tab
-// (requirement 15.6). HTML blocks are already sanitized on the server (lib/markdown.ts); cards are built here
+// (requirement 20.6). HTML blocks are already sanitized on the server (lib/markdown.ts); cards are built here
 // from resolved data (lib/article-embeds.ts), never from HTML. No marked or sanitize-html in this file.
 
 interface ArticleBodyProps {

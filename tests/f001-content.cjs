@@ -284,7 +284,7 @@ function seed() {
     assert.ok(docs.has('articles/tetap-tersimpan'));
   });
 
-  // F-013 phase C (requirements 14, 17.4): card data for [[produk:…]] and [[artikel:…]] markers.
+  // F-013 phase C (requirements 19, 22.4): card data for [[produk:…]] and [[artikel:…]] markers.
   const blocks = (...refs) => refs.map(r => { const [type, slug] = r.split(':'); return { type, slug }; });
   await check('embeds: one getAll for all markers; inactive, draft, missing, and self left out', async () => {
     seed(); getAllCalls.length = 0;
