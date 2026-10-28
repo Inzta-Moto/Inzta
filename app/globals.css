@@ -2699,6 +2699,26 @@ ul, ol { list-style: none; }
 .article-body table { display: block; max-width: 100%; overflow-x: auto; border-collapse: collapse; font-size: 0.9375em; line-height: 1.5; }
 .article-body th, .article-body td { padding: 0.6em 0.8em; text-align: left; vertical-align: top; border: 1px solid var(--border-light); min-width: 8em; }
 .article-body th { color: var(--text-primary); background: var(--bg-subtle); }
+/* F-013: image layout. Classes come only from lib/markdown.ts and pass the sanitizer allowlist. */
+.article-body::after { content: ''; display: table; clear: both; }  /* contain floats without a BFC */
+.article-body h2,
+.article-body h3,
+.article-body table,
+.article-body figure:not(.article-figure--kiri):not(.article-figure--kanan) { clear: both; }
+.article-body ul, .article-body ol { display: flow-root; }          /* bullets stay visible beside a float */
+.article-body .article-figure--kecil  { width: 33%; }
+.article-body .article-figure--sedang { width: 50%; }
+.article-body .article-figure--besar  { width: 75%; }
+.article-body .article-figure--kecil,
+.article-body .article-figure--sedang,
+.article-body .article-figure--besar  { margin-left: auto; margin-right: auto; }
+.article-body .article-figure--kiri   { float: left;  clear: left;  margin: 0.3em 1.5em 1em 0; }
+.article-body .article-figure--kanan  { float: right; clear: right; margin: 0.3em 0 1em 1.5em; }
+/* Portrait cap: the whole photo stays visible; the unused area is a light panel. */
+.article-body figure img { max-height: min(640px, 80vh); object-fit: contain; background: var(--bg-subtle); }
+@media (max-width: 767px) {
+  .article-body figure[class] { float: none; width: auto; margin: 2em 0; }
+}
 /* Plain (legacy) articles keep the pre-F-012 type size and full width; only paragraph spacing changes. */
 .article-body.article-body-plain { max-width: none; font-size: 16px; line-height: 1.8; }
 .article-preview-banner { margin-bottom: 24px; padding: 10px 16px; font-size: 13px; font-weight: 600; color: var(--text-primary); background: var(--accent-light); border: 1px solid var(--accent-border); border-radius: 8px; }
