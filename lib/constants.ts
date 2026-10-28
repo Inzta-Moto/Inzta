@@ -8,3 +8,6 @@ export const ALLOWED_IMAGE_PREFIX = `https://res.cloudinary.com/${CLOUDINARY_CLO
 
 // '/admin/artikel/baru' is the new-article page, so an article cannot own that slug.
 export const RESERVED_ARTICLE_SLUGS: readonly string[] = ['baru'];
+
+// F-013 phase A2 (H-3): an empty article author is stored and shown as this default.
+export const DEFAULT_AUTHOR = 'Tim INZTA';

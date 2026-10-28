@@ -9,6 +9,8 @@ import { toSlug } from '@/lib/slug';
 import { formatDate } from '@/lib/utils';
 import { adminErrorMessage } from '@/lib/admin-messages';
 import { canPublish, runChecklist } from '@/lib/article-checklist';
+import { DEFAULT_AUTHOR } from '@/lib/constants';
+import ArticleHead from '@/app/blog/[slug]/ArticleHead';
 import {
   countWords,
   extractBodyImages,
@@ -43,6 +45,9 @@ interface Draft {
   contentFormat: ContentFormat;
   coverImage: string;
   coverAlt: string;
+  coverCaption: string;
+  showCover: boolean;
+  author: string;
   metaTitle: string;
   metaDescription: string;
   images: string[];
@@ -53,7 +58,6 @@ interface ServerArticle extends Partial<Draft> {
   slug: string;
   status?: ArticleStatus;
   imageUrl?: string;
-  author?: string;
   createdAt: number | null;
   updatedAt: number | null;
   publishedAt: number | null;
@@ -70,7 +74,8 @@ type Message = { kind: 'error' | 'ok'; text: string; checks?: ChecklistItem[] };
 
 const EMPTY: Draft = {
   title: '', slug: '', excerpt: '', content: '', contentFormat: 'markdown',
-  coverImage: '', coverAlt: '', metaTitle: '', metaDescription: '', images: [],
+  coverImage: '', coverAlt: '', coverCaption: '', showCover: true, author: DEFAULT_AUTHOR,
+  metaTitle: '', metaDescription: '', images: [],
 };
 
 function toDraft(a: Partial<ServerArticle>): Draft {
@@ -83,6 +88,10 @@ function toDraft(a: Partial<ServerArticle>): Draft {
     contentFormat: formatOf(a),
     coverImage: a.coverImage || '',
     coverAlt: a.coverAlt || '',
+    // F-013 phase A2: documents and local copies from before A2 get the defaults (15.3).
+    coverCaption: a.coverCaption || '',
+    showCover: a.showCover !== false,
+    author: a.author || DEFAULT_AUTHOR,
     metaTitle: a.metaTitle || '',
     metaDescription: a.metaDescription || '',
     images: images.filter((u): u is string => typeof u === 'string'),
@@ -651,10 +660,16 @@ export default function ArticleEditor({ slug: routeSlug }: { slug?: string }) {
                     {preview.warnings.map((w, i) => <li key={i}>{warningText(w)}</li>)}
                   </ul>
                 )}
-                {preview && previewState !== 'loading' && (
-                  // Already sanitized by the server (lib/markdown.ts); the client does not transform it.
-                  <div className={`article-body${isMarkdown ? '' : ' article-body-plain'}`} dangerouslySetInnerHTML={{ __html: preview.html }} />
-                )}
+                {preview && previewState !== 'loading' && (isMarkdown ? (
+                  // F-013 phase A2 (16.1): same head component and classes as /blog/{slug}, from the unsaved draft.
+                  <div className="blog-detail blog-detail--column">
+                    <ArticleHead article={{ ...draft, publishedAt: server?.publishedAt ?? null, createdAt: server?.createdAt ?? null }} />
+                    {/* Already sanitized by the server (lib/markdown.ts); the client does not transform it. */}
+                    <div className="blog-detail-content article-body" dangerouslySetInnerHTML={{ __html: preview.html }} />
+                  </div>
+                ) : (
+                  <div className="article-body article-body-plain" dangerouslySetInnerHTML={{ __html: preview.html }} />
+                ))}
             </div>
             <p className="article-editor-footer">
               {words.toLocaleString('id-ID')} kata · ±{readingMinutes(words)} menit baca · {images.length} gambar
@@ -675,7 +690,9 @@ export default function ArticleEditor({ slug: routeSlug }: { slug?: string }) {
             </dl>
             <div className="form-group">
               <label className="form-label" htmlFor="article-author">Penulis</label>
-              <input id="article-author" className="form-input" value="Tim INZTA" readOnly />
+              <input id="article-author" className="form-input" value={draft.author} maxLength={80} placeholder={DEFAULT_AUTHOR} aria-describedby={isMarkdown ? 'article-author-help' : undefined} onChange={e => set('author', e.target.value)} />
+              {/* Plain articles show no byline (12.5), so the hint is for Markdown articles only (review N-2). */}
+              {isMarkdown && <p className="article-editor-help" id="article-author-help">Tampil di bawah judul: "Oleh {draft.author.trim() || DEFAULT_AUTHOR}". Kosong berarti {DEFAULT_AUTHOR}.</p>}
             </div>
           </section>
 
@@ -710,13 +727,21 @@ export default function ArticleEditor({ slug: routeSlug }: { slug?: string }) {
                   {draft.coverImage ? 'Ganti sampul' : 'Unggah sampul'}
                 </button>
                 {draft.coverImage && (
-                  <button type="button" className="btn btn-ghost" onClick={() => setDraft(d => ({ ...d, coverImage: '', coverAlt: '' }))} style={{ fontSize: 11, padding: '6px 14px' }}>Hapus</button>
+                  <button type="button" className="btn btn-ghost" onClick={() => setDraft(d => ({ ...d, coverImage: '', coverAlt: '', coverCaption: '' }))} style={{ fontSize: 11, padding: '6px 14px' }}>Hapus</button>
                 )}
               </div>
               <div className="form-group">
                 <label className="form-label" htmlFor="article-cover-alt">Teks alt sampul *</label>
                 <input id="article-cover-alt" className="form-input" value={draft.coverAlt} maxLength={200} onChange={e => set('coverAlt', e.target.value)} />
               </div>
+              <div className="form-group">
+                <label className="form-label" htmlFor="article-cover-caption">Keterangan / kredit foto sampul</label>
+                <input id="article-cover-caption" className="form-input" value={draft.coverCaption} maxLength={200} onChange={e => set('coverCaption', e.target.value)} />
+              </div>
+              <label className="article-editor-check">
+                <input type="checkbox" checked={draft.showCover} onChange={e => set('showCover', e.target.checked)} aria-describedby="article-show-cover-help" /> Tampilkan sampul di halaman artikel
+              </label>
+              <p className="article-editor-help" id="article-show-cover-help">Sampul tetap dipakai di kartu blog, beranda, dan pratinjau link.</p>
               {coverWidth !== null && coverWidth < 1200 && (
                 <p className="article-editor-help is-warn">Lebar sampul {coverWidth} px. Pratinjau link di WhatsApp dan Facebook butuh minimal 1200 px agar tidak buram.</p>
               )}
@@ -771,12 +796,12 @@ export default function ArticleEditor({ slug: routeSlug }: { slug?: string }) {
         <ImageDialog
           title="Gambar sampul"
           kind="cover"
-          initial={{ url: draft.coverImage, alt: draft.coverAlt }}
+          initial={{ url: draft.coverImage, alt: draft.coverAlt, caption: draft.coverCaption }}
           returnFocusRef={coverButtonRef}
           onClose={() => setDialog(null)}
           onConfirm={v => {
             setDialog(null);
-            setDraft(d => ({ ...d, coverImage: v.url, coverAlt: v.alt }));
+            setDraft(d => ({ ...d, coverImage: v.url, coverAlt: v.alt, coverCaption: v.caption }));
             if (v.width) setCoverWidth(v.width);
           }}
         />

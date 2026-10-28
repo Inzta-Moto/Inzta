@@ -496,10 +496,11 @@ check('F-013 helpers: placeholder upload keeps alt, caption, and layout, written
 // F-013 review ERR-01 (insertionPoint) moved to the visual editor in phase B: an image is a node there, so a caret
 // cannot be inside one (requirement 9.6, checked in the browser).
 
-// Checklist (requirement 10)
+// Checklist (requirement 10). The cover differs from the body image so W-6 (F-013 A2) stays quiet.
+const COVER = CLD.replace(/\.jpg$/, '-sampul.jpg');
 const ok = {
   title: 'Tas samping XSR 155', slug: 'tas-samping-xsr-155', excerpt: 'Ringkasan', content: `## A\n\n![Alt](${CLD})`,
-  contentFormat: 'markdown', coverImage: CLD, coverAlt: 'Sampul', metaTitle: 'x'.repeat(60), metaDescription: 'y'.repeat(155),
+  contentFormat: 'markdown', coverImage: COVER, coverAlt: 'Sampul', metaTitle: 'x'.repeat(60), metaDescription: 'y'.repeat(155),
 };
 const failed = (r) => r.blocking.filter(c => !c.ok).map(c => c.id);
 const warned = (r) => r.warnings.filter(c => !c.ok).map(c => c.id);
@@ -535,6 +536,18 @@ check('checklist: W-1 to W-4 are warnings at 61/156 characters and under 1200 px
   assert.strictEqual(canPublish(r), true);
   assert.deepStrictEqual(warned(runChecklist({ ...ok, metaDescription: '' })), ['W-3']);
   assert.ok(!runChecklist(ok).warnings.some(w => w.id === 'W-4'), 'W-4 only when the editor knows the width');
+});
+check('checklist W-6 (F-013 A2): cover also in the body warns while showCover is on or missing, never blocks', () => {
+  const twice = { ...ok, coverImage: CLD };
+  assert.deepStrictEqual(warned(runChecklist(twice)), ['W-6']);
+  assert.deepStrictEqual(warned(runChecklist({ ...twice, showCover: true })), ['W-6']);
+  assert.strictEqual(canPublish(runChecklist(twice)), true);
+  assert.match(runChecklist(twice).warnings.find(w => w.id === 'W-6').detail, /Tampilkan sampul di halaman artikel/);
+  assert.deepStrictEqual(warned(runChecklist({ ...twice, showCover: false })), [], 'cover hidden on the page');
+  assert.deepStrictEqual(warned(runChecklist(ok)), [], 'different URLs');
+  assert.ok(!runChecklist({ ...twice, showCover: false }).warnings.some(w => w.id === 'W-6'), 'not listed when the cover is hidden');
+  assert.ok(!runChecklist({ ...twice, contentFormat: 'plain' }).warnings.some(w => w.id === 'W-6'), 'plain articles have no W-6');
+  assert.ok(!runChecklist({ ...twice, coverImage: '' }).warnings.some(w => w.id === 'W-6'), 'no cover, no W-6');
 });
 check('checklist: legacy plain article runs only C-1 to C-3', () => {
   const r = runChecklist({ title: 'K-06', slug: 'gasber-16', excerpt: 'x', content: '# bukan masalah\n![](GAMBAR-1)' });

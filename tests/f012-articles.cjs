@@ -121,12 +121,13 @@ const ready = {
   process.env.ADMIN_EMAILS = 'admin@inzta.id';
 
   // Create and save drafts
-  await check('POST: creates a markdown draft by Tim INZTA; status, author, source, publishedAt in the body are ignored', async () => {
+  await check('POST: creates a markdown draft by Tim INZTA; status, source, publishedAt in the body are ignored', async () => {
     as('cookie-admin'); revalidated.length = 0;
-    const r = await articles.POST(req({ ...ready, status: 'published', author: 'Hacker', source: 'automation', publishedAt: '2020-01-01', images: [CLD], contentFormat: 'plain' }));
+    const r = await articles.POST(req({ ...ready, status: 'published', source: 'automation', publishedAt: '2020-01-01', images: [CLD], contentFormat: 'plain' }));
     assert.strictEqual(r.status, 201);
     const d = docs.get('articles/tas-samping-xsr-155');
     assert.deepStrictEqual([d.status, d.contentFormat, d.source, d.author, d.images, d.publishedAt], ['draft', 'markdown', 'admin', 'Tim INZTA', [], undefined]);
+    assert.deepStrictEqual([d.coverCaption, d.showCover], ['', true], 'F-013 A2 defaults');
     assert.ok(d.createdAt && d.createdAt === d.updatedAt);
     assert.deepStrictEqual(revalidated, [], 'a draft changes no public page');
     const { item } = await json(r);
@@ -152,6 +153,39 @@ const ready = {
       assert.strictEqual((await articles.POST(req({ title: 'm', slug: 'meta-bad', ...patch }))).status, 400, JSON.stringify(Object.keys(patch)));
       assert.strictEqual(counters.writes, w);
     }
+  });
+  // F-013 phase A2 (requirement 16.3)
+  await check('A2: POST stores author, coverCaption, showCover from the body (trimmed); unknown fields still dropped', async () => {
+    as('cookie-admin');
+    const r = await articles.POST(req({ title: 'a2', slug: 'a2-fields', author: '  Om Fahrul ', coverCaption: ' Dok. Gasber 16 ', showCover: false, hacker: 1 }));
+    assert.strictEqual(r.status, 201);
+    const d = docs.get('articles/a2-fields');
+    assert.deepStrictEqual([d.author, d.coverCaption, d.showCover, 'hacker' in d], ['Om Fahrul', 'Dok. Gasber 16', false, false]);
+    const { item } = await json(r);
+    assert.deepStrictEqual([item.author, item.coverCaption, item.showCover], ['Om Fahrul', 'Dok. Gasber 16', false]);
+  });
+  await check('A2: empty or blank author -> "Tim INZTA"; showCover missing -> true', async () => {
+    as('cookie-admin');
+    assert.strictEqual((await articles.POST(req({ title: 'a2', slug: 'a2-blank', author: '   ' }))).status, 201);
+    assert.deepStrictEqual([docs.get('articles/a2-blank').author, docs.get('articles/a2-blank').showCover], ['Tim INZTA', true]);
+  });
+  await check('A2: author 80 / coverCaption 200 accepted; 81 / 201, non-text author, non-boolean showCover -> 400, no write', async () => {
+    as('cookie-admin');
+    assert.strictEqual((await articles.POST(req({ title: 'a2', slug: 'a2-max', author: 'a'.repeat(80), coverCaption: 'c'.repeat(200) }))).status, 201);
+    for (const patch of [{ author: 'a'.repeat(81) }, { coverCaption: 'c'.repeat(201) }, { author: 5 }, { showCover: 'false' }, { showCover: 0 }, { showCover: [] }]) {
+      const w = counters.writes;
+      const r = await articles.POST(req({ title: 'a2', slug: 'a2-bad', ...patch }));
+      assert.strictEqual(r.status, 400, JSON.stringify(patch));
+      assert.match((await json(r)).error, /^(author|coverCaption|showCover):/);
+      assert.strictEqual(counters.writes, w);
+    }
+  });
+  await check('A2: PUT updates author, coverCaption, showCover', async () => {
+    as('cookie-admin');
+    const r = await article.PUT(req({ title: 'a2', author: 'Angkasa', coverCaption: 'Foto: INZTA', showCover: true }, 'PUT'), p('a2-fields'));
+    assert.strictEqual(r.status, 200);
+    const d = docs.get('articles/a2-fields');
+    assert.deepStrictEqual([d.author, d.coverCaption, d.showCover], ['Angkasa', 'Foto: INZTA', true]);
   });
   await check('cover image only from the allowed Cloudinary cloud', async () => {
     as('cookie-admin');

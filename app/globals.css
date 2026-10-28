@@ -2679,11 +2679,21 @@ ul, ol { list-style: none; }
 .blog-detail--column .blog-detail-header > .blog-card-meta,
 .blog-detail--column .article-preview-banner,
 .blog-detail--column .detail-share,
-.blog-detail--column .blog-detail-back {
+.blog-detail--column .blog-detail-back,
+.blog-detail--column .blog-detail-subtitle,
+.blog-detail--column .blog-detail-byline,
+.blog-detail--column .blog-detail-cover {
   max-width: var(--article-measure);
   margin-left: auto;
   margin-right: auto;
 }
+/* F-013 phase A2: head of Markdown articles (app/blog/[slug]/ArticleHead.tsx), in the naskah PDF order.
+   The cover is the reading column's width in a fixed 16:9 box (same crop as the blog card). */
+.blog-detail-subtitle { margin-top: 12px; font-size: 1.25rem; line-height: 1.5; color: var(--text-tertiary); }
+.blog-detail-byline { margin-top: 12px; margin-bottom: 24px; font-size: 14px; color: var(--text-tertiary); }
+.blog-detail-cover { margin-bottom: 32px; }
+.blog-detail-cover img { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 8px; border: 1px solid var(--border-light); background: var(--bg-subtle); }
+.blog-detail-cover figcaption { margin-top: 0.5em; font-size: 14px; font-style: italic; color: var(--text-tertiary); }
 .article-body > * + * { margin-top: var(--article-flow); }
 /* F-013 review WEB-02: the space above a heading is padding, not margin, because `clear: both` below absorbs
    the margin after a float (17 px instead of 51 px). Where no float is involved (first child, after a

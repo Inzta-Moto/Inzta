@@ -18,7 +18,7 @@ export interface ImageDialogValue {
 
 interface ImageDialogProps {
   title: string;
-  // 'body' inserts or edits an image in the article; 'cover' sets the cover (no caption).
+  // 'body' inserts or edits an image in the article; 'cover' sets the cover (caption = credit, no layout).
   kind: 'body' | 'cover';
   initial?: { url?: string; alt?: string; caption?: string; fileName?: string; layout?: ImageLayout };
   returnFocusRef?: RefObject<HTMLElement>;
@@ -84,7 +84,7 @@ export default function ImageDialog({ title, kind, initial, returnFocusRef, onCl
     onConfirm({
       url,
       alt: alt.trim(),
-      caption: kind === 'body' ? caption.trim() : '',
+      caption: caption.trim(),
       width: info?.width,
       asCover,
       layout: kind === 'body' ? layout : DEFAULT_LAYOUT,
@@ -129,13 +129,14 @@ export default function ImageDialog({ title, kind, initial, returnFocusRef, onCl
           <input id="image-alt" className="form-input" value={alt} onChange={e => setAlt(e.target.value)} maxLength={200} required data-autofocus={url ? true : undefined} />
           <p className="article-editor-help">Jelaskan isi gambar untuk mesin pencari dan pembaca layar; jangan menumpuk kata kunci.</p>
         </div>
+        {/* F-013 phase A2 (15.1): the cover's caption is its credit, stored as coverCaption (max. 200). */}
+        <div className="form-group">
+          <label className="form-label" htmlFor="image-caption">{kind === 'cover' ? 'Keterangan / kredit foto sampul (opsional)' : 'Caption (opsional)'}</label>
+          <input id="image-caption" className="form-input" value={caption} onChange={e => setCaption(e.target.value)} maxLength={kind === 'cover' ? 200 : 300} />
+          <p className="article-editor-help">{kind === 'cover' ? 'Tampil di bawah sampul, mis. "Dok. Gasber 16 / Indonesia Ride Adventure".' : 'Tampil di bawah gambar.'}</p>
+        </div>
         {kind === 'body' && (
           <>
-            <div className="form-group">
-              <label className="form-label" htmlFor="image-caption">Caption (opsional)</label>
-              <input id="image-caption" className="form-input" value={caption} onChange={e => setCaption(e.target.value)} maxLength={300} />
-              <p className="article-editor-help">Tampil di bawah gambar.</p>
-            </div>
             <fieldset className="article-editor-choice" aria-describedby="image-layout-phone image-layout-status">
               <legend className="form-label">Posisi</legend>
               <div className="article-editor-choice-options">
