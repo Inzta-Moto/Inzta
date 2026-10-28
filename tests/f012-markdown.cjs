@@ -1,12 +1,15 @@
 // F-012: renderArticle() (lib/markdown.ts) with the real marked + sanitize-html, and the pre-publish
 // checklist (lib/article-checklist.ts). Includes XSS attack fixtures and the K-02 and K-06 "Naskah".
 // Usage: npm run test:markdown  (or: node tests/f012-markdown.cjs <repo-root>)
+// F-013: `--write-snapshots` (once, on the unchanged renderer) writes tests/fixtures/K-0x-naskah.html.
 const path = require('path');
 const fs = require('fs');
 const Module = require('module');
 const assert = require('assert');
 
-const ROOT = path.resolve(process.argv[2] || path.join(__dirname, '..'));
+const ARGS = process.argv.slice(2);
+const WRITE_SNAPSHOTS = ARGS.includes('--write-snapshots');
+const ROOT = path.resolve(ARGS.find(a => !a.startsWith('--')) || path.join(__dirname, '..'));
 const ts = require(path.join(ROOT, 'node_modules/typescript'));
 
 const origResolve = Module._resolveFilename;
@@ -242,6 +245,16 @@ check('K-02 "Naskah": h2 and h3, 4 figures, product links, lists, no h1, no raw 
   assert.ok(!/(^|\s)##\s|\*\*|!\[/.test(html.replace(/<[^>]+>/g, ' ')), 'raw Markdown left in text');
   assertAllowlisted(html);
 });
+// F-013 requirement 7.2: renderArticle() output for both naskah stays byte-identical to the snapshots
+// captured from the renderer before F-013 changed it (task A2).
+for (const name of ['K-02-naskah', 'K-06-naskah']) {
+  const snapshot = path.join(ROOT, 'tests/fixtures', `${name}.html`);
+  if (WRITE_SNAPSHOTS) fs.writeFileSync(snapshot, md(fixture(`${name}.md`)).html);
+  check(`F-013 snapshot: ${name}.md renders byte-identical to ${name}.html`, () => {
+    assert.ok(fs.existsSync(snapshot), `missing ${snapshot}; run once with --write-snapshots on the unchanged renderer`);
+    assert.strictEqual(md(fixture(`${name}.md`)).html, fs.readFileSync(snapshot, 'utf8'));
+  });
+}
 
 // Helpers used by the editor and the checklist
 check('extractBodyImages: kinds, alt, caption, line, file name; skips fenced code', () => {
