@@ -378,7 +378,9 @@ export default function ArticleEditor({ slug: routeSlug }: { slug?: string }) {
     else if (action === 'italic') applyEdit(ta, wrapEdit(value, s, e, '*', 'teks miring'));
     else if (action === 'ul' || action === 'ol') applyEdit(ta, listEdit(value, s, e, action === 'ol'));
     else {
-      savedSelection.current = { start: s, end: e };
+      // A new image goes after the selection, never over it: after "Edit gambar" or "Baris N" the
+      // selection is a whole image, and replacing it would silently drop that image (F-013 A7b).
+      savedSelection.current = action === 'link' ? { start: s, end: e } : { start: e, end: e };
       setDialog(action === 'link' ? { type: 'link', text: value.slice(s, e) } : { type: 'image' });
     }
   }
