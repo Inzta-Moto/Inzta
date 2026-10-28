@@ -30,6 +30,8 @@ function decodeEntities(s: string): string {
 }
 
 const sameMarks = (a?: Mark[], b?: Mark[]) => JSON.stringify(a ?? []) === JSON.stringify(b ?? []);
+// Nested emphasis of the same kind ("**a **b** c**") is one mark in ProseMirror; a second copy fails the schema.
+const withMark = (marks: Mark[], mark: Mark) => (marks.some(m => m.type === mark.type) ? marks : [...marks, mark]);
 
 function inline(tokens: Token[] | undefined, marks: Mark[] = [], out: JSONContent[] = []): JSONContent[] {
   const text = (value: string) => {
@@ -49,15 +51,15 @@ function inline(tokens: Token[] | undefined, marks: Mark[] = [], out: JSONConten
         text((t as Tokens.Escape).text);
         break;
       case 'strong':
-        inline((t as Tokens.Strong).tokens, [...marks, { type: 'bold' }], out);
+        inline((t as Tokens.Strong).tokens, withMark(marks, { type: 'bold' }), out);
         break;
       case 'em':
-        inline((t as Tokens.Em).tokens, [...marks, { type: 'italic' }], out);
+        inline((t as Tokens.Em).tokens, withMark(marks, { type: 'italic' }), out);
         break;
       case 'link': {
         const link = t as Tokens.Link;
         if (link.title) unsupported();
-        inline(link.tokens, [...marks, { type: 'link', attrs: { href: link.href } }], out);
+        inline(link.tokens, withMark(marks, { type: 'link', attrs: { href: link.href } }), out);
         break;
       }
       case 'br':
@@ -204,7 +206,7 @@ function leaf(node: JSONContent, inTable: boolean): string {
   return node.type === 'text' ? escapeText(node.text ?? '') : '';
 }
 
-// Emphasis cannot start or end with whitespace, so outer spaces move outside the markers (as wrapEdit does).
+// Emphasis cannot start or end with whitespace, so outer spaces move outside the markers.
 function wrap(marker: string, inner: string): string {
   const core = inner.trim();
   if (!core) return inner;
@@ -222,6 +224,8 @@ function inlineMd(nodes: JSONContent[], inTable: boolean, level = 0): string {
     let j = i + 1;
     while (j < nodes.length && (mark ? sameMark(markOf(nodes[j], type), mark) : !markOf(nodes[j], type))) j++;
     const inner = inlineMd(nodes.slice(i, j), inTable, level + 1);
+    // A "!" right before a link's "[" would turn the link into an image (review REV-01).
+    if (mark && type === 'link' && /(^|[^\\])!$/.test(out)) out = `${out.slice(0, -1)}\\!`;
     if (!mark) out += inner;
     else if (type === 'link') out += `[${inner}](${encodeLinkUrl(String(mark.attrs?.href ?? '')).replace(/\|/g, '%7C')})`;
     else out += wrap(type === 'bold' ? '**' : '*', inner);
@@ -246,7 +250,8 @@ function headingMd(node: JSONContent): string {
 
 function imageMd(node: JSONContent): string {
   const a = node.attrs ?? {};
-  const src = String(a.src ?? '');
+  // A pasted <img> can carry line breaks in src; they would end the <...> form and inject Markdown (review REV-07).
+  const src = String(a.src ?? '').replace(/[\r\n]+/g, '');
   // Paths with spaces or parentheses need the <...> form; imageMarkdown() writes the URL as given.
   const url = /[\s()<>]/.test(src) ? `<${src.replace(/[<>]/g, '')}>` : src;
   return imageMarkdown(url, String(a.alt ?? ''), String(a.caption ?? ''), { posisi: a.posisi ?? 'tengah', ukuran: a.ukuran ?? 'penuh' });

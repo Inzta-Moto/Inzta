@@ -23,7 +23,8 @@ import {
 import type { ArticleStatus, ChecklistItem, ContentFormat, RenderWarning } from '@/types';
 import type { Editor } from '@tiptap/react';
 import MarkdownToolbar from './MarkdownToolbar';
-import VisualEditor from './VisualEditor';
+import VisualEditor, { splittableDepth } from './VisualEditor';
+import { NodeSelection } from '@tiptap/pm/state';
 import { imageOccurrence } from './markdown-doc';
 import LinkDialog from './LinkDialog';
 import ImageDialog, { type ImageDialogValue } from './ImageDialog';
@@ -389,7 +390,8 @@ export default function ArticleEditor({ slug: routeSlug }: { slug?: string }) {
   const onEditorReady = useCallback((ed: Editor | null) => setEditor(ed), []);
 
   function openLink() {
-    if (!editor) return;
+    // A selected image is a node, not text; linking it would replace it with the link text (review REV-06).
+    if (!editor || editor.state.selection instanceof NodeSelection) return;
     const href = editor.getAttributes('link').href as string | undefined;
     // A caret inside a link edits the whole link.
     if (href && editor.state.selection.empty) editor.chain().extendMarkRange('link').run();
@@ -415,7 +417,13 @@ export default function ArticleEditor({ slug: routeSlug }: { slug?: string }) {
   }
 
   // A new image goes after the selection, never over it: a selected image stays (A7b, ERR-01; requirement 9.6).
-  const openImage = () => editor && setDialog({ type: 'image', at: editor.state.selection.to });
+  // Inside a raw block or a table it goes after that whole block, which it would otherwise split (review REV-02).
+  function openImage() {
+    if (!editor) return;
+    const { selection } = editor.state;
+    const depth = splittableDepth(selection);
+    setDialog({ type: 'image', at: depth ? selection.$to.after(depth) : selection.to });
+  }
   const onEditImage = (pos: number) => setDialog({ type: 'image', pos });
 
   // Panel edits rewrite that exact match (by offsets and original text), so a duplicate image elsewhere stays;
@@ -650,6 +658,8 @@ export default function ArticleEditor({ slug: routeSlug }: { slug?: string }) {
             </div>
             <p className="article-editor-footer">
               {words.toLocaleString('id-ID')} kata · ±{readingMinutes(words)} menit baca · {images.length} gambar
+              {/* The textarea's maxLength is gone for the visual editor; the server still rejects more (review REV-10). */}
+              {draft.content.length > 50000 && <span className="is-warn"> · Isi melebihi 50.000 karakter, tidak bisa disimpan. Pecah jadi dua artikel.</span>}
             </p>
           </div>
         </div>

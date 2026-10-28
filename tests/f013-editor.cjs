@@ -183,6 +183,29 @@ check('bold and italic move edge spaces outside the markers; nested marks and li
   const back = p(md).content[0].content;
   assert.deepStrictEqual(back.find(n => n.text === 'link tebal').marks, [{ type: 'link', attrs: { href: '/produk/a%20b%281%29%7Cx' } }, { type: 'bold' }]);
 });
+check('review REV-01: a "!" typed right before a link stays text, the link stays a link', () => {
+  const doc = { type: 'doc', content: [{ type: 'paragraph', content: [
+    { type: 'text', text: 'Pesan sekarang!' }, { type: 'text', text: 'WhatsApp', marks: [{ type: 'link', attrs: { href: 'https://wa.me/62' } }] }, { type: 'text', text: ' Mantap!' }] }] };
+  const md = s(doc);
+  assert.strictEqual(md, 'Pesan sekarang\\![WhatsApp](https://wa.me/62) Mantap!');
+  assert.deepStrictEqual(p(md), doc);
+  assert.deepStrictEqual(render(md).warnings, []);
+  roundTrip('Wow\\![x](/produk)');
+});
+check('review REV-03: nested emphasis of the same kind is one mark (schema-valid, same text)', () => {
+  for (const md of ['**a **b** c**', '*a *b* c*', '[a [b](/y) c](/x)']) {
+    const doc = p(md);
+    PMNode.fromJSON(schema, doc).check();
+    assert.strictEqual(s(p(s(doc))), s(doc), md);
+  }
+  assert.strictEqual(s(p('**a **b** c**')), '**a b c**');
+});
+check('review REV-07: line breaks in an image src cannot inject Markdown', () => {
+  const doc = { type: 'doc', content: [{ type: 'articleImage', attrs: { src: 'https://example.com/a\n\n## Judul\n\nx.jpg', alt: 'a', caption: '', posisi: 'tengah', ukuran: 'penuh' } }] };
+  const md = s(doc);
+  assert.ok(!md.includes('\n'), md);
+  assert.strictEqual(p(md).content.length, 1);
+});
 check('hard break round-trips as backslash-newline; a trailing one is dropped', () => {
   assert.strictEqual(roundTrip('baris satu\\\nbaris dua'), 'baris satu\\\nbaris dua');
   assert.strictEqual(roundTrip('baris satu  \nbaris dua'), 'baris satu\\\nbaris dua');

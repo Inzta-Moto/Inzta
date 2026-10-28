@@ -39,6 +39,17 @@ for (const [page, chunks] of Object.entries(manifest)) {
 }
 for (const page of EDITOR_PAGES) if (!manifest[page]) errors.push(`${page}: not in app-build-manifest.json`);
 
+// Chunks loaded later through next/dynamic are not in the manifest (review REV-08): every client chunk with an
+// editor library must be one the editor pages list, and none may contain sanitize-html.
+const listed = new Set(EDITOR_PAGES.flatMap(p => manifest[p] || []));
+const walk = dir => fs.readdirSync(dir, { withFileTypes: true }).flatMap(e => (e.isDirectory() ? walk(path.join(dir, e.name)) : [path.join(dir, e.name)]));
+for (const file of walk(path.join(next, 'static')).filter(f => f.endsWith('.js'))) {
+  const chunk = path.relative(next, file);
+  const libs = libsIn(chunk);
+  if (libs.includes('sanitize-html')) errors.push(`${chunk}: sanitize-html`);
+  if ((libs.includes('tiptap') || libs.includes('marked')) && !listed.has(chunk)) errors.push(`${chunk}: ${libs.join(', ')} in a chunk the editor pages do not list`);
+}
+
 const kb = [...editorOnly].reduce((n, c) => n + fs.statSync(path.join(next, c)).size, 0) / 1024;
 console.log(`\nEditor library chunks: ${[...editorOnly].join(', ')} (${kb.toFixed(0)} KB uncompressed)`);
 if (errors.length) {

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { EditorContent, useEditor, useEditorState, type Editor } from '@tiptap/react';
 import { Fragment, Slice } from '@tiptap/pm/model';
+import type { Selection } from '@tiptap/pm/state';
 import { articleExtensions } from './editor-extensions';
 import { countRawBlocks, docToMarkdown, markdownToDoc } from './markdown-doc';
 
@@ -15,6 +16,14 @@ interface VisualEditorProps {
   onLink: () => void;
   onEditImage: (pos: number) => void;
 }
+
+/** Depth of the raw block or table around the selection end, or 0: blocks must not be inserted inside those. */
+export function splittableDepth(selection: Selection): number {
+  const $to = selection.$to;
+  for (let d = $to.depth; d > 0; d--) if (['rawMarkdown', 'table'].includes($to.node(d).type.name)) return d;
+  return 0;
+}
+const insideSplittable = (selection: Selection) => splittableDepth(selection) > 0;
 
 // A naskah pasted as text (B-6): headings, images, lists, or tables at a line start.
 const MARKDOWN_SIGNS = /^(#{1,6} |!\[|[-*+] |\d+[.)] |\|)/m;
@@ -53,6 +62,10 @@ export default function VisualEditor({ value, onChange, onReady, onLink, onEditI
         const text = e.clipboardData?.getData('text/plain') ?? '';
         const html = e.clipboardData?.getData('text/html') ?? '';
         if (!text || (html && (html.includes('data-pm-slice') || !MARKDOWN_SIGNS.test(text)))) return false;
+        // A URL over selected text becomes a link (Tiptap linkOnPaste, review REV-09). In a raw block or a table
+        // cell, blocks would split it, so the default plain-text paste applies there (review REV-02).
+        if (!view.state.selection.empty && /^https?:\/\/\S+$/.test(text.trim())) return false;
+        if (insideSplittable(view.state.selection)) return false;
         const nodes = markdownToDoc(text).content ?? [];
         const fragment = Fragment.fromJSON(view.state.schema, nodes);
         // Open paragraph ends merge into the paragraph at the caret, so pasting one sentence stays inline.
