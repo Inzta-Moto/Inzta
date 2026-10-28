@@ -158,10 +158,10 @@ const simpleProduct = { slug: 'tas-uji', name: 'Tas uji', productType: 'simple',
 
   // F-012: new articles are Markdown drafts; status, author, and source come from the server, never the body.
   await check('admin: create article -> 201 draft, only whitelisted fields, createdAt set', async () => {
-    as('cookie-admin'); const r = await articles.POST(req({ ...validArticle, createdAt: '1999-01-01', status: 'published', author: 'x', source: 'automation', publishedAt: '1999-01-01', evil: 1 }));
+    as('cookie-admin'); const r = await articles.POST(req({ ...validArticle, createdAt: '1999-01-01', status: 'published', source: 'automation', publishedAt: '1999-01-01', evil: 1 }));
     assert.strictEqual(r.status, 201);
     const d = docs.get('articles/tas-samping-xsr-155');
-    assert.deepStrictEqual(Object.keys(d).sort(), ['author', 'content', 'contentFormat', 'coverAlt', 'coverImage', 'createdAt', 'excerpt', 'images', 'metaDescription', 'metaTitle', 'slug', 'source', 'status', 'title', 'updatedAt']);
+    assert.deepStrictEqual(Object.keys(d).sort(), ['author', 'content', 'contentFormat', 'coverAlt', 'coverCaption', 'coverImage', 'createdAt', 'excerpt', 'images', 'metaDescription', 'metaTitle', 'showCover', 'slug', 'source', 'status', 'title', 'updatedAt']);
     assert.notStrictEqual(d.createdAt, '1999-01-01');
     assert.deepStrictEqual([d.status, d.contentFormat, d.source, d.author, d.images], ['draft', 'markdown', 'admin', 'Tim INZTA', []]);
   });

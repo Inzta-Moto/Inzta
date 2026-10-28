@@ -135,6 +135,10 @@ export interface Article {
   status?: ArticleStatus;
   coverImage?: string;
   coverAlt?: string;
+  // F-013 phase A2: credit under the cover, and whether the cover shows on the article page (missing = true).
+  // The cover still feeds blog cards, the home page, and og:image when showCover is false.
+  coverCaption?: string;
+  showCover?: boolean;
   metaTitle?: string;
   metaDescription?: string;
   // Legacy gallery, used only by 'plain' articles.

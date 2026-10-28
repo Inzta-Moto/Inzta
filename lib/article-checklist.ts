@@ -10,7 +10,7 @@ export const META_DESCRIPTION_GUIDE = 155;
 export const COVER_MIN_WIDTH = 1200;
 
 export type ChecklistInput = Pick<Article, 'title' | 'slug' | 'excerpt' | 'content'> &
-  Partial<Pick<Article, 'contentFormat' | 'coverImage' | 'coverAlt' | 'metaTitle' | 'metaDescription'>>;
+  Partial<Pick<Article, 'contentFormat' | 'coverImage' | 'coverAlt' | 'showCover' | 'metaTitle' | 'metaDescription'>>;
 
 export interface ChecklistOptions {
   // Measured in the editor from the loaded image; unknown on the server, so W-4 is editor only.
@@ -32,6 +32,7 @@ export function runChecklist(article: ChecklistInput, opts: ChecklistOptions = {
   const slug = (article.slug || '').trim();
   const content = article.content || '';
   const blocking: ChecklistItem[] = [];
+  const images = markdown ? extractBodyImages(content) : [];
 
   blocking.push(item('C-1', 'Judul terisi (maksimal 150 karakter)', title.length > 0 && title.length <= 150));
   const slugOk = slug.length > 0 && !RESERVED_ARTICLE_SLUGS.includes(slug) && (opts.legacySlugOk || SLUG_PATTERN.test(slug));
@@ -46,7 +47,6 @@ export function runChecklist(article: ChecklistInput, opts: ChecklistOptions = {
     const coverOk = isAllowedImageUrl(article.coverImage) && Boolean((article.coverAlt || '').trim());
     blocking.push(item('C-5', 'Gambar sampul diunggah dan punya teks alt', coverOk));
 
-    const images = extractBodyImages(content);
     const warnings = opts.renderWarnings || [];
     const noAlt = images.filter(i => !i.alt).map(i => `gambar ${i.index + 1}`);
     const foreign = images.filter(i => i.kind === 'foreign').map(i => `gambar ${i.index + 1}`);
@@ -80,6 +80,11 @@ export function runChecklist(article: ChecklistInput, opts: ChecklistOptions = {
   ];
   if (markdown && typeof opts.coverWidth === 'number') {
     warnings.push(item('W-4', `Gambar sampul minimal ${COVER_MIN_WIDTH} px lebarnya`, opts.coverWidth >= COVER_MIN_WIDTH, `Lebar ${opts.coverWidth} px; pratinjau tautan bisa buram.`));
+  }
+  // F-013 phase A2 (15.4, H-5): "Jadikan juga gambar sampul" copies the URL as is, so equality is enough.
+  if (markdown && article.showCover !== false && isAllowedImageUrl(article.coverImage)) {
+    const twice = images.some(i => i.url === article.coverImage);
+    warnings.push(item('W-6', 'Foto sampul tidak tampil dua kali', !twice, 'Gambar sampul juga ada di isi. Matikan "Tampilkan sampul di halaman artikel" atau hapus gambar itu dari isi.'));
   }
 
   return { blocking, warnings };

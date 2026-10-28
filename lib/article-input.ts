@@ -1,6 +1,6 @@
 import type { ContentFormat } from '@/types';
 import { SLUG_PATTERN } from './slug';
-import { RESERVED_ARTICLE_SLUGS } from './constants';
+import { DEFAULT_AUTHOR, RESERVED_ARTICLE_SLUGS } from './constants';
 import { isAllowedImageUrl } from './article-format';
 
 export { SLUG_PATTERN };
@@ -14,6 +14,9 @@ export type ArticleFields = {
   images: string[];
   coverImage: string;
   coverAlt: string;
+  coverCaption: string;
+  showCover: boolean;
+  author: string;
   metaTitle: string;
   metaDescription: string;
 };
@@ -40,7 +43,7 @@ function text(value: unknown, field: string, min: number, max: number): string |
 
 /**
  * Builds the only article fields a client may set. Anything else in the body (createdAt, status,
- * publishedAt, author, source, ...) is dropped, so a request can never overwrite server-managed fields.
+ * publishedAt, source, ...) is dropped, so a request can never overwrite server-managed fields.
  * Only title and slug are required here: a draft may be empty, and the publish checks
  * (lib/article-checklist.ts) run separately at publish and when a published article is saved.
  * The caps on cover alt and meta fields are abuse limits, not SEO limits (ADR-0014).
@@ -63,6 +66,8 @@ export function parseArticleInput(body: unknown, opts: ArticleInputOptions = {})
     excerpt: [0, 300],
     content: [0, 50000],
     coverAlt: [0, 200],
+    coverCaption: [0, 200],
+    author: [0, 80],
     metaTitle: [0, 200],
     metaDescription: [0, 500],
   };
@@ -77,6 +82,9 @@ export function parseArticleInput(body: unknown, opts: ArticleInputOptions = {})
   if (typeof coverImage !== 'string' || (coverImage !== '' && !isAllowedImageUrl(coverImage))) {
     return { ok: false, error: 'coverImage: hanya gambar yang diunggah lewat panel (Cloudinary INZTA)' };
   }
+
+  const showCover = data.showCover == null ? true : data.showCover;
+  if (typeof showCover !== 'boolean') return { ok: false, error: 'showCover: harus true atau false' };
 
   // New articles are always Markdown, whatever the body says. On update, Markdown is one-way
   // (requirement 1.6): a request may convert a plain article, never the reverse.
@@ -111,6 +119,9 @@ export function parseArticleInput(body: unknown, opts: ArticleInputOptions = {})
       images,
       coverImage,
       coverAlt: values.coverAlt,
+      coverCaption: values.coverCaption,
+      showCover,
+      author: values.author || DEFAULT_AUTHOR,
       metaTitle: values.metaTitle,
       metaDescription: values.metaDescription,
     },

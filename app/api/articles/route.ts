@@ -42,7 +42,6 @@ export async function POST(request: Request) {
       images: [],
       status: 'draft' as const,
       source: 'admin' as const,
-      author: 'Tim INZTA',
       createdAt: now,
       updatedAt: now,
     };
