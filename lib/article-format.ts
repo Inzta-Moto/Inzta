@@ -1,5 +1,6 @@
 import type { Article, ArticleStatus, ContentFormat, ImageLayout, ImagePosition, ImageSize, PublicArticle } from '@/types';
 import { ALLOWED_IMAGE_PREFIX } from '@/lib/constants';
+import { SLUG_PATTERN } from '@/lib/slug';
 
 // Pure helpers shared by the editor (browser), the API, and the renderer. No dependencies, so importing
 // this file never pulls marked or sanitize-html into a client bundle.
@@ -280,6 +281,50 @@ export function siteLinks(content: string): Array<{ kind: 'produk' | 'artikel'; 
   for (const m of text.matchAll(SITE_LINK_RE)) {
     if (inRanges(m.index ?? 0, fenced)) continue;
     out.push({ kind: m[1] === 'produk' ? 'produk' : 'artikel', slug: m[2], path: `/${m[1]}/${m[2]}` });
+  }
+  return out;
+}
+
+export interface EmbedRef {
+  kind: 'produk' | 'artikel';
+  slug: string;
+  // 1-based line number and the canonical marker, e.g. "[[produk:side-bag-z10]]".
+  line: number;
+  marker: string;
+}
+
+const LIST_ITEM_RE = /^\s*(?:[-*+]|\d+[.)])(?:\s|$)/;
+const ATX_HEADING_RE = /^ {0,3}#{1,6}(?:\s|$)/;
+const FENCE_RE = /^ {0,3}(?:`{3,}|~{3,})/;
+
+/**
+ * F-013 phase C: the marker lines that render as cards, without a Markdown parser, so the editor and the
+ * checklist can use it in the browser (requirement 17.1). A marker counts when it is a paragraph of its own: a
+ * blank line, a heading, a code fence, or the start before it; a blank line, a heading, a fence, or the end after
+ * it; outside fenced code; and, when indented, not inside a list item. The server still decides with
+ * renderArticle() blocks; tests/f012-markdown.cjs checks that both agree.
+ */
+export function extractEmbeds(content: string): EmbedRef[] {
+  const text = content || '';
+  const lines = text.split('\n');
+  const fenced = fencedRanges(text);
+  const out: EmbedRef[] = [];
+  const boundary = (l: string | undefined) => l === undefined || !l.trim() || ATX_HEADING_RE.test(l) || FENCE_RE.test(l);
+  let offset = 0;
+  for (let i = 0; i < lines.length; offset += lines[i].length + 1, i++) {
+    const line = lines[i];
+    const indent = /^ */.exec(line)![0].length;
+    const m = indent <= 3 ? EMBED_LINE_RE.exec(line.trim()) : null;
+    if (!m || !SLUG_PATTERN.test(m[2]) || inRanges(offset, fenced)) continue;
+    if (!boundary(lines[i - 1]) || !boundary(lines[i + 1])) continue;
+    if (indent > 0) {
+      // An indented line after a list item (or its indented continuation) belongs to that item.
+      let j = i - 1;
+      while (j >= 0 && !lines[j].trim()) j--;
+      if (j >= 0 && (LIST_ITEM_RE.test(lines[j]) || /^\s/.test(lines[j]))) continue;
+    }
+    const kind = m[1].toLowerCase() === 'produk' ? 'produk' : 'artikel';
+    out.push({ kind, slug: m[2], line: i + 1, marker: `[[${kind}:${m[2]}]]` });
   }
   return out;
 }
