@@ -308,10 +308,24 @@ check('C3: markers the renderer shows as text stay verbatim (raw), so their warn
     assert.ok(render(out).warnings.some(w => w.kind.startsWith('embed-')), md);
   }
 });
-check('C3: an escaped marker is ordinary text and stays escaped', () => {
+check('C3: an escaped marker in Markdown stays verbatim (raw block), so it is not turned into a card', () => {
   const md = '\\[\\[produk:a\\]\\]';
   assert.strictEqual(roundTripCards(md), md);
-  assert.strictEqual(p(md).content[0].type, 'paragraph');
+  assert.strictEqual(p(md).content[0].type, 'rawMarkdown');
+});
+check('review REV-01: marker text typed in the editor is written unescaped: a card alone, a C-9 warning inline', () => {
+  const para = text => ({ type: 'paragraph', content: [{ type: 'text', text }] });
+  const alone = s({ type: 'doc', content: [para('[[produk:a]]')] });
+  assert.strictEqual(alone, '[[produk:a]]');
+  assert.deepStrictEqual(blocksOf(alone), ['product:a']);
+  const inline = s({ type: 'doc', content: [para('Lihat [[produk:a]] ya, [teks] tetap.')] });
+  assert.strictEqual(inline, 'Lihat [[produk:a]] ya, \\[teks\\] tetap.');
+  assert.deepStrictEqual(render(inline).warnings.map(w => w.kind), ['embed-inline']);
+  const inList = s({ type: 'doc', content: [{ type: 'bulletList', content: [{ type: 'listItem', content: [para('[[artikel:b]]')] }] }] });
+  assert.deepStrictEqual(render(inList).warnings.map(w => w.kind), ['embed-inline']);
+  // Loading it back keeps it as the editor will show it: a card, or a raw block with the warning.
+  assert.strictEqual(p(alone).content[0].type, 'articleEmbed');
+  assert.strictEqual(roundTripCards(inline), inline);
 });
 check('C3: cards are allowed only at the top level of the schema', () => {
   const card = { type: 'articleEmbed', attrs: { kind: 'produk', slug: 'a' } };

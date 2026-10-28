@@ -12,6 +12,8 @@ interface ArticleBodyProps {
   className: string;
   // Admins see a note where a card is missing; visitors see nothing (K-4).
   adminPreview?: boolean;
+  // The card data could not be read (editor preview only): the note says so instead of blaming the target.
+  embedsError?: boolean;
 }
 
 const THUMB_SIZES = '(max-width: 767px) 72px, 96px';
@@ -78,7 +80,7 @@ export function ArticleReadAlso({ article: a }: { article: ArticleEmbed }) {
   );
 }
 
-export default function ArticleBody({ blocks, embeds, className, adminPreview }: ArticleBodyProps) {
+export default function ArticleBody({ blocks, embeds, className, adminPreview, embedsError }: ArticleBodyProps) {
   // Without cards the body stays one element with the sanitized HTML, as before phase C (K-7).
   if (blocks.length <= 1 && blocks.every(b => b.type === 'html')) {
     return <div className={className} dangerouslySetInnerHTML={{ __html: blocks[0]?.type === 'html' ? blocks[0].html : '' }} />;
@@ -93,6 +95,13 @@ export default function ArticleBody({ blocks, embeds, className, adminPreview }:
         if (article) return <ArticleReadAlso key={i} article={article} />;
         if (!adminPreview) return null;
         const what = b.type === 'product' ? `Produk "${b.slug}"` : `Artikel "${b.slug}"`;
+        if (embedsError) {
+          return (
+            <p key={i} className="article-embed-missing" role="note">
+              Kartu {b.type === 'product' ? 'produk' : 'artikel'} &quot;{b.slug}&quot; belum bisa dimuat (data gagal dibaca). Buka Pratinjau lagi.
+            </p>
+          );
+        }
         const why = b.type === 'product' ? 'tidak ada atau nonaktif' : 'tidak ada, belum terbit, atau artikel ini sendiri';
         return (
           <p key={i} className="article-embed-missing" role="note">

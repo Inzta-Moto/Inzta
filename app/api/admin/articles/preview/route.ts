@@ -32,10 +32,13 @@ export async function POST(request: Request) {
   const result = renderArticle({ content, contentFormat });
   // The article being edited never shows itself as "Baca juga". A failed read only drops the cards (19.4).
   let embeds: ArticleEmbeds = { products: {}, articles: {} };
+  // Tells the preview that missing cards are a read failure, not missing products (review REV-03).
+  let embedsError = false;
   try {
     embeds = await resolveEmbeds(result.blocks, { exclude: isValidSlug(body.slug) ? body.slug : undefined });
   } catch (error) {
     console.error('preview: embeds could not be read', { error: (error as Error)?.message });
+    embedsError = true;
   }
-  return NextResponse.json({ ...result, embeds }, { status: 200 });
+  return NextResponse.json({ ...result, embeds, embedsError }, { status: 200 });
 }

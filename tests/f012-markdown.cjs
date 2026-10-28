@@ -772,6 +772,11 @@ check('F-013 C: marker in fenced or indented code, or escaped, is neither a card
     assert.deepStrictEqual(r.warnings, [], c);
   }
 });
+check('review REV-02: marker text in code inside a list or quote, or in inline code, gives no warning', () => {
+  for (const c of ['- item\n\n  ```\n  [[produk:a]]\n  ```', '> ```\n> [[produk:a]]\n> ```', 'Ketik `[[produk:slug]]` di baris sendiri.']) {
+    assert.deepStrictEqual(md(c).warnings, [], c);
+  }
+});
 check('F-013 C: only the first 10 markers become cards; the rest give embed-limit and no output', () => {
   const content = Array.from({ length: 12 }, (_, i) => `[[produk:p-${i + 1}]]`).join('\n\nTeks.\n\n');
   const r = md(content);

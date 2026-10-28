@@ -347,7 +347,9 @@ function seed() {
     state.failReads = true;
     const failed = await quiet(() => preview.POST(req({ ...body, slug: '../x' })));
     assert.strictEqual(failed.status, 200);
-    assert.deepStrictEqual((await failed.json()).embeds, { products: {}, articles: {} });
+    const failedJson = await failed.json();
+    assert.deepStrictEqual([failedJson.embeds, failedJson.embedsError], [{ products: {}, articles: {} }, true]);
+    assert.strictEqual(json.embedsError, false);
     jar.clear();
     assert.strictEqual((await preview.POST(req(body))).status, 401);
   });

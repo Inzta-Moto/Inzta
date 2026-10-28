@@ -221,8 +221,14 @@ function renderMarkdown(content: string): RenderResult {
         continue;
       }
       if (m) warnings.push({ kind: 'embed-invalid', marker: token.raw.trim() });
-      else if (token.type !== 'code') {
-        for (const x of token.raw.matchAll(EMBED_TEXT_RE)) warnings.push({ kind: 'embed-inline', marker: x[0] });
+      else {
+        // Only text the reader sees counts: marker text in code (fenced, indented, inline, also inside a list or
+        // quote) is shown as code and is not a mistake (review REV-02). marked merges adjacent text tokens.
+        md.walkTokens([token], t => {
+          if (t.type === 'text' && !(t as Tokens.Text).tokens) {
+            for (const x of t.raw.matchAll(EMBED_TEXT_RE)) warnings.push({ kind: 'embed-inline', marker: x[0] });
+          }
+        });
       }
       group.push(token);
     }

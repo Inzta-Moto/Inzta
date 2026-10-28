@@ -174,7 +174,7 @@ export function markdownToDoc(md: string): JSONContent {
       }
       // Any other marker text (in a sentence, a list, a table, an invalid slug) stays verbatim: as editor text its
       // brackets would be escaped on save, and the renderer warning that blocks publishing (C-9) would be lost.
-      if (t.raw.search(EMBED_TEXT_RE) >= 0) {
+      if (t.raw.search(EMBED_TEXT_RE) >= 0 || t.raw.search(ESCAPED_MARKER) >= 0) {
         content.push(rawNode(t.raw));
         continue;
       }
@@ -220,9 +220,13 @@ const MARK_ORDER = ['link', 'bold', 'italic'] as const;
 const markOf = (node: JSONContent, type: string) => node.marks?.find(m => m.type === type);
 const sameMark = (a: Mark | undefined, b: Mark | undefined) => Boolean(a && b && a.attrs?.href === b.attrs?.href);
 
+// Marker text typed in the editor is written unescaped, so the renderer makes it a card or warns about it (C-9)
+// instead of publishing "[[produk:x]]" as silent text (review REV-01). A slug never contains "\\" or "]".
+const ESCAPED_MARKER = /\\\[\\\[((?:produk|artikel):[^\]\\\n]*)\\\]\\\]/gi;
+
 function leaf(node: JSONContent, inTable: boolean): string {
   if (node.type === 'hardBreak') return inTable ? ' ' : '\\\n';
-  return node.type === 'text' ? escapeText(node.text ?? '') : '';
+  return node.type === 'text' ? escapeText(node.text ?? '').replace(ESCAPED_MARKER, '[[$1]]') : '';
 }
 
 // Emphasis cannot start or end with whitespace, so outer spaces move outside the markers.

@@ -158,7 +158,7 @@ export default function ArticleEditor({ slug: routeSlug }: { slug?: string }) {
   const [loadError, setLoadError] = useState('');
   const [slugTouched, setSlugTouched] = useState(false);
   const [tab, setTab] = useState<'write' | 'preview'>('write');
-  const [preview, setPreview] = useState<{ blocks: RenderBlock[]; embeds: ArticleEmbeds; warnings: RenderWarning[] } | null>(null);
+  const [preview, setPreview] = useState<{ blocks: RenderBlock[]; embeds: ArticleEmbeds; embedsError?: boolean; warnings: RenderWarning[] } | null>(null);
   const [previewState, setPreviewState] = useState<'idle' | 'loading' | 'error'>('idle');
   const [previewError, setPreviewError] = useState('');
   const [busy, setBusy] = useState<null | 'save' | 'publish' | 'unpublish'>(null);
@@ -764,10 +764,10 @@ export default function ArticleEditor({ slug: routeSlug }: { slug?: string }) {
                   <div className="blog-detail blog-detail--column">
                     <ArticleHead article={{ ...draft, publishedAt: server?.publishedAt ?? null, createdAt: server?.createdAt ?? null }} />
                     {/* Already sanitized by the server (lib/markdown.ts); the client does not transform it. */}
-                    <ArticleBody blocks={preview.blocks} embeds={preview.embeds} className="blog-detail-content article-body" adminPreview />
+                    <ArticleBody blocks={preview.blocks} embeds={preview.embeds} embedsError={preview.embedsError} className="blog-detail-content article-body" adminPreview />
                   </div>
                 ) : (
-                  <ArticleBody blocks={preview.blocks} embeds={preview.embeds} className="article-body article-body-plain" adminPreview />
+                  <ArticleBody blocks={preview.blocks} embeds={preview.embeds} embedsError={preview.embedsError} className="article-body article-body-plain" adminPreview />
                 ))}
             </div>
             <p className="article-editor-footer">
