@@ -1,7 +1,7 @@
 import type { Article, ChecklistItem, ChecklistResult, RenderWarning } from '@/types';
 import { RESERVED_ARTICLE_SLUGS } from '@/lib/constants';
 import { SLUG_PATTERN } from '@/lib/slug';
-import { MAX_EMBEDS, extractBodyImages, formatOf, hasH1, isAllowedImageUrl, siteLinks } from '@/lib/article-format';
+import { MAX_EMBEDS, extractBodyImages, extractEmbeds, formatOf, hasH1, isAllowedImageUrl, siteLinks } from '@/lib/article-format';
 
 // Pre-publish checks (F-012 requirement 10), pure so the editor, PUT on a published article, and the
 // publish route all apply the same rules. Meta lengths follow ADR-0014: a guideline, never a block.
@@ -20,9 +20,10 @@ export interface ChecklistOptions {
   // The stored document ID of an existing article, which may predate the slug rule (F-000).
   legacySlugOk?: boolean;
   // F-013 phase C4: markers whose product or article would not show (missing, inactive, draft, this article),
-  // from the server resolver at publish or from the editor's list (C-9, requirement 22.1).
+  // from the server resolver at publish (C-9, requirement 22.1). The server's answer wins over publicTargets.
   missingEmbeds?: string[];
-  // Slugs of active products and published articles, known in the editor only (W-5, requirement 22.2).
+  // Slugs of active products and published articles, known in the editor only: W-5 (requirement 22.2), and C-9
+  // for the cards found by extractEmbeds() when missingEmbeds is not given.
   publicTargets?: { produk: string[]; artikel: string[] };
 }
 
@@ -78,7 +79,9 @@ export function runChecklist(article: ChecklistInput, opts: ChecklistOptions = {
     // F-013 phase C (K-5): marker problems come from the renderer, so like C-4 they are seen on the server.
     // Listed only when the body has a marker, so articles without cards keep their checklist.
     const embedProblems = warnings.filter((w): w is Extract<RenderWarning, { marker: string }> => 'marker' in w);
-    const missing = Array.from(new Set(opts.missingEmbeds || []));
+    const targets = opts.publicTargets;
+    const missing = Array.from(new Set(opts.missingEmbeds
+      ?? (targets ? extractEmbeds(content).filter(e => !targets[e.kind].includes(e.slug)).map(e => e.marker) : [])));
     if (embedProblems.length || missing.length || /\[\[(?:produk|artikel):/i.test(content)) {
       const detail = (kind: string, text: string) => {
         const markers = embedProblems.filter(w => w.kind === kind).map(w => w.marker);
