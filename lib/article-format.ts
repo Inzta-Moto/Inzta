@@ -132,6 +132,23 @@ export function resolveLayout(attrs: Partial<ImageLayout> | null | undefined): I
   return ukuran === 'penuh' ? { posisi: 'tengah', ukuran } : { posisi, ukuran };
 }
 
+/**
+ * One choice in the image dialog (requirement 5.2): picking Kiri or Kanan while Ukuran is Penuh switches
+ * Ukuran to Sedang; picking Penuh switches Posisi to Tengah. The result is always a resolved layout.
+ */
+export function changeLayout(current: Partial<ImageLayout> | null | undefined, change: Partial<ImageLayout>): ImageLayout {
+  const next = { ...resolveLayout(current) };
+  if (isPosition(change.posisi)) {
+    next.posisi = change.posisi;
+    if (change.posisi !== 'tengah' && next.ukuran === 'penuh') next.ukuran = 'sedang';
+  }
+  if (isSize(change.ukuran)) {
+    next.ukuran = change.ukuran;
+    if (change.ukuran === 'penuh') next.posisi = 'tengah';
+  }
+  return resolveLayout(next);
+}
+
 const isDefaultLayout = (l: ImageLayout) => l.posisi === DEFAULT_LAYOUT.posisi && l.ukuran === DEFAULT_LAYOUT.ukuran;
 
 /** Canonical attribute block (requirement 2.2): '' for the default layout, else "{posisi=<p> ukuran=<u>}". */

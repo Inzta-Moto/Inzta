@@ -411,6 +411,39 @@ check('F-013 helpers: countWords and firstLineSummary ignore block contents', ()
   assert.strictEqual(fmt.firstLineSummary(`![a](${CLD}){posisi=kiri}\n\nIsi pertama.`), 'Isi pertama.');
   assert.strictEqual(fmt.firstLineSummary(`Lihat ![a](${CLD}){posisi=kiri ukuran=kecil} foto ini.`), 'Lihat  foto ini.');
 });
+check('F-013 helpers: changeLayout() couples Posisi and Ukuran as the image dialog does (5.2)', () => {
+  const L = (posisi, ukuran) => ({ posisi, ukuran });
+  // Kiri or Kanan while Penuh -> Sedang; Tengah keeps Penuh.
+  assert.deepStrictEqual(fmt.changeLayout(fmt.DEFAULT_LAYOUT, { posisi: 'kiri' }), L('kiri', 'sedang'));
+  assert.deepStrictEqual(fmt.changeLayout(fmt.DEFAULT_LAYOUT, { posisi: 'kanan' }), L('kanan', 'sedang'));
+  assert.deepStrictEqual(fmt.changeLayout(fmt.DEFAULT_LAYOUT, { posisi: 'tengah' }), L('tengah', 'penuh'));
+  // Another size is kept when the position changes.
+  assert.deepStrictEqual(fmt.changeLayout(L('tengah', 'kecil'), { posisi: 'kanan' }), L('kanan', 'kecil'));
+  assert.deepStrictEqual(fmt.changeLayout(L('kiri', 'besar'), { posisi: 'kanan' }), L('kanan', 'besar'));
+  assert.deepStrictEqual(fmt.changeLayout(L('kanan', 'sedang'), { posisi: 'tengah' }), L('tengah', 'sedang'));
+  // Penuh -> Tengah; other sizes keep the position.
+  assert.deepStrictEqual(fmt.changeLayout(L('kanan', 'sedang'), { ukuran: 'penuh' }), L('tengah', 'penuh'));
+  assert.deepStrictEqual(fmt.changeLayout(L('kiri', 'kecil'), { ukuran: 'penuh' }), L('tengah', 'penuh'));
+  assert.deepStrictEqual(fmt.changeLayout(L('kiri', 'sedang'), { ukuran: 'besar' }), L('kiri', 'besar'));
+  assert.deepStrictEqual(fmt.changeLayout(fmt.DEFAULT_LAYOUT, { ukuran: 'kecil' }), L('tengah', 'kecil'));
+  // Every reachable state is a resolved layout, so the editor writes it back unchanged.
+  for (const posisi of POS) for (const ukuran of UK) {
+    const start = fmt.resolveLayout({ posisi, ukuran });
+    for (const p of POS) {
+      const next = fmt.changeLayout(start, { posisi: p });
+      assert.strictEqual(next.posisi, p, `${posisi}/${ukuran} -> posisi ${p}`);
+      assert.deepStrictEqual(fmt.resolveLayout(next), next);
+    }
+    for (const u of UK) {
+      const next = fmt.changeLayout(start, { ukuran: u });
+      assert.strictEqual(next.ukuran, u, `${posisi}/${ukuran} -> ukuran ${u}`);
+      assert.deepStrictEqual(fmt.resolveLayout(next), next);
+    }
+  }
+  // Values outside the lists change nothing; the shared default is not mutated.
+  assert.deepStrictEqual(fmt.changeLayout(L('kanan', 'kecil'), { posisi: 'atas', ukuran: 'x' }), L('kanan', 'kecil'));
+  assert.deepStrictEqual(fmt.DEFAULT_LAYOUT, { posisi: 'tengah', ukuran: 'penuh' });
+});
 
 // Checklist (requirement 10)
 const ok = {

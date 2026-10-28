@@ -427,7 +427,8 @@ export default function ArticleEditor({ slug: routeSlug }: { slug?: string }) {
   function onImageConfirm(value: ImageDialogValue) {
     const current = dialog;
     setDialog(null);
-    const md = imageMarkdown(value.url, value.alt, value.caption);
+    // F-013: the canonical attribute block for the chosen layout, none for the default (5.3, 5.4).
+    const md = imageMarkdown(value.url, value.alt, value.caption, value.layout);
     if (current?.type === 'image' && current.image) {
       if (!replaceImage(current.image, md)) return;
     } else {
@@ -727,7 +728,7 @@ export default function ArticleEditor({ slug: routeSlug }: { slug?: string }) {
         <ImageDialog
           title={dialog.image ? (dialog.image.kind === 'allowed' ? 'Edit gambar' : 'Unggah gambar') : 'Sisipkan gambar'}
           kind="body"
-          initial={dialog.image ? { url: dialog.image.url, alt: dialog.image.alt, caption: dialog.image.caption, fileName: dialog.image.fileName } : undefined}
+          initial={dialog.image ? { url: dialog.image.url, alt: dialog.image.alt, caption: dialog.image.caption, fileName: dialog.image.fileName, layout: dialog.image.layout } : undefined}
           returnFocusRef={textareaRef}
           onClose={() => setDialog(null)}
           onConfirm={onImageConfirm}

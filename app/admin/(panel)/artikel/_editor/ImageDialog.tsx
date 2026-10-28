@@ -2,7 +2,8 @@
 
 import { ChangeEvent, FormEvent, RefObject, useRef, useState } from 'react';
 import { ACCEPTED_IMAGE_TYPES, uploadImage } from '@/lib/cloudinary-upload';
-import { isAllowedImageUrl } from '@/lib/article-format';
+import { DEFAULT_LAYOUT, changeLayout, isAllowedImageUrl, resolveLayout } from '@/lib/article-format';
+import type { ImageLayout, ImagePosition, ImageSize } from '@/types';
 import Dialog from './Dialog';
 
 export interface ImageDialogValue {
@@ -11,25 +12,32 @@ export interface ImageDialogValue {
   caption: string;
   width?: number;
   asCover: boolean;
+  // F-013: resolved layout; DEFAULT_LAYOUT for the cover dialog, which has no layout choice.
+  layout: ImageLayout;
 }
 
 interface ImageDialogProps {
   title: string;
   // 'body' inserts or edits an image in the article; 'cover' sets the cover (no caption).
   kind: 'body' | 'cover';
-  initial?: { url?: string; alt?: string; caption?: string; fileName?: string };
+  initial?: { url?: string; alt?: string; caption?: string; fileName?: string; layout?: ImageLayout };
   returnFocusRef?: RefObject<HTMLElement>;
   onClose: () => void;
   onConfirm: (value: ImageDialogValue) => void;
 }
 
-// Follows the mockup's "Pengaturan gambar" panel without size, float, and link options (design.md).
+const POSITION_OPTIONS: [ImagePosition, string][] = [['kiri', 'Kiri'], ['tengah', 'Tengah'], ['kanan', 'Kanan']];
+const SIZE_OPTIONS: [ImageSize, string][] = [['kecil', 'Kecil 33%'], ['sedang', 'Sedang 50%'], ['besar', 'Besar 75%'], ['penuh', 'Penuh 100%']];
+
+// Follows the mockup's "Pengaturan gambar" panel. F-013 adds Posisi and Ukuran for body images; link
+// options are still out of scope (design.md).
 export default function ImageDialog({ title, kind, initial, returnFocusRef, onClose, onConfirm }: ImageDialogProps) {
   const startUrl = initial?.url && isAllowedImageUrl(initial.url) ? initial.url : '';
   const [url, setUrl] = useState(startUrl);
   const [alt, setAlt] = useState(initial?.alt || '');
   const [caption, setCaption] = useState(initial?.caption || '');
   const [asCover, setAsCover] = useState(false);
+  const [layout, setLayout] = useState<ImageLayout>(() => resolveLayout(initial?.layout ?? DEFAULT_LAYOUT));
   const [info, setInfo] = useState<{ name: string; size: number; width: number; height: number } | null>(null);
   const [progress, setProgress] = useState<number | null>(null);
   const [error, setError] = useState('');
@@ -60,7 +68,14 @@ export default function ImageDialog({ title, kind, initial, returnFocusRef, onCl
     if (uploading) return;
     if (!url) return setError('Unggah gambar dulu.');
     if (!alt.trim()) return setError('Teks alt wajib diisi.');
-    onConfirm({ url, alt: alt.trim(), caption: kind === 'body' ? caption.trim() : '', width: info?.width, asCover });
+    onConfirm({
+      url,
+      alt: alt.trim(),
+      caption: kind === 'body' ? caption.trim() : '',
+      width: info?.width,
+      asCover,
+      layout: kind === 'body' ? layout : DEFAULT_LAYOUT,
+    });
   };
 
   return (
@@ -107,6 +122,46 @@ export default function ImageDialog({ title, kind, initial, returnFocusRef, onCl
               <label className="form-label" htmlFor="image-caption">Caption (opsional)</label>
               <input id="image-caption" className="form-input" value={caption} onChange={e => setCaption(e.target.value)} maxLength={300} />
               <p className="article-editor-help">Tampil di bawah gambar.</p>
+            </div>
+            <fieldset className="article-editor-choice">
+              <legend className="form-label">Posisi</legend>
+              <div className="article-editor-choice-options">
+                {POSITION_OPTIONS.map(([value, label]) => (
+                  <label key={value}>
+                    <input
+                      type="radio"
+                      name="image-posisi"
+                      value={value}
+                      checked={layout.posisi === value}
+                      onChange={() => setLayout(l => changeLayout(l, { posisi: value }))}
+                    />
+                    {label}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+            <fieldset className="article-editor-choice">
+              <legend className="form-label">Ukuran</legend>
+              <div className="article-editor-choice-options">
+                {SIZE_OPTIONS.map(([value, label]) => (
+                  <label key={value}>
+                    <input
+                      type="radio"
+                      name="image-ukuran"
+                      value={value}
+                      checked={layout.ukuran === value}
+                      onChange={() => setLayout(l => changeLayout(l, { ukuran: value }))}
+                    />
+                    {label}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+            <div>
+              <p className="article-editor-help">Di HP gambar selalu tampil selebar layar.</p>
+              {layout.ukuran === 'besar' && layout.posisi !== 'tengah' && (
+                <p className="article-editor-help is-warn">Teks di sampingnya akan sempit.</p>
+              )}
             </div>
             <label className="article-editor-check">
               <input type="checkbox" checked={asCover} onChange={e => setAsCover(e.target.checked)} /> Jadikan juga gambar sampul
