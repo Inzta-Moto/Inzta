@@ -4,6 +4,7 @@ import BlogDetailClient from '@/app/blog/[slug]/BlogDetailClient';
 import { requireAdmin } from '@/lib/auth';
 import { getArticleForAdmin } from '@/lib/admin-articles';
 import { renderArticle } from '@/lib/markdown';
+import { resolveEmbeds } from '@/lib/article-embeds';
 import { statusOf } from '@/lib/article-format';
 
 // Stored article (draft or published) in the public layout, for admins only. Never cached and never
@@ -25,12 +26,16 @@ export default async function AdminArticlePreviewPage({ params }: { params: { sl
   const article = await getArticleForAdmin(params.slug);
   if (!article) notFound();
 
-  const { html } = renderArticle(article);
+  const { blocks } = renderArticle(article);
+  // Same cards as the public page would show (published articles and active products only).
+  const embeds = await resolveEmbeds(blocks, { exclude: article.slug });
   const { content, ...rest } = article;
   return (
     <BlogDetailClient
       article={rest}
-      bodyHtml={html}
+      blocks={blocks}
+      embeds={embeds}
+      adminPreview
       articleUrl={`${siteUrl}/blog/${params.slug}`}
       previewBanner={statusOf(article) !== 'published'}
     />

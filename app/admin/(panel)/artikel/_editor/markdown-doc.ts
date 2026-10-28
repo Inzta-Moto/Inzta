@@ -4,7 +4,8 @@
 
 import { Marked, type Token, type Tokens } from 'marked';
 import type { JSONContent } from '@tiptap/core';
-import { DEFAULT_LAYOUT, imageMarkdown, type BodyImage } from '@/lib/article-format';
+import { DEFAULT_LAYOUT, EMBED_LINE_RE, EMBED_TEXT_RE, imageMarkdown, type BodyImage } from '@/lib/article-format';
+import { SLUG_PATTERN } from '@/lib/slug';
 import { attachImageLayouts, type LayoutImage } from '@/lib/markdown-layout';
 import { encodeLinkUrl } from './markdown-edit';
 
@@ -144,6 +145,13 @@ const rawNode = (raw: string): JSONContent => {
   return text ? { type: 'rawMarkdown', content: [{ type: 'text', text }] } : { type: 'rawMarkdown' };
 };
 
+// F-013 phase C3: a top-level marker paragraph the renderer turns into a card (requirements 17.1, 18.2).
+function embedNode(t: Token): JSONContent | null {
+  if (t.type !== 'paragraph') return null;
+  const m = EMBED_LINE_RE.exec(t.raw.trim());
+  return m && SLUG_PATTERN.test(m[2]) ? { type: 'articleEmbed', attrs: { kind: m[1].toLowerCase(), slug: m[2] } } : null;
+}
+
 /** p(m): the editor document for Markdown `md`. Never throws; anything it cannot represent becomes a raw block. */
 export function markdownToDoc(md: string): JSONContent {
   const content: JSONContent[] = [];
@@ -159,6 +167,17 @@ export function markdownToDoc(md: string): JSONContent {
       }
     });
     for (const t of tokens) {
+      const embed = embedNode(t);
+      if (embed) {
+        content.push(embed);
+        continue;
+      }
+      // Any other marker text (in a sentence, a list, a table, an invalid slug) stays verbatim: as editor text its
+      // brackets would be escaped on save, and the renderer warning that blocks publishing (C-9) would be lost.
+      if (t.raw.search(EMBED_TEXT_RE) >= 0 || t.raw.search(ESCAPED_MARKER) >= 0) {
+        content.push(rawNode(t.raw));
+        continue;
+      }
       try {
         content.push(...block(t));
       } catch (e) {
@@ -201,9 +220,13 @@ const MARK_ORDER = ['link', 'bold', 'italic'] as const;
 const markOf = (node: JSONContent, type: string) => node.marks?.find(m => m.type === type);
 const sameMark = (a: Mark | undefined, b: Mark | undefined) => Boolean(a && b && a.attrs?.href === b.attrs?.href);
 
+// Marker text typed in the editor is written unescaped, so the renderer makes it a card or warns about it (C-9)
+// instead of publishing "[[produk:x]]" as silent text (review REV-01). A slug never contains "\\" or "]".
+const ESCAPED_MARKER = /\\\[\\\[((?:produk|artikel):[^\]\\\n]*)\\\]\\\]/gi;
+
 function leaf(node: JSONContent, inTable: boolean): string {
   if (node.type === 'hardBreak') return inTable ? ' ' : '\\\n';
-  return node.type === 'text' ? escapeText(node.text ?? '') : '';
+  return node.type === 'text' ? escapeText(node.text ?? '').replace(ESCAPED_MARKER, '[[$1]]') : '';
 }
 
 // Emphasis cannot start or end with whitespace, so outer spaces move outside the markers.
@@ -291,6 +314,11 @@ function blockMd(node: JSONContent, alt: boolean): string {
     case 'table': return tableMd(node);
     case 'articleImage': return imageMd(node);
     case 'rawMarkdown': return (node.content ?? []).map(t => t.text ?? '').join('');
+    case 'articleEmbed': {
+      // Canonical marker line; a slug outside SLUG_PATTERN (only possible in hand-built JSON) writes nothing.
+      const slug = String(node.attrs?.slug ?? '');
+      return SLUG_PATTERN.test(slug) ? `[[${node.attrs?.kind === 'artikel' ? 'artikel' : 'produk'}:${slug}]]` : '';
+    }
     default: return '';
   }
 }

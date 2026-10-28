@@ -263,8 +263,30 @@ export function imageMarkdown(url: string, alt: string, caption?: string, layout
   return `![${escapeAlt(alt)}](${url}${title})${layout ? layoutBlock(layout) : ''}`;
 }
 
+// F-013 phase C markers (requirement 17): EMBED_LINE_RE is a whole trimmed paragraph, EMBED_TEXT_RE any
+// marker text. The keyword is case-insensitive; the slug is checked against SLUG_PATTERN by the renderer.
+export const EMBED_LINE_RE = /^\[\[(produk|artikel):([^\]\s]*)\]\]$/i;
+export const EMBED_TEXT_RE = /\[\[(?:produk|artikel):[^\]\n]*\]\]/gi;
+export const MAX_EMBEDS = 10;
+const EMBED_LINES_RE = /^[ \t]*\[\[(?:produk|artikel):[^\]\s]*\]\][ \t]*$/gim;
+
+// F-013 phase C4 (W-5): Markdown links to an INZTA article or product page, outside fenced code. Paths with a
+// query or anchor are not matched, so they are never reported.
+const SITE_LINK_RE = /\]\(\s*<?\/(produk|blog)\/([a-z0-9]+(?:-[a-z0-9]+)*)\/?>?(?:\s+"(?:\\.|[^"\\])*")?\s*\)/g;
+export function siteLinks(content: string): Array<{ kind: 'produk' | 'artikel'; slug: string; path: string }> {
+  const text = content || '';
+  const fenced = fencedRanges(text);
+  const out: Array<{ kind: 'produk' | 'artikel'; slug: string; path: string }> = [];
+  for (const m of text.matchAll(SITE_LINK_RE)) {
+    if (inRanges(m.index ?? 0, fenced)) continue;
+    out.push({ kind: m[1] === 'produk' ? 'produk' : 'artikel', slug: m[2], path: `/${m[1]}/${m[2]}` });
+  }
+  return out;
+}
+
 export function countWords(content: string): number {
   const text = (content || '')
+    .replace(EMBED_LINES_RE, ' ')
     .replace(IMAGE_RE, ' ')
     .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
     .replace(/[#*_>`~\-|]+/g, ' ');
@@ -281,7 +303,7 @@ export const readingMinutes = (words: number) => Math.max(1, Math.round(words / 
 export function firstLineSummary(content: string, max = 160): string {
   for (const rawLine of (content || '').split(/\r?\n/)) {
     let line = rawLine.trim();
-    if (!line || /^(#|!\[|```|~~~|\|)/.test(line)) continue;
+    if (!line || /^(#|!\[|```|~~~|\|)/.test(line) || EMBED_LINE_RE.test(line)) continue;
     line = line
       .replace(/^([-*+]|\d+[.)])\s+/, '')
       .replace(IMAGE_RE, '')

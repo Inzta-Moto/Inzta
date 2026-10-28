@@ -54,7 +54,7 @@ export async function PUT(request: Request, { params }: { params: { slug: string
     // Saving a published article changes the live page at once, so it must pass the publish checks.
     const isPublic = statusOf(stored) === 'published';
     if (isPublic) {
-      const checks = serverPublishFailures(parsed.value);
+      const checks = await serverPublishFailures(parsed.value);
       if (checks.length) {
         return NextResponse.json({ error: 'Artikel yang sudah terbit belum lolos cek sebelum terbit', checks }, { status: 400 });
       }

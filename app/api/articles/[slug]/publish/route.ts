@@ -19,7 +19,7 @@ export async function POST(request: Request, { params }: { params: { slug: strin
     if (!existing.exists) return NextResponse.json({ error: NOT_FOUND }, { status: 404 });
     const stored = existing.data() ?? {};
 
-    const checks = serverPublishFailures({
+    const checks = await serverPublishFailures({
       title: stored.title,
       slug: params.slug,
       excerpt: stored.excerpt,

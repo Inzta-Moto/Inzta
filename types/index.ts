@@ -183,7 +183,38 @@ export type RenderWarning =
   | { kind: 'image-host' | 'placeholder' | 'inline-image'; src: string; alt: string }
   | { kind: 'raw-html' }
   // marked could not parse the body (e.g. nesting deep enough to overflow the stack).
-  | { kind: 'render-error' };
+  | { kind: 'render-error' }
+  // F-013 phase C: a [[produk:…]] / [[artikel:…]] marker that is not alone in its paragraph, has an invalid
+  // slug, or comes after the 10th marker. Each blocks publishing through C-9.
+  | { kind: 'embed-inline' | 'embed-invalid' | 'embed-limit'; marker: string };
+
+// F-013 phase C: renderArticle() output in Markdown order. HTML blocks are sanitized; cards are data only.
+export type EmbedKind = 'product' | 'article';
+export type RenderBlock = { type: 'html'; html: string } | { type: EmbedKind; slug: string };
+
+// Card data from lib/article-embeds.ts (server). Only what the cards render, nothing internal.
+export interface ProductEmbed {
+  slug: string;
+  name: string;
+  image: string | null;
+  price: number | null;
+  priceTo: number | null;
+  compareAtPrice: number | null;
+  inStock: boolean;
+}
+
+export interface ArticleEmbed {
+  slug: string;
+  title: string;
+  excerpt: string;
+  image: string | null;
+  date: number | null;
+}
+
+export interface ArticleEmbeds {
+  products: Record<string, ProductEmbed>;
+  articles: Record<string, ArticleEmbed>;
+}
 
 export interface ChecklistItem {
   id: string;
