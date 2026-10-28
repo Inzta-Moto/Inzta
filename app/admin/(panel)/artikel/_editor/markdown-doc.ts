@@ -171,8 +171,9 @@ export function markdownToDoc(md: string): JSONContent {
   return { type: 'doc', content: content.length ? content : [paragraph([])] };
 }
 
-/** Number of raw blocks in a document, for the notice above the editor (requirement 9.8). */
-export const countRawBlocks = (doc: JSONContent) => (doc.content ?? []).filter(n => n.type === 'rawMarkdown').length;
+/** Number of raw blocks in a document, at any depth (a paste into a list item lands there), for the notice (9.8). */
+export const countRawBlocks = (node: JSONContent): number =>
+  (node.content ?? []).reduce((n, child) => n + (child.type === 'rawMarkdown' ? 1 : countRawBlocks(child)), 0);
 
 // ---------------------------------------------------------------------------------------------------------
 // Document -> Markdown

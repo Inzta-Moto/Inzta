@@ -493,47 +493,8 @@ check('F-013 helpers: placeholder upload keeps alt, caption, and layout, written
     assert.ok(!out.html.includes('{'), block);
   }
 });
-// F-013 review ERR-01: "Sisipkan gambar" with the caret inside an image used to split it from its block.
-check('F-013 editor: insertionPoint() moves a caret inside an image to its end; blockEdit then keeps the layout', () => {
-  const { insertionPoint, blockEdit } = require(path.join(ROOT, 'app/admin/(panel)/artikel/_editor/markdown-edit.ts'));
-  const CLD2 = 'https://res.cloudinary.com/dukddlp0b/image/upload/v1/inzta/baru.jpg';
-  const image = `![Tas samping](${CLD} "Foto: INZTA"){posisi=kanan ukuran=sedang}`;
-  const content = `Paragraf pembuka.\n\n${image}\n\nTeks di samping.`;
-  const start = content.indexOf('![');
-  const end = start + image.length;
-  const inside = [
-    ['right after ")" before the block', content.indexOf('){') + 1],
-    ['inside the block', content.indexOf('ukuran=sedang')],
-    ['inside the alt', content.indexOf('samping]')],
-    ['inside the caption', content.indexOf('INZTA"')],
-    ['inside the URL', content.indexOf('foto.jpg')],
-  ];
-  for (const [name, pos] of inside) {
-    assert.ok(pos > start && pos < end, name);
-    assert.strictEqual(insertionPoint(content, pos), end, name);
-    // The editor's path: insert at the returned point, then both images keep alt, caption, and layout.
-    const at = insertionPoint(content, pos);
-    const edit = blockEdit(content, at, at, fmt.imageMarkdown(CLD2, 'Baru', '', fmt.DEFAULT_LAYOUT));
-    const after = content.slice(0, edit.start) + edit.text + content.slice(edit.end);
-    const imgs = fmt.extractBodyImages(after);
-    assert.deepStrictEqual(imgs.map(i => [i.url, i.alt, i.caption, i.layout]), [
-      [CLD, 'Tas samping', 'Foto: INZTA', { posisi: 'kanan', ukuran: 'sedang' }],
-      [CLD2, 'Baru', '', fmt.DEFAULT_LAYOUT],
-    ], name);
-    const out = md(after);
-    assert.deepStrictEqual(out.warnings, [], name);
-    assert.ok(!/[{}]|posisi/.test(out.html), `${name}: ${out.html}`);
-  }
-  // Outside an image the caret is kept, including exactly at its start or end (A7b: never over a selection).
-  for (const pos of [0, 5, start, end, end + 2, content.length]) assert.strictEqual(insertionPoint(content, pos), pos, String(pos));
-  // No block, two images, and an image inside fenced code (not an image, so the caret stays).
-  const two = `![a](${CLD})\n\n![b](${CLD2})`;
-  assert.strictEqual(insertionPoint(two, 3), two.indexOf('\n'));
-  assert.strictEqual(insertionPoint(two, two.length - 2), two.length);
-  const fenced = '```\n![a](' + CLD + '){posisi=kanan}\n```';
-  assert.strictEqual(insertionPoint(fenced, fenced.indexOf('{')), fenced.indexOf('{'));
-  assert.strictEqual(insertionPoint('', 0), 0);
-});
+// F-013 review ERR-01 (insertionPoint) moved to the visual editor in phase B: an image is a node there, so a caret
+// cannot be inside one (requirement 9.6, checked in the browser).
 
 // Checklist (requirement 10)
 const ok = {

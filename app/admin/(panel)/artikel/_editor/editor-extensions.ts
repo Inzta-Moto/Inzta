@@ -45,16 +45,19 @@ export const ArticleImage = Node.create<ArticleImageOptions>({
         getAttrs: el => {
           const img = el.querySelector('img');
           if (!img) return false;
-          return { src: img.getAttribute('src') || '', alt: img.getAttribute('alt') || '', caption: el.querySelector('figcaption')?.textContent?.trim() || '', ...fromClasses(el) };
+          return { src: img.getAttribute('src') || img.getAttribute('data-src') || '', alt: img.getAttribute('alt') || '', caption: el.querySelector('figcaption')?.textContent?.trim() || '', ...fromClasses(el) };
         },
       },
       { tag: 'img[src]', getAttrs: el => ({ src: el.getAttribute('src') || '', alt: el.getAttribute('alt') || '' }) },
+      { tag: 'img[data-src]', getAttrs: el => ({ src: el.getAttribute('data-src') || '', alt: el.getAttribute('alt') || '' }) },
     ];
   },
 
   renderHTML({ HTMLAttributes: a }) {
     const classes = layoutClasses(layoutOf(a));
-    const img = ['img', { src: a.src, alt: a.alt }];
+    // Serialized HTML (copy, drag) is parsed into detached elements, which still load their src; placeholders and other
+    // hosts would request a missing or foreign file, so they keep the path in data-src.
+    const img = ['img', isAllowedImageUrl(a.src) ? { src: a.src, alt: a.alt } : { 'data-src': a.src, alt: a.alt }];
     return ['figure', classes.length ? { class: classes.join(' ') } : {}, img, ...(a.caption ? [['figcaption', {}, a.caption]] : [])] as any;
   },
 
@@ -183,7 +186,12 @@ export function articleExtensions(options: ArticleImageOptions = {}) {
       heading: { levels: [2, 3] },
       link: { openOnClick: false, autolink: false, linkOnPaste: true, HTMLAttributes: { rel: null, target: null } },
     }),
-    Table.configure({ resizable: false }),
+    // Tab in the last cell leaves the table instead of adding a row, so keyboard users are never trapped.
+    Table.extend({
+      addKeyboardShortcuts() {
+        return { ...this.parent?.(), Tab: () => this.editor.commands.goToNextCell(), 'Shift-Tab': () => this.editor.commands.goToPreviousCell() };
+      },
+    }).configure({ resizable: false }),
     TableRow,
     TableHeader.extend(cellContent),
     TableCell.extend(cellContent),

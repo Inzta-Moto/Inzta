@@ -403,6 +403,26 @@ select.form-input { appearance: none; background-image: url("data:image/svg+xml,
 .md-toolbar.tips-hidden .md-toolbar-btn::after, .md-toolbar.tips-hidden .md-toolbar-btn::before { content: none; }
 .article-editor-textarea { display: block; min-height: 420px; padding: 16px; font-size: 15px; line-height: 1.7; border: none; border-radius: 0; background: var(--bg-white); resize: none; overflow: hidden; }
 .article-editor-textarea:focus { box-shadow: none; }
+/* F-013 phase B: the visual editor. It carries .article-body, so headings, lists, tables, figures, and floats look as on
+   the page (requirement 9.4); the rules below only add editing affordances. */
+.article-editor-visual { min-height: 420px; padding: 16px; background: var(--bg-white); outline: none; white-space: pre-wrap; word-wrap: break-word; }
+.article-editor-visual > :first-child { margin-top: 0; }
+.article-editor-visual td p, .article-editor-visual th p { margin: 0; }
+.article-editor-visual .selectedCell { background: var(--accent-light); }
+.article-editor-visual .ProseMirror-gapcursor { position: relative; }
+.article-editor-visual .ProseMirror-gapcursor::after { content: ''; position: absolute; top: -2px; width: 20px; border-top: 1px solid var(--text-primary); animation: article-editor-blink 1.1s steps(2, start) infinite; }
+@keyframes article-editor-blink { to { visibility: hidden; } }
+.article-editor-figure { position: relative; cursor: pointer; }
+.article-editor-figure.is-selected { outline: 2px solid var(--text-primary); outline-offset: 2px; }
+.article-editor-figure-edit { position: absolute; top: 8px; right: 8px; display: none; font-size: 11px; padding: 4px 10px; background: var(--bg-white); }
+.article-editor-figure.is-selected .article-editor-figure-edit, .article-editor-figure:hover .article-editor-figure-edit { display: inline-flex; }
+.article-editor-figure-missing { padding: 24px 16px; font-size: 13px; text-align: center; color: #92400E; background: var(--accent-light); border: 1px dashed var(--accent-border); border-radius: 4px; }
+.article-editor-raw { position: relative; margin: 1.1em 0; padding: 28px 12px 12px; font: 13px/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; white-space: pre-wrap; color: var(--text-primary); background: var(--bg-subtle); border: 1px dashed var(--border-light); border-radius: 4px; }
+.article-editor-raw::before { content: 'Markdown mentah'; position: absolute; top: 6px; left: 12px; font-family: system-ui, sans-serif; font-size: 11px; font-weight: 600; line-height: 1; color: var(--text-tertiary); }
+.article-editor-raw-notice { margin: 12px 16px 0; }
+.md-toolbar-btn[aria-pressed="true"] { color: var(--text-primary); background: var(--bg-white); border-color: var(--border-light); }
+.md-toolbar-btn:disabled { opacity: 0.4; cursor: default; }
+.md-toolbar-group { display: inline-flex; gap: 2px; padding-left: 6px; margin-left: 4px; border-left: 1px solid var(--border-light); }
 .article-editor-body:focus-within { border-color: var(--text-secondary); box-shadow: 0 0 0 1px var(--text-secondary); }
 .article-editor-preview-wrap { padding: 16px 20px; min-height: 420px; }
 .article-editor-warnings { margin-bottom: 16px; padding: 10px 12px 10px 28px; font-size: 12px; color: #92400E; list-style: disc; background: var(--accent-light); border: 1px solid var(--accent-border); border-radius: 4px; }

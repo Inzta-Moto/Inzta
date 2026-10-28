@@ -135,6 +135,13 @@ for (const [name, md] of Object.entries(RAW_CASES)) {
     assert.ok(out.includes(md), out);
   });
 }
+check('countRawBlocks counts raw blocks inside list items too', () => {
+  const doc = { type: 'doc', content: [{ type: 'bulletList', attrs: { tight: false }, content: [{ type: 'listItem', content: [
+    { type: 'paragraph', content: [{ type: 'text', text: 'a' }] }, { type: 'rawMarkdown', content: [{ type: 'text', text: '> q' }] }] }] }, { type: 'rawMarkdown' }] };
+  assert.strictEqual(countRawBlocks(doc), 2);
+  assert.strictEqual(s(doc), '- a\n\n  > q');
+  PMNode.fromJSON(schema, doc).check();
+});
 check('the lexer failing (deep nesting) keeps the whole body as one raw block', () => {
   const md = '> '.repeat(5000) + 'x';
   const quiet = console.error;
