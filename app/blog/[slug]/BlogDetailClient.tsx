@@ -10,6 +10,7 @@ import { PublicArticle } from '@/types';
 import { ArrowLeft, Calendar } from 'lucide-react';
 import { formatDate, optimizeCloudinaryUrl, generateCloudinarySrcSet } from '@/lib/utils';
 import { formatOf, publicDate } from '@/lib/article-format';
+import ArticleHead from './ArticleHead';
 
 interface BlogDetailProps {
   // Without content: the body arrives as bodyHtml, rendered and sanitized on the server (lib/markdown.ts).
@@ -55,26 +56,15 @@ export default function BlogDetailClient({ article, bodyHtml, articleUrl, previe
           {previewBanner && (
             <p className="article-preview-banner" role="status">Pratinjau, belum tayang. Halaman ini hanya terlihat oleh admin.</p>
           )}
+          {isMarkdown ? (
+            <ArticleHead article={a} />
+          ) : (
           <div className="blog-detail-header">
             <h1 className="blog-detail-title">{a.title}</h1>
             <div className="blog-card-meta" style={{ marginBottom: '24px' }}>
               <Calendar size={14} /> {formatDate(publicDate(a), { day: 'numeric', month: 'long', year: 'numeric' })}
             </div>
 
-            {isMarkdown && a.coverImage && (
-              <div className="blog-detail-gallery">
-                <div className="blog-detail-image-main">
-                  <img
-                    src={optimizeCloudinaryUrl(a.coverImage, 1200)}
-                    srcSet={generateCloudinarySrcSet(a.coverImage, [600, 1000, 1200, 1600])}
-                    // Matches the rendered width: .container is 1280 px with 48 px side padding from 768 px.
-                    sizes="(max-width: 767px) calc(100vw - 48px), min(calc(100vw - 96px), 1184px)"
-                    alt={a.coverAlt || ''}
-                  />
-                </div>
-              </div>
-            )}
-            
             {/* GALLERY GAMBAR (1 BESAR, SISANYA KECIL) */}
             {images.length > 0 && (
               <div className="blog-detail-gallery">
@@ -107,6 +97,7 @@ export default function BlogDetailClient({ article, bodyHtml, articleUrl, previe
               </div>
             )}
           </div>
+          )}
           
           <div
             className={`blog-detail-content article-body${isMarkdown ? '' : ' article-body-plain'}`}
