@@ -131,6 +131,10 @@ function renderMarkdown(content: string): RenderResult {
   md.use({
     // Runs on a parent before its children, so the block is gone before the renderer sees the tokens.
     walkTokens(token) {
+      // After an inline raw <pre>, <code>, <kbd>, or <script>, marked marks the following text `escaped` and
+      // the text renderer would emit it unescaped, so a tag fragment there reached the sanitizer as a tag.
+      // Clearing the flag makes the renderer escape it like any other text; the reader still sees it.
+      if (token.type === 'text' && (token as Tokens.Text).escaped) (token as Tokens.Text).escaped = false;
       // Paragraphs, list-item text, links, emphasis, headings: anything with inline child tokens.
       if ('tokens' in token && Array.isArray(token.tokens)) attachImageLayouts(token.tokens);
       // Table cells are not passed to the callback themselves, only their children.

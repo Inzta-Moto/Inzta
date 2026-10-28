@@ -119,6 +119,24 @@ check('raw HTML inside a list item, heading, and emphasis is dropped too', () =>
   assert.ok(!/onerror|<script|onmouseover|<img|<b /i.test(html), html);
   assertAllowlisted(html);
 });
+// F-013 review SEC-01: after an inline raw <pre>/<code>/<kbd>/<script>, marked emits the following text
+// unescaped, so an unclosed tag fragment there used to reach the sanitizer as a real tag.
+check('text after an inline raw tag is escaped: no <figure>/<h2> from an unclosed fragment (review SEC-01)', () => {
+  const cases = [
+    ['x <pre> <figure class="article-figure--kiri evil" style="float:left"', '&lt;figure class="article-figure--kiri evil" style="float:left"'],
+    ['x <code> <h2', '&lt;h2'],
+    ['x <script> <figure class="article-figure--kanan"', '&lt;figure class="article-figure--kanan"'],
+    ['- a <kbd> <h2\n- b', '&lt;h2'],
+    ['| A |\n|---|\n| x <pre> <figure class="article-figure--kiri" |', '&lt;figure class="article-figure--kiri"'],
+  ];
+  for (const [src, shown] of cases) {
+    const { html, warnings } = md(src);
+    assert.ok(!/<figure|<h2/i.test(html), `${JSON.stringify(src)} -> ${html}`);
+    assert.ok(html.includes(shown), `text must stay visible, escaped: ${JSON.stringify(src)} -> ${html}`);
+    assert.ok(warnings.some(w => w.kind === 'raw-html'), JSON.stringify(src));
+    assertAllowlisted(html);
+  }
+});
 check('sanitizer layer alone: foreign src or srcset candidate, javascript: href, attributes outside the allowlist', () => {
   const { sanitizeArticleHtml } = require(path.join(ROOT, 'lib/markdown.ts'));
   const okSet = `${CLD.replace('upload/', 'upload/f_auto,q_auto,w_480/')} 480w, ${CLD.replace('upload/', 'upload/f_auto,q_auto,w_800/')} 800w`;
