@@ -1,6 +1,7 @@
 import { getAdminDb, hasAdminCredentials } from '@/lib/firebaseAdmin';
 import { toMillis, toPublicArticle } from '@/lib/article-format';
 import { renderArticle } from '@/lib/markdown';
+import { resolveEmbeds } from '@/lib/article-embeds';
 import { failedChecks, runChecklist, type ChecklistInput } from '@/lib/article-checklist';
 import type { ChecklistItem, PublicArticle } from '@/types';
 
@@ -30,10 +31,20 @@ export async function getArticleForAdmin(slug: string): Promise<PublicArticle | 
   return doc.exists ? toPublicArticle(doc.id, doc.data() ?? {}) : null;
 }
 
-/** Blocking checks plus renderer warnings: any image the renderer would drop also blocks publishing. */
-export function serverPublishFailures(article: ChecklistInput): ChecklistItem[] {
-  const { warnings } = renderArticle(article);
-  return failedChecks(runChecklist(article, { renderWarnings: warnings, legacySlugOk: true }));
+/**
+ * Blocking checks plus renderer warnings: any image the renderer would drop also blocks publishing. F-013 phase C4:
+ * a card whose product or article the public page would not show (missing, inactive, draft, this article) blocks
+ * too (C-9); the targets are read with the same resolver as the page, in one getAll.
+ */
+export async function serverPublishFailures(article: ChecklistInput): Promise<ChecklistItem[]> {
+  const { warnings, blocks } = renderArticle(article);
+  const embeds = await resolveEmbeds(blocks, { exclude: article.slug });
+  const missingEmbeds = blocks.flatMap(b =>
+    b.type === 'product' && !embeds.products[b.slug] ? [`[[produk:${b.slug}]]`]
+      : b.type === 'article' && !embeds.articles[b.slug] ? [`[[artikel:${b.slug}]]`]
+        : [],
+  );
+  return failedChecks(runChecklist(article, { renderWarnings: warnings, legacySlugOk: true, missingEmbeds }));
 }
 
 // Firestore precondition codes: the document changed after it was read (FAILED_PRECONDITION).

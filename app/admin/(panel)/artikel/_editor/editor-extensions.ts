@@ -7,6 +7,7 @@ import StarterKit from '@tiptap/starter-kit';
 import { Table, TableCell, TableHeader, TableRow } from '@tiptap/extension-table';
 import { isAllowedImageUrl, layoutClasses, resolveLayout } from '@/lib/article-format';
 import { optimizeCloudinaryUrl } from '@/lib/utils';
+import { SLUG_PATTERN } from '@/lib/slug';
 
 export interface ArticleImageOptions {
   // Opens the image dialog for the image node at `pos` (B-8).
@@ -133,6 +134,150 @@ export const ArticleImage = Node.create<ArticleImageOptions>({
   },
 });
 
+// F-013 phase C3: a [[produk:slug]] / [[artikel:slug]] card (requirement 21). `kind` uses the Markdown keyword.
+export type EmbedMdKind = 'produk' | 'artikel';
+
+// What the editor knows about a card's target: undefined while the list is loading, null when the slug is not
+// in it, `unavailable` when the public page will not show the card (inactive, draft, this article).
+export interface EmbedInfo {
+  title: string;
+  image: string | null;
+  unavailable?: string;
+}
+
+export interface EmbedCatalogSource {
+  get: (kind: EmbedMdKind, slug: string) => EmbedInfo | null | undefined;
+  // Node views re-render when the list arrives.
+  subscribe: (fn: () => void) => () => void;
+}
+
+export interface ArticleEmbedOptions {
+  // Opens the picker for the card at `pos` ("Ganti", or Enter on a selected card).
+  onEdit?: (pos: number) => void;
+  catalog?: EmbedCatalogSource;
+}
+
+export const isEmbedKind = (v: unknown): v is EmbedMdKind => v === 'produk' || v === 'artikel';
+export const embedPath = (kind: EmbedMdKind, slug: string) => `/${kind === 'produk' ? 'produk' : 'blog'}/${slug}`;
+
+/**
+ * A product or "Baca juga" card. Group `embed` is allowed only directly in the document (ArticleDocument), so a
+ * card can never end up inside a list or a table cell, where the renderer would show the marker as text (17.3).
+ */
+export const ArticleEmbed = Node.create<ArticleEmbedOptions>({
+  name: 'articleEmbed',
+  group: 'embed',
+  atom: true,
+  draggable: true,
+  selectable: true,
+
+  addOptions() {
+    return { onEdit: undefined, catalog: undefined };
+  },
+
+  addAttributes() {
+    return { kind: { default: 'produk' }, slug: { default: '' } };
+  },
+
+  parseHTML() {
+    return [
+      {
+        tag: 'div[data-embed]',
+        getAttrs: el => {
+          const kind = el.getAttribute('data-embed');
+          const slug = el.getAttribute('data-slug') || '';
+          return isEmbedKind(kind) && SLUG_PATTERN.test(slug) ? { kind, slug } : false;
+        },
+      },
+    ];
+  },
+
+  renderHTML({ HTMLAttributes: a }) {
+    return ['div', { 'data-embed': a.kind, 'data-slug': a.slug }, `[[${a.kind}:${a.slug}]]`];
+  },
+
+  addKeyboardShortcuts() {
+    return {
+      Enter: ({ editor }) => {
+        const sel = editor.state.selection;
+        if (!(sel instanceof NodeSelection) || sel.node.type.name !== this.name || !this.options.onEdit) return false;
+        this.options.onEdit(sel.from);
+        return true;
+      },
+    };
+  },
+
+  addNodeView() {
+    return ({ node: initial, getPos, editor }) => {
+      let node = initial;
+      const dom = document.createElement('div');
+      dom.contentEditable = 'false';
+      const pos = () => (typeof getPos === 'function' ? getPos() : undefined);
+      const button = (label: string, onClick: () => void) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'btn btn-ghost article-editor-embed-btn';
+        b.textContent = label;
+        b.addEventListener('mousedown', e => e.preventDefault());
+        b.addEventListener('click', onClick);
+        return b;
+      };
+      const render = () => {
+        const kind: EmbedMdKind = isEmbedKind(node.attrs.kind) ? node.attrs.kind : 'produk';
+        const slug = String(node.attrs.slug);
+        const info = this.options.catalog?.get(kind, slug);
+        const hidden = info === null ? 'Tidak ditemukan' : info?.unavailable;
+        dom.className = `article-editor-embed${hidden ? ' is-missing' : ''}`;
+        const parts: HTMLElement[] = [];
+        if (info?.image && /^https:\/\//.test(info.image)) {
+          const img = document.createElement('img');
+          img.src = optimizeCloudinaryUrl(info.image, 120, 120);
+          img.alt = '';
+          img.draggable = false;
+          parts.push(img);
+        }
+        const text = document.createElement('span');
+        text.className = 'article-editor-embed-text';
+        const label = document.createElement('span');
+        label.className = 'article-editor-embed-label';
+        label.textContent = kind === 'produk' ? 'Kartu produk' : 'Kartu Baca juga';
+        const title = document.createElement('strong');
+        title.textContent = info ? info.title : slug;
+        const meta = document.createElement('span');
+        meta.className = 'article-editor-embed-meta';
+        meta.textContent = hidden ? `${hidden}: ${embedPath(kind, slug)}. Kartu tidak tampil di halaman publik.` : embedPath(kind, slug);
+        text.append(label, title, meta);
+        parts.push(text);
+        parts.push(button('Ganti', () => { const p = pos(); if (typeof p === 'number') this.options.onEdit?.(p); }));
+        parts.push(button('Hapus', () => {
+          const p = pos();
+          if (typeof p === 'number') editor.chain().focus().deleteRange({ from: p, to: p + node.nodeSize }).run();
+        }));
+        dom.replaceChildren(...parts);
+      };
+      render();
+      const unsubscribe = this.options.catalog?.subscribe(render);
+      return {
+        dom,
+        update: updated => {
+          if (updated.type !== node.type) return false;
+          node = updated;
+          render();
+          return true;
+        },
+        selectNode: () => dom.classList.add('is-selected'),
+        deselectNode: () => dom.classList.remove('is-selected'),
+        stopEvent: e => e.target instanceof HTMLElement && e.target.closest('button') !== null,
+        ignoreMutation: () => true,
+        destroy: () => unsubscribe?.(),
+      };
+    };
+  },
+});
+
+// Cards sit only between top-level blocks (see ArticleEmbed).
+const ArticleDocument = Node.create({ name: 'doc', topNode: true, content: '(block | embed)+' });
+
 /** Markdown the editor cannot represent, kept verbatim and editable as text (B-4, requirement 9.8). */
 export const RawMarkdown = Node.create({
   name: 'rawMarkdown',
@@ -173,9 +318,11 @@ const ListTightness = Extension.create({
 // Cells hold text only, as a GFM pipe table can (no lists or images in a cell).
 const cellContent = { content: 'paragraph+' };
 
-export function articleExtensions(options: ArticleImageOptions = {}) {
+export function articleExtensions(options: ArticleImageOptions & { onEditEmbed?: (pos: number) => void; catalog?: EmbedCatalogSource } = {}) {
   return [
+    ArticleDocument,
     StarterKit.configure({
+      document: false,
       // Outside the F-012 subset: the sanitizer drops these tags, so the editor must not create them.
       blockquote: false,
       code: false,
@@ -195,7 +342,8 @@ export function articleExtensions(options: ArticleImageOptions = {}) {
     TableRow,
     TableHeader.extend(cellContent),
     TableCell.extend(cellContent),
-    ArticleImage.configure(options),
+    ArticleImage.configure({ onEdit: options.onEdit }),
+    ArticleEmbed.configure({ onEdit: options.onEditEmbed, catalog: options.catalog }),
     RawMarkdown,
     ListTightness,
   ];

@@ -13,7 +13,7 @@ export { toMillis, toPublicArticle };
 // on Vercel Production, where an empty home page and a 404 for every article would be cached for an hour.
 // With credentials, errors propagate on purpose: a failed build keeps the previous deployment, and a
 // failed background regeneration keeps the last good page in the ISR cache instead of an empty one.
-async function readPublic<T>(label: string, read: () => Promise<T>, empty: T): Promise<T> {
+export async function readPublic<T>(label: string, read: () => Promise<T>, empty: T): Promise<T> {
   if (!hasAdminCredentials()) {
     if (process.env.VERCEL_ENV === 'production') {
       throw new Error(`[public-content] ${label}: Firebase Admin credentials missing in production`);

@@ -282,6 +282,69 @@ check('imageOccurrence: n-th image with the same src and alt', () => {
   assert.deepStrictEqual(imgs.map(i => imageOccurrence(imgs, i)), [0, 0, 1]);
 });
 
+// F-013 phase C3 (requirements 21.1, 22.4): card nodes round-trip to the canonical marker line.
+const blocksOf = md => render(md).blocks.map(b => (b.type === 'html' ? 'html' : `${b.type}:${b.slug}`));
+function roundTripCards(md) {
+  const out = roundTrip(md);
+  assert.deepStrictEqual(blocksOf(out), blocksOf(md), `cards changed:\n${out}`);
+  return out;
+}
+check('C3: valid markers load as card nodes and are written back as the same marker lines', () => {
+  const md = 'Pembuka.\n\n[[produk:side-bag-z10]]\n\n## Lanjut\n\n[[artikel:cara-pasang]]\n\n[[produk:a]]\n\nPenutup.';
+  const doc = p(md);
+  assert.deepStrictEqual(doc.content.filter(n => n.type === 'articleEmbed').map(n => n.attrs), [
+    { kind: 'produk', slug: 'side-bag-z10' }, { kind: 'artikel', slug: 'cara-pasang' }, { kind: 'produk', slug: 'a' },
+  ]);
+  assert.strictEqual(roundTripCards(md), md);
+  assert.strictEqual(countRawBlocks(doc), 0);
+});
+check('C3: keyword case and spaces are normalised; the card stays the same', () => {
+  assert.strictEqual(roundTripCards('  [[PRODUK:a]]  \n\n[[Artikel:b]]'), '[[produk:a]]\n\n[[artikel:b]]');
+});
+check('C3: markers the renderer shows as text stay verbatim (raw), so their warning is kept', () => {
+  for (const md of ['Lihat [[produk:a]] ya.', '- [[produk:a]]', '[[produk:A_B]]', '| x |\n|---|\n| [[artikel:b]] |', 'Teks\n[[produk:a]]']) {
+    const out = roundTripCards(`Sebelum.\n\n${md}\n\nSesudah.`);
+    assert.ok(out.includes(md), out);
+    assert.ok(render(out).warnings.some(w => w.kind.startsWith('embed-')), md);
+  }
+});
+check('C3: an escaped marker in Markdown stays verbatim (raw block), so it is not turned into a card', () => {
+  const md = '\\[\\[produk:a\\]\\]';
+  assert.strictEqual(roundTripCards(md), md);
+  assert.strictEqual(p(md).content[0].type, 'rawMarkdown');
+});
+check('review REV-01: marker text typed in the editor is written unescaped: a card alone, a C-9 warning inline', () => {
+  const para = text => ({ type: 'paragraph', content: [{ type: 'text', text }] });
+  const alone = s({ type: 'doc', content: [para('[[produk:a]]')] });
+  assert.strictEqual(alone, '[[produk:a]]');
+  assert.deepStrictEqual(blocksOf(alone), ['product:a']);
+  const inline = s({ type: 'doc', content: [para('Lihat [[produk:a]] ya, [teks] tetap.')] });
+  assert.strictEqual(inline, 'Lihat [[produk:a]] ya, \\[teks\\] tetap.');
+  assert.deepStrictEqual(render(inline).warnings.map(w => w.kind), ['embed-inline']);
+  const inList = s({ type: 'doc', content: [{ type: 'bulletList', content: [{ type: 'listItem', content: [para('[[artikel:b]]')] }] }] });
+  assert.deepStrictEqual(render(inList).warnings.map(w => w.kind), ['embed-inline']);
+  // Loading it back keeps it as the editor will show it: a card, or a raw block with the warning.
+  assert.strictEqual(p(alone).content[0].type, 'articleEmbed');
+  assert.strictEqual(roundTripCards(inline), inline);
+});
+check('C3: cards are allowed only at the top level of the schema', () => {
+  const card = { type: 'articleEmbed', attrs: { kind: 'produk', slug: 'a' } };
+  PMNode.fromJSON(schema, { type: 'doc', content: [card] }).check();
+  const inList = { type: 'doc', content: [{ type: 'bulletList', content: [{ type: 'listItem', content: [{ type: 'paragraph' }, card] }] }] };
+  assert.throws(() => PMNode.fromJSON(schema, inList).check());
+  const inCell = { type: 'doc', content: [{ type: 'table', content: [{ type: 'tableRow', content: [{ type: 'tableHeader', content: [card] }] }] }] };
+  assert.throws(() => PMNode.fromJSON(schema, inCell).check());
+});
+check('C3: a card with a slug outside SLUG_PATTERN writes nothing (no Markdown injection)', () => {
+  for (const slug of ['', 'A', 'a]]\n\n<script>', '../x', 'a b']) {
+    assert.strictEqual(s({ type: 'doc', content: [{ type: 'articleEmbed', attrs: { kind: 'produk', slug } }] }), '', slug);
+  }
+  assert.strictEqual(s({ type: 'doc', content: [{ type: 'articleEmbed', attrs: { kind: 'x', slug: 'a' } }] }), '[[produk:a]]');
+});
+check('C3: a card next to images, lists, and tables round-trips with the same blocks', () => {
+  roundTripCards(`![Foto](${CLD}){posisi=kanan ukuran=sedang}\n\n[[produk:a]]\n\n- satu\n- dua\n\n[[artikel:b]]\n\n| a | b |\n| --- | --- |\n| 1 | 2 |\n\n[[produk:c]]`);
+});
+
 const failed = results.filter(r => r[0] === 'FAIL');
 for (const [status, name] of results) console.log(`${status}  ${name}`);
 console.log(`\n${results.length - failed.length}/${results.length} passed`);

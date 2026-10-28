@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef } from 'react';
 import { EditorContent, useEditor, useEditorState, type Editor } from '@tiptap/react';
 import { Fragment, Slice } from '@tiptap/pm/model';
 import type { Selection } from '@tiptap/pm/state';
-import { articleExtensions } from './editor-extensions';
+import { articleExtensions, type EmbedCatalogSource } from './editor-extensions';
 import { countRawBlocks, docToMarkdown, markdownToDoc } from './markdown-doc';
 
 interface VisualEditorProps {
@@ -15,6 +15,9 @@ interface VisualEditorProps {
   // Ctrl+K and the image node's "Edit gambar" button / Enter (B-8, B-9).
   onLink: () => void;
   onEditImage: (pos: number) => void;
+  // F-013 phase C3: "Ganti" / Enter on a card, and what the cards show (names, images, availability).
+  onEditEmbed: (pos: number) => void;
+  catalog: EmbedCatalogSource;
 }
 
 /** Depth of the raw block or table around the selection end, or 0: blocks must not be inserted inside those. */
@@ -28,16 +31,20 @@ const insideSplittable = (selection: Selection) => splittableDepth(selection) > 
 // A naskah pasted as text (B-6): headings, images, lists, or tables at a line start.
 const MARKDOWN_SIGNS = /^(#{1,6} |!\[|[-*+] |\d+[.)] |\|)/m;
 
-export default function VisualEditor({ value, onChange, onReady, onLink, onEditImage }: VisualEditorProps) {
-  const callbacks = useRef({ onChange, onLink, onEditImage });
-  callbacks.current = { onChange, onLink, onEditImage };
+export default function VisualEditor({ value, onChange, onReady, onLink, onEditImage, onEditEmbed, catalog }: VisualEditorProps) {
+  const callbacks = useRef({ onChange, onLink, onEditImage, onEditEmbed });
+  callbacks.current = { onChange, onLink, onEditImage, onEditEmbed };
   // What the editor last reported (or was loaded with), the Markdown it was loaded from, and that Markdown's
   // canonical form. A document equal to the loaded one reports the loaded Markdown, so opening an article, or
   // undoing back to it, never changes content (B-5, requirement 10.5).
   const lastEmitted = useRef<string | null>(null);
   const loaded = useRef({ markdown: '', canonical: '' });
 
-  const extensions = useMemo(() => articleExtensions({ onEdit: pos => callbacks.current.onEditImage(pos) }), []);
+  // The catalog source is stable for the editor's life (ArticleEditor creates it once).
+  const extensions = useMemo(
+    () => articleExtensions({ onEdit: pos => callbacks.current.onEditImage(pos), onEditEmbed: pos => callbacks.current.onEditEmbed(pos), catalog }),
+    [],
+  );
   const editor = useEditor({
     extensions,
     immediatelyRender: false,

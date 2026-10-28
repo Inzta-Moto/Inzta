@@ -713,6 +713,148 @@ check('F-013 checklist: a recognised attribute block triggers no check (7.4)', (
   assert.deepStrictEqual(failed(r), ['C-7'], 'a block does not hide a placeholder');
 });
 
+// F-013 phase C: [[produk:…]] and [[artikel:…]] markers (requirements 17, 18, 22.1, 22.4).
+const htmlOf = (blocks) => blocks.filter(b => b.type === 'html').map(b => b.html).join('');
+const kinds = (warnings) => warnings.map(w => w.kind);
+check('F-013 C: markers become blocks in Markdown order; html is the joined HTML blocks', () => {
+  const r = md('Pembuka.\n\n[[produk:side-bag-z10]]\n\n## Lanjut\n\nTeks.\n\n[[ARTIKEL:cara-pasang]]\n\nPenutup.');
+  assert.deepStrictEqual(r.blocks.map(b => b.type === 'html' ? 'html' : `${b.type}:${b.slug}`), ['html', 'product:side-bag-z10', 'html', 'article:cara-pasang', 'html']);
+  assert.strictEqual(r.html, htmlOf(r.blocks));
+  assert.ok(!r.html.includes('[['), r.html);
+  assert.deepStrictEqual(r.warnings, []);
+  for (const b of r.blocks) if (b.type === 'html') assertAllowlisted(b.html);
+});
+check('F-013 C: marker at start or end, adjacent markers, surrounding spaces; no empty HTML block', () => {
+  const r = md('[[produk:a]]\n\n  [[artikel:b]]  \n\nTeks.\n\n[[produk:c]]');
+  assert.deepStrictEqual(r.blocks.map(b => b.type), ['product', 'article', 'html', 'product']);
+  assert.ok(r.blocks.every(b => b.type !== 'html' || b.html));
+});
+check('F-013 C: body without markers is one HTML block equal to html (K-02/K-06 snapshots above stay byte-identical)', () => {
+  for (const name of ['K-02-naskah', 'K-06-naskah']) {
+    const r = md(fixture(`${name}.md`));
+    assert.strictEqual(r.blocks.length, 1, name);
+    assert.strictEqual(r.blocks[0].html, r.html, name);
+  }
+  assert.deepStrictEqual(md('').blocks, []);
+  const plain = renderArticle({ content: 'Satu\nDua', contentFormat: 'plain' });
+  assert.deepStrictEqual(plain.blocks, [{ type: 'html', html: plain.html }]);
+});
+check('F-013 C: invalid slug stays text with embed-invalid', () => {
+  for (const marker of ['[[produk:Tas_Besar]]', '[[produk:]]', '[[artikel:-x]]', '[[produk:a--b]]', '[[produk:ä]]']) {
+    const r = md(`A.\n\n${marker}\n\nB.`);
+    assert.ok(r.blocks.every(b => b.type === 'html'), marker);
+    assert.deepStrictEqual(kinds(r.warnings), ['embed-invalid'], marker);
+    assert.strictEqual(r.warnings[0].marker, marker);
+    assertAllowlisted(r.html);
+  }
+});
+check('F-013 C: marker in a sentence, list, quote, table, heading, or next to a line stays text with embed-inline', () => {
+  const cases = [
+    'Lihat [[produk:a]] ya.',
+    '- [[produk:a]]',
+    '> [[artikel:b]]',
+    '| x |\n|---|\n| [[produk:a]] |',
+    '## [[produk:a]]',
+    'Teks di atas\n[[produk:a]]',
+    '[[produk:a]]\nteks di bawah',
+  ];
+  for (const c of cases) {
+    const r = md(c);
+    assert.ok(r.blocks.every(b => b.type === 'html'), c);
+    assert.deepStrictEqual(kinds(r.warnings), ['embed-inline'], c);
+    assert.ok(r.html.includes('[[produk:a]]') || r.html.includes('[[artikel:b]]'), c);
+  }
+});
+check('F-013 C: marker in fenced or indented code, or escaped, is neither a card nor a warning', () => {
+  for (const c of ['```\n[[produk:a]]\n```', '    [[produk:a]]', '\\[\\[produk:a\\]\\]']) {
+    const r = md(c);
+    assert.ok(r.blocks.every(b => b.type === 'html'), c);
+    assert.deepStrictEqual(r.warnings, [], c);
+  }
+});
+check('review REV-02: marker text in code inside a list or quote, or in inline code, gives no warning', () => {
+  for (const c of ['- item\n\n  ```\n  [[produk:a]]\n  ```', '> ```\n> [[produk:a]]\n> ```', 'Ketik `[[produk:slug]]` di baris sendiri.']) {
+    assert.deepStrictEqual(md(c).warnings, [], c);
+  }
+});
+check('F-013 C: only the first 10 markers become cards; the rest give embed-limit and no output', () => {
+  const content = Array.from({ length: 12 }, (_, i) => `[[produk:p-${i + 1}]]`).join('\n\nTeks.\n\n');
+  const r = md(content);
+  assert.strictEqual(r.blocks.filter(b => b.type === 'product').length, 10);
+  assert.deepStrictEqual(r.warnings.map(w => `${w.kind}:${w.marker}`), ['embed-limit:[[produk:p-11]]', 'embed-limit:[[produk:p-12]]']);
+  assert.ok(!r.html.includes('[['));
+});
+check('F-013 C: markers cannot inject HTML; every HTML block passes the allowlist', () => {
+  const attacks = [
+    '[[produk:x" onload="alert(1)]]',
+    '[[produk:<img src=x onerror=alert(1)>]]',
+    '[[artikel:javascript:alert(1)]]',
+    '[[produk:../../users/admin]]',
+    '<div>[[produk:a]]</div>',
+    '[[produk:a]]<script>alert(1)</script>',
+  ];
+  for (const a of attacks) {
+    const r = md(`A.\n\n${a}\n\nB.`);
+    assert.ok(r.blocks.every(b => b.type === 'html'), a);
+    for (const b of r.blocks) assertAllowlisted(b.html);
+    assert.ok(!/<(script|div|img)\b|<[^>]*\son\w+=/i.test(r.html), `${a}: ${r.html}`);
+  }
+});
+check('F-013 C: a floated image before a card keeps its layout; the image block is sanitized on its own', () => {
+  const r = md(`![Tas](${CLD}){posisi=kanan ukuran=sedang}\n\nTeks.\n\n[[produk:a]]\n\nLagi.`);
+  assert.strictEqual(r.blocks[0].type, 'html');
+  assert.ok(r.blocks[0].html.includes('class="article-figure--kanan article-figure--sedang"'));
+  assert.deepStrictEqual(r.blocks.map(b => b.type), ['html', 'product', 'html']);
+});
+check('F-013 C: an unparseable body still returns render-error and no blocks', () => {
+  const r = md('>'.repeat(20000) + ' x');
+  if (r.warnings.some(w => w.kind === 'render-error')) assert.deepStrictEqual(r.blocks, []);
+  else assert.strictEqual(r.html, htmlOf(r.blocks));
+});
+check('F-013 C: countWords and firstLineSummary ignore marker lines', () => {
+  assert.strictEqual(fmt.countWords('[[produk:side-bag-z10]]\n\nDua kata'), 2);
+  assert.strictEqual(fmt.countWords('  [[ARTIKEL:a]]  \nDua kata'), 2);
+  assert.strictEqual(fmt.firstLineSummary('[[produk:a]]\n\nKalimat pertama.'), 'Kalimat pertama.');
+});
+check('F-013 C: C-9 fails on each embed warning and is absent without markers', () => {
+  const run = (content) => runChecklist({ ...ok, content }, { coverWidth: 1200, renderWarnings: md(content).warnings });
+  assert.ok(!run(`## A\n\nTeks.`).blocking.some(c => c.id === 'C-9'));
+  const good = run(`## A\n\nTeks.\n\n[[produk:a]]\n\n[[artikel:b]]`);
+  assert.deepStrictEqual(good.blocking.find(c => c.id === 'C-9'), { id: 'C-9', label: good.blocking.find(c => c.id === 'C-9').label, ok: true });
+  assert.ok(canPublish(good));
+  for (const content of ['## A\n\nLihat [[produk:a]].', '## A\n\n[[produk:A_B]]', Array.from({ length: 11 }, (_, i) => `[[produk:p${i}]]`).join('\n\n')]) {
+    const r = run(content);
+    assert.deepStrictEqual(failed(r), ['C-9'], content);
+    assert.ok(r.blocking.find(c => c.id === 'C-9').detail);
+  }
+  // The editor has no renderer: without render warnings a marker alone never blocks there.
+  assert.ok(canPublish(runChecklist({ ...ok, content: '## A\n\nLihat [[produk:a]].' }, { coverWidth: 1200 })));
+});
+
+// F-013 phase C4 (requirements 22.1, 22.2).
+check('F-013 C4: C-9 fails on missing targets given by the server or the editor, deduplicated', () => {
+  const content = '## A\n\nTeks.\n\n[[produk:a]]\n\n[[artikel:b]]';
+  const r = runChecklist({ ...ok, content }, { coverWidth: 1200, renderWarnings: md(content).warnings, missingEmbeds: ['[[produk:a]]', '[[produk:a]]'] });
+  assert.deepStrictEqual(failed(r), ['C-9']);
+  assert.strictEqual(r.blocking.find(c => c.id === 'C-9').detail, 'tidak ada, nonaktif, belum terbit, atau artikel ini sendiri: [[produk:a]]');
+  assert.ok(canPublish(runChecklist({ ...ok, content }, { coverWidth: 1200, missingEmbeds: [] })));
+});
+check('F-013 C4: siteLinks finds /blog and /produk links outside code, with titles and <...>; not anchors or queries', () => {
+  const content = '[a](/blog/satu) [b](/produk/dua "Judul") [c](</blog/tiga>) [d](/produk/empat#x) [e](/produk?x=1) [f](https://inzta.id/blog/lima)\n\n```\n[g](/blog/enam)\n```';
+  assert.deepStrictEqual(fmt.siteLinks(content).map(l => `${l.kind}:${l.slug}`), ['artikel:satu', 'produk:dua', 'artikel:tiga']);
+});
+check('F-013 C4: W-5 lists links to pages that are not public; absent without the editor list or without links', () => {
+  const content = '## A\n\nLihat [tas](/produk/tas-aktif), [lama](/produk/tas-nonaktif), dan [draf](/blog/draf-x). Lagi [draf](/blog/draf-x).';
+  const targets = { produk: ['tas-aktif'], artikel: ['terbit'] };
+  const r = runChecklist({ ...ok, content }, { coverWidth: 1200, publicTargets: targets });
+  assert.deepStrictEqual(warned(r), ['W-5']);
+  assert.strictEqual(r.warnings.find(c => c.id === 'W-5').detail, 'Belum tayang atau tidak ada: /produk/tas-nonaktif, /blog/draf-x');
+  assert.ok(canPublish(r), 'W-5 is a warning only');
+  assert.ok(!runChecklist({ ...ok, content }, { coverWidth: 1200 }).warnings.some(c => c.id === 'W-5'));
+  assert.ok(!runChecklist({ ...ok, content: '## A\n\nTanpa link.' }, { coverWidth: 1200, publicTargets: targets }).warnings.some(c => c.id === 'W-5'));
+  assert.deepStrictEqual(warned(runChecklist({ ...ok, content: '## A\n\n[tas](/produk/tas-aktif)' }, { coverWidth: 1200, publicTargets: targets })), []);
+});
+
 for (const [s, n] of results) console.log(`${s}  ${n}`);
 const failedCount = results.filter(([s]) => s === 'FAIL').length;
 console.log(`\n${results.length - failedCount}/${results.length} passed`);

@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import BlogDetailClient from './BlogDetailClient';
 import { getArticle } from '@/lib/public-content';
 import { renderArticle } from '@/lib/markdown';
+import { resolveEmbeds, visibleBlocks } from '@/lib/article-embeds';
 import { firstLineSummary } from '@/lib/article-format';
 import { optimizeCloudinaryUrl } from '@/lib/utils';
 import type { PublicArticle } from '@/types';
@@ -80,7 +81,8 @@ export default async function BlogDetailPage({ params }: { params: { slug: strin
   if (!article) notFound();
 
   // Rendered and sanitized here on the server; the raw content is not sent to the browser.
-  const { html } = renderArticle(article);
+  const { blocks } = renderArticle(article);
+  const embeds = await resolveEmbeds(blocks, { exclude: article.slug });
   const { content, ...rest } = article;
-  return <BlogDetailClient article={rest} bodyHtml={html} articleUrl={`${siteUrl}/blog/${params.slug}`} />;
+  return <BlogDetailClient article={rest} blocks={visibleBlocks(blocks, embeds)} embeds={embeds} articleUrl={`${siteUrl}/blog/${params.slug}`} />;
 }

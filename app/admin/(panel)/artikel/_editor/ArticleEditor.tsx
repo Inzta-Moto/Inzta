@@ -18,17 +18,21 @@ import {
   imageMarkdown,
   isAllowedImageUrl,
   isEverPublished,
+  MAX_EMBEDS,
   readingMinutes,
   statusOf,
   type BodyImage,
 } from '@/lib/article-format';
-import type { ArticleStatus, ChecklistItem, ContentFormat, RenderWarning } from '@/types';
+import type { ArticleEmbeds, ArticleStatus, ChecklistItem, ContentFormat, RenderBlock, RenderWarning } from '@/types';
+import ArticleBody from '@/components/ArticleBody';
 import type { Editor } from '@tiptap/react';
 import MarkdownToolbar from './MarkdownToolbar';
 import VisualEditor, { splittableDepth } from './VisualEditor';
 import { NodeSelection } from '@tiptap/pm/state';
 import { imageOccurrence } from './markdown-doc';
 import LinkDialog from './LinkDialog';
+import EmbedDialog, { loadCatalog, pickable, type Catalog } from './EmbedDialog';
+import type { EmbedCatalogSource, EmbedMdKind } from './editor-extensions';
 import ImageDialog, { type ImageDialogValue } from './ImageDialog';
 import BodyImagesPanel from './BodyImagesPanel';
 import SeoPanel from './SeoPanel';
@@ -68,6 +72,8 @@ interface ServerArticle extends Partial<Draft> {
 type Dialog =
   | { type: 'link'; text: string; url?: string; from: number; to: number }
   | { type: 'image'; image?: BodyImage; pos?: number; at?: number }
+  // F-013 phase C3: a card picked from the product or article list; `pos` is an existing card node.
+  | { type: 'embed'; kind: EmbedMdKind; pos?: number; at?: number }
   | { type: 'cover' };
 
 type Message = { kind: 'error' | 'ok'; text: string; checks?: ChecklistItem[] };
@@ -110,6 +116,9 @@ function warningText(w: RenderWarning): string {
     case 'placeholder': return `Gambar belum diunggah, tidak tampil: ${w.alt || w.src}`;
     case 'image-host': return `Gambar bukan dari panel INZTA, dibuang: ${w.alt || w.src}`;
     case 'inline-image': return `Gambar menempel di teks, dibuang. Beri baris kosong sebelum dan sesudahnya: ${w.alt || w.src}`;
+    case 'embed-inline': return `Penanda harus di baris sendiri, diapit baris kosong; tampil sebagai teks: ${w.marker}`;
+    case 'embed-invalid': return `Slug penanda hanya boleh huruf kecil, angka, dan tanda hubung; tampil sebagai teks: ${w.marker}`;
+    case 'embed-limit': return `Lebih dari 10 kartu produk/artikel; penanda ini tidak ditampilkan: ${w.marker}`;
   }
 }
 
@@ -149,7 +158,7 @@ export default function ArticleEditor({ slug: routeSlug }: { slug?: string }) {
   const [loadError, setLoadError] = useState('');
   const [slugTouched, setSlugTouched] = useState(false);
   const [tab, setTab] = useState<'write' | 'preview'>('write');
-  const [preview, setPreview] = useState<{ html: string; warnings: RenderWarning[] } | null>(null);
+  const [preview, setPreview] = useState<{ blocks: RenderBlock[]; embeds: ArticleEmbeds; embedsError?: boolean; warnings: RenderWarning[] } | null>(null);
   const [previewState, setPreviewState] = useState<'idle' | 'loading' | 'error'>('idle');
   const [previewError, setPreviewError] = useState('');
   const [busy, setBusy] = useState<null | 'save' | 'publish' | 'unpublish'>(null);
@@ -157,6 +166,40 @@ export default function ArticleEditor({ slug: routeSlug }: { slug?: string }) {
   const [dialog, setDialog] = useState<Dialog | null>(null);
   const [coverWidth, setCoverWidth] = useState<number | null>(null);
   const [restore, setRestore] = useState<LocalCopy<Draft> | null>(null);
+  // F-013 phase C3: products and articles for cards and links, read once when first needed.
+  const [catalog, setCatalog] = useState<Catalog | null>(null);
+  const [catalogError, setCatalogError] = useState('');
+  const catalogRef = useRef<{ data: Catalog | null; loading: boolean; listeners: Set<() => void> }>({ data: null, loading: false, listeners: new Set() });
+  const ensureCatalog = useCallback(() => {
+    const c = catalogRef.current;
+    if (c.data || c.loading) return;
+    c.loading = true;
+    setCatalogError('');
+    loadCatalog()
+      .then(data => {
+        c.data = data;
+        setCatalog(data);
+        c.listeners.forEach(fn => fn());
+      })
+      .catch(() => setCatalogError('Daftar produk dan artikel gagal dimuat. Tutup dialog, cek koneksi, lalu coba lagi.'))
+      .finally(() => { c.loading = false; });
+  }, []);
+  // An article that already has cards or INZTA links needs the list (card names, C-9, W-5); others read it on
+  // the first dialog.
+  const hasCards = /\[\[(?:produk|artikel):|\]\(\s*<?\/(?:blog|produk)\//i.test(draft.content);
+  useEffect(() => { if (hasCards && draft.contentFormat === 'markdown') ensureCatalog(); }, [hasCards, draft.contentFormat, ensureCatalog]);
+  // What the card nodes in the editor show; stable for the editor's life.
+  const catalogSource = useMemo<EmbedCatalogSource>(() => ({
+    get: (kind, slug) => {
+      const data = catalogRef.current.data;
+      if (!data) return undefined;
+      return pickable(data[kind], kind, draftRef.current.slug).find(i => i.slug === slug) ?? null;
+    },
+    subscribe: fn => {
+      catalogRef.current.listeners.add(fn);
+      return () => { catalogRef.current.listeners.delete(fn); };
+    },
+  }), []);
 
   const key = localKey(routeSlug);
   const baseline = useMemo(() => (server ? toDraft(server) : EMPTY), [server]);
@@ -166,9 +209,20 @@ export default function ArticleEditor({ slug: routeSlug }: { slug?: string }) {
   const slugLocked = server ? isEverPublished(server) : false;
   const images = useMemo(() => (isMarkdown ? extractBodyImages(draft.content) : []), [draft.content, isMarkdown]);
   const words = useMemo(() => countWords(draft.content), [draft.content]);
+  // F-013 phase C4: with the list loaded, cards to non-public targets fail C-9 here as they will on the server,
+  // and links to non-public INZTA pages give W-5. Marker lines are the editor's own canonical output.
+  const cardChecks = useMemo(() => {
+    if (!catalog || !isMarkdown) return {};
+    const open = (kind: EmbedMdKind) => pickable(catalog[kind], kind, draft.slug).filter(i => !i.unavailable).map(i => i.slug);
+    const publicTargets = { produk: open('produk'), artikel: open('artikel') };
+    const missingEmbeds = Array.from(draft.content.matchAll(/^[ \t]*\[\[(produk|artikel):([a-z0-9]+(?:-[a-z0-9]+)*)\]\][ \t]*$/gm))
+      .filter(m => !publicTargets[m[1] as EmbedMdKind].includes(m[2]))
+      .map(m => m[0].trim());
+    return { publicTargets, missingEmbeds };
+  }, [catalog, isMarkdown, draft.content, draft.slug]);
   const checklist = useMemo(
-    () => runChecklist(draft, { coverWidth: isMarkdown ? coverWidth : null, legacySlugOk: Boolean(server && draft.slug === server.slug) }),
-    [draft, coverWidth, isMarkdown, server],
+    () => runChecklist(draft, { coverWidth: isMarkdown ? coverWidth : null, legacySlugOk: Boolean(server && draft.slug === server.slug), ...cardChecks }),
+    [draft, coverWidth, isMarkdown, server, cardChecks],
   );
   const ready = canPublish(checklist);
   const failedCount = checklist.blocking.filter(c => !c.ok).length;
@@ -379,7 +433,7 @@ export default function ArticleEditor({ slug: routeSlug }: { slug?: string }) {
       const res = await fetch('/api/admin/articles/preview', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: draftRef.current.content, contentFormat: draftRef.current.contentFormat }),
+        body: JSON.stringify({ content: draftRef.current.content, contentFormat: draftRef.current.contentFormat, slug: draftRef.current.slug }),
       });
       const body = await readJson(res);
       if (!res.ok) {
@@ -446,6 +500,39 @@ export default function ArticleEditor({ slug: routeSlug }: { slug?: string }) {
     setDialog({ type: 'image', at: depth ? selection.$to.after(depth) : selection.to });
   }
   const onEditImage = (pos: number) => setDialog({ type: 'image', pos });
+
+  // Cards go between top-level blocks, after the block holding the selection (requirement 21.2).
+  function openEmbed(kind: EmbedMdKind) {
+    if (!editor) return;
+    let cards = 0;
+    editor.state.doc.forEach(n => { if (n.type.name === 'articleEmbed') cards++; });
+    if (cards >= MAX_EMBEDS) {
+      setMessage({ kind: 'error', text: `Maksimal ${MAX_EMBEDS} kartu produk dan artikel per artikel.` });
+      return;
+    }
+    const { selection } = editor.state;
+    setDialog({ type: 'embed', kind, at: selection.$to.depth ? selection.$to.after(1) : selection.to });
+    ensureCatalog();
+  }
+  const onEditEmbed = (pos: number) => {
+    const node = editor?.state.doc.nodeAt(pos);
+    if (!node) return;
+    setDialog({ type: 'embed', kind: node.attrs.kind === 'artikel' ? 'artikel' : 'produk', pos });
+    ensureCatalog();
+  };
+
+  function onEmbedConfirm(slug: string) {
+    const current = dialog;
+    setDialog(null);
+    if (!editor || current?.type !== 'embed') return;
+    const attrs = { kind: current.kind, slug };
+    if (current.pos !== undefined) {
+      const pos = current.pos;
+      editor.chain().focus().command(({ tr }) => { tr.setNodeMarkup(pos, undefined, attrs); return true; }).setNodeSelection(pos).run();
+    } else {
+      editor.chain().focus().insertContentAt(current.at ?? editor.state.selection.to, { type: 'articleEmbed', attrs }).run();
+    }
+  }
 
   // Panel edits rewrite that exact match (by offsets and original text), so a duplicate image elsewhere stays;
   // the visual editor then reloads the changed Markdown as one undo step.
@@ -643,13 +730,13 @@ export default function ArticleEditor({ slug: routeSlug }: { slug?: string }) {
                 <button type="button" role="tab" id="tab-write" aria-selected={tab === 'write'} aria-controls="panel-write" tabIndex={tab === 'write' ? 0 : -1} className={tab === 'write' ? 'is-active' : ''} onClick={() => setTab('write')}>Tulis</button>
                 <button type="button" role="tab" id="tab-preview" aria-selected={tab === 'preview'} aria-controls="panel-preview" tabIndex={tab === 'preview' ? 0 : -1} className={tab === 'preview' ? 'is-active' : ''} onClick={showPreview}>Pratinjau</button>
               </div>
-              {tab === 'write' && isMarkdown && <MarkdownToolbar editor={editor} onLink={openLink} onImage={openImage} />}
+              {tab === 'write' && isMarkdown && <MarkdownToolbar editor={editor} onLink={openLink} onImage={openImage} onEmbed={openEmbed} />}
             </div>
             {/* Both panels stay in the DOM so aria-controls always points at an element. */}
             <div role="tabpanel" id="panel-write" aria-labelledby="tab-write" hidden={tab !== 'write'}>
               {isMarkdown ? (
                 // F-013 phase B: the visual editor; content stays Markdown (requirements 9.1, 10.1).
-                <VisualEditor value={draft.content} onChange={onContent} onReady={onEditorReady} onLink={openLink} onEditImage={onEditImage} />
+                <VisualEditor value={draft.content} onChange={onContent} onReady={onEditorReady} onLink={openLink} onEditImage={onEditImage} onEditEmbed={onEditEmbed} catalog={catalogSource} />
               ) : (
                 <textarea
                   id="article-content"
@@ -677,10 +764,10 @@ export default function ArticleEditor({ slug: routeSlug }: { slug?: string }) {
                   <div className="blog-detail blog-detail--column">
                     <ArticleHead article={{ ...draft, publishedAt: server?.publishedAt ?? null, createdAt: server?.createdAt ?? null }} />
                     {/* Already sanitized by the server (lib/markdown.ts); the client does not transform it. */}
-                    <div className="blog-detail-content article-body" dangerouslySetInnerHTML={{ __html: preview.html }} />
+                    <ArticleBody blocks={preview.blocks} embeds={preview.embeds} embedsError={preview.embedsError} className="blog-detail-content article-body" adminPreview />
                   </div>
                 ) : (
-                  <div className="article-body article-body-plain" dangerouslySetInnerHTML={{ __html: preview.html }} />
+                  <ArticleBody blocks={preview.blocks} embeds={preview.embeds} embedsError={preview.embedsError} className="article-body article-body-plain" adminPreview />
                 ))}
             </div>
             <p className="article-editor-footer">
@@ -792,7 +879,30 @@ export default function ArticleEditor({ slug: routeSlug }: { slug?: string }) {
       </div>
 
       {dialog?.type === 'link' && (
-        <LinkDialog initialText={dialog.text} initialUrl={dialog.url} returnFocusRef={editorFocusRef} onClose={() => setDialog(null)} onInsert={insertLink} onRemove={removeLink} />
+        <LinkDialog
+          initialText={dialog.text}
+          initialUrl={dialog.url}
+          returnFocusRef={editorFocusRef}
+          onClose={() => setDialog(null)}
+          onInsert={insertLink}
+          onRemove={removeLink}
+          catalog={catalog}
+          catalogError={catalogError}
+          currentSlug={draft.slug}
+          onNeedCatalog={ensureCatalog}
+        />
+      )}
+      {dialog?.type === 'embed' && (
+        <EmbedDialog
+          kind={dialog.kind}
+          initialSlug={dialog.pos !== undefined ? editor?.state.doc.nodeAt(dialog.pos)?.attrs.slug : undefined}
+          currentSlug={draft.slug}
+          catalog={catalog}
+          catalogError={catalogError}
+          returnFocusRef={editorFocusRef}
+          onClose={() => setDialog(null)}
+          onConfirm={onEmbedConfirm}
+        />
       )}
       {dialog?.type === 'image' && (
         <ImageDialog

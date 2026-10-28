@@ -2694,16 +2694,18 @@ ul, ol { list-style: none; }
 .blog-detail-cover { margin-bottom: 32px; }
 .blog-detail-cover img { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 8px; border: 1px solid var(--border-light); background: var(--bg-subtle); }
 .blog-detail-cover figcaption { margin-top: 0.5em; font-size: 14px; font-style: italic; color: var(--text-tertiary); }
-.article-body > * + * { margin-top: var(--article-flow); }
+/* F-013 phase C: with cards the body is split into .article-part blocks (components/ArticleBody.tsx); :is()
+   keeps the same specificity, so a body without cards matches exactly the same elements as before. */
+:is(.article-body, .article-part) > * + * { margin-top: var(--article-flow); }
 /* F-013 review WEB-02: the space above a heading is padding, not margin, because `clear: both` below absorbs
    the margin after a float (17 px instead of 51 px). Where no float is involved (first child, after a
    non-floating figure) the old collapsing margin stays, so articles without layout blocks look the same (7.3). */
 .article-body h2 { margin-top: 0; padding-top: 2em; font-size: 1.5em; line-height: 1.3; color: var(--text-primary); }
 .article-body h3 { margin-top: 0; padding-top: 1.6em; font-size: 1.2em; line-height: 1.35; color: var(--text-primary); }
-.article-body > h2:first-child,
-.article-body > figure:not(.article-figure--kiri):not(.article-figure--kanan) + h2 { margin-top: 2em; padding-top: 0; }
-.article-body > h3:first-child,
-.article-body > figure:not(.article-figure--kiri):not(.article-figure--kanan) + h3 { margin-top: 1.6em; padding-top: 0; }
+:is(.article-body, .article-part) > h2:first-child,
+:is(.article-body, .article-part) > figure:not(.article-figure--kiri):not(.article-figure--kanan) + h2 { margin-top: 2em; padding-top: 0; }
+:is(.article-body, .article-part) > h3:first-child,
+:is(.article-body, .article-part) > figure:not(.article-figure--kiri):not(.article-figure--kanan) + h3 { margin-top: 1.6em; padding-top: 0; }
 .article-body ul, .article-body ol { padding-left: 1.4em; }
 .article-body ul { list-style: disc; }
 .article-body ol { list-style: decimal; }
@@ -2753,6 +2755,25 @@ ul, ol { list-style: none; }
 .article-body figure img { max-height: min(640px, 80vh); object-fit: contain; background: var(--bg-subtle); }
 @media (max-width: 767px) {
   .article-body figure[class] { float: none; width: auto; margin: 2em 0; }
+}
+/* F-013 phase C: product and "Baca juga" cards, as wide as the reading column, below any float. */
+.article-body .article-embed { clear: both; margin: 2em 0; }
+.article-body .article-embed-link { display: flex; align-items: center; gap: 1em; padding: 0.875em; color: var(--text-secondary); text-decoration: none; background: var(--bg-white); border: 1px solid var(--border-light); border-radius: 8px; box-shadow: var(--shadow-sm); transition: border-color 0.2s ease, box-shadow 0.2s ease; }
+.article-body .article-embed-link:hover { border-color: var(--accent-border); box-shadow: var(--shadow-md); }
+.article-body .article-embed-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.article-body .article-embed-image { flex: none; width: 96px; height: 96px; object-fit: cover; border-radius: 6px; }
+.article-embed-text { display: flex; flex-direction: column; gap: 0.2em; min-width: 0; }
+.article-embed-label { font-size: 0.75em; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-tertiary); }
+.article-embed-title { font-weight: 600; line-height: 1.35; color: var(--text-primary); }
+.article-embed-excerpt { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: 0.875em; line-height: 1.5; color: var(--text-tertiary); }
+.article-embed-price { font-weight: 600; color: var(--text-primary); }
+.article-embed-compare { margin-right: 0.25em; font-weight: 400; color: var(--text-placeholder); }
+.article-embed-stock { font-size: 0.8125em; font-weight: 600; color: var(--text-tertiary); }
+.article-embed-cta { font-size: 0.875em; color: var(--text-primary); text-decoration: underline; text-decoration-color: var(--accent); text-underline-offset: 3px; }
+.article-embed-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.article-body .article-embed-missing { clear: both; padding: 0.75em 1em; font-size: 0.875em; color: var(--text-tertiary); border: 1px dashed var(--border-medium); border-radius: 8px; }
+@media (max-width: 767px) {
+  .article-body .article-embed-image { width: 72px; height: 72px; }
 }
 /* Plain (legacy) articles keep the pre-F-012 type size and full width; only paragraph spacing changes. */
 .article-body.article-body-plain { max-width: none; font-size: 16px; line-height: 1.8; }
