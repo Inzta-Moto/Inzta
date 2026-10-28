@@ -7,21 +7,26 @@
     "build": "next build",
     "start": "next start",
     "test:auth": "node tests/f000-auth.cjs",
-    "test:content": "node tests/f001-content.cjs"
+    "test:content": "node tests/f001-content.cjs",
+    "test:markdown": "node tests/f012-markdown.cjs",
+    "test:articles": "node tests/f012-articles.cjs"
   },
   "dependencies": {
     "browser-image-compression": "^2.0.2",
     "firebase": "^10.12.0",
     "firebase-admin": "^13.10.0",
     "lucide-react": "^0.400.0",
+    "marked": "18.1.2",
     "next": "^14.2.0",
     "react": "^18.3.0",
-    "react-dom": "^18.3.0"
+    "react-dom": "^18.3.0",
+    "sanitize-html": "2.18.1"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
     "@types/react": "^18.3.0",
     "@types/react-dom": "^18.3.0",
+    "@types/sanitize-html": "2.16.2",
     "typescript": "^5.4.0"
   }
 }

@@ -32,6 +32,11 @@ function docRef(col, id) {
       if (docs.has(key)) { const e = new Error('6 ALREADY_EXISTS: Document already exists'); e.code = 6; throw e; }
       writes++; docs.set(key, value);
     },
+    // Precondition (second argument) is ignored: the fake has no updateTime, so routes never pass one.
+    update: async (value) => {
+      if (!docs.has(key)) { const e = new Error('5 NOT_FOUND'); e.code = 5; throw e; }
+      writes++; docs.set(key, { ...docs.get(key), ...value });
+    },
     delete: async () => { writes++; docs.delete(key); },
   };
 }
@@ -100,7 +105,7 @@ const results = [];
 async function check(name, fn) {
   try { await fn(); results.push(['PASS', name]); } catch (e) { results.push(['FAIL', name + ': ' + e.message]); }
 }
-const validArticle = { title: 'Tas samping XSR 155', slug: 'tas-samping-xsr-155', excerpt: 'Ringkas', content: 'Isi artikel', images: ['https://res.cloudinary.com/demo/a.jpg'] };
+const validArticle = { title: 'Tas samping XSR 155', slug: 'tas-samping-xsr-155', excerpt: 'Ringkas', content: 'Isi artikel', images: ['https://res.cloudinary.com/dukddlp0b/image/upload/a.jpg'] };
 const simpleProduct = { slug: 'tas-uji', name: 'Tas uji', productType: 'simple', price: 100000, stock: 5, isActive: true };
 
 (async () => {
@@ -151,12 +156,14 @@ const simpleProduct = { slug: 'tas-uji', name: 'Tas uji', productType: 'simple',
     assert.strictEqual(r.status, 200); assert.ok(jar.has('affiliate_session'));
   });
 
-  await check('admin: create article -> 201, only whitelisted fields, createdAt set', async () => {
-    as('cookie-admin'); const r = await articles.POST(req({ ...validArticle, createdAt: '1999-01-01', status: 'published', evil: 1 }));
+  // F-012: new articles are Markdown drafts; status, author, and source come from the server, never the body.
+  await check('admin: create article -> 201 draft, only whitelisted fields, createdAt set', async () => {
+    as('cookie-admin'); const r = await articles.POST(req({ ...validArticle, createdAt: '1999-01-01', status: 'published', author: 'x', source: 'automation', publishedAt: '1999-01-01', evil: 1 }));
     assert.strictEqual(r.status, 201);
     const d = docs.get('articles/tas-samping-xsr-155');
-    assert.deepStrictEqual(Object.keys(d).sort(), ['content', 'createdAt', 'excerpt', 'images', 'slug', 'title', 'updatedAt']);
+    assert.deepStrictEqual(Object.keys(d).sort(), ['author', 'content', 'contentFormat', 'coverAlt', 'coverImage', 'createdAt', 'excerpt', 'images', 'metaDescription', 'metaTitle', 'slug', 'source', 'status', 'title', 'updatedAt']);
     assert.notStrictEqual(d.createdAt, '1999-01-01');
+    assert.deepStrictEqual([d.status, d.contentFormat, d.source, d.author, d.images], ['draft', 'markdown', 'admin', 'Tim INZTA', []]);
   });
   await check('admin: POST onto a taken slug -> 409, existing article untouched', async () => {
     as('cookie-admin'); const before = { ...docs.get('articles/tas-samping-xsr-155') }; const w = writes;
@@ -189,11 +196,12 @@ const simpleProduct = { slug: 'tas-uji', name: 'Tas uji', productType: 'simple',
     as('cookie-admin'); const r = await article.PUT(req({ ...validArticle, slug: 'Legacy_Slug' }), { params: { slug: 'Legacy_Slug' } });
     assert.strictEqual(r.status, 200); assert.strictEqual(docs.get('articles/Legacy_Slug').createdAt, '2026-01-01');
   });
-  await check('admin: non-Cloudinary image -> 400', async () => {
-    as('cookie-admin'); const r = await articles.POST(req({ ...validArticle, images: ['https://evil.example/x.png'] })); assert.strictEqual(r.status, 400);
+  // The legacy gallery exists only on plain articles since F-012, so these run against the legacy document.
+  await check('admin: non-Cloudinary gallery image on a plain article -> 400', async () => {
+    as('cookie-admin'); const r = await article.PUT(req({ ...validArticle, images: ['https://evil.example/x.png'] }), { params: { slug: 'Legacy_Slug' } }); assert.strictEqual(r.status, 400);
   });
-  await check('admin: 6 images -> 400', async () => {
-    as('cookie-admin'); const r = await articles.POST(req({ ...validArticle, images: Array(6).fill('https://res.cloudinary.com/a.jpg') })); assert.strictEqual(r.status, 400);
+  await check('admin: 6 gallery images on a plain article -> 400', async () => {
+    as('cookie-admin'); const r = await article.PUT(req({ ...validArticle, images: Array(6).fill(validArticle.images[0]) }), { params: { slug: 'Legacy_Slug' } }); assert.strictEqual(r.status, 400);
   });
   await check('admin: title over 150 chars -> 400', async () => {
     as('cookie-admin'); const r = await articles.POST(req({ ...validArticle, title: 'x'.repeat(151) })); assert.strictEqual(r.status, 400);

@@ -34,6 +34,10 @@ function docRef(col, id) {
       if (docs.has(key)) { const e = new Error('6 ALREADY_EXISTS'); e.code = 6; throw e; }
       docs.set(key, value);
     },
+    update: async (value) => {
+      if (!docs.has(key)) { const e = new Error('5 NOT_FOUND'); e.code = 5; throw e; }
+      docs.set(key, { ...docs.get(key), ...value });
+    },
     delete: async () => { docs.delete(key); },
   };
 }
@@ -47,7 +51,7 @@ const fakeDb = {
   runTransaction: async (fn) => fn({ get: (ref) => ref.get(), update: (ref, v) => ref.set(v, { merge: true }), delete: (ref) => ref.delete() }),
 };
 const fakeAuth = {
-  verifySessionCookie: async (c) => { if (c !== 'cookie-admin') throw new Error('invalid'); return { uid: 'u-admin', email: 'admin@inzta.id' }; },
+  verifySessionCookie: async (c) => { if (c !== 'cookie-admin') throw new Error('invalid'); return { uid: 'u-admin', email: 'admin@inzta.id', email_verified: true }; },
 };
 const stubs = {
   react: { cache: (fn) => fn },
@@ -108,6 +112,9 @@ function seed() {
   docs.set('articles/legacy-timestamp', { title: 'Legacy', slug: 'legacy-timestamp', excerpt: 'a', content: 'x', createdAt: timestamp('2026-07-01T00:00:00Z') });
   docs.set('articles/new-iso', { title: 'Baru', slug: 'new-iso', excerpt: 'b', content: 'y', createdAt: '2026-10-20T03:00:00.000Z', updatedAt: '2026-10-25T05:00:00.000Z' });
   docs.set('articles/no-date', { title: 'Tanpa tanggal', slug: 'no-date', excerpt: 'c', content: 'z' });
+  // F-012: drafts never reach public reads; publishedAt (not createdAt) is the public date.
+  docs.set('articles/draf-rahasia', { title: 'Draf', slug: 'draf-rahasia', excerpt: 'd', content: 'w', status: 'draft', contentFormat: 'markdown', createdAt: '2026-10-27T00:00:00.000Z', updatedAt: '2026-10-27T00:00:00.000Z' });
+  docs.set('articles/terbit-lama-dibuat', { title: 'Terbit', slug: 'terbit-lama-dibuat', excerpt: 'e', content: 'v', status: 'published', contentFormat: 'markdown', createdAt: '2026-05-01T00:00:00.000Z', publishedAt: '2026-10-22T00:00:00.000Z', updatedAt: '2026-10-22T00:00:00.000Z' });
   docs.set('products/tas-aktif', { name: 'Tas Aktif', isActive: true, price: 100000, stock: 3, createdAt: '2026-09-01T00:00:00.000Z', updatedAt: '2026-10-26T01:00:00.000Z' });
   docs.set('products/tas-lama', { name: 'Tas Lama', isActive: true, price: 90000, stock: 1, createdAt: timestamp('2026-06-01T00:00:00Z') });
   docs.set('products/tas-nonaktif', { name: 'Tas Nonaktif', isActive: false, price: 1, stock: 0, updatedAt: '2026-12-01T00:00:00.000Z' });
@@ -131,9 +138,11 @@ function seed() {
   });
 
   seed();
-  await check('getArticles: all articles, newest first across Timestamp and ISO dates, slug from doc id', async () => {
+  await check('getArticles: published and legacy only, newest public date first (publishedAt, else createdAt), slug from doc id', async () => {
     const list = await content.getArticles();
-    assert.deepStrictEqual(list.map(a => a.slug), ['new-iso', 'legacy-timestamp', 'no-date']);
+    assert.deepStrictEqual(list.map(a => a.slug), ['terbit-lama-dibuat', 'new-iso', 'legacy-timestamp', 'no-date']);
+    assert.strictEqual(list[0].publishedAt, Date.parse('2026-10-22T00:00:00.000Z'));
+    list.shift();
     assert.strictEqual(typeof list[0].createdAt, 'number');
     assert.strictEqual(list[0].updatedAt, Date.parse('2026-10-25T05:00:00.000Z'));
   });
@@ -150,12 +159,13 @@ function seed() {
   await check('toArticleCard: only card fields, no article content', async () => {
     const [first] = await content.getArticles();
     const card = content.toArticleCard(first);
-    assert.deepStrictEqual(Object.keys(card).sort(), ['createdAt', 'excerpt', 'imageUrl', 'images', 'slug', 'title']);
+    assert.deepStrictEqual(Object.keys(card).sort(), ['coverAlt', 'coverImage', 'createdAt', 'excerpt', 'imageUrl', 'images', 'publishedAt', 'slug', 'title']);
     assert.ok(!('content' in card));
   });
-  await check('getArticle: existing slug -> article, missing slug -> null', async () => {
+  await check('getArticle: existing slug -> article, missing slug -> null, draft -> null', async () => {
     assert.strictEqual((await content.getArticle('new-iso')).title, 'Baru');
     assert.strictEqual(await content.getArticle('tidak-ada'), null);
+    assert.strictEqual(await content.getArticle('draf-rahasia'), null);
   });
 
   await check('failure policy: no Admin credentials -> empty lists and null article, no throw', async () => {
@@ -192,6 +202,11 @@ function seed() {
     assert.ok(byUrl['https://inzta.id/blog/no-date']);
     assert.ok(!('lastModified' in byUrl['https://inzta.id/blog/no-date']));
   });
+  await check('sitemap: drafts are not listed (F-012)', async () => {
+    const map = await sitemap();
+    assert.ok(!map.some(e => e.url.includes('draf-rahasia')));
+    assert.ok(map.some(e => e.url === 'https://inzta.id/blog/terbit-lama-dibuat'));
+  });
   await check('sitemap: active products only, lastModified from their dates', async () => {
     const map = await sitemap();
     const byUrl = Object.fromEntries(map.map(e => [e.url, e]));
@@ -207,17 +222,24 @@ function seed() {
     assert.strictEqual(byUrl['https://inzta.id/blog'].lastModified.toISOString(), '2026-10-25T05:00:00.000Z');
   });
 
-  const validArticle = { title: 'Tas samping XSR 155', slug: 'tas-samping-xsr-155', excerpt: 'Ringkas', content: 'Isi', images: ['https://res.cloudinary.com/demo/a.jpg'] };
+  const validArticle = { title: 'Tas samping XSR 155', slug: 'tas-samping-xsr-155', excerpt: 'Ringkas', content: 'Isi' };
   const simpleProduct = { slug: 'tas-uji', name: 'Tas uji', productType: 'simple', price: 100000, stock: 5, isActive: true };
   const asAdmin = () => { jar.clear(); jar.set('admin_session', 'cookie-admin'); };
   const articlePaths = (slug) => ['/', '/blog', `/blog/${slug}`, '/sitemap.xml'];
 
-  await check('revalidate: article create, edit, delete revalidate home, blog list, article, sitemap', async () => {
+  // F-012: creating or editing a draft changes no public page, so only public changes revalidate.
+  await check('revalidate: editing a published (legacy) article revalidates its paths', async () => {
+    asAdmin(); seed();
+    revalidated.length = 0;
+    assert.strictEqual((await article.PUT(req({ title: 'Baru diubah', excerpt: 'b', content: 'y' }), { params: { slug: 'new-iso' } })).status, 200);
+    assert.deepStrictEqual(revalidated, articlePaths('new-iso'));
+  });
+  await check('revalidate: draft create and edit revalidate nothing; delete revalidates home, blog list, article, sitemap', async () => {
     asAdmin();
     revalidated.length = 0; assert.strictEqual((await articles.POST(req(validArticle))).status, 201);
-    assert.deepStrictEqual(revalidated, articlePaths('tas-samping-xsr-155'));
+    assert.deepStrictEqual(revalidated, []);
     revalidated.length = 0; assert.strictEqual((await article.PUT(req(validArticle), { params: { slug: 'tas-samping-xsr-155' } })).status, 200);
-    assert.deepStrictEqual(revalidated, articlePaths('tas-samping-xsr-155'));
+    assert.deepStrictEqual(revalidated, []);
     revalidated.length = 0; assert.strictEqual((await article.DELETE(req({}), { params: { slug: 'tas-samping-xsr-155' } })).status, 200);
     assert.deepStrictEqual(revalidated, articlePaths('tas-samping-xsr-155'));
   });

@@ -6,6 +6,7 @@ const Footer = dynamic(() => import('@/components/Footer'));
 import { Calendar } from 'lucide-react';
 import { formatDate, optimizeCloudinaryUrl, generateCloudinarySrcSet } from '@/lib/utils';
 import { getArticles } from '@/lib/public-content';
+import { publicDate } from '@/lib/article-format';
 
 // ISR: rendered on the server so Google sees every article; admin writes call revalidatePath.
 export const revalidate = 3600;
@@ -30,7 +31,7 @@ export default async function BlogPage() {
         <div className="container">
           <div className="blog-grid blog-grid-full">
             {articles.length === 0 ? <p className="empty-state">Belum ada artikel.</p> : articles.map(a => {
-              const articleImage = a.images?.[0] || a.imageUrl || 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80';
+              const articleImage = a.coverImage || a.images?.[0] || a.imageUrl || 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80';
               
               return (
                 <Link href={`/blog/${a.slug}`} key={a.slug} className="blog-card">
@@ -39,12 +40,12 @@ export default async function BlogPage() {
                       src={optimizeCloudinaryUrl(articleImage, 600)}
                       srcSet={generateCloudinarySrcSet(articleImage, [400, 600, 800])}
                       sizes="(max-width: 768px) 100vw, 33vw"
-                      alt={a.title} 
+                      alt={(a.coverImage && a.coverAlt) || a.title}
                       loading="lazy"
                     />
                   </div>
                   <div className="blog-card-body">
-                    <div className="blog-card-meta"><Calendar size={12} /> {formatDate(a.createdAt)}</div>
+                    <div className="blog-card-meta"><Calendar size={12} /> {formatDate(publicDate(a))}</div>
                     <h3 className="blog-card-title">{a.title}</h3>
                     <p className="blog-card-excerpt">{a.excerpt}</p>
                   </div>

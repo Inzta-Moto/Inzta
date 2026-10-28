@@ -1,0 +1,53 @@
+'use client';
+
+import { FormEvent, RefObject, useState } from 'react';
+import Dialog from './Dialog';
+import { isAllowedLinkUrl } from './markdown-edit';
+
+interface LinkDialogProps {
+  initialText: string;
+  returnFocusRef: RefObject<HTMLElement>;
+  onClose: () => void;
+  onInsert: (text: string, url: string) => void;
+}
+
+// Only http(s) and site paths, matching what the renderer keeps (requirement 4.6 and 7.3).
+export default function LinkDialog({ initialText, returnFocusRef, onClose, onInsert }: LinkDialogProps) {
+  const [text, setText] = useState(initialText);
+  const [url, setUrl] = useState('');
+  const [error, setError] = useState('');
+
+  const submit = (e?: FormEvent) => {
+    e?.preventDefault();
+    if (!text.trim()) return setError('Teks link wajib diisi.');
+    if (!isAllowedLinkUrl(url)) return setError('URL harus diawali https:// (situs lain) atau / (halaman inzta.id, misalnya /produk).');
+    onInsert(text.trim(), url.trim());
+  };
+
+  return (
+    <Dialog
+      title="Sisipkan link"
+      onClose={onClose}
+      returnFocusRef={returnFocusRef}
+      footer={
+        <>
+          <button type="button" className="btn btn-ghost" onClick={onClose} style={{ fontSize: 11, padding: '8px 16px' }}>Batal</button>
+          <button type="submit" form="link-dialog-form" className="btn btn-primary" style={{ fontSize: 11, padding: '8px 16px' }}>Sisipkan</button>
+        </>
+      }
+    >
+      <form id="link-dialog-form" onSubmit={submit} className="article-editor-stack">
+        <div className="form-group">
+          <label className="form-label" htmlFor="link-text">Teks link</label>
+          <input id="link-text" className="form-input" value={text} onChange={e => setText(e.target.value)} data-autofocus={initialText ? undefined : true} />
+        </div>
+        <div className="form-group">
+          <label className="form-label" htmlFor="link-url">URL</label>
+          <input id="link-url" className="form-input" value={url} onChange={e => setUrl(e.target.value)} placeholder="/produk/nama-produk atau https://..." data-autofocus={initialText ? true : undefined} inputMode="url" />
+          <p className="article-editor-help">Link ke situs lain otomatis dibuka di tab baru.</p>
+        </div>
+        {error && <div className="form-error" role="alert">{error}</div>}
+      </form>
+    </Dialog>
+  );
+}

@@ -15,7 +15,10 @@ service cloud.firestore {
     }
     
     match /articles/{articleId} {
-      allow read: if true;
+      // F-012: draf hanya terbaca lewat Admin SDK (server). Dokumen lama tanpa status tetap publik.
+      // List ditolak: tidak ada kode client yang me-list artikel.
+      allow get: if resource.data.get('status', 'published') == 'published';
+      allow list: if false;
       allow write: if false;
     }
 
