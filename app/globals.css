@@ -2685,8 +2685,15 @@ ul, ol { list-style: none; }
   margin-right: auto;
 }
 .article-body > * + * { margin-top: var(--article-flow); }
-.article-body h2 { margin-top: 2em; font-size: 1.5em; line-height: 1.3; color: var(--text-primary); }
-.article-body h3 { margin-top: 1.6em; font-size: 1.2em; line-height: 1.35; color: var(--text-primary); }
+/* F-013 review WEB-02: the space above a heading is padding, not margin, because `clear: both` below absorbs
+   the margin after a float (17 px instead of 51 px). Where no float is involved (first child, after a
+   non-floating figure) the old collapsing margin stays, so articles without layout blocks look the same (7.3). */
+.article-body h2 { margin-top: 0; padding-top: 2em; font-size: 1.5em; line-height: 1.3; color: var(--text-primary); }
+.article-body h3 { margin-top: 0; padding-top: 1.6em; font-size: 1.2em; line-height: 1.35; color: var(--text-primary); }
+.article-body > h2:first-child,
+.article-body > figure:not(.article-figure--kiri):not(.article-figure--kanan) + h2 { margin-top: 2em; padding-top: 0; }
+.article-body > h3:first-child,
+.article-body > figure:not(.article-figure--kiri):not(.article-figure--kanan) + h3 { margin-top: 1.6em; padding-top: 0; }
 .article-body ul, .article-body ol { padding-left: 1.4em; }
 .article-body ul { list-style: disc; }
 .article-body ol { list-style: decimal; }
