@@ -286,6 +286,32 @@ function seed() {
     assert.ok(docs.has('articles/tetap-tersimpan'));
   });
 
+  // F-014: an inactive or missing product is a 404 for anyone but an admin, with the same body.
+  const getProduct = async (slug) => { const r = await product.GET(req({}), { params: { slug } }); return [r.status, await r.json()]; };
+  await check('GET /api/products/[slug]: active product -> 200 without cookie', async () => {
+    seed(); jar.clear(); const [status, body] = await getProduct('tas-aktif');
+    assert.strictEqual(status, 200); assert.strictEqual(body.product.name, 'Tas Aktif');
+  });
+  await check('GET /api/products/[slug]: inactive and missing -> same 404 without cookie', async () => {
+    seed(); jar.clear();
+    assert.deepStrictEqual(await getProduct('tas-nonaktif'), [404, { error: 'Product not found' }]);
+    assert.deepStrictEqual(await getProduct('tidak-ada'), [404, { error: 'Product not found' }]);
+    docs.set('products/tanpa-status', { name: 'Tanpa status', price: 1 });
+    assert.deepStrictEqual(await getProduct('tanpa-status'), [404, { error: 'Product not found' }]);
+    jar.set('admin_session', 'forged');
+    assert.deepStrictEqual(await quiet(() => getProduct('tas-nonaktif')), [404, { error: 'Product not found' }]);
+  });
+  await check('GET /api/products/[slug]: admin reads an inactive product, missing stays 404', async () => {
+    seed(); asAdmin(); const [status, body] = await getProduct('tas-nonaktif');
+    assert.strictEqual(status, 200); assert.strictEqual(body.product.name, 'Tas Nonaktif');
+    assert.strictEqual((await getProduct('tidak-ada'))[0], 404);
+  });
+  await check('GET /api/products/[slug]: invalid slug -> 404 before any read', async () => {
+    seed(); jar.clear(); state.failReads = true;
+    assert.strictEqual((await getProduct('../x'))[0], 404);
+    assert.strictEqual((await getProduct('Tas Aktif'))[0], 404);
+  });
+
   // F-013 phase C (requirements 19, 22.4): card data for [[produk:…]] and [[artikel:…]] markers.
   const blocks = (...refs) => refs.map(r => { const [type, slug] = r.split(':'); return { type, slug }; });
   await check('embeds: one getAll for all markers; inactive, draft, missing, and self left out', async () => {

@@ -255,7 +255,7 @@ check('route contract: ISR 3600, no force-dynamic, no server searchParams, no ca
   assert.match(page, /export const revalidate = 3600;/);
   assert.doesNotMatch(page, /force-dynamic|searchParams|catch\s*\(/);
   assert.match(page, /getActiveProducts\(\)/);
-  assert.match(page, /canonical: '\/produk'/);
+  assert.match(page, /canonical: canonicalUrl\('produk'\)/); // F-005: absolute canonical, query never part of it
   assert.match(page, /title: 'Semua tas motor INZTA'/);
   const shell = src('components/v2/catalog/CatalogPage.tsx');
   assert.match(shell, /<Suspense fallback={<CatalogBody /);

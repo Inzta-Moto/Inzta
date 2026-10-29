@@ -1,4 +1,4 @@
-import type { OrderItemInput, Product, ProductAttribute, ProductVariant, Voucher } from '@/types';
+import type { OrderItemInput, Product, ProductAttribute, ProductVariant, Voucher, OrderUtm } from '@/types';
 import { buildWaLink } from '@/lib/utils';
 import { isSelectionComplete, matchVariant } from '@/lib/product-utils';
 import { formatRupiah } from '@/lib/v2/home-data';
@@ -15,14 +15,17 @@ export interface OrderRequestBody {
   voucherCode: string | null;
   affiliateId: string | null;
   buyerUID: string | null;
+  // F-002: first-touch UTM saved with the order.
+  utm: OrderUtm | null;
 }
 
-export function buildOrderBody(items: OrderItemInput[], voucher: Voucher | null, buyerUID: string | null): OrderRequestBody {
+export function buildOrderBody(items: OrderItemInput[], voucher: Voucher | null, buyerUID: string | null, utm: OrderUtm | null = null): OrderRequestBody {
   return {
     items,
     voucherCode: voucher?.code ?? null,
     affiliateId: voucher?.affiliateId ?? null,
     buyerUID,
+    utm,
   };
 }
 
@@ -74,7 +77,7 @@ export function recalcVoucher(v: Voucher, subtotal: number): { released: true; m
   return { released: false, discount: voucherDiscount(v, subtotal) };
 }
 
-export type OrderResult = { ok: true; href: string; orderId: string } | { ok: false; message: string };
+export type OrderResult = { ok: true; href: string; orderId: string; value: number } | { ok: false; message: string };
 
 /**
  * S3.3.5: POST /api/orders, then the WhatsApp link from the server-computed response (DetailClient used the same
@@ -100,7 +103,7 @@ export async function submitOrder(body: OrderRequestBody, fetchFn: FetchLike, ex
       },
       extraLine,
     );
-    return { ok: true, href, orderId: data.orderId };
+    return { ok: true, href, orderId: data.orderId, value: data.finalPrice };
   } catch (e: any) {
     return { ok: false, message: `Gagal membuat pesanan: ${e?.message ?? ''}` };
   }

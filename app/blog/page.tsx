@@ -7,6 +7,7 @@ import ArticleList from '@/components/v2/article/ArticleList';
 import { WA_NUMBER } from '@/lib/constants';
 import { getArticles } from '@/lib/public-content';
 import { articleCardV2 } from '@/lib/v2/article-v2';
+import { canonicalUrl } from '@/lib/seo';
 
 // ISR: rendered on the server so Google sees every article; admin writes call revalidatePath (F-001, F-016 S6.7.1).
 export const revalidate = 3600;
@@ -17,7 +18,8 @@ const LEAD = 'Cara memilih dan memasang tas, panduan per motor, dan catatan dari
 export const metadata: Metadata = {
   title: 'Artikel · INZTA',
   description: LEAD,
-  alternates: { canonical: '/blog' },
+  // F-005: absolute canonical on inzta.id.
+  alternates: { canonical: canonicalUrl('blog') },
 };
 
 // F-016 S6 (blog.dc.html). Reads stay as F-001/F-012 wrote them (published only, newest first); the list island

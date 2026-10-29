@@ -7,6 +7,8 @@ import { formatPrice, calcDiscount, buildWaLink, optimizeCloudinaryUrl, generate
 import { matchVariant, isSelectionComplete, generateLabel } from '@/lib/product-utils';
 import { Truck, ShieldCheck, RefreshCw, Headphones, LucideIcon, X, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Tag, TicketCheck, TicketX } from 'lucide-react';
 import Header from '@/components/Header';
+import { trackViewItem, trackLead } from '@/lib/tracking';
+import { browserStorage, readFirstTouchUtm } from '@/lib/utm';
 import VariantSelector from '@/components/VariantSelector';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
@@ -21,7 +23,7 @@ export default function DetailClient({ slug, initialProduct, initialRelated }: {
   initialRelated?: any[];
 }) {
   const [product, setProduct] = useState<Product | null>(initialProduct || null);
-  const [related, setRelated] = useState<Product[]>(initialRelated || []);
+  const [related] = useState<Product[]>(initialRelated || []);
   const [loading, setLoading] = useState<boolean>(!initialProduct);
   const [error, setError] = useState<string | null>(null);
   const [activeImg, setActiveImg] = useState<number>(0);
@@ -165,13 +167,8 @@ export default function DetailClient({ slug, initialProduct, initialRelated }: {
       const res = await fetch(`/api/products/${slug}`);
       const data = await res.json();
       if (!res.ok) { setError(data.error || 'Produk tidak ditemukan'); return; }
+      // F-014: no related products in this fallback; GET /api/products is admin-only.
       setProduct(data.product as Product);
-
-      const relRes = await fetch('/api/products');
-      const relData = await relRes.json();
-      if (relRes.ok && relData.products) {
-        setRelated((relData.products as Product[]).filter((p) => p.isActive && p.slug !== slug).slice(0, 4));
-      }
     } catch (e: any) {
       setError(e.message);
     } finally {
@@ -256,6 +253,17 @@ export default function DetailClient({ slug, initialProduct, initialRelated }: {
 
   const removeVoucher = () => { setVoucherInput(''); setVoucherData(null); setVoucherError(''); setDiscountAmount(0); };
 
+  // F-002: lihat produk, sekali per slug (tidak ulang saat ganti varian/qty/StrictMode).
+  const viewTrackedSlugRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!product || viewTrackedSlugRef.current === product.slug) return;
+    viewTrackedSlugRef.current = product.slug;
+    const price = product.productType === 'simple'
+      ? (product as SimpleProduct).price
+      : (product as VariableProduct).priceFrom;
+    trackViewItem({ slug: product.slug, name: product.name, price: price ?? 0 });
+  }, [product]);
+
   // ── Order ──────────────────────────────────────────────────────────────────
   const handleOrderClick = async () => {
     if (!product || orderLoading) return;
@@ -275,12 +283,15 @@ export default function DetailClient({ slug, initialProduct, initialRelated }: {
           voucherCode: voucherData?.code ?? null,
           affiliateId: voucherData?.affiliateId ?? null,
           buyerUID,
+          utm: readFirstTouchUtm(browserStorage(), Date.now()),
         }),
       });
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || data.error || 'Gagal membuat pesanan');
 
+      // F-002: sinkron, tanpa await; navigasi WhatsApp tidak boleh ditunda (bug iOS).
+      trackLead({ orderId: data.orderId, value: data.finalPrice, slugs: [product.slug] }, 'product');
       window.location.href = buildWaLink(data.orderId, data.items, {
         totalPrice: data.totalPrice,
         discountAmount: data.discountAmount,
@@ -426,12 +437,12 @@ export default function DetailClient({ slug, initialProduct, initialRelated }: {
       <section className="detail-page-header">
         <div className="container">
           <div className="breadcrumb-wrapper">
-            <nav className="breadcrumb">
+            <nav className="breadcrumb" aria-label="Breadcrumb">
               <Link href="/">Home</Link>
-              <span className="breadcrumb-sep">/</span>
+              <span className="breadcrumb-sep" aria-hidden="true">/</span>
               <Link href="/produk">Produk</Link>
-              <span className="breadcrumb-sep">/</span>
-              <span className="breadcrumb-current">{p.name}</span>
+              <span className="breadcrumb-sep breadcrumb-sep--current" aria-hidden="true">/</span>
+              <span className="breadcrumb-current" aria-current="page">{p.name}</span>
             </nav>
           </div>
         </div>

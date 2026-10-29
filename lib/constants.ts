@@ -11,3 +11,7 @@ export const RESERVED_ARTICLE_SLUGS: readonly string[] = ['baru'];
 
 // F-013 phase A2 (H-3): an empty article author is stored and shown as this default.
 export const DEFAULT_AUTHOR = 'Tim INZTA';
+
+// F-005: the one public origin for canonical URLs and JSON-LD. Deliberately not NEXT_PUBLIC_SITE_URL or the
+// request host, so Preview, staging, and www all point Google at inzta.id (requirement 1.3).
+export const SITE_ORIGIN = 'https://inzta.id';

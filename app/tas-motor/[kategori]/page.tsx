@@ -3,11 +3,12 @@ import { notFound } from 'next/navigation';
 import { cache } from 'react';
 import type { MotorCategory } from '@/types';
 import { getActiveProducts, getArticles } from '@/lib/public-content';
-import { CATEGORY_SLUGS, categoryHref, isMotorCategory } from '@/lib/v2/motor-category';
+import { CATEGORY_SLUGS, isMotorCategory } from '@/lib/v2/motor-category';
 import V2Layout from '@/components/v2/V2Layout';
 import CategoryPage from '@/components/v2/motor/CategoryPage';
 import { buildCategoryPage, categoryDescription, categoryIndexable, categoryTitle } from '@/components/v2/motor/motor-page';
 import '@/app/(v2)/v2-motor.css';
+import { canonicalUrl } from '@/lib/seo';
 
 // F-016 S5.8.1: ISR; the four D1 slugs are prebuilt and every other slug, including case variants, is a 404.
 export const revalidate = 3600;
@@ -32,7 +33,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: categoryTitle(c),
     description: categoryDescription(c, lead),
-    alternates: { canonical: categoryHref(c) },
+    alternates: { canonical: canonicalUrl('tas-motor', c) },
     ...(categoryIndexable(c, products) ? {} : { robots: { index: false, follow: true } }),
   };
 }

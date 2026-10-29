@@ -94,6 +94,17 @@ export interface InventorySnapshotItem {
   stockAfter: number;
 }
 
+// F-002: UTM pertama pengunjung (first touch), disimpan di order.
+export interface OrderUtm {
+  source?: string;
+  medium?: string;
+  campaign?: string;
+  content?: string;
+  term?: string;
+  landingPath?: string; // pathname saja
+  capturedAt?: string;  // ISO 8601
+}
+
 export interface Order {
   orderId: string;
   customerName: string;
@@ -104,6 +115,7 @@ export interface Order {
   voucherCode: string | null;
   affiliateId: string | null;
   finalPrice: number;
+  utm?: OrderUtm | null;
   status: 'pending' | 'completed' | 'cancelled';
   createdAt: any;
   completedAt?: any;

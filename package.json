@@ -8,6 +8,7 @@
     "start": "next start",
     "test:auth": "node tests/f000-auth.cjs",
     "test:content": "node tests/f001-content.cjs",
+    "test:tracking": "node tests/f002-tracking.cjs",
     "test:markdown": "node tests/f012-markdown.cjs",
     "test:articles": "node tests/f012-articles.cjs",
     "test:editor": "node tests/f013-editor.cjs",
@@ -18,6 +19,7 @@
     "test:catalog": "node tests/f016-catalog.cjs",
     "test:motor": "node tests/f016-motor.cjs",
     "test:product": "node tests/f016-product.cjs",
+    "test:seo": "node tests/f005-seo.cjs",
     "check:v2-css": "node scripts/check-v2-css.mjs",
     "check:f016-structure": "node scripts/check-f016-structure.mjs",
     "check:f016-release": "node scripts/check-f016-release.mjs"

@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { OrderItemInput, Voucher } from '@/types';
+import { trackLead } from '@/lib/tracking';
+import { browserStorage, readFirstTouchUtm } from '@/lib/utm';
 import {
   buildOrderBody,
   checkVoucher,
@@ -158,9 +160,11 @@ export function useOrder({ slug, unitTotal, maxQuantity, canOrder, selectionKey,
     busy.current = true;
     setProcessing(true);
     setOrderError(null);
-    const body = buildOrderBody(buildItems(quantity), voucher, buyerUID);
+    const body = buildOrderBody(buildItems(quantity), voucher, buyerUID, readFirstTouchUtm(browserStorage(), Date.now()));
     const r = await submitOrder(body, browserFetch, extraLine?.(quantity));
     if (r.ok) {
+      // F-002: synchronous, not awaited; the WhatsApp navigation must not wait (iOS).
+      trackLead({ orderId: r.orderId, value: r.value, slugs: [slug] }, 'product');
       // S3.3.6: same tab; a new tab opened after an await is blocked by popup blockers.
       window.location.href = r.href;
     } else {
@@ -168,7 +172,7 @@ export function useOrder({ slug, unitTotal, maxQuantity, canOrder, selectionKey,
     }
     busy.current = false;
     setProcessing(false);
-  }, [canOrder, buildItems, quantity, voucher, buyerUID, extraLine]);
+  }, [canOrder, buildItems, quantity, voucher, buyerUID, extraLine, slug]);
 
   const max = Math.max(1, maxQuantity);
   return {

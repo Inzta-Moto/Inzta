@@ -149,7 +149,7 @@ function oldDetailClient(product, selectedAttributes, quantity, voucherData, buy
   const isVariable = product.productType === 'variable';
   const canOrder = selectionComplete && (isVariable ? variantExists && resolvedStock > 0 : resolvedStock > 0);
   const maxQuantity = selectionComplete && (!isVariable || variantExists) ? resolvedStock : 0;
-  const body = { items: [{ productSlug: product.slug, variationId: selectedVariant?.variationId ?? null, quantity }], voucherCode: voucherData?.code ?? null, affiliateId: voucherData?.affiliateId ?? null, buyerUID };
+  const body = { items: [{ productSlug: product.slug, variationId: selectedVariant?.variationId ?? null, quantity }], voucherCode: voucherData?.code ?? null, affiliateId: voucherData?.affiliateId ?? null, buyerUID, utm: null }; // F-002: DetailClient adds the first-touch UTM (null without one)
   return { resolvedPrice, canOrder, maxQuantity, body };
 }
 const oldRecalc = (v, base) => { let d = v.type === 'percentage' ? (base * v.value) / 100 : v.value; if (v.type === 'percentage' && v.maxDiscount && d > v.maxDiscount) d = v.maxDiscount; return Math.round(Math.min(d, base)); };

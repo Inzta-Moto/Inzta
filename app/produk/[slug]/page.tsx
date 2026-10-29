@@ -4,7 +4,10 @@ import { getActiveProducts } from '@/lib/public-content';
 import { getProduct } from '@/lib/v2/product-read';
 import V2Layout from '@/components/v2/V2Layout';
 import ProductDetail from '@/components/v2/product/ProductDetail';
-import { jsonLdScript, productJsonLd, selectRelated } from '@/components/v2/product/product-view';
+import { productJsonLd, selectRelated } from '@/components/v2/product/product-view';
+import JsonLd from '@/components/JsonLd';
+import TrackView from '@/components/v2/product/TrackView';
+import { canonicalUrl } from '@/lib/seo';
 import '@/app/(v2)/v2-product.css';
 
 // F-016 E1, S3.10.1: ISR per slug instead of force-dynamic. Product writes and stock changes purge the page through
@@ -70,6 +73,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
     return {
       title: `${name} — INZTA MOTO`,
       description: ogDescription,
+      alternates: { canonical: canonicalUrl('produk', slug) },
       openGraph: {
         url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://inzta.id'}/produk/${slug}`,
         title: name,
@@ -99,7 +103,8 @@ export default async function DetailPage({ params }: { params: { slug: string } 
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://inzta.id';
   return (
     <V2Layout current="produk" products={active}>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(productJsonLd(product, baseUrl)) }} />
+      <JsonLd data={productJsonLd(product, baseUrl)} />
+      <TrackView slug={product.slug} name={product.name} price={(product.productType === 'simple' ? product.price : product.priceFrom) ?? 0} />
       <ProductDetail product={product} related={selectRelated(product, active)} />
     </V2Layout>
   );

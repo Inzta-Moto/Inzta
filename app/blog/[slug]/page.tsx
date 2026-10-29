@@ -10,6 +10,8 @@ import { resolveEmbeds, visibleBlocks } from '@/lib/article-embeds';
 import { firstLineSummary } from '@/lib/article-format';
 import { optimizeCloudinaryUrl } from '@/lib/utils';
 import { articleReadingMinutes, otherArticles } from '@/lib/v2/article-v2';
+import { articleJsonLd, canonicalUrl } from '@/lib/seo';
+import JsonLd from '@/components/JsonLd';
 import type { PublicArticle } from '@/types';
 
 // ISR per slug: the first request renders and caches the page; admin writes call revalidatePath.
@@ -21,7 +23,6 @@ export function generateStaticParams() {
   return [];
 }
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://inzta.id';
 const DEFAULT_DESCRIPTION = 'Baca tips dan berita terbaru seputar dunia touring dan motor.';
 
 // Link previews want a fixed 1200x630 JPEG: WhatsApp and Facebook do not all accept the AVIF that
@@ -61,10 +62,13 @@ export async function generateMetadata({ params }: { params: { slug: string } })
     (article.coverImage && article.coverAlt) || article.title,
   );
 
+  const url = canonicalUrl('blog', article.slug);
   return {
     title,
     description,
+    alternates: { canonical: url },
     openGraph: {
+      url,
       title: socialTitle,
       description,
       images: [image],
@@ -87,18 +91,20 @@ export default async function BlogDetailPage({ params }: { params: { slug: strin
   // Rendered and sanitized here on the server; the raw content is not sent to the browser.
   const { blocks } = renderArticle(article);
   const embeds = await resolveEmbeds(blocks, { exclude: article.slug });
+  const jsonLd = articleJsonLd(article); // needs content for the body-image fallback
   const { content, ...rest } = article;
   // F-016 S7.9.1: only the JSX changes, to the v2 frame. S7.6.3: "Artikel lain" from the published list, card fields only.
   const others = otherArticles(article, await getArticles());
   return (
     <V2Layout current="artikel">
+      <JsonLd data={jsonLd} />
       <ArticlePage
         article={rest}
         blocks={visibleBlocks(blocks, embeds)}
         embeds={embeds}
         minutes={articleReadingMinutes(content)}
         others={others}
-        shareUrl={`${siteUrl}/blog/${params.slug}`}
+        shareUrl={canonicalUrl('blog', article.slug)}
       />
     </V2Layout>
   );

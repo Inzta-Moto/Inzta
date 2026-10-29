@@ -5,6 +5,7 @@ import CatalogPage from '@/components/v2/catalog/CatalogPage';
 import { toCatalogItem } from '@/components/v2/catalog/filter';
 import { getActiveProducts } from '@/lib/public-content';
 import { WA_NUMBER } from '@/lib/constants';
+import { canonicalUrl } from '@/lib/seo';
 
 // F-016 E1, S2.7.1: ISR instead of force-dynamic; product and stock writes purge /produk (revalidateProductPaths).
 // The query string is read on the client only (S2.2.8), so the route stays static.
@@ -17,7 +18,8 @@ const DESCRIPTION = 'Tas yang dibuat untuk motor Anda ditandai hijau.';
 export const metadata: Metadata = {
   title: 'Semua tas motor INZTA',
   description: DESCRIPTION,
-  alternates: { canonical: '/produk' },
+  // F-005: absolute canonical on inzta.id.
+  alternates: { canonical: canonicalUrl('produk') },
 };
 
 // S2.7.2: a failed read throws (getActiveProducts does not catch), so the last good ISR page keeps being served,

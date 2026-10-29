@@ -5,6 +5,7 @@ import V2Layout from '@/components/v2/V2Layout';
 import About from '@/components/v2/about/About';
 import { GASBER_SLUG } from '@/components/v2/about/about-content';
 import '@/app/(v2)/v2-about.css';
+import { canonicalUrl } from '@/lib/seo';
 
 // F-016 S8.7.1: ISR; product, article, and flash-sale writes revalidate /tentang (design.md §2).
 export const revalidate = 3600;
@@ -20,7 +21,7 @@ const SHARE_IMAGE = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://inzta.id'}/l
 export const metadata: Metadata = {
   title: TITLE,
   description: DESCRIPTION,
-  alternates: { canonical: '/tentang' },
+  alternates: { canonical: canonicalUrl('tentang') },
   openGraph: {
     type: 'website',
     locale: 'id_ID',
