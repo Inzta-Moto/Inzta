@@ -128,7 +128,7 @@ export default function CatalogBody({
 
   return (
     <>
-      <section className="iz-wrap" ref={filtersRef}>
+      <section className="iz-wrap iz-catalog__filters" ref={filtersRef}>
         <FilterBar
           items={items}
           state={state}

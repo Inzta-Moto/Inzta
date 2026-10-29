@@ -1,8 +1,5 @@
-/* F-016 S5: states and fixes for /tas-motor/[kategori] that the canvas does not cover. Imported by the route page only. */
-
-/* Canvas inline styles (motor.dc.html): tabs and #produk sit 48 px below the previous block. */
-.iz-motor-tabs { margin-top: 48px; }
-.iz-motor-produk { margin-top: 48px; }
+/* F-016 S5: states and fixes for /tas-motor/[kategori] that the canvas does not cover. Imported by the route page only.
+   The space above the tabs and #produk comes from the section rhythm in v2-overrides.css. */
 
 /* SmartImage wrappers fill the boxes the canvas gives to a bare <img> (S5.1, S5.6, S5.7). */
 .iz-hero > .iz-smartimg.iz-hero__img { position: absolute; inset: 0; }

@@ -9,7 +9,7 @@ import ArticlePhoto from './ArticlePhoto';
 export default function OtherArticles({ cards }: { cards: ArticleCardV2[] }) {
   if (cards.length === 0) return null;
   return (
-    <section className="iz-wrap" style={{ marginTop: 96 }}>
+    <section className="iz-wrap">
       <h2 className="t-h2-shop" style={{ marginBottom: 24 }}>Artikel lain</h2>
       <div className="iz-grid-2">
         {cards.map(c => {

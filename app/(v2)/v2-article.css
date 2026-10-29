@@ -62,8 +62,10 @@
 .iz-athumbs { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px; }
 .iz-figure .iz-athumbs .iz-photo { aspect-ratio: 1 / 1; border-radius: var(--radius-tile); }
 
-/* S7.5.3: copy feedback next to the chips. */
-.iz-share__msg { flex-basis: 100%; min-height: 1.4em; font-weight: 500; color: var(--c-batu); }
+/* S7.5.3: copy feedback under the chips. It hangs below the row instead of reserving an empty line, so the section gap
+   after the article starts at the chips; a message then appears inside that gap and moves nothing. */
+.iz-share { position: relative; }
+.iz-share__msg { position: absolute; top: 100%; left: 0; right: 0; margin-top: 10px; font-weight: 500; line-height: 1.4; color: var(--c-batu); }
 .iz-share > a.iz-fchip { color: var(--c-tinta); }
 
 /* S7.8.3: preview banner above the head (admin only). */

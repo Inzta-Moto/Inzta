@@ -43,7 +43,7 @@ export default async function BlogPage() {
           <ArticleList cards={cards} />
         )}
       </div>
-      <div style={{ marginTop: 72 }}>
+      <div>
         <Closing waHref={`https://wa.me/${WA_NUMBER}`} />
       </div>
     </V2Layout>

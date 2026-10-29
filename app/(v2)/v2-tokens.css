@@ -40,6 +40,11 @@
   --space-12: 48px;
   --space-18: 72px;
   --space-30: 120px;
+  /* Gap between page sections: 120 px desktop, 72 px phone (design README, "Jarak antar bagian"), fluid in between.
+     Inside 1024-1439 px v2-fit.css scales both ends, so the gap stays 120 design px there. */
+  --space-section: clamp(var(--space-18), 100vw / 12, var(--space-30));
+  /* A section that continues the one above it (.iz-section--tight, tabs over their grid) sits half as far. */
+  --space-section-tight: calc(var(--space-section) / 2);
   --radius-thumb: 16px;
   --radius-tile: 20px;
   --radius-tile-lg: 24px;

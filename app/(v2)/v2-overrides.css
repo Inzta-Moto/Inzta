@@ -62,7 +62,6 @@
   .iz-page .iz-hero.iz-hero--short { min-height: clamp(540px, 100svh, 760px); }
   .iz-page .iz-hero__body { padding-top: clamp(104px, 18vh, 160px); padding-bottom: clamp(40px, 9vh, 80px); gap: clamp(16px, 2.6vh, 24px); }
   .iz-page .iz-band { min-height: clamp(440px, 72svh, 600px); }
-  .iz-page .iz-section { padding-block: clamp(48px, 5vw, 72px); }
   .iz-page .iz-gfeature h3 { font-size: clamp(24px, 2.25vw, 32px); }
   .iz-page .iz-rfeature blockquote { font-size: clamp(22px, 2.1vw, 30px); }
 }
@@ -104,4 +103,34 @@ html:not(.js-nav) .iz-navdd:focus-within .iz-navdd__btn svg { transform: rotate(
   .iz-page .iz-band { max-width: calc(var(--size-content) + 160px); margin-inline: auto; }
   /* Padding percentages resolve against main (the full viewport), not the capped band, so the inset is fixed here. */
   html .iz-page .iz-band--split { padding-left: 80px; }
+}
+
+/* Section rhythm (Sehan, 2026-10-29: "spacing per section nya itu konsisten"). Every page-level block of main, and the
+   footer, sits one --space-section below the block above it, edge to edge. Sections drop their own padding, so two
+   sections no longer double the gap and a band, a dark panel or the footer no longer halves it; the canvas inline
+   paddingTop/paddingBottom: 0 are no-ops now. A tight section (the best-seller row under the Garasi) and the motor
+   tabs over their grid continue the block above at --space-section-tight. Parts of a page head (article cover and
+   body, the product under its breadcrumb, the catalog filters and results) keep their own margins, and the fixed
+   reading bar of an article does not count as a block. */
+.iz-page main > * + *:not(.iz-figure--cover, .iz-article--page, .iz-pdp, .iz-catalog__filters, .iz-catalog__results) { margin-top: var(--space-section); }
+.iz-page main > .iz-progress + * { margin-top: 0; }
+.iz-page main > * + .iz-section--tight, .iz-page main > .iz-motor-tabs + .iz-motor-produk { margin-top: var(--space-section-tight); }
+.iz-page main > :is(.iz-section, .iz-section--tight) { padding-block: 0; }
+.iz-page .iz-footer { margin-top: var(--space-section); }
+/* Without that padding an anchored section would land with its heading against the floating navbar. */
+.iz-page main > [id] { scroll-margin-top: calc(var(--size-nav) + var(--space-4) + var(--space-6)); }
+/* Desktop with motion the filmstrip is a viewport-tall stage pinned at the top (v2-motion.css .is-pinned): its 64 px top
+   padding and the centring slack already part it from the band above, so the rhythm margin is dropped there and the
+   block below sits 64 px under the stage. Both sides then read 64 px plus the slack, one section gap at 1440x900. */
+.iz-page main > .iz-film-scene.is-pinned { margin-top: 0; }
+.iz-page main > .iz-film-scene.is-pinned + *, .iz-page main > :has(> .iz-film-scene.is-pinned) + * { margin-top: 64px; }
+
+/* A link row keeps its 48 px hit area outside its box (as the navbar controls, 20.4), so the space around the row is
+   measured from its text: "Lihat semua produk" under the best-seller row, and on phones the link a split heading
+   stacks under its title. */
+.iz-page .iz-scroller + .iz-link { position: relative; min-height: 0; }
+.iz-page .iz-scroller + .iz-link::after { content: ""; position: absolute; inset: -10px 0; }
+@media (max-width: 767px) {
+  .iz-page .iz-head--split .iz-link { position: relative; min-height: 0; }
+  .iz-page .iz-head--split .iz-link::after { content: ""; position: absolute; inset: -10px 0; }
 }

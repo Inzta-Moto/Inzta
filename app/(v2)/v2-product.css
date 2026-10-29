@@ -1,9 +1,9 @@
 /* F-016 S3, S4: product page states and fixes the canvas does not cover (produk-detail, produk-sisi). Tokens only;
    every selector is an iz- class (S0.1.1). Imported by app/produk/[slug]/page.tsx. */
 
-/* The canvas puts iz-wrap and the top padding on <main>; here each block carries iz-wrap (V2Layout owns main). */
+/* The canvas puts iz-wrap and the top padding on <main>; here each block carries iz-wrap (V2Layout owns main). The
+   space above each .iz-pdp-block comes from the section rhythm in v2-overrides.css. */
 .iz-pdp-crumb { padding-top: 128px; margin-bottom: 24px; }
-.iz-pdp-block { margin-top: 72px; }
 .iz-pdp-para + .iz-pdp-para { margin-top: 12px; }
 
 /* Gallery (S3.2): SmartImage fills the ported boxes, so the canvas inset and radius still apply. */

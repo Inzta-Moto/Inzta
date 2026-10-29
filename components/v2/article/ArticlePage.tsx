@@ -85,7 +85,7 @@ export default function ArticlePage({
         </div>
       </div>
       <OtherArticles cards={others} />
-      <div style={{ marginTop: 72 }}>
+      <div>
         <Closing waHref={`https://wa.me/${WA_NUMBER}`} />
       </div>
     </>

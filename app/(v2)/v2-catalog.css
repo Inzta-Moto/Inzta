@@ -18,9 +18,6 @@
 /* S2.5: "Muat 12 produk lagi" (canvas inline style). */
 .iz-catalog__more { display: flex; justify-content: center; margin-top: 48px; }
 
-/* Closing panel spacing of the canvas (margin-top: 72px on its section). */
-.iz-catalog__results ~ .iz-wrap { margin-top: 72px; }
-
 /* S2.4.4: cards fade 200 ms on a result change; two names so each change restarts the animation. */
 .iz-catalog__grid[data-anim="a"] > * { animation: iz-catfade-a 200ms ease-out; }
 .iz-catalog__grid[data-anim="b"] > * { animation: iz-catfade-b 200ms ease-out; }
