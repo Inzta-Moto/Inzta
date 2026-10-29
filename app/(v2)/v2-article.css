@@ -1,0 +1,38 @@
+/* F-016 S6, S7: states and fixes for /blog and /blog/[slug] that the ported Design System does not cover. Imported by
+   the route pages only. Every selector is an iz- class; F-013 body classes are never named here (S7.3.8). */
+
+/* Article photos use SmartImage inside the canvas .iz-photo box, whose ratio comes from the card rule (S6.3.2, S6.4.1). */
+.iz-aphoto > .iz-smartimg { position: absolute; inset: 0; background: transparent; }
+.iz-aphoto > .iz-tag { z-index: 1; }
+.iz-aphoto .iz-smartimg > img { transition: transform .4s ease; }
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .iz-acard:hover .iz-aphoto .iz-smartimg > img { transform: scale(1.04); }
+  .iz-grow:hover .iz-aphoto .iz-smartimg > img { transform: scale(1.03); }
+}
+/* ST-RM: no hover zoom on cards (S6.4 states, S7.6). */
+@media (prefers-reduced-motion: reduce) {
+  .iz-aphoto .iz-smartimg > img { transition: none; transform: none; }
+}
+
+/* Cards outside the current page carry `hidden`; .iz-acard sets display, which would beat the UA rule (S6.5.2). */
+.iz-acard[hidden] { display: none; }
+/* Long titles clamp to three lines; the full title stays in the DOM (S6.4.3). */
+.iz-acard .t-h3 { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; overflow: hidden; }
+
+/* Tabs keep their 44 px look with a 48 px hit area (S6.2 BP, G-A2). The phone row scrolls, so it gets room for it. */
+.iz-atabs .iz-fchip { position: relative; }
+.iz-atabs .iz-fchip::after { content: ""; position: absolute; inset: -2px 0; }
+@media (max-width: 767px) {
+  .iz-atabs { padding-block: 2px; }
+}
+
+/* Tab change: list fades in over 150 ms (design.md §8 "tabs fade 150 ms"); never on first paint, never under ST-RM. */
+@media (prefers-reduced-motion: no-preference) {
+  .iz-alist--fade { animation: iz-alist-fade 150ms ease-out; }
+}
+@keyframes iz-alist-fade { from { opacity: 0; } to { opacity: 1; } }
+
+/* Pager: disabled ends, ellipsis, and wrapping at 390 px without horizontal scroll (S6.5.3, S6.5 BP). */
+.iz-alist .iz-pager { flex-wrap: wrap; }
+.iz-alist .iz-pager button:disabled { opacity: .45; cursor: default; }
+.iz-pager__gap { min-width: 24px; text-align: center; color: var(--c-batu); }

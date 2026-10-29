@@ -1,61 +1,49 @@
-import Header from '@/components/Header';
-import dynamic from 'next/dynamic';
-import Link from 'next/link';
-
-const Footer = dynamic(() => import('@/components/Footer'));
-import { Calendar } from 'lucide-react';
-import { formatDate, optimizeCloudinaryUrl, generateCloudinarySrcSet } from '@/lib/utils';
+import type { Metadata } from 'next';
+import '@/app/(v2)/v2-article.css';
+import V2Layout from '@/components/v2/V2Layout';
+import Closing from '@/components/v2/Closing';
+import EmptyState from '@/components/v2/ui/EmptyState';
+import ArticleList from '@/components/v2/article/ArticleList';
+import { WA_NUMBER } from '@/lib/constants';
 import { getArticles } from '@/lib/public-content';
-import { publicDate } from '@/lib/article-format';
+import { articleCardV2 } from '@/lib/v2/article-v2';
 
-// ISR: rendered on the server so Google sees every article; admin writes call revalidatePath.
+// ISR: rendered on the server so Google sees every article; admin writes call revalidatePath (F-001, F-016 S6.7.1).
 export const revalidate = 3600;
 
+const LEAD = 'Cara memilih dan memasang tas, panduan per motor, dan catatan dari komunitas.';
+
+// F-016 S6.7.4, design.md §9.
+export const metadata: Metadata = {
+  title: 'Artikel · INZTA',
+  description: LEAD,
+  alternates: { canonical: '/blog' },
+};
+
+// F-016 S6 (blog.dc.html). Reads stay as F-001/F-012 wrote them (published only, newest first); the list island
+// receives the card projection only, never `content` (S6.7.2). A failed read throws to error.tsx (S6.6.4).
 export default async function BlogPage() {
-  const articles = await getArticles();
+  const cards = (await getArticles()).map(articleCardV2);
 
   return (
-    <>
-      <Header active="blog" />
-      <section className="page-header page-header-with-bg">
-        <div className="page-header-bg"><img src="https://i.ytimg.com/vi/hrJnT58v8Ss/hq720.jpg?sqp=-oaymwE7CK4FEIIDSFryq4qpAy0IARUAAAAAGAElAADIQj0AgKJD8AEB-AH-CYAC0AWKAgwIABABGFQgXihlMA8=&rs=AOn4CLBjwCeRL8haREKtJ3qI5BUFZG6LcQ" alt="Blog" /></div>
-        <div className="hero-overlay"></div>
-        <div className="container">
-          <div className="page-header-content">
-            <h1 className="page-title">Article Blog</h1>
-            <p className="page-desc">Artikel, tips, dan Informasi</p>
+    <V2Layout current="artikel">
+      <div className="iz-wrap" style={{ paddingTop: 128 }}>
+        <section>
+          <div className="iz-head" style={{ marginBottom: 24 }}>
+            <h1 className="t-h1-shop">Artikel</h1>
+            <p className="t-lead">{LEAD}</p>
           </div>
-        </div>
-      </section>
-      <section className="section">
-        <div className="container">
-          <div className="blog-grid blog-grid-full">
-            {articles.length === 0 ? <p className="empty-state">Belum ada artikel.</p> : articles.map(a => {
-              const articleImage = a.coverImage || a.images?.[0] || a.imageUrl || 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80';
-              
-              return (
-                <Link href={`/blog/${a.slug}`} key={a.slug} className="blog-card">
-                  <div className="blog-card-image">
-                    <img 
-                      src={optimizeCloudinaryUrl(articleImage, 600)}
-                      srcSet={generateCloudinarySrcSet(articleImage, [400, 600, 800])}
-                      sizes="(max-width: 768px) 100vw, 33vw"
-                      alt={(a.coverImage && a.coverAlt) || a.title}
-                      loading="lazy"
-                    />
-                  </div>
-                  <div className="blog-card-body">
-                    <div className="blog-card-meta"><Calendar size={12} /> {formatDate(publicDate(a))}</div>
-                    <h3 className="blog-card-title">{a.title}</h3>
-                    <p className="blog-card-excerpt">{a.excerpt}</p>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-      <Footer />
-    </>
+        </section>
+        {cards.length === 0 ? (
+          // S6.6.1: no tabs, featured card, grid, panel, or pager; the closing panel stays.
+          <EmptyState title="Belum ada artikel." actions={[{ label: 'Lihat produk', href: '/produk' }]} />
+        ) : (
+          <ArticleList cards={cards} />
+        )}
+      </div>
+      <div style={{ marginTop: 72 }}>
+        <Closing waHref={`https://wa.me/${WA_NUMBER}`} />
+      </div>
+    </V2Layout>
   );
 }

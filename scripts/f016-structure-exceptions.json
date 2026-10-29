@@ -110,5 +110,61 @@
     "value": "Tas samping XSR 155: versi tali vs versi baut, depan vs belakang",
     "reason": "The featured title comes from the newest published per-motor article of the category (data); hidden when none qualifies.",
     "requirement": "S5.6, S5.6.3, design.md §19 data-driven text"
+  },
+  {
+    "artboard": "blog",
+    "kind": "block",
+    "value": "iz-panel",
+    "reason": "The category panel sits inside the list tabpanel (role=tabpanel wraps featured card, grid, panel, pager) and renders only when the current page shows four or more cards; the shared fixture has three articles.",
+    "requirement": "S6.2.1, S6.4.2, S6.6.2"
+  },
+  {
+    "artboard": "blog",
+    "kind": "block",
+    "value": "iz-closing",
+    "reason": "The shared Closing component carries its own .iz-wrap (as in Main.dc.html) because V2Layout main#isi is not .iz-wrap.",
+    "requirement": "S0.8"
+  },
+  {
+    "artboard": "blog",
+    "kind": "heading",
+    "value": "Cari tas untuk motor Anda",
+    "reason": "Panel heading renders only from five articles on a page (featured + 4 cards); verified on a local 5/8/50-article fixture.",
+    "requirement": "S6.4.2, S6.6.2"
+  },
+  {
+    "artboard": "blog",
+    "kind": "heading",
+    "value": "Gasber 16 Indonesia Ride Adventure: matic sampai bigbike di jalur tanah Banten–Bogor",
+    "reason": "Article titles come from published articles in Firestore (data, not canvas copy); the canvas shows sample titles.",
+    "requirement": "S6.3, S6.4, design.md §19 data-driven text"
+  },
+  {
+    "artboard": "blog",
+    "kind": "heading",
+    "value": "Panduan memilih tas motor: tank bag, tail bag, side bag, atau box?",
+    "reason": "Article titles come from published articles in Firestore (data, not canvas copy); the canvas shows sample titles.",
+    "requirement": "S6.3, S6.4, design.md §19 data-driven text"
+  },
+  {
+    "artboard": "blog",
+    "kind": "heading",
+    "value": "Tas motor NMAX: pilihan tas tengah, samping, belakang, dan botol",
+    "reason": "Article titles come from published articles in Firestore (data, not canvas copy); the canvas shows sample titles.",
+    "requirement": "S6.3, S6.4, design.md §19 data-driven text"
+  },
+  {
+    "artboard": "blog",
+    "kind": "heading",
+    "value": "Checklist touring: perkakas, P3K, dan cara packing per posisi tas",
+    "reason": "Article titles come from published articles in Firestore (data, not canvas copy); the canvas shows sample titles.",
+    "requirement": "S6.3, S6.4, design.md §19 data-driven text"
+  },
+  {
+    "artboard": "blog",
+    "kind": "heading",
+    "value": "Tail bag vs top box: mana yang cocok untuk harian dan touring?",
+    "reason": "Article titles come from published articles in Firestore (data, not canvas copy); the canvas shows sample titles.",
+    "requirement": "S6.3, S6.4, design.md §19 data-driven text"
   }
 ]
