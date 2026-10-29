@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { PHOTOS } from '@/lib/v2/home-content';
 import SmartImage from '@/components/v2/ui/SmartImage';
 import { ArrowRight, Chat, CircleCheck, Road, Scissors } from '@/components/v2/icons';
+import '@/app/(v2)/v2-why.css';
 
 // road-02 is 1200 x 630 landscape inside a portrait panel, so object-fit: cover renders it about 1.9x the panel
 // height wide; the sizes hint asks for that width instead of the panel width.
@@ -28,7 +29,7 @@ export default function WhyInzta({ gasberHref, waHref }: { gasberHref: string; w
           <span className="iz-eyebrow">Mengapa pilih INZTA</span>
           <h2 className="t-h2-landing">Dibuat di Indonesia. Dipakai di jalan Indonesia.</h2>
         </div>
-        <ul className="iz-why__list" data-reveal-stagger="">
+        <ul className="iz-why__list iz-why__list--tiles" data-reveal-stagger="">
           <li className="iz-why__item">
             <span className="iz-why__icon"><CircleCheck /></span>
             <h3>Jujur soal kecocokan</h3>

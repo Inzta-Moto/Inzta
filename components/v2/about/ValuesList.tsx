@@ -2,6 +2,7 @@ import Link from 'next/link';
 import SmartImage from '@/components/v2/ui/SmartImage';
 import { ArrowRight, Chat, CircleCheck, Road } from '@/components/v2/icons';
 import { VALUES_PHOTO } from '@/components/v2/about/about-content';
+import '@/app/(v2)/v2-why.css';
 
 // "Yang kami pegang." (F-016 S8.3). Team copy waiting for G2 (P-8); the page hides this section through
 // SHOW_VALUES_COPY. The two chips are static examples of the FitLabel styles, not links and not data (S8.3.1). The
@@ -14,7 +15,7 @@ export default function ValuesList({ gasberHref }: { gasberHref: string }) {
           <SmartImage src={VALUES_PHOTO.src} alt={VALUES_PHOTO.alt} tone="dark" sizes="(max-width: 767px) 100vw, 480px" widths={[480, 800, 1200]} width={800} />
           <h2 className="t-h2-landing" data-reveal-lines="">Yang kami pegang.</h2>
         </div>
-        <ul className="iz-why__list" data-reveal-stagger="">
+        <ul className="iz-why__list iz-why__list--tiles" data-reveal-stagger="">
           <li className="iz-why__item">
             <span className="iz-why__icon"><CircleCheck /></span>
             <h3>Jujur soal kecocokan</h3>

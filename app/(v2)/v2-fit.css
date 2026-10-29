@@ -164,6 +164,8 @@
   html .iz-page .iz-spec__n { font-size: max(12.6px, calc(15 * var(--u))); }
   html .iz-page .iz-band__callout b { font-size: max(10.9px, calc(13 * var(--u))); }
   html .iz-page .iz-band__callout > span { font-size: max(18.5px, calc(22 * var(--u))); }
+  html .iz-page .iz-mfill__glyph { font-size: max(252px, calc(300 * var(--u))); }
+  html .iz-page .iz-morecard__tile > b { font-size: max(11.8px, calc(14 * var(--u))); }
   html .iz-page .iz-preview-banner { font-size: max(12.6px, calc(15 * var(--u))); }
   html .iz-page .iz-article .article-body { font-size: max(16px, calc(19 * var(--u))); }
   html .iz-page .iz-article .article-body h2 { font-size: max(23.5px, calc(28 * var(--u))); }

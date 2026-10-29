@@ -32,12 +32,15 @@
 /* Helper cards in the free slots of the first #produk row (GridFill.tsx). Font sizes are em of the inherited page
    size (18 px), so they follow the laptop fit of v2-fit.css without new generated rules. */
 .iz-mfill { display: grid; min-width: 0; }
-.iz-mfill__card { --mfill-r: var(--radius-tile-lg); position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-3); min-width: 0; padding: var(--space-5); border-radius: var(--mfill-r); transition: transform 200ms cubic-bezier(0.23, 1, 0.32, 1), box-shadow 200ms ease, background-color 200ms ease; }
-/* The auto margin sends the free height above the title, so the link lines up with the product prices. */
-.iz-mfill__icon { display: grid; place-items: center; flex: none; width: var(--size-chip); height: var(--size-chip); margin-bottom: auto; border-radius: 50%; background: var(--c-kuning); color: var(--c-on-kuning); }
+.iz-mfill__card { --mfill-r: var(--radius-tile-lg); position: relative; isolation: isolate; display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-3); min-width: 0; padding: var(--space-5); border-radius: var(--mfill-r); transition: transform 200ms cubic-bezier(0.23, 1, 0.32, 1), box-shadow 200ms ease, background-color 200ms ease; }
+/* Stitched seam inside the edge, like the sewn panel of a bag. Inert, so the card stays one target. */
+.iz-mfill__card::before { content: ""; position: absolute; inset: 8px; z-index: -1; border: 1.5px dashed color-mix(in srgb, currentColor 16%, transparent); border-radius: calc(var(--mfill-r) - 8px); pointer-events: none; }
+.iz-mfill__icon { display: grid; place-items: center; flex: none; width: var(--size-chip); height: var(--size-chip); border-radius: 50%; background: var(--c-kuning); color: var(--c-on-kuning); }
 .iz-mfill__icon svg { width: 20px; height: 20px; }
 .iz-mfill__title { font-family: var(--font-display); font-size: calc(24em / 18); font-weight: 800; line-height: 1.1; letter-spacing: -0.02em; text-wrap: balance; }
 .iz-mfill__text { color: var(--c-pasir); font-size: calc(16em / 18); line-height: 1.45; }
+/* A one-column cell keeps the title and the link, so the photo has room; the full sentence is in the closing panel. */
+.iz-mfill--wa:not(.iz-mfill--wide) .iz-mfill__text { display: none; }
 /* Block, not the inline-flex of .iz-link: on a two-line label the arrow then follows "WhatsApp" instead of the edge. */
 .iz-mfill .iz-mfill__cta { display: block; min-height: 0; padding-top: var(--space-2); font-size: calc(16em / 18); font-weight: 700; line-height: 1.3; }
 .iz-mfill__cta svg { display: inline-block; vertical-align: middle; margin-left: 2px; }
@@ -45,11 +48,40 @@
 .iz-mfill__cta::after { content: ""; position: absolute; inset: 0; border-radius: var(--mfill-r); }
 .iz-mfill .iz-mfill__cta:focus-visible { outline: none; }
 .iz-mfill__cta:focus-visible::after { outline: 3px solid var(--c-focus); outline-offset: 3px; }
-.iz-mfill--all .iz-mfill__card { justify-content: space-between; background: var(--c-pasir-muda); color: var(--c-tinta); }
-.iz-mfill--all .iz-arrow { align-self: flex-end; }
+
+/* Consult card visual. The clip sits on its own layer, not on the card, so the focus ring outside the card survives. */
+.iz-mfill__bg { position: absolute; inset: 0; z-index: -1; overflow: hidden; border-radius: inherit; pointer-events: none; }
+.iz-mfill__glyph { position: absolute; right: 0.02em; bottom: -0.16em; font-family: var(--font-display); font-size: 300px; font-weight: 800; line-height: 0.8; color: transparent; -webkit-text-stroke: 2px rgba(243, 239, 230, 0.1); user-select: none; }
+/* The art takes the free height above the title, so the link lines up with the product prices. */
+.iz-mfill__art { position: relative; align-self: stretch; flex: 1 1 auto; min-height: 104px; margin-bottom: var(--space-2); }
+.iz-mfill__art > .iz-mfill__icon { position: absolute; z-index: 2; top: 0; left: 0; }
+.iz-mfill__route { display: none; }
+.iz-mfill__photo { position: absolute; top: 4px; right: 10px; height: calc(100% - 12px); max-height: 190px; aspect-ratio: 4 / 3; max-width: 62%; }
+.iz-mfill__plate, .iz-mfill__frame { position: absolute; inset: 0; border-radius: 14px; }
+/* Back plate in the palette of the Closing chat: a stitched patch peeking out behind the photo. */
+.iz-mfill__plate { inset: 12% -8% -10% 16%; background: var(--c-kuning-tua); outline: 1.5px dashed color-mix(in srgb, var(--c-kuning) 60%, transparent); outline-offset: -6px; rotate: 9deg; }
+.iz-mfill__frame { padding: 5px; background: var(--c-krem); box-shadow: 0 18px 32px -14px rgba(0, 0, 0, 0.7); rotate: -4deg; }
+.iz-mfill__frame > .iz-smartimg { position: absolute; inset: 5px; border-radius: 10px; }
+.iz-mfill__frame > .iz-tag { position: absolute; z-index: 1; left: 10px; bottom: 10px; min-height: 22px; padding: 1px 8px; font-size: 12px; }
+.iz-mfill__frame:has(> .iz-smartimg[data-state="error"]) > .iz-tag { display: none; }
+
+/* "Lihat semua produk": a fanned stack of the product photos already on this page. */
+.iz-mfill--all .iz-mfill__card { background: var(--c-pasir-muda); color: var(--c-tinta); }
+.iz-mfill__fan { position: relative; align-self: stretch; flex: 1 1 auto; min-height: 136px; }
+.iz-mfill__thumb { --fan-x: 0%; --fan-y: 0%; --fan-r: -5deg; --fan-k: 1; position: absolute; left: 50%; top: 50%; width: min(60%, 136px); aspect-ratio: 1; border-radius: 16px; background: var(--c-kertas-terang); box-shadow: 0 0 0 1px var(--c-garis), var(--shadow-float); transform: translate(calc(-50% + var(--fan-x) * var(--fan-k)), calc(-50% + var(--fan-y) * var(--fan-k))) rotate(calc(var(--fan-r) * var(--fan-k))); }
+.iz-mfill__thumb > .iz-smartimg { position: absolute; inset: 5px; border-radius: 11px; background: transparent; }
+.iz-mfill__fan--2 > :nth-child(1) { --fan-x: -24%; --fan-r: -8deg; }
+.iz-mfill__fan--2 > :nth-child(2) { --fan-x: 24%; --fan-y: 4%; --fan-r: 7deg; }
+.iz-mfill__fan--3 > :nth-child(1) { --fan-x: -38%; --fan-y: 6%; --fan-r: -12deg; }
+.iz-mfill__fan--3 > :nth-child(2) { z-index: 2; --fan-y: -6%; --fan-r: 0deg; }
+.iz-mfill__fan--3 > :nth-child(3) { z-index: 1; --fan-x: 38%; --fan-y: 6%; --fan-r: 12deg; }
+.iz-mfill__foot { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--space-3); width: 100%; margin-top: auto; }
 .iz-mfill__label { font-family: var(--font-display); font-size: calc(26em / 18); font-weight: 800; line-height: 1.05; letter-spacing: -0.02em; text-wrap: balance; }
+
 @media (min-width: 768px) {
   .iz-mfill--wide { grid-column: span 2; }
+  /* The dashed route reads "send from WhatsApp to the photo"; a one-column cell has no room for it. */
+  .iz-mfill--wide .iz-mfill__route { display: block; position: absolute; top: 14px; left: 56px; width: calc(70% - 56px); height: 50%; overflow: visible; fill: none; stroke: var(--c-kuning); stroke-opacity: 0.55; stroke-width: 1.5; stroke-dasharray: 5 6; stroke-linecap: round; }
 }
 @media (min-width: 1024px) {
   .iz-mfill--wide .iz-mfill__title { font-size: calc(30em / 18); max-width: 22ch; }
@@ -59,18 +91,67 @@
   .iz-mfill__card:hover { box-shadow: var(--shadow-float); }
   .iz-mfill--all .iz-mfill__card:hover { background: var(--c-pasir-hover); }
 }
+/* Hover motion on fine pointers only; under reduced motion every layer keeps its resting pose. */
 @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
   .iz-mfill__card:hover { transform: translateY(-3px); }
   .iz-mfill__card svg { transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1); }
   .iz-mfill__card:hover .iz-mfill__cta svg { transform: translateX(6px); }
   .iz-mfill__card:hover .iz-arrow svg { transform: translateX(4px); }
+  .iz-mfill__plate, .iz-mfill__frame, .iz-mfill__thumb { transition: rotate 0.55s cubic-bezier(0.16, 1, 0.3, 1), translate 0.55s cubic-bezier(0.16, 1, 0.3, 1), transform 0.55s cubic-bezier(0.16, 1, 0.3, 1); }
+  .iz-mfill__card:hover .iz-mfill__frame { rotate: -1deg; translate: 0 -4px; }
+  .iz-mfill__card:hover .iz-mfill__plate { rotate: 14deg; translate: 4px 2px; }
+  .iz-mfill__route path { transition: stroke-dashoffset 0.8s cubic-bezier(0.16, 1, 0.3, 1); }
+  .iz-mfill__card:hover .iz-mfill__route path { stroke-dashoffset: -22; }
+  .iz-mfill__card:hover .iz-mfill__thumb { --fan-k: 1.35; }
 }
-/* Narrow cells keep the title and the link; the full sentence is in the closing panel further down the page. */
 @media (max-width: 1023px) {
   .iz-mfill__card { padding: var(--space-4); gap: var(--space-2); }
   .iz-mfill__title { font-size: calc(19em / 18); }
   .iz-mfill__label { font-size: calc(20em / 18); }
-  .iz-mfill--wa:not(.iz-mfill--wide) .iz-mfill__text { display: none; }
+  .iz-mfill--wa:not(.iz-mfill--wide) .iz-mfill__glyph { font-size: 200px; }
+}
+
+/* "Semua motor (strap)" (MoreCard.tsx). Selectors start at .iz-grid-4 so they beat the base card of
+   v2-components.css whatever order the stylesheets load in. */
+.iz-grid-4 > .iz-morecard { position: relative; isolation: isolate; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); grid-template-rows: minmax(0, 1fr) auto; grid-template-areas: "body tiles" "cta tiles"; gap: var(--space-5) var(--space-6); padding: var(--space-6); }
+.iz-grid-4 > .iz-morecard::before { content: ""; position: absolute; inset: 8px; z-index: -1; border: 1.5px dashed color-mix(in srgb, var(--c-tinta) 16%, transparent); border-radius: calc(var(--radius-tile-lg) - 8px); pointer-events: none; }
+.iz-morecard__body { grid-area: body; }
+.iz-grid-4 > .iz-morecard h3 { margin-top: 0; }
+.iz-grid-4 > .iz-morecard .iz-morecard__cta { grid-area: cta; align-self: end; }
+.iz-morecard__tiles { grid-area: tiles; position: relative; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: minmax(56px, 1fr); gap: 8px; min-height: 180px; }
+.iz-morecard__tile { position: relative; overflow: hidden; border-radius: 14px; background: var(--c-aspal); color: var(--c-krem); }
+.iz-morecard__tile > .iz-smartimg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.iz-morecard__tile::after { content: ""; position: absolute; inset: 0; background: linear-gradient(to top, var(--c-scrim-strong) 0%, var(--c-scrim-clear) 62%); pointer-events: none; }
+.iz-morecard__tile > b { position: absolute; z-index: 1; left: 10px; right: 6px; bottom: 8px; font-size: 14px; font-weight: 700; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* The category of this page is ringed, so the card reads "your motor is one of these". */
+.iz-morecard__tile.is-current { outline: 2.5px solid var(--c-kuning); outline-offset: 2px; }
+.iz-morecard__tiles > .iz-tag { position: absolute; z-index: 2; top: 8px; right: 8px; min-height: 22px; padding: 1px 8px; font-size: 12px; }
+@media (min-width: 768px) {
+  /* One strap card: the more-card takes the three spare columns so the row has no empty cell; tiles run as a strip. */
+  .iz-grid-4 > .iz-pcard:first-child + .iz-morecard:last-child { grid-column: span 3; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.4fr); }
+  .iz-grid-4 > .iz-morecard:first-child { grid-column: 1 / -1; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.4fr); }
+  .iz-grid-4 > .iz-pcard:first-child + .iz-morecard:last-child .iz-morecard__tiles,
+  .iz-grid-4 > .iz-morecard:first-child .iz-morecard__tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  /* Three strap cards leave one column: tiles on top, text under them. */
+  .iz-grid-4 > .iz-pcard:nth-child(3) ~ .iz-morecard { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto auto; grid-template-areas: "tiles" "body" "cta"; gap: var(--space-4); padding: var(--space-5); }
+  .iz-grid-4 > .iz-pcard:nth-child(3) ~ .iz-morecard .iz-morecard__tiles { min-height: 120px; }
+}
+/* Tablet: a four-tile strip is too narrow for "Adventure" and squeezes the link, so the wide card keeps the 2 x 2 block. */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .iz-grid-4 > .iz-pcard:first-child + .iz-morecard:last-child,
+  .iz-grid-4 > .iz-morecard:first-child { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .iz-grid-4 > .iz-pcard:first-child + .iz-morecard:last-child .iz-morecard__tiles,
+  .iz-grid-4 > .iz-morecard:first-child .iz-morecard__tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .iz-morecard__tile, .iz-morecard__tile > .iz-smartimg, .iz-morecard__cta svg { transition: transform 0.55s cubic-bezier(0.16, 1, 0.3, 1); }
+  .iz-morecard:hover .iz-morecard__tile { transform: translateY(-4px); }
+  .iz-morecard:hover .iz-morecard__tile > .iz-smartimg { transform: scale(1.06); }
+  .iz-morecard:hover .iz-morecard__cta svg { transform: translateX(6px); }
+  /* A short stagger so the four tiles rise as a wave, not as one block. */
+  .iz-morecard__tile:nth-child(2) { transition-delay: 40ms; }
+  .iz-morecard__tile:nth-child(3) { transition-delay: 80ms; }
+  .iz-morecard__tile:nth-child(4) { transition-delay: 120ms; }
 }
 
 /* "Kategori lain": .iz-mtile__body span (pasir text) also matched the arrow, which almost vanished on the yellow circle. */
@@ -91,4 +172,13 @@
   .iz-mfill--wa .iz-mfill__text { display: none; }
   .iz-mfill__title { font-size: calc(17em / 18); }
   .iz-mfill .iz-mfill__cta { font-size: calc(15em / 18); }
+  .iz-mfill__art { min-height: 88px; }
+  .iz-mfill__frame { padding: 4px; rotate: -5deg; }
+  .iz-mfill__frame > .iz-smartimg { inset: 4px; border-radius: 9px; }
+  .iz-mfill__frame > .iz-tag { left: 7px; bottom: 7px; padding: 0 6px; min-height: 18px; font-size: 10.5px; }
+  .iz-mfill--wa .iz-mfill__glyph { font-size: 170px; }
+  /* The more-card spans the whole phone row: tiles in a 2 x 2 block on top, text under them. */
+  .iz-grid-4 > .iz-morecard { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto auto; grid-template-areas: "tiles" "body" "cta"; gap: var(--space-4); padding: var(--space-5); }
+  .iz-morecard__tiles { min-height: 0; grid-auto-rows: auto; }
+  .iz-morecard__tile { aspect-ratio: 2 / 1; }
 }

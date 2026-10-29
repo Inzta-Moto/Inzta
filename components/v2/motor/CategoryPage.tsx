@@ -48,7 +48,7 @@ export default function CategoryPage({ data }: { data: CategoryPageData }) {
               {cards.map(card => (
                 <ProductCardV2 key={card.slug} card={card} sizes={CARD_SIZES} />
               ))}
-              <GridFill count={cards.length} waHref={waHref} />
+              <GridFill count={cards.length} waHref={waHref} category={category} products={[...cards, ...universal]} />
             </div>
           </>
         ) : (
@@ -74,7 +74,7 @@ export default function CategoryPage({ data }: { data: CategoryPageData }) {
           {universal.map(card => (
             <ProductCardV2 key={card.slug} card={card} sizes={CARD_SIZES} />
           ))}
-          <MoreCard />
+          <MoreCard current={category} />
         </div>
       </section>
 

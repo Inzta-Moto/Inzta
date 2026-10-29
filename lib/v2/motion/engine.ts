@@ -264,7 +264,7 @@ export function initPage(root: HTMLElement, kit: MotionKit, mode: PageMode): () 
     function singles(scope: HTMLElement) {
       scope.querySelectorAll<HTMLElement>('main [data-reveal]').forEach(el => {
         if (inHero(el)) return;
-        onEnter(el, gsap.fromTo(el, { y: 30, opacity: 0 }, { y: 0, opacity: 1, duration: 1, paused: true }));
+        onEnter(el, gsap.fromTo(el, { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 1, paused: true }));
       });
     }
 
@@ -286,7 +286,7 @@ export function initPage(root: HTMLElement, kit: MotionKit, mode: PageMode): () 
         }
         const tl = gsap.timeline({ paused: true });
         // clearProps hands the cards back to CSS afterwards; a leftover inline transform blocked their hover lift.
-        tl.fromTo(items, { y: desktop ? 80 : 36, opacity: 0 }, { y: 0, opacity: 1, duration: 1.15, ease: 'expo.out', stagger: 0.085, clearProps: 'transform,opacity,visibility' }, 0);
+        tl.fromTo(items, { y: desktop ? 44 : 28, opacity: 0 }, { y: 0, opacity: 1, duration: 1.15, ease: 'expo.out', stagger: 0.085, clearProps: 'transform,opacity,visibility' }, 0);
         const imgs = items.map(item => item.querySelector('img')).filter((img): img is HTMLImageElement => !!img);
         if (imgs.length) tl.fromTo(imgs, { scale: 1.28 }, { scale: 1, duration: 1.7, ease: 'expo.out', stagger: 0.085, clearProps: 'scale' }, 0);
         onEnter(group, tl);

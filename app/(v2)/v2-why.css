@@ -1,0 +1,54 @@
+/* "Mengapa pilih INZTA" icon tiles (F-016, Sehan 2026-10-29: the flat orange squares read as generic). Scoped to the
+   --tiles modifier because /tentang (ValuesList) reuses .iz-why__icon and this file only loads with WhyInzta; without
+   the scope its tiles would change look depending on whether the home page was visited first in the session. */
+.iz-why__list--tiles .iz-why__item { grid-template-columns: 64px minmax(0, 1fr); column-gap: var(--space-6); }
+.iz-why__list--tiles .iz-why__icon {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  border-radius: 20px;
+  color: var(--c-aspal);
+  background: linear-gradient(150deg, var(--c-kertas-terang) 0%, var(--c-krem) 55%, var(--c-pasir-muda) 100%);
+  /* Inner hairline plus a light top edge give the tile depth without a heavy drop shadow. */
+  box-shadow: inset 0 0 0 1px var(--c-garis), inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 1px 2px rgba(22, 20, 15, 0.06);
+  overflow: hidden;
+  isolation: isolate;
+}
+/* Kuning glow in the top-right corner: the brand accent without filling the whole tile. */
+.iz-why__list--tiles .iz-why__icon::before {
+  content: "";
+  position: absolute;
+  inset: -40% -40% auto auto;
+  width: 80%;
+  height: 80%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(245, 158, 11, 0.42) 0%, rgba(245, 158, 11, 0) 70%);
+  z-index: -1;
+}
+.iz-why__list--tiles .iz-why__icon svg { width: 38px; height: 38px; }
+/* The Solar secondary layer turns kuning at full strength; the primary layer stays aspal for contrast on krem. */
+.iz-why__list--tiles .iz-why__icon .iz-duo { color: var(--c-kuning); opacity: 1; }
+
+@media (max-width: 767px) {
+  .iz-why__list--tiles .iz-why__item { grid-template-columns: 52px minmax(0, 1fr); column-gap: var(--space-4); }
+  .iz-why__list--tiles .iz-why__icon { width: 52px; height: 52px; border-radius: 16px; }
+  .iz-why__list--tiles .iz-why__icon svg { width: 31px; height: 31px; }
+}
+
+/* Hover micro-motion only where hover is real and motion is allowed; touch and reduced-motion users get the static tile. */
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .iz-why__list--tiles .iz-why__icon,
+  .iz-why__list--tiles .iz-why__icon::before,
+  .iz-why__list--tiles .iz-why__icon svg { transition: transform 0.55s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease, opacity 0.3s ease; }
+  .iz-why__list--tiles .iz-why__item:hover .iz-why__icon {
+    transform: translateY(-2px);
+    box-shadow: inset 0 0 0 1px rgba(245, 158, 11, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 6px 14px -6px rgba(22, 20, 15, 0.22);
+  }
+  .iz-why__list--tiles .iz-why__item:hover .iz-why__icon::before { transform: scale(1.35); }
+  .iz-why__list--tiles .iz-why__item:hover .iz-why__icon svg { transform: rotate(-8deg) scale(1.08); }
+}
+
+@media (forced-colors: active) {
+  .iz-why__list--tiles .iz-why__icon { border: 1px solid CanvasText; }
+  .iz-why__list--tiles .iz-why__icon::before { display: none; }
+}

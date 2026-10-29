@@ -94,3 +94,11 @@ html:not(.js-nav) .iz-navdd:focus-within .iz-navdd__btn svg { transform: rotate(
 /* The eyebrow inside the "Mengapa pilih INZTA" photo panel sat on the dark photo in the light-page brown and could
    not be read (Sehan, 2026-10-29); on photos it uses the bright yellow like every other on-photo eyebrow. */
 .iz-why__photo .iz-eyebrow { color: var(--c-kuning); text-shadow: 0 1px 12px rgba(22, 20, 15, 0.6); }
+
+/* Very wide monitors: the Tourmax band stops at the content width plus a margin and centres, so its photo panel is
+   never stretched past the 1440 px source and the band lines up with the rest of the page. */
+@media (min-width: 1680px) {
+  .iz-page .iz-band { max-width: calc(var(--size-content) + 160px); margin-inline: auto; }
+  /* Padding percentages resolve against main (the full viewport), not the capped band, so the inset is fixed here. */
+  html .iz-page .iz-band--split { padding-left: 80px; }
+}
