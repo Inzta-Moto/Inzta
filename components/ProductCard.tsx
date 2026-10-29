@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Product } from '@/types';
+import { trackLead } from '@/lib/tracking';
+import { browserStorage, readFirstTouchUtm } from '@/lib/utm';
 import { formatPrice, calcDiscount, buildWaLink, optimizeCloudinaryUrl, generateCloudinarySrcSet } from '@/lib/utils';
 
 interface ProductCardProps {
@@ -73,12 +75,15 @@ export default function ProductCard({ product: p, showDetails }: ProductCardProp
         body: JSON.stringify({
           items: [{ productSlug: p.slug, variationId: null, quantity: 1 }],
           buyerUID,
+          utm: readFirstTouchUtm(browserStorage(), Date.now()),
         }),
       });
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || data.error || 'Gagal membuat pesanan');
 
+      // F-002: sinkron, tanpa await; navigasi WhatsApp tidak boleh ditunda (bug iOS).
+      trackLead({ orderId: data.orderId, value: data.finalPrice, slugs: [p.slug] }, 'product_list');
       window.location.href = buildWaLink(data.orderId, data.items, {
         totalPrice: data.totalPrice,
         discountAmount: data.discountAmount,

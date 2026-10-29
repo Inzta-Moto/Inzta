@@ -89,14 +89,16 @@ export default function Header({ active }: HeaderProps) {
             </nav>
 
             <div className="header-right">
+              {/* F-002: <a> biasa (muat ulang penuh) supaya GA4/Pixel yang sudah
+                  termuat tidak ikut merekam /affiliate lewat history tracking. */}
               {user ? (
-                <Link href="/affiliate/dashboard" className="header-login">
+                <a href="/affiliate/dashboard" className="header-login">
                   DASHBOARD <User size={18} />
-                </Link>
+                </a>
               ) : (
-                <Link href="/affiliate/login" className="header-login">
+                <a href="/affiliate/login" className="header-login">
                   LOGIN <User size={18} />
-                </Link>
+                </a>
               )}
               <button className="mobile-toggle" onClick={() => setMobileOpen(!mobileOpen)} aria-label="Menu">
                 <div className={`hamburger-box${mobileOpen ? ' open' : ''}`}>
