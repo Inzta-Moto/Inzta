@@ -81,31 +81,27 @@ export function initPage(root: HTMLElement, kit: MotionKit, mode: PageMode): Pag
     // what is already on screen to fade it in would make it blink, so the shop routes skip that first screen.
     const bare = isRevealed();
 
-    const setup = () => {
-      if (mode === 'full') {
-        headings(root, HEADINGS_FULL, true);
-        eyebrows(root);
-        leads(root);
-        singles(root);
-        groups(root, false);
-        photos(root);
-        tourmax(root);
-        film(root);
-        reviews(root);
-        closing(root);
-        footer(root);
-        if (!desktop) swipe(root);
-        if (hover) tilt(root);
-      } else {
-        headings(root, HEADINGS_LIGHT, false);
-        groups(root, true);
-        pdp(root);
-        footer(root);
-      }
-    };
+    const steps: (() => void)[] =
+      mode === 'full'
+        ? [
+            () => headings(root, HEADINGS_FULL, true),
+            () => eyebrows(root),
+            () => leads(root),
+            () => singles(root),
+            () => groups(root, false),
+            () => photos(root),
+            () => tourmax(root),
+            () => film(root),
+            () => reviews(root),
+            () => closing(root),
+            () => footer(root),
+            ...(desktop ? [] : [() => swipe(root)]),
+            ...(hover ? [() => tilt(root)] : []),
+          ]
+        : [() => headings(root, HEADINGS_LIGHT, false), () => groups(root, true), () => pdp(root), () => footer(root)];
     let replayHero: (() => void) | null = null;
     if (mode === 'full') hero(root);
-    setup();
+    steps.forEach(step => step());
 
     function hero(scope: HTMLElement) {
       const section = scope.querySelector<HTMLElement>('main .iz-hero');
@@ -558,25 +554,33 @@ export function initPage(root: HTMLElement, kit: MotionKit, mode: PageMode): Pag
 
     ScrollTrigger.refresh();
 
-    // The blocks below the first screen, in page order, one per frame once the curtain is up. The hero entrance gets
-    // its first frames to itself; a visitor who scrolls or types straight away starts the rest at once.
-    const queue = later.slice();
+    // The blocks below the first screen, in page order, once the curtain is up: one setup step of one block at a time,
+    // about 8 ms of work per frame, so the hero entrance and the scroll keep their frames. The entrance gets its run
+    // to itself first; a visitor who scrolls or types straight away starts the rest at once.
+    const queue: (() => void)[] = [];
+    later.forEach(block =>
+      steps.forEach(step =>
+        queue.push(() => {
+          active = block;
+          try {
+            step();
+          } finally {
+            active = null;
+          }
+        }),
+      ),
+    );
     const inputs = ['wheel', 'touchstart', 'keydown'] as const;
     let lateTimer = 0;
     let lateFrame = 0;
     const next = () => {
       lateFrame = 0;
-      const block = queue.shift();
-      if (!block) return;
+      const start = performance.now();
       context.add(() => {
-        active = block;
-        try {
-          setup();
-        } finally {
-          active = null;
-        }
+        do queue.shift()?.();
+        while (queue.length && performance.now() - start < 8);
       });
-      lateFrame = requestAnimationFrame(next);
+      if (queue.length) lateFrame = requestAnimationFrame(next);
     };
     const startLate = () => {
       window.clearTimeout(lateTimer);
@@ -590,7 +594,8 @@ export function initPage(root: HTMLElement, kit: MotionKit, mode: PageMode): Pag
     };
     let stop = whenRevealed(() => {
       release();
-      lateTimer = window.setTimeout(startLate, 600);
+      // The hero letters are still landing until about 1.8 s after the reveal; the shop routes have no entrance.
+      lateTimer = window.setTimeout(startLate, mode === 'full' ? 1500 : 300);
     });
 
     // Logo click on the page you are on (SiteMotion replay): only the hero entrance is rebuilt behind the curtain and
