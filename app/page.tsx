@@ -1,5 +1,8 @@
 import HomeClient from './HomeClient';
 import { getActiveProducts, getArticles, toArticleCard } from '@/lib/public-content';
+import { canonicalUrl } from '@/lib/seo';
+
+export const metadata = { alternates: { canonical: canonicalUrl() } };
 
 // ISR: rendered on the server so Google sees products and articles; admin writes call revalidatePath.
 export const revalidate = 3600;

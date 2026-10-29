@@ -10,7 +10,8 @@
     "test:content": "node tests/f001-content.cjs",
     "test:markdown": "node tests/f012-markdown.cjs",
     "test:articles": "node tests/f012-articles.cjs",
-    "test:editor": "node tests/f013-editor.cjs"
+    "test:editor": "node tests/f013-editor.cjs",
+    "test:seo": "node tests/f005-seo.cjs"
   },
   "dependencies": {
     "@tiptap/core": "3.32.0",
