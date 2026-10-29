@@ -39,7 +39,7 @@ export default function WhyInzta({ gasberHref, waHref }: { gasberHref: string; w
             <h3>Dibuat sendiri sejak 2023</h3>
             <p>Kami merancang dan memproduksi sendiri, lalu mengirim dari gudang INZTA.</p>
             <div className="iz-why__proof">
-              <Link className="iz-link" href="/#mengapa">
+              <Link className="iz-link" href="/tentang">
                 Tentang INZTA <ArrowRight size={18} />
               </Link>
             </div>

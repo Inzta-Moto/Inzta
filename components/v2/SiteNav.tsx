@@ -11,6 +11,7 @@ import CategoryLink from '@/components/v2/CategoryLink';
 import { ArrowRight, ChevronDown, Close, Menu, Motorcycle, WhatsApp } from '@/components/v2/icons';
 
 type OpenMenu = 'produk' | 'motor' | null;
+export type NavTab = 'produk' | 'motor' | 'artikel' | 'tentang';
 
 function thumb(src: string): string {
   return src.includes('res.cloudinary.com') ? optimizeCloudinaryUrl(src, 80, 80) : src;
@@ -18,7 +19,16 @@ function thumb(src: string): string {
 
 // Capsule navbar (F-016 4): dropdowns open on hover for fine pointers (CSS) and by click or keyboard (state),
 // phone menu below 768 px. Dark over the hero, light once the hero has scrolled away (4.2).
-export default function SiteNav({ minPrices, waHref }: { minPrices: Record<BagPosition, number | null>; waHref: string }) {
+export default function SiteNav({
+  minPrices,
+  waHref,
+  current,
+}: {
+  minPrices: Record<BagPosition, number | null>;
+  waHref: string;
+  current?: NavTab;
+}) {
+  const page = (tab: NavTab) => (current === tab ? ({ 'aria-current': 'page' } as const) : {});
   const { category } = useMotorCategory();
   const [open, setOpen] = useState<OpenMenu>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -130,6 +140,7 @@ export default function SiteNav({ minPrices, waHref }: { minPrices: Record<BagPo
               type="button"
               aria-expanded={open === 'produk'}
               aria-controls="iz-menu-produk"
+              {...page('produk')}
               onClick={() => setOpen(o => (o === 'produk' ? null : 'produk'))}
               onKeyDown={onTriggerKey('produk')}
             >
@@ -160,6 +171,7 @@ export default function SiteNav({ minPrices, waHref }: { minPrices: Record<BagPo
               type="button"
               aria-expanded={open === 'motor'}
               aria-controls="iz-menu-motor"
+              {...page('motor')}
               onClick={() => setOpen(o => (o === 'motor' ? null : 'motor'))}
               onKeyDown={onTriggerKey('motor')}
             >
@@ -181,8 +193,8 @@ export default function SiteNav({ minPrices, waHref }: { minPrices: Record<BagPo
             </div>
           </div>
 
-          <Link href="/blog">Artikel</Link>
-          <Link href="/#mengapa">Tentang</Link>
+          <Link href="/blog" {...page('artikel')}>Artikel</Link>
+          <Link href="/tentang" {...page('tentang')}>Tentang</Link>
         </div>
 
         <div className="iz-nav__actions">
@@ -246,7 +258,7 @@ export default function SiteNav({ minPrices, waHref }: { minPrices: Record<BagPo
           </div>
           <div className="iz-msheet__links">
             <Link href="/blog" onClick={() => setSheetOpen(false)}>Artikel</Link>
-            <Link href="/#mengapa" onClick={() => setSheetOpen(false)}>Tentang</Link>
+            <Link href="/tentang" onClick={() => setSheetOpen(false)}>Tentang</Link>
           </div>
           <div className="iz-wa" style={{ width: '100%' }}>
             <a className="iz-btn iz-btn--primary iz-btn--wa" href={waHref} target="_blank" rel="noopener noreferrer">

@@ -1,21 +1,18 @@
 'use client';
 
 import Image from 'next/image';
+import Link from 'next/link';
+import { categoryHref } from '@/lib/v2/motor-category';
 import { MOTOR_CATEGORIES, categoryLabel } from '@/lib/v2/home-content';
 import { useMotorCategory } from '@/components/v2/MotorCategory';
 import { Check } from '@/components/v2/icons';
 
 // F-016 5. The server render is "not chosen" (5.2); the stored choice arrives through useMotorCategory after mount.
-// Tile photos get alt="" because the label already names the button (20.5, D-9). The WhatsApp button stays in the
-// DOM, hidden, while nothing is chosen so a choice never shifts the layout (5.2, 5.3).
-export default function Garasi({ waNumber }: { waNumber: string }) {
+// Tile photos get alt="" because the label already names the button (20.5, D-9). The button to the category page
+// (P2-4) stays in the DOM, hidden, while nothing is chosen so a choice never shifts the layout (5.2, 5.3).
+export default function Garasi() {
   const { category, setCategory } = useMotorCategory();
   const chosen = category ? categoryLabel(category) : null;
-  const waHref = chosen
-    ? `https://wa.me/${waNumber}?text=${encodeURIComponent(
-        `Halo INZTA, motor saya kategori ${chosen}. Tas mana yang dibuat untuk motor ini?`,
-      )}`
-    : undefined;
 
   return (
     <section className="iz-section" id="garasi">
@@ -50,17 +47,15 @@ export default function Garasi({ waNumber }: { waNumber: string }) {
           })}
         </div>
         <div style={{ display: 'flex', justifyContent: 'center', marginTop: 40 }}>
-          <a
+          <Link
             className="iz-btn iz-btn--primary iz-btn--block iz-garasi__cta"
-            href={waHref}
-            target={waHref ? '_blank' : undefined}
-            rel={waHref ? 'noopener noreferrer' : undefined}
+            href={category ? categoryHref(category) : '/#garasi'}
             data-hidden={chosen ? undefined : 'true'}
             aria-hidden={chosen ? undefined : true}
             tabIndex={chosen ? undefined : -1}
           >
             {chosen ? `Lihat tas untuk motor ${chosen}` : 'Lihat tas untuk motor'}
-          </a>
+          </Link>
         </div>
       </div>
     </section>

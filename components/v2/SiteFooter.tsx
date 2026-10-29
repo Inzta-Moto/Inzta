@@ -5,7 +5,7 @@ import CategoryLink from '@/components/v2/CategoryLink';
 
 const PRODUCT_LINKS = ['Tank bag', 'Side bag', 'Tail bag', 'Extend bag', 'Aksesori touring', 'Tas harian'];
 
-// Footer (F-016 16). Pages that do not exist yet use temporary targets so no link is a 404 (4.9).
+// Footer (F-016 16, P2-3). Shop links stay text until their URLs are known (16.4).
 export default function SiteFooter({ waHref, waNumber }: { waHref: string; waNumber: string }) {
   return (
     <footer className="iz-footer iz-dark">
@@ -40,8 +40,8 @@ export default function SiteFooter({ waHref, waNumber }: { waHref: string; waNum
         <div>
           <h2>Informasi</h2>
           <ul>
-            <li><Link href="/#mengapa">Tentang INZTA</Link></li>
-            <li><Link href="/#cara-pesan">Cara pesan</Link></li>
+            <li><Link href="/tentang">Tentang INZTA</Link></li>
+            <li><Link href="/tentang#cara-pesan">Cara pesan</Link></li>
             <li><Link href="/blog">Artikel</Link></li>
           </ul>
         </div>

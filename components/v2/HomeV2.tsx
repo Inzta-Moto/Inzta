@@ -27,7 +27,7 @@ export default function HomeV2({ data }: { data: HomeData }) {
       <SiteNav minPrices={data.minPrices} waHref={waHref} />
       <main id="isi">
         <Hero />
-        <Garasi waNumber={WA_NUMBER} />
+        <Garasi />
         <BestSeller cards={data.bestSellers} flash={data.flash} />
         <WhyInzta gasberHref={gasberHref} waHref={waHref} />
         <Positions minPrices={data.minPrices} />
