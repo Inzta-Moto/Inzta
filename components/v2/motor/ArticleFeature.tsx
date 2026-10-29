@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { optimizeCloudinaryUrl } from '@/lib/utils';
+import { cldWebp } from '@/lib/v2/image';
 import SmartImage from '@/components/v2/ui/SmartImage';
 import type { CategoryArticle } from '@/components/v2/motor/motor-page';
 
@@ -44,7 +44,7 @@ export default function ArticleFeature({ article }: { article: CategoryArticle }
               <span className="iz-afeature__label">Tas yang dibahas</span>
               <div className="iz-afeature__thumbs">
                 {thumbs.map(t => (
-                  <img key={t.slug} src={optimizeCloudinaryUrl(t.image, 128, 128)} alt={t.name} width={64} height={64} loading="lazy" decoding="async" />
+                  <img key={t.slug} src={cldWebp(t.image, 160, 160)} alt={t.name} width={64} height={64} loading="lazy" decoding="async" />
                 ))}
               </div>
             </div>

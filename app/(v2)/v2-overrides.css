@@ -68,3 +68,7 @@
 /* Without JavaScript the panels still open from the keyboard; SiteNav adds .js-nav on mount and then drives data-open itself, so Escape and Tab-out behave (S0.4 ST-NOJS, VF-01). */
 html:not(.js-nav) .iz-navdd:focus-within .iz-navdd__menu { opacity: 1; visibility: visible; transform: none; transition-delay: 0s; }
 html:not(.js-nav) .iz-navdd:focus-within .iz-navdd__btn svg { transform: rotate(180deg); }
+
+/* Two-tone headings are one colour (Sehan, 2026-10-29): the lighter second tone in the canvas only previewed the text
+   animation, so the hero title now starts from that tone and lands on the heading colour (lib/v2/motion/engine.ts). */
+.iz-page .iz-tone2, .iz-page :is(.iz-dark, .iz-on-photo) .iz-tone2 { color: inherit; }

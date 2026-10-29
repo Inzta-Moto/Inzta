@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type RefObject } from 'react';
 import { WhatsApp } from '@/components/v2/icons';
-import { optimizeCloudinaryUrl } from '@/lib/utils';
+import { cldWebp } from '@/lib/v2/image';
 
 /**
  * Mobile order bar `.iz-mbar` (F-016 S3.9). Rendered only after hydration (without JavaScript the main link remains),
@@ -53,7 +53,7 @@ export default function MobileOrderBar({
   return (
     <div ref={bar} className="iz-mbar iz-mbar--fixed iz-only-mob" data-shown={shown ? 'true' : 'false'} aria-hidden={shown ? undefined : true}>
       <div className="iz-mbar__item">
-        {image ? <img src={optimizeCloudinaryUrl(image, 120)} alt="" width={48} height={48} loading="lazy" decoding="async" /> : null}
+        {image ? <img src={cldWebp(image, 144)} alt="" width={48} height={48} loading="lazy" decoding="async" /> : null}
         <div>
           <b>{name}</b>
           <span>{price}</span>

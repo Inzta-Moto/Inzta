@@ -5,6 +5,7 @@ import { formatRupiah } from '@/lib/v2/home-data';
 import { POSITION_ITEMS } from '@/lib/v2/home-content';
 import SmartImage from '@/components/v2/ui/SmartImage';
 import { ArrowRight } from '@/components/v2/icons';
+import { PHOTO_QUALITY } from '@/lib/v2/image';
 
 // Tiles are 4:5 and about 280 px wide on desktop (a quarter of the content) and 72% wide in the phone swipe row.
 const TILE_SIZES = '(max-width: 767px) 72vw, 25vw';
@@ -14,7 +15,7 @@ const TILE_SIZES = '(max-width: 767px) 72vw, 25vw';
 // background is --c-aspal, so the dark tone keeps the white text readable when a photo fails.
 function TileImage({ src }: { src: string }) {
   if (!src.includes('res.cloudinary.com')) {
-    return <Image src={src} alt="" width={320} height={400} sizes={TILE_SIZES} />;
+    return <Image src={src} alt="" width={320} height={400} sizes={TILE_SIZES} quality={PHOTO_QUALITY} />;
   }
   return <SmartImage src={src} alt="" tone="dark" sizes={TILE_SIZES} widths={[320, 640, 960]} width={640} />;
 }

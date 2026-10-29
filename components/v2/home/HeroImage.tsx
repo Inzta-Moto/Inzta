@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
 import { PHOTOS } from '@/lib/v2/home-content';
+import { PHOTO_QUALITY } from '@/lib/v2/image';
 
 // F-016 S1.1.1, S1.1.4, S0.12.7: the LCP photo stays a next/image with priority (preloaded, eager, no shimmer). When it
 // fails, the image is hidden so the browser's broken-image icon never shows; the hero's --c-aspal background is the
@@ -25,6 +26,7 @@ export default function HeroImage() {
       fill
       priority
       sizes="100vw"
+      quality={PHOTO_QUALITY}
       data-parallax=""
       data-failed={failed ? 'true' : undefined}
       onError={() => setFailed(true)}

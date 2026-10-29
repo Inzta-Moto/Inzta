@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
-import { generateCloudinarySrcSet, optimizeCloudinaryUrl } from '@/lib/utils';
+import { PHOTO_QUALITY, cldSrcSet, cldWebp } from '@/lib/v2/image';
 
 type State = 'loading' | 'loaded' | 'error';
 
@@ -15,7 +15,7 @@ export default function SmartImage({
   alt,
   ratio,
   sizes,
-  widths = [300, 600, 900],
+  widths = [320, 480, 640, 960, 1280],
   width = 600,
   tone = 'light',
   fallbackLabel,
@@ -49,7 +49,7 @@ export default function SmartImage({
 
   const cloud = !!src && src.includes('res.cloudinary.com');
   const local = !!src && src.startsWith('/');
-  const srcSet = cloud ? generateCloudinarySrcSet(src as string, widths) : '';
+  const srcSet = cloud ? cldSrcSet(src as string, widths) : '';
   const box: CSSProperties = { ...(ratio ? { aspectRatio: ratio } : {}), ...style };
 
   return (
@@ -62,6 +62,7 @@ export default function SmartImage({
           alt={alt}
           fill
           sizes={sizes ?? '100vw'}
+          quality={PHOTO_QUALITY}
           priority={priority}
           onLoad={() => setState('loaded')}
           onError={() => setState('error')}
@@ -71,7 +72,7 @@ export default function SmartImage({
         <img
           ref={ref}
           className={imgClassName}
-          src={cloud ? optimizeCloudinaryUrl(src, width) : src}
+          src={cloud ? cldWebp(src, width) : src}
           srcSet={srcSet || undefined}
           sizes={srcSet ? sizes : undefined}
           alt={alt}
