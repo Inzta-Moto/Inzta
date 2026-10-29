@@ -6,6 +6,7 @@ import CategoryHero from '@/components/v2/motor/CategoryHero';
 import PositionTabs from '@/components/v2/motor/PositionTabs';
 import InstallNotice from '@/components/v2/motor/InstallNotice';
 import MoreCard from '@/components/v2/motor/MoreCard';
+import GridFill from '@/components/v2/motor/GridFill';
 import ArticleFeature from '@/components/v2/motor/ArticleFeature';
 import OtherCategories from '@/components/v2/motor/OtherCategories';
 import Closing from '@/components/v2/Closing';
@@ -47,6 +48,7 @@ export default function CategoryPage({ data }: { data: CategoryPageData }) {
               {cards.map(card => (
                 <ProductCardV2 key={card.slug} card={card} sizes={CARD_SIZES} />
               ))}
+              <GridFill count={cards.length} waHref={waHref} />
             </div>
           </>
         ) : (

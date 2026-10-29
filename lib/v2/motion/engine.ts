@@ -279,12 +279,13 @@ export function initPage(root: HTMLElement, kit: MotionKit, mode: PageMode): () 
           ScrollTrigger.batch(items, {
             start: 'top 94%',
             once: true,
-            onEnter: batch => play(gsap.to(batch, { y: 0, autoAlpha: 1, duration: 0.6, stagger: 0.05, overwrite: true, paused: true })),
+            onEnter: batch => play(gsap.to(batch, { y: 0, autoAlpha: 1, duration: 0.6, stagger: 0.05, overwrite: true, paused: true, clearProps: 'transform,opacity,visibility' })),
           });
           return;
         }
         const tl = gsap.timeline({ paused: true });
-        tl.fromTo(items, { y: desktop ? 80 : 36, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 1.15, ease: 'expo.out', stagger: 0.085 }, 0);
+        // clearProps hands the cards back to CSS afterwards; a leftover inline transform blocked their hover lift.
+        tl.fromTo(items, { y: desktop ? 80 : 36, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 1.15, ease: 'expo.out', stagger: 0.085, clearProps: 'transform,opacity,visibility' }, 0);
         const imgs = items.map(item => item.querySelector('img')).filter((img): img is HTMLImageElement => !!img);
         if (imgs.length) tl.fromTo(imgs, { scale: 1.28 }, { scale: 1, duration: 1.7, ease: 'expo.out', stagger: 0.085, clearProps: 'scale' }, 0);
         onEnter(group, tl);
