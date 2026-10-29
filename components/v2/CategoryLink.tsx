@@ -12,17 +12,20 @@ export default function CategoryLink({
   className,
   children,
   onChosen,
+  current = false,
 }: {
   value: MotorCategory;
   className?: string;
   children: ReactNode;
   onChosen?: () => void;
+  current?: boolean;
 }) {
   const { setCategory } = useMotorCategory();
   return (
     <Link
       href={categoryHref(value)}
       className={className}
+      aria-current={current ? 'page' : undefined}
       onClick={() => {
         setCategory(value);
         onChosen?.();

@@ -1,34 +1,35 @@
 import type { ReactNode } from 'react';
-import type { Product } from '@/types';
+import type { MotorCategory, Product } from '@/types';
 import { WA_NUMBER } from '@/lib/constants';
-import { getActiveProducts } from '@/lib/public-content';
-import { getFlashSale } from '@/lib/v2/flash-sale';
-import { isFlashActive } from '@/lib/v2/flash-time';
-import { minPriceByPosition } from '@/lib/v2/home-data';
+import { getNavData } from '@/lib/v2/nav-data';
 import V2Page from '@/components/v2/V2Page';
 import FlashBar from '@/components/v2/FlashBar';
 import SiteNav, { type NavTab } from '@/components/v2/SiteNav';
 import SiteFooter from '@/components/v2/SiteFooter';
 
-// Shared frame of every v2 page except the Beranda (F-016 25): promo bar, navbar, main, footer. The navbar prices
-// and the flash-sale state are read on the server so the frame is the same on every page (25.2). Pages that already
-// read the products pass them in to avoid a second Firestore read.
+// Shared frame of every v2 page except the Beranda (F-016 S0.2): promo bar, navbar, main, footer. The navbar prices
+// and the flash-sale state are read on the server so the frame is the same on every page. Pages that already read
+// the products pass them in to avoid a second Firestore read. `dark` is true only for pages that open on a dark hero
+// (S5, S8), so the first paint matches the first section without JavaScript (S0.4.4).
 export default async function V2Layout({
   children,
   current,
+  currentCategory,
   products,
+  dark = false,
 }: {
   children: ReactNode;
   current?: NavTab;
+  currentCategory?: MotorCategory;
   products?: Product[];
+  dark?: boolean;
 }) {
-  const [list, flashRaw] = await Promise.all([products ? Promise.resolve(products) : getActiveProducts(), getFlashSale()]);
-  const flash = isFlashActive(flashRaw, Date.now()) ? flashRaw : { isActive: false, endsAt: null };
+  const { minPrices, flash } = await getNavData(products);
   const waHref = `https://wa.me/${WA_NUMBER}`;
   return (
     <V2Page>
       <FlashBar flash={flash} />
-      <SiteNav current={current} minPrices={minPriceByPosition(list)} waHref={waHref} />
+      <SiteNav current={current} currentCategory={currentCategory} minPrices={minPrices} waHref={waHref} dark={dark} />
       <main id="isi">{children}</main>
       <SiteFooter waHref={waHref} waNumber={WA_NUMBER} />
     </V2Page>

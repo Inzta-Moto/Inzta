@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { BagPosition } from '@/types';
+import type { BagPosition, MotorCategory } from '@/types';
 import { optimizeCloudinaryUrl } from '@/lib/utils';
 import { formatRupiah } from '@/lib/v2/home-data';
 import { MOTOR_CATEGORIES, POSITION_ITEMS, categoryLabel } from '@/lib/v2/home-content';
@@ -23,16 +23,20 @@ export default function SiteNav({
   minPrices,
   waHref,
   current,
+  dark: darkHero = true,
+  currentCategory,
 }: {
   minPrices: Record<BagPosition, number | null>;
   waHref: string;
   current?: NavTab;
+  dark?: boolean;
+  currentCategory?: MotorCategory;
 }) {
   const page = (tab: NavTab) => (current === tab ? ({ 'aria-current': 'page' } as const) : {});
   const { category } = useMotorCategory();
   const [open, setOpen] = useState<OpenMenu>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [overHero, setOverHero] = useState(true);
+  const [overHero, setOverHero] = useState(darkHero);
   const navRef = useRef<HTMLElement>(null);
   const sheetRef = useRef<HTMLDivElement>(null);
   const menuBtnRef = useRef<HTMLButtonElement>(null);
@@ -164,7 +168,7 @@ export default function SiteNav({
             </button>
             <div className="iz-navdd__menu" id="iz-menu-produk">
               {POSITION_ITEMS.map(item => (
-                <Link key={item.value} className="iz-navdd__item" href="/produk" onClick={() => setOpen(null)}>
+                <Link key={item.value} className="iz-navdd__item" href={`/produk?posisi=${item.value}`} onClick={() => setOpen(null)}>
                   <span className="iz-navdd__ico">
                     <img src={thumb(item.image)} alt="" width={40} height={40} loading="lazy" />
                   </span>
@@ -195,7 +199,7 @@ export default function SiteNav({
             </button>
             <div className="iz-navdd__menu" id="iz-menu-motor">
               {MOTOR_CATEGORIES.map(c => (
-                <CategoryLink key={c.value} value={c.value} className="iz-navdd__item" onChosen={() => setOpen(null)}>
+                <CategoryLink key={c.value} value={c.value} className="iz-navdd__item" current={currentCategory === c.value} onChosen={() => setOpen(null)}>
                   <span className="iz-navdd__ico">
                     <img src={c.image} alt="" width={40} height={40} loading="lazy" />
                   </span>
@@ -254,7 +258,7 @@ export default function SiteNav({
           <div className="iz-msheet__group">
             <h2>Produk</h2>
             {POSITION_ITEMS.map(item => (
-              <Link key={item.value} className="iz-msheet__row" href="/produk" onClick={() => setSheetOpen(false)}>
+              <Link key={item.value} className="iz-msheet__row" href={`/produk?posisi=${item.value}`} onClick={() => setSheetOpen(false)}>
                 <span>{item.menuLabel}</span>
                 {minPrices[item.value] !== null && <small>Mulai {formatRupiah(minPrices[item.value] as number)}</small>}
               </Link>

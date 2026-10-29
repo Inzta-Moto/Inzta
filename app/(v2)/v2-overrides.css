@@ -20,7 +20,7 @@
 :where(.iz-page) img.iz-crop-top { object-fit: cover; object-position: 50% 0%; }
 
 /* Headings that the design writes as h4 are h2 here so the outline has no skipped levels (D-6, 20.2). */
-.iz-footer h2 { color: var(--c-kuning); font-size: 15px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 12px; font-family: var(--font-sans); line-height: 1.3; }
+.iz-footer h2, .iz-footer .iz-footer__sub { color: var(--c-kuning); font-size: 15px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 12px; font-family: var(--font-sans); line-height: 1.3; }
 .iz-msheet__group h2 { font-size: 14px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--c-batu); padding: 0 8px 6px; font-family: var(--font-sans); line-height: 1.3; }
 
 /* Phone menu sits under the capsule inside the zero-height sticky wrapper (m-nav.dc.html). */
@@ -63,3 +63,4 @@
   .iz-page .iz-gfeature h3 { font-size: clamp(24px, 2.25vw, 32px); }
   .iz-page .iz-rfeature blockquote { font-size: clamp(22px, 2.1vw, 30px); }
 }
+.iz-footer .iz-footer__sub { margin-top: 16px; }

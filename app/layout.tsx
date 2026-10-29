@@ -10,22 +10,24 @@ const inter = Inter({
   weight: ['300', '400', '500', '600', '700', '800', '900'],
 });
 
+// F-016 E5: claim-free defaults from the Beranda H1 and lead (the old copy made a water-resistance claim without a source,
+// A-020); F-005 phase 2 may replace them with RND-approved copy.
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://inzta.id'),
   title: {
-    default: 'INZTA Moto | Premium Waterproof Motorcycle Bags',
+    default: 'Tas motor untuk perjalanan Anda · INZTA',
     template: '%s'
   },
-  description: 'Tas motor eksklusif dan perlengkapan touring untuk rider. Waterproof, ringan, tahan banting, dan stylish. Temukan Sidebag Inzta Adventure dan produk lainnya.',
-  keywords: ['inzta', 'inzta moto', 'tas motor', 'tas waterproof', 'sidebag motor', 'sidebag touring', 'tas touring waterproof', 'perlengkapan motor'],
+  description: 'Tank bag, side bag, dan tail bag buatan INZTA sejak 2023. Beri tahu motor Anda, kami tandai tas yang dibuat untuknya.',
+  keywords: ['inzta', 'inzta moto', 'tas motor', 'sidebag motor', 'sidebag touring', 'perlengkapan motor'],
   authors: [{ name: 'Inzta Moto' }],
   creator: 'Inzta Moto',
   openGraph: {
     type: 'website',
     locale: 'id_ID',
     url: process.env.NEXT_PUBLIC_SITE_URL || 'https://inzta.id',
-    title: 'INZTA Moto | Premium Waterproof Motorcycle Bags',
-    description: 'Tas motor eksklusif untuk rider. Waterproof, ringan, tahan banting, dan stylish.',
+    title: 'Tas motor untuk perjalanan Anda · INZTA',
+    description: 'Tank bag, side bag, dan tail bag buatan INZTA sejak 2023. Beri tahu motor Anda, kami tandai tas yang dibuat untuknya.',
     siteName: 'INZTA Moto',
     images: [
       {
@@ -38,8 +40,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'INZTA Moto | Premium Waterproof Motorcycle Bags',
-    description: 'Tas motor eksklusif untuk rider. Waterproof, ringan, tahan banting, dan stylish.',
+    title: 'Tas motor untuk perjalanan Anda · INZTA',
+    description: 'Tank bag, side bag, dan tail bag buatan INZTA sejak 2023. Beri tahu motor Anda, kami tandai tas yang dibuat untuknya.',
     images: [`${process.env.NEXT_PUBLIC_SITE_URL || 'https://inzta.id'}/logo-mtg.png`],
     creator: '@inztamoto',
   },

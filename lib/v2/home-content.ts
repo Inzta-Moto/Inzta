@@ -102,7 +102,7 @@ export const REVIEWS_ARE_PLACEHOLDERS = true;
 export const SHOPEE_REVIEWS_URL: string | null = null;
 export const SHOP_LINKS: readonly { label: string; href: string | null }[] = [
   { label: 'Shopee: Inztamoto', href: null },
-  { label: 'Tokopedia: Inzta moto Ride', href: null },
+  { label: 'Tokopedia: Inzta moto Ride', href: 'https://www.tokopedia.com/lentoratoko' },
 ];
 
 export const INSTAGRAM = { handle: '@inztamoto_bag', href: 'https://instagram.com/inztamoto_bag' };

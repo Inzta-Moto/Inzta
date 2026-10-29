@@ -3,7 +3,15 @@ import { formatWaDisplay } from '@/lib/v2/home-data';
 import { INSTAGRAM, MOTOR_CATEGORIES, SHOP_LINKS } from '@/lib/v2/home-content';
 import CategoryLink from '@/components/v2/CategoryLink';
 
-const PRODUCT_LINKS = ['Tank bag', 'Side bag', 'Tail bag', 'Extend bag', 'Aksesori touring', 'Tas harian'];
+// F-016 S0.7: position keys shared with the catalog filter (S2.2).
+const PRODUCT_LINKS = [
+  { key: 'tank', label: 'Tank bag' },
+  { key: 'side', label: 'Side bag' },
+  { key: 'tail', label: 'Tail bag' },
+  { key: 'extend', label: 'Extend bag' },
+  { key: 'aksesori', label: 'Aksesori touring' },
+  { key: 'harian', label: 'Tas harian' },
+];
 
 // Footer (F-016 16, P2-3). Shop links stay text until their URLs are known (16.4).
 export default function SiteFooter({ waHref, waNumber }: { waHref: string; waNumber: string }) {
@@ -20,9 +28,9 @@ export default function SiteFooter({ waHref, waNumber }: { waHref: string; waNum
         <div>
           <h2>Produk</h2>
           <ul>
-            {PRODUCT_LINKS.map(label => (
-              <li key={label}>
-                <Link href="/produk">{label}</Link>
+            {PRODUCT_LINKS.map(({ key, label }) => (
+              <li key={key}>
+                <Link href={`/produk?posisi=${key}`}>{label}</Link>
               </li>
             ))}
           </ul>
@@ -59,7 +67,7 @@ export default function SiteFooter({ waHref, waNumber }: { waHref: string; waNum
               </a>
             </li>
           </ul>
-          <h2 style={{ marginTop: 16 }}>Kanal toko</h2>
+          <h3 className="iz-footer__sub">Kanal toko</h3>
           <div className="iz-footer__shops">
             {SHOP_LINKS.map(s =>
               s.href ? (

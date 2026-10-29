@@ -15,7 +15,7 @@ import Community from '@/components/v2/home/Community';
 import Guides from '@/components/v2/home/Guides';
 import Reviews from '@/components/v2/home/Reviews';
 import HowToOrder from '@/components/v2/home/HowToOrder';
-import Closing from '@/components/v2/home/Closing';
+import Closing from '@/components/v2/Closing';
 
 // Beranda v2 "Rider's shop" (F-016), section order of Main.dc.html (requirement 1.1).
 export default function HomeV2({ data }: { data: HomeData }) {

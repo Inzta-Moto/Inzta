@@ -1,0 +1,39 @@
+/* F-016 S0.11, S0.12: loading, image, empty, and error states the canvas does not draw. Tokens only; every selector
+   is an iz- class so nothing leaks outside .iz-page (S0.1.1). */
+
+/* Shimmer moves a pseudo-element with transform, so it stays on the compositor (S0.12.1). */
+.iz-skel { position: relative; display: block; overflow: hidden; width: var(--w, 100%); height: var(--h, 1em); border-radius: var(--r, 8px); background: var(--c-pasir-muda); }
+.iz-skel::after { content: ""; position: absolute; inset: 0; transform: translateX(-100%); background: linear-gradient(90deg, transparent, rgba(253, 252, 249, .6), transparent); animation: iz-shimmer 1.2s infinite; }
+.iz-dark .iz-skel, .iz-skel--dark { background: rgba(253, 252, 249, .08); }
+.iz-dark .iz-skel::after, .iz-skel--dark::after { background: linear-gradient(90deg, transparent, rgba(253, 252, 249, .08), transparent); }
+@keyframes iz-shimmer { to { transform: translateX(100%); } }
+@media (prefers-reduced-motion: reduce) { .iz-skel::after { animation: none; opacity: 0; } }
+
+.iz-skelcard { display: flex; flex-direction: column; gap: 10px; }
+.iz-skelcard > .iz-skel:first-child { aspect-ratio: 1; height: auto; border-radius: var(--radius-tile); }
+.iz-skelstack { display: flex; flex-direction: column; gap: 12px; }
+
+/* SmartImage: the box keeps its ratio before the image loads, so nothing shifts (S0.12.2). */
+.iz-smartimg { position: relative; display: block; overflow: hidden; background: var(--c-pasir-muda); }
+.iz-smartimg--dark { background: var(--c-aspal); }
+.iz-smartimg > img { width: 100%; height: 100%; object-fit: cover; }
+.iz-smartimg > .iz-skel { position: absolute; inset: 0; width: auto; height: auto; border-radius: 0; background: transparent; pointer-events: none; }
+.iz-smartimg[data-state="loaded"] > .iz-skel, .iz-smartimg[data-state="error"] > .iz-skel { display: none; }
+.iz-fallback { position: absolute; inset: 0; display: grid; place-items: center; align-content: center; gap: 8px; padding: 12px; text-align: center; color: var(--c-batu); font-size: 14px; font-weight: 600; background: var(--c-pasir-muda); }
+.iz-smartimg--dark .iz-fallback { background: var(--c-aspal); color: var(--c-pasir); }
+.iz-fallback__mark { width: 40%; max-width: 72px; opacity: .3; }
+
+/* Empty state shared by the catalog, category, and article pages (S0.12.4). */
+.iz-empty { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-3); padding: var(--space-8); border-radius: var(--radius-tile); background: var(--c-kertas-terang); box-shadow: 0 0 0 1px var(--c-garis); }
+.iz-empty__title { font-size: 22px; font-weight: 700; line-height: 1.3; }
+.iz-empty__text { color: var(--c-batu); max-width: 52ch; }
+.iz-empty .iz-row { margin-top: var(--space-2); }
+
+/* 404 and error pages (S0.11). */
+.iz-state { min-height: 60vh; display: flex; align-items: center; padding-block: calc(var(--space-18) + 72px) var(--space-18); }
+.iz-state .iz-wrap { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-4); }
+.iz-state p { color: var(--c-batu); max-width: 52ch; }
+
+/* Loading pages render under a light navbar; the first block clears the capsule like the real pages do. */
+.iz-loading { padding-block: calc(var(--space-12) + 72px) var(--space-18); }
+.iz-skel--square { aspect-ratio: 1; }
