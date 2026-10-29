@@ -68,8 +68,9 @@ export default function BuyBox({
   const qtyId = 'iz-qty-label';
   const msg = order.voucherMessage;
 
+  // A div, not the canvas aside: the buy box sits inside main, and a nested complementary landmark fails axe (S3.3, G-A1).
   return (
-    <aside className="iz-buybox">
+    <div className="iz-buybox">
       <noscript dangerouslySetInnerHTML={{ __html: NOSCRIPT_STYLE }} />
       {(view.positionLabel || badge || fit?.kind === 'model') && (
         <div className="iz-row" style={{ gap: 8 }}>
@@ -182,7 +183,7 @@ export default function BuyBox({
         <span className="iz-infopill">Garansi: PLACEHOLDER</span>
         <span className="iz-infopill">Pengiriman: PLACEHOLDER</span>
       </div>
-    </aside>
+    </div>
   );
 }
 

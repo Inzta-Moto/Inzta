@@ -77,8 +77,6 @@ export default function SmartImage({
           alt={alt}
           loading={priority ? 'eager' : 'lazy'}
           decoding="async"
-          // React 18 does not know fetchPriority yet and warns; the lowercase attribute passes through as-is.
-          {...(priority ? { fetchpriority: 'high' } : {})}
           onLoad={() => setState('loaded')}
           onError={() => setState('error')}
         />

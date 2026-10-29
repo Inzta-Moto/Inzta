@@ -123,10 +123,9 @@ export default function PageMotion({ page }: { page: Page }) {
             tl.from(notes, { y: 24, opacity: 0, stagger: 0.25, duration: 0.4, ease: EASE }, 0.1);
             const foot = band.querySelector('.iz-band__foot');
             if (foot) tl.from(foot, { y: 16, opacity: 0, duration: 0.3, ease: EASE }, '>');
-          } else if (band) {
-            const notes = band.querySelectorAll('.iz-note, .iz-band__foot');
-            if (notes.length && belowFold(band)) gsap.from(notes, { opacity: 0, duration: 0.5, ease: EASE, stagger: 0.1, scrollTrigger: once(band) });
           }
+          // On phones the notes (data-reveal-stagger) and the price row (data-reveal) already fade through the generic
+          // loops above; a second from() on the same elements would capture opacity 0 as its end state (QA, ≤1023 px).
 
           // Filmstrip: on desktop, scroll position follows the page while the strip passes, only when it overflows.
           // It stays a native, focusable scroll region, so keys and swipe still work (S1.7).
