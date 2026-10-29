@@ -83,3 +83,10 @@ html:not(.js-nav) .iz-navdd:focus-within .iz-navdd__btn svg { transform: rotate(
   .iz-footer__brand { grid-column: 1 / -1; }
   .iz-footer__brand .iz-footer__about { max-width: 60ch; }
 }
+
+/* Wide screens (Sehan, 2026-10-29): above 1440 px the content column grows with the viewport, one pixel per pixel,
+   up to a 1440 px maximum (reached at 1680 px), so wide monitors do not show large empty sides. It starts at the
+   canvas 1200 px, so there is no jump at the 1440 px edge of the fit scale. */
+@media (min-width: 1440px) {
+  .iz-page { --size-content: min(1440px, calc(1200px + (100vw - 1440px))); }
+}
