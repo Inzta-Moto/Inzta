@@ -30,8 +30,11 @@ export default function FlashBar({ flash }: { flash: FlashSaleState }) {
 
   if (!eligible || end === null || ended || closed) return null;
 
+  // The close button disappears with the bar, so keyboard focus moves to the brand link instead of body (S0.3.9).
   const close = () => {
+    const hadFocus = document.activeElement instanceof HTMLElement && document.activeElement.classList.contains('iz-promobar__close');
     setClosed(true);
+    if (hadFocus) requestAnimationFrame(() => document.querySelector<HTMLElement>('.iz-nav .iz-brand')?.focus());
     try {
       if (flash.endsAt) window.sessionStorage.setItem(CLOSED_KEY, flash.endsAt);
     } catch {

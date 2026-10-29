@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { generateCloudinarySrcSet, optimizeCloudinaryUrl } from '@/lib/utils';
 
@@ -47,12 +48,26 @@ export default function SmartImage({
   }, []);
 
   const cloud = !!src && src.includes('res.cloudinary.com');
+  const local = !!src && src.startsWith('/');
   const srcSet = cloud ? generateCloudinarySrcSet(src as string, widths) : '';
   const box: CSSProperties = { ...(ratio ? { aspectRatio: ratio } : {}), ...style };
 
   return (
     <span className={`iz-smartimg${tone === 'dark' ? ' iz-smartimg--dark' : ''}${className ? ` ${className}` : ''}`} style={box} data-state={state}>
-      {src && state !== 'error' && (
+      {local && state !== 'error' && (
+        <Image
+          ref={ref}
+          className={imgClassName}
+          src={src as string}
+          alt={alt}
+          fill
+          sizes={sizes ?? '100vw'}
+          priority={priority}
+          onLoad={() => setState('loaded')}
+          onError={() => setState('error')}
+        />
+      )}
+      {src && !local && state !== 'error' && (
         <img
           ref={ref}
           className={imgClassName}

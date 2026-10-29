@@ -15,7 +15,7 @@ export default function About({ gasberHref }: { gasberHref: string }) {
       <ProcessSteps />
       {SHOW_VALUES_COPY && <ValuesList gasberHref={gasberHref} />}
       <CommunityPanel gasberHref={gasberHref} />
-      <HowToOrder />
+      <HowToOrder flush={false} />
       <ContactCard />
     </>
   );

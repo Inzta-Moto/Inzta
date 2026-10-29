@@ -10,9 +10,10 @@ const STEPS: readonly { icon: ComponentType; title: string; text: string }[] = [
 // "Pesan dalam tiga langkah." (F-016 S1.10). Warranty and shipping time stay PLACEHOLDER until INZTA writes them
 // (A-023, P-5, P-6; listed by check:f016-release, S1.10.3). S1.10.2: the v2 reset removes the list markers, so each
 // number is announced once, from its visible span; the arrows between steps are CSS pseudo-elements, unseen by AT.
-export default function HowToOrder() {
+// The Beranda sits it right under the previous section (paddingTop 0); /tentang keeps the normal section padding (S8.5.2).
+export default function HowToOrder({ flush = true }: { flush?: boolean }) {
   return (
-    <section className="iz-section" id="cara-pesan" style={{ paddingTop: 0 }}>
+    <section className="iz-section" id="cara-pesan" style={flush ? { paddingTop: 0 } : undefined}>
       <div className="iz-wrap">
         <div className="iz-howto">
           <div className="iz-howto__intro">
