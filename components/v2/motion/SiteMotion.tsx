@@ -354,8 +354,28 @@ function createController(curtain: HTMLDivElement, push: (href: string) => void,
     });
   }
 
+  // Phone menu and navbar buttons answer a tap (Sehan, 2026-10-29: the sheet looked flat): the press point becomes
+  // --fx/--fy and data-press runs a short CSS flood that finishes even when the finger lifts at once (:active alone
+  // lasts one frame on a quick tap). The attribute clears itself for the next tap.
+  const pressed = new WeakMap<Element, number>();
+  function onPress(e: PointerEvent) {
+    if (!motionOk()) return;
+    const btn = (e.target as Element | null)?.closest?.('.iz-msheet a, .iz-msheet button, .iz-nav__menu, .iz-motorchip');
+    if (!(btn instanceof HTMLElement)) return;
+    const box = btn.getBoundingClientRect();
+    btn.style.setProperty('--fx', `${((e.clientX - box.left) / box.width) * 100}%`);
+    btn.style.setProperty('--fy', `${((e.clientY - box.top) / box.height) * 100}%`);
+    window.clearTimeout(pressed.get(btn));
+    btn.removeAttribute('data-press');
+    // A forced reflow restarts the CSS animation on a second tap in a row.
+    void btn.offsetWidth;
+    btn.setAttribute('data-press', '');
+    pressed.set(btn, window.setTimeout(() => btn.removeAttribute('data-press'), 700));
+  }
+
   document.addEventListener('click', onClick, true);
   document.addEventListener('pointerover', onPointer);
+  document.addEventListener('pointerdown', onPress, { passive: true });
   const onTouch = (e: TouchEvent) => warm(e.target);
   document.addEventListener('touchstart', onTouch, { passive: true });
   document.addEventListener('pointerout', onPointer);
@@ -386,6 +406,7 @@ function createController(curtain: HTMLDivElement, push: (href: string) => void,
       if (frame) window.clearTimeout(frame);
       document.removeEventListener('click', onClick, true);
       document.removeEventListener('pointerover', onPointer);
+      document.removeEventListener('pointerdown', onPress);
       document.removeEventListener('touchstart', onTouch);
       document.removeEventListener('pointerout', onPointer);
       detach();

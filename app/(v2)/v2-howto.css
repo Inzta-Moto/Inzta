@@ -106,6 +106,16 @@
 .iz-howto--live .iz-journey__step:not(.iz-journey__step--on) .iz-journey__stage { opacity: 0.5; }
 .iz-howto--live .iz-journey__step--done .iz-journey__stage { opacity: 0.74; }
 .iz-howto--live .iz-journey__step:not(.iz-journey__step--on) .iz-journey__body { opacity: 0.88; }
+/* At the last stop every step reads as reached: cards 1 and 2 take the look of card 3, undimmed, with a filled
+   numeral, a kuning node and the yellow outline (Sehan, 2026-10-29). Scrolling back clears it. */
+.iz-howto--live.iz-howto--complete .iz-journey__step .iz-journey__nfill { clip-path: inset(-25% -25% -25% -25%); }
+.iz-howto--live.iz-howto--complete .iz-journey__step .iz-journey__node { color: var(--c-on-kuning); }
+.iz-howto--live.iz-howto--complete .iz-journey__step .iz-journey__node::before { transform: scale(1); }
+.iz-howto--live.iz-howto--complete .iz-journey__step .iz-journey__node::after { transform: scale(0); }
+.iz-howto--live.iz-howto--complete .iz-journey__step .iz-journey__card { translate: 0 calc(-8 * var(--hu)); }
+.iz-howto--live.iz-howto--complete .iz-journey__step .iz-journey__card::after { opacity: 1; }
+.iz-howto--live.iz-howto--complete .iz-journey__step .iz-journey__stage,
+.iz-howto--live.iz-howto--complete .iz-journey__step .iz-journey__body { opacity: 1; }
 
 /* Step scenes. Decorative (aria-hidden), nothing focusable; every size goes through --v, the scene unit. Boxes keep a
    transparent border so forced-colors mode draws their edges. */
@@ -194,7 +204,8 @@
 /* Forced colours drop shadows and backgrounds: the active card keeps a system outline, the boxes their borders. */
 @media (forced-colors: active) {
   .iz-journey__card { outline: 1px solid CanvasText; }
-  .iz-journey__step--on .iz-journey__card { outline: 2px solid Highlight; outline-offset: 2px; }
+  .iz-journey__step--on .iz-journey__card,
+  .iz-howto--complete .iz-journey__card { outline: 2px solid Highlight; outline-offset: 2px; }
   .iz-vig-pick,
   .iz-vig-send__wa,
   .iz-vig-send__btn,
@@ -221,7 +232,8 @@
   .iz-journey__n { font-size: 40px; }
   .iz-journey__road { flex: 1; width: 2px; height: auto; min-height: 24px; margin: 0 0 calc(-1 * var(--space-5) + 6px); background: repeating-linear-gradient(180deg, var(--c-pasir) 0 6px, transparent 6px 12px); transform-origin: 50% 0; transform: scaleY(var(--hw-draw, 1)); }
   .iz-journey__fill { transform-origin: 50% 0; transform: scaleY(var(--hw-fill, 1)); }
-  .iz-journey__step--on .iz-journey__card { translate: 0 -4px; }
+  .iz-journey__step--on .iz-journey__card,
+  .iz-howto--live.iz-howto--complete .iz-journey__step .iz-journey__card { translate: 0 -4px; }
 }
 @media (min-width: 768px) and (max-width: 1023.98px) {
   .iz-journey__card { display: grid; grid-template-columns: minmax(0, 300px) minmax(0, 1fr); align-items: center; padding-bottom: 10px; }
@@ -245,3 +257,4 @@
 .iz-journey__node .iz-duo { color: var(--c-kuning); opacity: 1; }
 .iz-journey__step--on .iz-journey__node .iz-duo { color: inherit; opacity: 0.45; }
 .iz-journey__step--done .iz-journey__node .iz-duo { color: var(--c-kuning); opacity: 1; }
+.iz-howto--live.iz-howto--complete .iz-journey__node .iz-duo { color: inherit; opacity: 0.45; }

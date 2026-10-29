@@ -355,8 +355,14 @@ export default function SiteNav({
             ))}
           </div>
           <div className="iz-msheet__links">
-            <Link href="/blog" onClick={() => setSheetOpen(false)}>Artikel</Link>
-            <Link href="/tentang" onClick={() => setSheetOpen(false)}>Tentang</Link>
+            <Link href="/blog" onClick={() => setSheetOpen(false)} {...page('artikel')}>
+              <span>Artikel</span>
+              <ArrowRight width={18} height={18} />
+            </Link>
+            <Link href="/tentang" onClick={() => setSheetOpen(false)} {...page('tentang')}>
+              <span>Tentang</span>
+              <ArrowRight width={18} height={18} />
+            </Link>
           </div>
           <div className="iz-wa" style={{ width: '100%' }}>
             <a className="iz-btn iz-btn--primary iz-btn--wa" href={waHref} target="_blank" rel="noopener noreferrer">

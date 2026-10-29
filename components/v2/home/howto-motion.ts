@@ -173,6 +173,8 @@ export function attachHowTo(root: HTMLElement, kit: MotionKit): () => void {
     const setActive = (n: number) => {
       if (n === active) return;
       active = n;
+      // The last stop marks every step reached (v2-howto.css .iz-howto--complete).
+      root.classList.toggle('iz-howto--complete', n === steps.length - 1);
       steps.forEach((step, i) => {
         step.classList.toggle('iz-journey__step--on', i === n);
         step.classList.toggle('iz-journey__step--done', i < n);
@@ -182,7 +184,7 @@ export function attachHowTo(root: HTMLElement, kit: MotionKit): () => void {
       });
     };
     const cleanup = () => {
-      root.classList.remove('iz-howto--live');
+      root.classList.remove('iz-howto--live', 'iz-howto--complete');
       steps.forEach(s => s.classList.remove('iz-journey__step--on', 'iz-journey__step--done'));
     };
 
