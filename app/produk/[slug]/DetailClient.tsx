@@ -7,6 +7,8 @@ import { formatPrice, calcDiscount, buildWaLink, optimizeCloudinaryUrl, generate
 import { matchVariant, isSelectionComplete, generateLabel } from '@/lib/product-utils';
 import { Truck, ShieldCheck, RefreshCw, Headphones, LucideIcon, X, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Tag, TicketCheck, TicketX } from 'lucide-react';
 import Header from '@/components/Header';
+import { trackViewItem, trackLead } from '@/lib/tracking';
+import { browserStorage, readFirstTouchUtm } from '@/lib/utm';
 import VariantSelector from '@/components/VariantSelector';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
@@ -256,6 +258,17 @@ export default function DetailClient({ slug, initialProduct, initialRelated }: {
 
   const removeVoucher = () => { setVoucherInput(''); setVoucherData(null); setVoucherError(''); setDiscountAmount(0); };
 
+  // F-002: lihat produk, sekali per slug (tidak ulang saat ganti varian/qty/StrictMode).
+  const viewTrackedSlugRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!product || viewTrackedSlugRef.current === product.slug) return;
+    viewTrackedSlugRef.current = product.slug;
+    const price = product.productType === 'simple'
+      ? (product as SimpleProduct).price
+      : (product as VariableProduct).priceFrom;
+    trackViewItem({ slug: product.slug, name: product.name, price: price ?? 0 });
+  }, [product]);
+
   // ── Order ──────────────────────────────────────────────────────────────────
   const handleOrderClick = async () => {
     if (!product || orderLoading) return;
@@ -275,12 +288,15 @@ export default function DetailClient({ slug, initialProduct, initialRelated }: {
           voucherCode: voucherData?.code ?? null,
           affiliateId: voucherData?.affiliateId ?? null,
           buyerUID,
+          utm: readFirstTouchUtm(browserStorage(), Date.now()),
         }),
       });
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || data.error || 'Gagal membuat pesanan');
 
+      // F-002: sinkron, tanpa await; navigasi WhatsApp tidak boleh ditunda (bug iOS).
+      trackLead({ orderId: data.orderId, value: data.finalPrice, slugs: [product.slug] }, 'product');
       window.location.href = buildWaLink(data.orderId, data.items, {
         totalPrice: data.totalPrice,
         discountAmount: data.discountAmount,

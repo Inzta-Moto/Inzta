@@ -122,6 +122,12 @@ export default function OrdersPage() {
     return <span className={`table-badge ${s.cls}`}>{s.label}</span>;
   }
 
+  function orderSource(utm: Order['utm']) {
+    const head = [utm?.source, utm?.medium].filter(Boolean).join(' / ');
+    const text = [head, utm?.campaign].filter(Boolean).join(' · ');
+    return text ? <span className="order-accordion-value">{text}</span> : <span className="order-na">-</span>;
+  }
+
   function orderActions(order: Order & { id: string }) {
     const id = order.id || order.orderId;
     return (
@@ -277,6 +283,7 @@ export default function OrdersPage() {
                     <th>Produk</th>
                     <th>Total</th>
                     <th>Voucher</th>
+                    <th>Sumber</th>
                     <th>Status</th>
                     <th>Tanggal</th>
                     <th>Aksi</th>
@@ -308,6 +315,7 @@ export default function OrdersPage() {
                       <td>
                         {order.voucherCode ? <span className="order-voucher-badge">{order.voucherCode}</span> : <span className="order-na">-</span>}
                       </td>
+                      <td>{orderSource(order.utm)}</td>
                       <td>{orderStatusBadge(order.status)}</td>
                       <td className="order-date-cell">{formatDate(order.createdAt, { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
                       <td>{orderActions(order)}</td>
@@ -367,6 +375,10 @@ export default function OrdersPage() {
                       <div className="order-accordion-row">
                         <span className="order-accordion-label">Voucher</span>
                         {order.voucherCode ? <span className="order-voucher-badge">{order.voucherCode}</span> : <span className="order-na">-</span>}
+                      </div>
+                      <div className="order-accordion-row">
+                        <span className="order-accordion-label">Sumber</span>
+                        {orderSource(order.utm)}
                       </div>
                       <div className="order-accordion-actions">
                         {order.status === 'pending' && (
