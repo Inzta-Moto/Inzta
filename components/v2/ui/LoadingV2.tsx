@@ -55,15 +55,17 @@ export default function LoadingV2({ variant }: { variant: Variant }) {
           {variant === 'blog' && (
             <>
               <Skeleton h="48px" w="min(420px, 80%)" />
+              <div className="iz-row">{Array.from({ length: 5 }, (_, i) => <Skeleton key={i} h="40px" w="110px" r="var(--radius-pill)" />)}</div>
               <Skeleton h="clamp(240px, 40vh, 420px)" r="var(--radius-tile)" />
               <div className="iz-grid-3">{Array.from({ length: 3 }, (_, i) => <SkeletonCard key={i} />)}</div>
             </>
           )}
           {variant === 'article' && (
             <div className="iz-stack" style={{ maxWidth: 760 }}>
+              <Skeleton h="16px" w="220px" />
               <Skeleton h="48px" w="90%" />
               <Skeleton h="20px" w="40%" />
-              <Skeleton h="clamp(220px, 40vh, 420px)" r="var(--radius-tile)" />
+              <Skeleton h="auto" r="var(--radius-tile)" className="iz-skel--wide" />
               <SkeletonLines count={6} />
             </div>
           )}

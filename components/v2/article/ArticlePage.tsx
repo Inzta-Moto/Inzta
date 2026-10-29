@@ -35,7 +35,7 @@ export function tocHeadings(blocks: RenderBlock[]): TocHeading[] {
 /**
  * Article page of v2 (F-016 S7, artikel.dc.html), shared by /blog/[slug] and /admin/pratinjau/[slug] (S7.8.2).
  * The body is components/ArticleBody.tsx unchanged, with the className BlogDetailClient passes (S7.3.7); the restyle
- * is CSS only (components/v2/article/article-body.css). Client islands receive primitives only (S7.9.2).
+ * is CSS only (app/(v2)/v2-article-body.css). Client islands receive primitives only (S7.9.2).
  */
 export default function ArticlePage({
   article,

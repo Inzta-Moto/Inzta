@@ -63,7 +63,8 @@ for (const file of fs.readdirSync(dir).filter(f => f.endsWith('.css'))) {
     for (const m of sel.matchAll(/\.([a-zA-Z][\w-]*)/g)) {
       const cls = m[1];
       if (cls === 'iz-page' || cls === 'js-nav' || cls === 'js-motion') continue;
-      if (globalClasses.has(cls)) problems.push(`${file}: class ".${cls}" also exists in app/globals.css`);
+      // F-016 S7.3.8: the article body keeps its F-012/F-013 classes; v2 restyles them only under .iz-page .iz-article.
+      if (globalClasses.has(cls) && !sel.startsWith('.iz-page .iz-article')) problems.push(`${file}: class ".${cls}" also exists in app/globals.css`);
     }
   }
 }

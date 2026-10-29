@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
 import '@/app/(v2)/v2-article.css';
-import '@/components/v2/article/article-body.css';
+import '@/app/(v2)/v2-article-body.css';
 import V2Layout from '@/components/v2/V2Layout';
 import ArticlePage from '@/components/v2/article/ArticlePage';
 import { requireAdmin } from '@/lib/auth';

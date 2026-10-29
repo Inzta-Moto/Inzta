@@ -2,8 +2,7 @@
    `.iz-page .iz-article`, so each override is strictly more specific than the F-012/F-013 rule it beats and stylesheet
    order is never relied on (S7.3.8 f). No margin, padding, float, clear, width, max-width, display, or position on body
    headings, figures, images, tables, lists, .article-part, or .article-embed (S7.3.8 d); the 88 px embed thumbnail is
-   the S7.4.1 exception. Kept out of app/(v2)/ because scripts/check-v2-css.mjs forbids naming globals.css classes
-   there; imported by the article route pages only. */
+   the S7.4.1 exception. check-v2-css allows globals.css class names only under this prefix. */
 
 /* (a) colours through the variables F-013 rules already read, (b) the redesign variables F-012 provides. */
 .iz-page .iz-article {

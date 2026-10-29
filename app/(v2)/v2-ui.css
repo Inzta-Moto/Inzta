@@ -50,3 +50,4 @@
 .iz-skel--portrait { aspect-ratio: 4 / 5; }
 .iz-skelsteps { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--space-4); }
 @media (max-width: 1023px) { .iz-skelsteps { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: 60%; overflow: hidden; } }
+.iz-skel--wide { aspect-ratio: 16 / 9; }
