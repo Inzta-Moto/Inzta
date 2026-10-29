@@ -20,7 +20,7 @@ export default function HeroImage() {
   return (
     <Image
       ref={ref}
-      className="iz-hero__img"
+      className="iz-hero__img iz-hero__img--home"
       src={PHOTOS.hero}
       alt="Rider petualang Indonesia di jalur gunung"
       fill

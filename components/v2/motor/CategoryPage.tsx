@@ -2,6 +2,7 @@ import type { CategoryPageData } from '@/components/v2/motor/motor-page';
 import { consultHref } from '@/components/v2/motor/motor-page';
 import ProductCardV2 from '@/components/v2/ProductCardV2';
 import EmptyState from '@/components/v2/ui/EmptyState';
+import { Motorcycle } from '@/components/v2/icons';
 import CategoryHero from '@/components/v2/motor/CategoryHero';
 import PositionTabs from '@/components/v2/motor/PositionTabs';
 import InstallNotice from '@/components/v2/motor/InstallNotice';
@@ -54,6 +55,7 @@ export default function CategoryPage({ data }: { data: CategoryPageData }) {
         ) : (
           // S5.3.2: no product is tagged for this category yet; robots follow S5.8.5.
           <EmptyState
+            icon={<Motorcycle width={30} height={30} />}
             title={`Belum ada tas yang ditandai untuk motor ${label}.`}
             actions={[
               { label: 'Tanya admin soal motor Anda', href: waHref, external: true },

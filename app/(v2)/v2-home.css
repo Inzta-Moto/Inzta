@@ -55,6 +55,13 @@
    (S1.1.4). */
 img.iz-hero__img[data-failed="true"] { visibility: hidden; }
 
+/* Phones and tablets crop the 4:3 Beranda photo to a tall strip. The rider sits at about 74% of its width and the bike
+   spans 44-87%, so the strip is pulled right to keep the whole rider, the INZTAMOTO tank and the headlight in frame
+   (Sehan, 2026-10-29: at 62% the rider was cut at the right edge). Other heroes keep the shared 62% 30%. */
+@media (max-width: 1023.98px) {
+  .iz-hero__img.iz-hero__img--home { object-position: 77% 40%; }
+}
+
 /* Tourmax band (Sehan, 2026-10-29): copy left, the photo as a full-height panel bleeding to the band's right edge
    and fading into the asphalt, numbered spec rows and a floating size callout, so the band has no empty areas. The
    section is the grid, so the canvas classes stay within two levels of the block (check-f016-structure). */
@@ -118,7 +125,9 @@ img.iz-hero__img[data-failed="true"] { visibility: hidden; }
 @keyframes iz-marquee-up { from { transform: translateY(0); } to { transform: translateY(calc(-50% - var(--space-4) / 2)); } }
 @keyframes iz-marquee-down { from { transform: translateY(calc(-50% - var(--space-4) / 2)); } to { transform: translateY(0); } }
 @media (max-width: 767px) {
-  .iz-reviews__wall { display: flex; }
+  /* Each card keeps its own height in the swipe row; stretched to the longest review, the short ones ended in an empty
+     block (Sehan, 2026-10-29: no blank space on phones; the desktop wall stays as it is). */
+  .iz-reviews__wall { display: flex; align-items: flex-start; }
   .iz-rcol, .iz-rcol__track { display: contents; }
 }
 

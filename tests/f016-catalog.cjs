@@ -222,7 +222,8 @@ check('render: 0 active products shows "Belum ada produk." + Chat admin, no lead
   assert.doesNotMatch(out, /t-lead/);
   assert.doesNotMatch(out, /iz-filters/);
   assert.match(out, /iz-empty__title">Belum ada produk\.</);
-  assert.match(out, /<a class="iz-btn iz-btn--primary" href="https:\/\/wa\.me\/6289513482410" target="_blank" rel="noopener noreferrer">Chat admin<\/a>/);
+  // The wa.me action carries the WhatsApp glyph like every other WhatsApp button; its text is still "Chat admin".
+  assert.match(out, /<a class="iz-btn iz-btn--primary iz-btn--wa" href="https:\/\/wa\.me\/6289513482410" target="_blank" rel="noopener noreferrer"><span class="iz-btn__icon"><svg[^>]*aria-hidden="true"[\s\S]*?<\/svg><\/span><span>Chat admin<\/span><\/a>/);
 });
 
 check('render: Suspense fallback lists every product (h2 names), help card after the 8th, "Muat lagi" hidden (S2.2.8, S2.5.1, S0.9.6)', () => {
@@ -242,7 +243,7 @@ check('render: filters that match nothing show the filtered EmptyState with "Hap
   const out = html(React.createElement(CatalogBody, { items: ITEMS, waHref: WA, state: st({ posisi: ['extend'], harga: 'atas-500rb', urut: 'terbaru' }), search: 'posisi=extend&harga=atas-500rb&urut=terbaru' }));
   assert.match(out, /iz-empty__title">Tidak ada tas yang sesuai filter\.</);
   assert.match(out, /href="\/produk\?urut=terbaru"[^>]*>Hapus semua filter<\/a>/);
-  assert.match(out, /Chat admin<\/a>/);
+  assert.match(out, /<span>Chat admin<\/span><\/a>/);
   assert.doesNotMatch(out, /iz-catalog__grid/);
   assert.match(out, /Menampilkan 0 dari 0 produk/);
 });
