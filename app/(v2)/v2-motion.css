@@ -194,6 +194,15 @@ html.iz-motion .iz-film-scene.is-swipe .iz-film__progress > span { display: bloc
    overflow: hidden while the child is animated on the GPU, so a corner flashes square. A rounded clip-path always
    holds (Sehan, 2026-10-29: hero bottom sometimes straight, sometimes round). */
 .iz-page .iz-hero { clip-path: inset(0 round 0 0 var(--radius-band) var(--radius-band)); }
+/* The hero's bottom corners are also painted: page-coloured wedges above the photo. The photo zooms in and drifts with
+   the scroll on the GPU, and some Chrome builds still dropped the rounded clip for a few frames, so the edge flicked
+   between straight and round while scrolling back up (Sehan, 2026-10-29). A painted corner cannot be dropped. */
+.iz-page .iz-hero::before {
+  content: ""; position: absolute; z-index: 2; left: 0; right: 0; bottom: 0; height: var(--radius-band); pointer-events: none;
+  background:
+    radial-gradient(circle at 100% 0, transparent calc(var(--radius-band) - 0.75px), var(--c-kertas) var(--radius-band)) left bottom / var(--radius-band) var(--radius-band) no-repeat,
+    radial-gradient(circle at 0 0, transparent calc(var(--radius-band) - 0.75px), var(--c-kertas) var(--radius-band)) right bottom / var(--radius-band) var(--radius-band) no-repeat;
+}
 .iz-page :is(.iz-why__photo, .iz-overlap__photo, .iz-gfeature) { clip-path: inset(0 round var(--radius-panel)); }
 .iz-page .iz-cat, .iz-page .iz-film > .iz-photo { clip-path: inset(0 round var(--radius-tile-lg)); }
 .iz-page .iz-mtile, .iz-page .iz-step .iz-photo { clip-path: inset(0 round var(--radius-tile)); }
