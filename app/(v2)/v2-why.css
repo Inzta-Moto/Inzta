@@ -1,54 +1,64 @@
-/* "Mengapa pilih INZTA" icon tiles (F-016, Sehan 2026-10-29: the flat orange squares read as generic). Scoped to the
-   --tiles modifier because /tentang (ValuesList) reuses .iz-why__icon and this file only loads with WhyInzta; without
-   the scope its tiles would change look depending on whether the home page was visited first in the session. */
+/* "Mengapa pilih INZTA" (home) and "Yang kami pegang." (/tentang) icon tiles (F-016; Sehan 2026-10-29: the flat
+   orange squares, then the soft krem tiles, read as generic). Both lists import this file and opt in with the --tiles
+   modifier, so the base .iz-why__icon in v2-components.css stays the fallback. The tile is the INZTA logo inverted: an
+   aspal patch carrying a kuning Phosphor duotone glyph, ringed by a dashed kuning stitch as a nod to the sewn bags. */
 .iz-why__list--tiles .iz-why__item { grid-template-columns: 64px minmax(0, 1fr); column-gap: var(--space-6); }
 .iz-why__list--tiles .iz-why__icon {
   position: relative;
   width: 64px;
   height: 64px;
-  border-radius: 20px;
-  color: var(--c-aspal);
-  background: linear-gradient(150deg, var(--c-kertas-terang) 0%, var(--c-krem) 55%, var(--c-pasir-muda) 100%);
-  /* Inner hairline plus a light top edge give the tile depth without a heavy drop shadow. */
-  box-shadow: inset 0 0 0 1px var(--c-garis), inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 1px 2px rgba(22, 20, 15, 0.06);
-  overflow: hidden;
+  border-radius: 18px;
+  color: var(--c-kuning);
+  background: linear-gradient(160deg, var(--c-arang-naik) 0%, var(--c-aspal) 65%);
+  /* A faint bevel on the top edge inside, and a soft shadow below that lifts the dark tile off the paper background. */
+  box-shadow: inset 0 1px 0 rgba(243, 239, 230, 0.08), 0 10px 20px -12px rgba(22, 20, 15, 0.6);
   isolation: isolate;
 }
-/* Kuning glow in the top-right corner: the brand accent without filling the whole tile. */
+/* Stitch ring: a thin dashed kuning line inset like the seam of a sewn patch. */
+.iz-why__list--tiles .iz-why__icon::after {
+  content: "";
+  position: absolute;
+  inset: 5px;
+  border: 1px dashed rgba(245, 158, 11, 0.45);
+  border-radius: 13px;
+  pointer-events: none;
+}
+/* Soft kuning light behind the glyph so its duotone fill still reads on the dark tile. */
 .iz-why__list--tiles .iz-why__icon::before {
   content: "";
   position: absolute;
-  inset: -40% -40% auto auto;
-  width: 80%;
-  height: 80%;
+  inset: 14%;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(245, 158, 11, 0.42) 0%, rgba(245, 158, 11, 0) 70%);
+  background: radial-gradient(circle, rgba(245, 158, 11, 0.2) 0%, rgba(245, 158, 11, 0) 70%);
   z-index: -1;
 }
 .iz-why__list--tiles .iz-why__icon svg { width: 38px; height: 38px; }
-/* The Solar secondary layer turns kuning at full strength; the primary layer stays aspal for contrast on krem. */
-.iz-why__list--tiles .iz-why__icon .iz-duo { color: var(--c-kuning); opacity: 1; }
+/* Phosphor's 20% back layer is too faint on aspal; 35% keeps a visible second tone that does not compete. */
+.iz-why__list--tiles .iz-why__icon .iz-duo { opacity: 0.35; }
 
 @media (max-width: 767px) {
   .iz-why__list--tiles .iz-why__item { grid-template-columns: 52px minmax(0, 1fr); column-gap: var(--space-4); }
-  .iz-why__list--tiles .iz-why__icon { width: 52px; height: 52px; border-radius: 16px; }
-  .iz-why__list--tiles .iz-why__icon svg { width: 31px; height: 31px; }
+  .iz-why__list--tiles .iz-why__icon { width: 52px; height: 52px; border-radius: 15px; }
+  .iz-why__list--tiles .iz-why__icon::after { inset: 4px; border-radius: 11px; }
+  .iz-why__list--tiles .iz-why__icon svg { width: 32px; height: 32px; }
 }
 
-/* Hover micro-motion only where hover is real and motion is allowed; touch and reduced-motion users get the static tile. */
+/* Hover feedback only where hover is real: the stitch brightens, and the glyph drifts and tilts slowly when motion is
+   allowed, so touch and reduced-motion users get the static tile. Transitions rather than a looping animation, so the
+   glyph eases back instead of snapping when the pointer leaves. */
+@media (hover: hover) and (pointer: fine) {
+  .iz-why__list--tiles .iz-why__icon::after { transition: border-color 0.6s ease; }
+  .iz-why__list--tiles .iz-why__item:hover .iz-why__icon::after { border-color: rgba(245, 158, 11, 0.85); }
+}
 @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
-  .iz-why__list--tiles .iz-why__icon,
-  .iz-why__list--tiles .iz-why__icon::before,
-  .iz-why__list--tiles .iz-why__icon svg { transition: transform 0.55s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease, opacity 0.3s ease; }
-  .iz-why__list--tiles .iz-why__item:hover .iz-why__icon {
-    transform: translateY(-2px);
-    box-shadow: inset 0 0 0 1px rgba(245, 158, 11, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 6px 14px -6px rgba(22, 20, 15, 0.22);
-  }
-  .iz-why__list--tiles .iz-why__item:hover .iz-why__icon::before { transform: scale(1.35); }
-  .iz-why__list--tiles .iz-why__item:hover .iz-why__icon svg { transform: rotate(-8deg) scale(1.08); }
+  .iz-why__list--tiles .iz-why__icon svg,
+  .iz-why__list--tiles .iz-why__icon::before { transition: transform 0.9s cubic-bezier(0.16, 1, 0.3, 1); }
+  .iz-why__list--tiles .iz-why__item:hover .iz-why__icon svg { transform: translateY(-2px) rotate(-6deg) scale(1.06); }
+  .iz-why__list--tiles .iz-why__item:hover .iz-why__icon::before { transform: scale(1.3); }
 }
 
 @media (forced-colors: active) {
   .iz-why__list--tiles .iz-why__icon { border: 1px solid CanvasText; }
-  .iz-why__list--tiles .iz-why__icon::before { display: none; }
+  .iz-why__list--tiles .iz-why__icon::before,
+  .iz-why__list--tiles .iz-why__icon::after { display: none; }
 }
