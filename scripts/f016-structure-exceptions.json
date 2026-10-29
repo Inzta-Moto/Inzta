@@ -187,5 +187,54 @@
     "value": "iz-tabs",
     "reason": "The position tablist renders only when the category products cover two or more of Side/Tank/Tail; with the draft mapping (F016_KATEGORI=draft) Retro lists side bags only, so there is no tablist. With two or more positions the block is present and matches.",
     "requirement": "S5.2.2"
+  },
+  {
+    "artboard": "artikel",
+    "kind": "block",
+    "value": "iz-closing",
+    "reason": "The shared Closing component carries its own .iz-wrap (as in Main.dc.html) because V2Layout main#isi is not .iz-wrap.",
+    "requirement": "S0.8"
+  },
+  {
+    "artboard": "artikel",
+    "kind": "class",
+    "value": "iz-toc",
+    "reason": "TOC not rendered while KS-01 is option b: body h2 ids need Angkasa's lib/markdown.ts change; Toc renders nothing without bagian- ids.",
+    "requirement": "S7.3.3, KS-01, VF-14"
+  },
+  {
+    "artboard": "artikel",
+    "kind": "heading",
+    "value": "Daftar isi",
+    "reason": "TOC heading; TOC not rendered while KS-01 is option b.",
+    "requirement": "S7.3.3, KS-01, VF-14"
+  },
+  {
+    "artboard": "artikel",
+    "kind": "class",
+    "value": "iz-prose",
+    "reason": ".iz-prose must not wrap .article-body (its li bullets double F-013 list-style and its h2 margin undoes WEB-02); the body keeps the F-013 renderer output restyled by CSS only.",
+    "requirement": "S7.3.7, S7.3.8 e"
+  },
+  {
+    "artboard": "artikel",
+    "kind": "heading",
+    "value": "Untuk perkakas dan P3K di perjalanan",
+    "reason": "Canvas inline-product panel heading is not generated; the author writes an h3 before the markers, each marker stays its own F-013 card.",
+    "requirement": "S7.4.2"
+  },
+  {
+    "artboard": "artikel",
+    "kind": "heading",
+    "value": "Tas samping XSR 155: versi tali vs versi baut, depan vs belakang",
+    "reason": "Article titles come from published articles in Firestore (data, not canvas copy); the canvas shows sample titles.",
+    "requirement": "S7.6, design.md §19 data-driven text"
+  },
+  {
+    "artboard": "artikel",
+    "kind": "heading",
+    "value": "Checklist touring: perkakas, P3K, dan cara packing per posisi tas",
+    "reason": "Article titles come from published articles in Firestore (data, not canvas copy); the canvas shows sample titles.",
+    "requirement": "S7.6, design.md §19 data-driven text"
   }
 ]

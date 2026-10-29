@@ -1,0 +1,45 @@
+/* F-016 S7.3.8, S7.4.1: CSS-only restyle of the F-013 article body and embeds on v2 pages. Every selector starts with
+   `.iz-page .iz-article`, so each override is strictly more specific than the F-012/F-013 rule it beats and stylesheet
+   order is never relied on (S7.3.8 f). No margin, padding, float, clear, width, max-width, display, or position on body
+   headings, figures, images, tables, lists, .article-part, or .article-embed (S7.3.8 d); the 88 px embed thumbnail is
+   the S7.4.1 exception. Kept out of app/(v2)/ because scripts/check-v2-css.mjs forbids naming globals.css classes
+   there; imported by the article route pages only. */
+
+/* (a) colours through the variables F-013 rules already read, (b) the redesign variables F-012 provides. */
+.iz-page .iz-article {
+  --text-primary: var(--c-tinta);
+  --text-secondary: var(--c-tinta);
+  --text-tertiary: var(--c-batu);
+  --text-placeholder: var(--c-batu-muda);
+  --border-light: var(--c-garis);
+  --border-medium: var(--c-batu-muda);
+  --bg-subtle: var(--c-pasir-muda);
+  --bg-white: var(--c-kertas-terang);
+  --accent: var(--c-kuning);
+  --accent-border: var(--c-kuning-tua);
+  --shadow-sm: none;
+  --shadow-md: var(--shadow-lift);
+  --article-measure: var(--size-reading);
+}
+
+/* (c) typography. --article-flow is declared on .article-body itself by F-012, so it is set on the same element. */
+.iz-page .iz-article .article-body { --article-flow: 1.25em; font-family: var(--font-sans); font-size: 19px; line-height: 1.7; color: var(--c-tinta); }
+.iz-page .iz-article .article-body h2 { font-family: var(--font-sans); font-weight: 700; font-size: 28px; line-height: 1.2; letter-spacing: -0.01em; scroll-margin-top: 96px; }
+.iz-page .iz-article .article-body h3 { font-family: var(--font-sans); font-weight: 700; }
+@media (max-width: 767px) {
+  .iz-page .iz-article .article-body { font-size: 18px; }
+  .iz-page .iz-article .article-body h2 { font-size: 24px; scroll-margin-top: 84px; }
+}
+
+/* S7.4.1: product and "Baca juga" cards in the canvas iz-inline-products / iz-iprod look; markup and copy unchanged. */
+.iz-page .iz-article .article-embed-link { gap: var(--space-4); padding: var(--space-6); color: var(--c-tinta); background: var(--c-kertas-terang); border: 1px solid var(--c-garis); border-radius: var(--radius-tile-lg); box-shadow: none; }
+.iz-page .iz-article .article-embed-link:hover { border-color: var(--c-kuning-tua); box-shadow: var(--shadow-lift); }
+.iz-page .iz-article .article-embed-link:focus-visible { outline: 3px solid var(--c-focus); outline-offset: 3px; }
+.iz-page .iz-article .article-embed-image { width: 88px; height: 88px; border: 0; border-radius: var(--radius-thumb); background: var(--c-pasir-muda); }
+.iz-page .iz-article .article-embed-title { font-size: 17px; font-weight: 600; line-height: 1.35; }
+.iz-page .iz-article .article-embed-price { font-size: 17px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.iz-page .iz-article .article-embed-cta { font-size: 16px; font-weight: 600; color: var(--c-kuning-tua); text-decoration: none; }
+@media (max-width: 767px) {
+  .iz-page .iz-article .article-embed-image { width: 72px; height: 72px; }
+  .iz-page .iz-article .article-embed-link { padding: var(--space-4); }
+}

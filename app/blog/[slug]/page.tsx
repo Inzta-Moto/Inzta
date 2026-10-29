@@ -1,11 +1,15 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import BlogDetailClient from './BlogDetailClient';
-import { getArticle } from '@/lib/public-content';
+import '@/app/(v2)/v2-article.css';
+import '@/components/v2/article/article-body.css';
+import V2Layout from '@/components/v2/V2Layout';
+import ArticlePage from '@/components/v2/article/ArticlePage';
+import { getArticle, getArticles } from '@/lib/public-content';
 import { renderArticle } from '@/lib/markdown';
 import { resolveEmbeds, visibleBlocks } from '@/lib/article-embeds';
 import { firstLineSummary } from '@/lib/article-format';
 import { optimizeCloudinaryUrl } from '@/lib/utils';
+import { articleReadingMinutes, otherArticles } from '@/lib/v2/article-v2';
 import type { PublicArticle } from '@/types';
 
 // ISR per slug: the first request renders and caches the page; admin writes call revalidatePath.
@@ -84,5 +88,18 @@ export default async function BlogDetailPage({ params }: { params: { slug: strin
   const { blocks } = renderArticle(article);
   const embeds = await resolveEmbeds(blocks, { exclude: article.slug });
   const { content, ...rest } = article;
-  return <BlogDetailClient article={rest} blocks={visibleBlocks(blocks, embeds)} embeds={embeds} articleUrl={`${siteUrl}/blog/${params.slug}`} />;
+  // F-016 S7.9.1: only the JSX changes, to the v2 frame. S7.6.3: "Artikel lain" from the published list, card fields only.
+  const others = otherArticles(article, await getArticles());
+  return (
+    <V2Layout current="artikel">
+      <ArticlePage
+        article={rest}
+        blocks={visibleBlocks(blocks, embeds)}
+        embeds={embeds}
+        minutes={articleReadingMinutes(content)}
+        others={others}
+        shareUrl={`${siteUrl}/blog/${params.slug}`}
+      />
+    </V2Layout>
+  );
 }
