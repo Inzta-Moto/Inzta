@@ -133,6 +133,47 @@
   .iz-closing--armed .iz-closing__route > li:not(:last-child)::after { animation-name: iz-closing-road-y; }
 }
 
+/* Rider (Sehan, 2026-10-29: "animasikan bagian section ini"): once the route is drawn, a kuning dot rides it from stop
+   1 to stop 3 and starts over, and each number chip pops with a ring as the dot reaches it. ClosingStage adds
+   .iz-closing--ride, measures the chip centres into --ride-mx/my (stop 2) and --ride-x/y (stop 3), and adds
+   .iz-closing--live only while the panel is on screen, so the loop never runs unseen. The dot is painted before the
+   list items, so it passes under the chips. Without JavaScript or under reduced motion none of this exists. */
+@media (prefers-reduced-motion: no-preference) {
+  .iz-closing--ride { --closing-ride-run: paused; }
+  .iz-closing--ride.iz-closing--live { --closing-ride-run: running; }
+  .iz-closing--ride .iz-closing__route { position: relative; }
+  .iz-closing--ride .iz-closing__route::before {
+    content: "";
+    position: absolute;
+    top: calc(var(--closing-n) / 2 - 6px);
+    left: calc(var(--closing-n) / 2 - 6px);
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--c-kuning);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--c-kuning) 25%, transparent), 0 0 18px 2px color-mix(in srgb, var(--c-kuning) 55%, transparent);
+    pointer-events: none;
+    animation: iz-closing-ride 5s linear infinite;
+    animation-play-state: var(--closing-ride-run);
+  }
+  .iz-closing--ride .iz-closing__route > li:nth-child(1) { --closing-ride-at: 0s; }
+  .iz-closing--ride .iz-closing__route > li:nth-child(2) { --closing-ride-at: 2.3s; }
+  .iz-closing--ride .iz-closing__route > li:nth-child(3) { --closing-ride-at: 4.4s; }
+  .iz-closing--ride .iz-closing__n { animation: iz-closing-chip 5s var(--closing-ride-at) infinite; animation-play-state: var(--closing-ride-run); }
+  .iz-closing--ride .iz-closing__n::after { content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit; border: 2px solid var(--c-kuning); opacity: 0; animation: iz-closing-ring 5s ease-out var(--closing-ride-at) infinite; animation-play-state: var(--closing-ride-run); }
+}
+
+@keyframes iz-closing-ride {
+  0% { opacity: 0; scale: 0.3; translate: 0 0; }
+  6% { opacity: 1; scale: 1; translate: 0 0; animation-timing-function: cubic-bezier(0.45, 0, 0.25, 1); }
+  46% { translate: var(--ride-mx, 0px) var(--ride-my, 0px); }
+  54% { translate: var(--ride-mx, 0px) var(--ride-my, 0px); animation-timing-function: cubic-bezier(0.45, 0, 0.25, 1); }
+  88% { opacity: 1; scale: 1; translate: var(--ride-x, 0px) var(--ride-y, 0px); }
+  95%, 100% { opacity: 0; scale: 0.3; translate: var(--ride-x, 0px) var(--ride-y, 0px); }
+}
+@keyframes iz-closing-chip { 0%, 14%, 100% { scale: 1; } 5% { scale: 1.18; } }
+@keyframes iz-closing-ring { 0% { opacity: 0.9; scale: 1; } 18%, 100% { opacity: 0; scale: 1.9; } }
+
 @keyframes iz-closing-card { from { opacity: 0; translate: 0 calc(44 * var(--closing-u)); rotate: -9deg; } }
 @keyframes iz-closing-plate { from { opacity: 0; rotate: -2deg; scale: 0.9; } }
 @keyframes iz-closing-bubble { from { opacity: 0; translate: calc(60 * var(--closing-u)) 0; scale: 0.88; } }
@@ -143,6 +184,6 @@
 @keyframes iz-closing-stamp { from { opacity: 0; scale: 0.25; rotate: -160deg; } }
 @keyframes iz-closing-fill { from { scale: 0; } }
 @keyframes iz-closing-num { from { color: var(--c-pasir); } }
-@keyframes iz-closing-stop { from { opacity: 0.4; } }
+@keyframes iz-closing-stop { from { opacity: 0; translate: 0 calc(12 * var(--closing-u)); } }
 @keyframes iz-closing-road-x { from { scale: 0 1; } }
 @keyframes iz-closing-road-y { from { scale: 1 0; } }

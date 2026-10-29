@@ -7,6 +7,7 @@ import '@/app/(v2)/v2-motion.css';
 import { fontDisplay } from '@/components/v2/fonts';
 import { CURTAIN_ATTR, isMotionRoute } from '@/lib/v2/motion/boot';
 import { FULL, cover, framesSettled, lift, pageReady, pageSettled } from '@/lib/v2/motion/curtain';
+import { initCursor } from '@/lib/v2/motion/cursor';
 import { initPage, type PageMode } from '@/lib/v2/motion/engine';
 import { routeLabel, transitionTarget } from '@/lib/v2/motion/links';
 import { HOVER, MOTION_OK, jumpTo, loadMotion, markCovered, markRevealed, setLenis, type MotionKit } from '@/lib/v2/motion/runtime';
@@ -35,6 +36,7 @@ function createController(curtain: HTMLDivElement, push: (href: string) => void,
   // Pathname at the moment a covered navigation pushed; the waiter only accepts a page once the route has moved on.
   let leaving: string | null = null;
   let disposeLenis: (() => void) | null = null;
+  let disposeCursor: (() => void) | null = null;
   let frame = 0;
   // React Strict Mode mounts, disposes and mounts again in development; async steps of a disposed controller must
   // stop, or its engine and Lenis outlive it and the page gets two pins on one section.
@@ -130,6 +132,7 @@ function createController(curtain: HTMLDivElement, push: (href: string) => void,
     if (disposed) return;
     await startLenis();
     if (disposed) return;
+    disposeCursor = initCursor(kit);
     const root = readyRoot();
     if (root) attach(root);
     if (html.getAttribute(CURTAIN_ATTR) === 'load') {
@@ -319,6 +322,7 @@ function createController(curtain: HTMLDivElement, push: (href: string) => void,
       document.removeEventListener('pointerout', onPointer);
       detach();
       disposeLenis?.();
+      disposeCursor?.();
       // Only the route curtain is dropped: in development Strict Mode disposes the first controller while the load
       // curtain is still up, and the second one must still lift it (the boot fallback covers a real unmount).
       curtain.removeAttribute('data-active');

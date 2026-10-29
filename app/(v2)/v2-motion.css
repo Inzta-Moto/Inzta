@@ -158,3 +158,17 @@ html.iz-motion .iz-film-scene.is-swipe .iz-film__progress > span { display: bloc
 @media (forced-colors: active) {
   .iz-roll > span { text-shadow: none; transform: none !important; }
 }
+
+/* Pointer follower (lib/v2/motion/cursor.ts, fine pointers only): dot and ring blend against any background; over
+   cards the ring becomes a yellow pill with a short label. */
+.iz-cursor { position: fixed; top: 0; left: 0; z-index: 2147482000; pointer-events: none; visibility: hidden; opacity: 0; }
+.iz-cursor--dot { width: 8px; height: 8px; border-radius: 50%; background: #f3efe6; mix-blend-mode: difference; }
+.iz-cursor--ring { width: 38px; height: 38px; border-radius: 50%; border: 1.5px solid #f3efe6; mix-blend-mode: difference; transition: width 0.35s cubic-bezier(0.16, 1, 0.3, 1), height 0.35s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.35s ease; }
+.iz-cursor--ring[data-state="link"] { width: 64px; height: 64px; background: rgba(243, 239, 230, 0.12); }
+.iz-cursor--pill { padding: 8px 16px; border-radius: 999px; background: #f59e0b; color: #1a1813; font-family: var(--font-sans-v2), system-ui, sans-serif; font-size: 14px; font-weight: 700; letter-spacing: 0.02em; white-space: nowrap; box-shadow: 0 10px 24px -10px rgba(22, 20, 15, 0.5); }
+
+/* Light cards catch a soft warm light under the pointer, so they read as surfaces rather than flat boxes. */
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .iz-page :is(.iz-pcard, .iz-rcard, .iz-mfill)[data-glow] { background-image: radial-gradient(360px circle at var(--mx, 50%) var(--my, 50%), rgba(245, 158, 11, 0.12), rgba(245, 158, 11, 0) 65%); }
+  .iz-page .iz-msheet__row[data-glow] { background-color: var(--c-pasir-muda); }
+}

@@ -7,14 +7,59 @@ import { HOVER, MOTION_OK, whenRevealed } from '@/lib/v2/motion/runtime';
 const IN_VIEW = '0px 0px -25% 0px';
 // If the curtain never reports itself lifted (runtime error), the assembly still plays this long after it is in view.
 const SAFETY_MS = 4000;
+// The rider starts once the assembly has drawn the whole route (stop 3 lights at 1.9 s, v2-closing.css).
+const RIDE_AFTER_MS = 2400;
+
+/**
+ * Prepares the route rider (v2-closing.css "Rider") and returns the function that starts it. The chip centres are
+ * measured into custom properties, again whenever the route changes size (it turns from a row into a column below
+ * 1024 px). The loop runs only while the panel is on screen (.iz-closing--live); off screen it pauses.
+ */
+function rider(section: HTMLElement, cleanups: (() => void)[]): () => void {
+  const route = section.querySelector<HTMLElement>('.iz-closing__route');
+  if (!route || typeof IntersectionObserver !== 'function' || typeof ResizeObserver !== 'function') return () => {};
+  let started = false;
+  const measure = () => {
+    const chips = route.querySelectorAll<HTMLElement>('.iz-closing__n');
+    if (chips.length < 3) return;
+    const centre = (el: HTMLElement) => {
+      const r = el.getBoundingClientRect();
+      return [r.left + r.width / 2, r.top + r.height / 2];
+    };
+    const [a, m, z] = [centre(chips[0]), centre(chips[1]), centre(chips[2])];
+    route.style.setProperty('--ride-mx', `${(m[0] - a[0]).toFixed(1)}px`);
+    route.style.setProperty('--ride-my', `${(m[1] - a[1]).toFixed(1)}px`);
+    route.style.setProperty('--ride-x', `${(z[0] - a[0]).toFixed(1)}px`);
+    route.style.setProperty('--ride-y', `${(z[1] - a[1]).toFixed(1)}px`);
+  };
+  const sizes = new ResizeObserver(measure);
+  const live = new IntersectionObserver(entries => {
+    section.classList.toggle('iz-closing--live', entries.some(e => e.isIntersecting));
+  });
+  cleanups.push(() => {
+    sizes.disconnect();
+    live.disconnect();
+    section.classList.remove('iz-closing--ride', 'iz-closing--live');
+    ['--ride-mx', '--ride-my', '--ride-x', '--ride-y'].forEach(p => route.style.removeProperty(p));
+  });
+  return () => {
+    if (started) return;
+    started = true;
+    measure();
+    sizes.observe(route);
+    live.observe(section);
+    section.classList.add('iz-closing--ride');
+  };
+}
 
 /**
  * Section frame of the closing panel (F-016 S0.8). The panel, its route and the chat illustration are complete in the
  * server HTML; this component only adds classes, so without JavaScript or with reduced motion nothing is hidden.
  * With motion allowed it arms the panel (start states in v2-closing.css under .iz-closing--armed), plays the chat
- * assembly once the panel scrolls in and the curtain is up (.iz-closing--play), and on fine pointers lets the chat lean
- * toward the pointer (.iz-closing--tilt). A panel already on screen and uncovered at mount is left as it is, so the
- * chat never blinks out in front of the visitor. Transforms stay off the section itself (the engine clips it).
+ * assembly once the panel scrolls in and the curtain is up (.iz-closing--play), then sets the route rider going
+ * (.iz-closing--ride), and on fine pointers lets the chat lean toward the pointer (.iz-closing--tilt). A panel already
+ * on screen and uncovered at mount is not re-assembled, so the chat never blinks out in front of the visitor; it only
+ * gets the rider. Transforms stay off the section itself (the engine clips it).
  */
 export default function ClosingStage({ className, children }: { className: string; children: ReactNode }) {
   const ref = useRef<HTMLElement>(null);
@@ -23,12 +68,14 @@ export default function ClosingStage({ className, children }: { className: strin
     const section = ref.current;
     if (!section || !window.matchMedia(MOTION_OK).matches) return;
     const cleanups: (() => void)[] = [];
+    const startRide = rider(section, cleanups);
 
     if (typeof IntersectionObserver === 'function') {
       let revealed = false;
       let inView = false;
       let played = false;
       let safety = 0;
+      let rideTimer = 0;
       let io: IntersectionObserver | null = null;
       const play = () => {
         if (played) return;
@@ -36,6 +83,7 @@ export default function ClosingStage({ className, children }: { className: strin
         window.clearTimeout(safety);
         io?.disconnect();
         section.classList.add('iz-closing--play');
+        rideTimer = window.setTimeout(startRide, RIDE_AFTER_MS);
       };
       const stopReveal = whenRevealed(() => {
         revealed = true;
@@ -43,7 +91,9 @@ export default function ClosingStage({ className, children }: { className: strin
       });
       const box = section.getBoundingClientRect();
       const onScreen = box.top < window.innerHeight && box.bottom > 0;
-      if (!(onScreen && revealed)) {
+      if (onScreen && revealed) {
+        startRide();
+      } else {
         section.classList.add('iz-closing--armed');
         io = new IntersectionObserver(
           entries => {
@@ -60,6 +110,7 @@ export default function ClosingStage({ className, children }: { className: strin
         stopReveal();
         io?.disconnect();
         window.clearTimeout(safety);
+        window.clearTimeout(rideTimer);
         section.classList.remove('iz-closing--armed', 'iz-closing--play');
       });
     }

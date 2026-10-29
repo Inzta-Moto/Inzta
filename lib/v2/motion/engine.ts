@@ -460,7 +460,7 @@ export function initPage(root: HTMLElement, kit: MotionKit, mode: PageMode): () 
 
     // Garasi and position tiles lean a few degrees toward the pointer (fine pointers only).
     function tilt(scope: HTMLElement) {
-      scope.querySelectorAll<HTMLElement>('.iz-gtile, .iz-cat').forEach(card => {
+      scope.querySelectorAll<HTMLElement>('.iz-gtile, .iz-cat, .iz-mtile, .iz-step, .iz-gfeature').forEach(card => {
         gsap.set(card, { transformPerspective: 900 });
         const rx = gsap.quickTo(card, 'rotationX', { duration: 0.6, ease: 'power3.out' });
         const ry = gsap.quickTo(card, 'rotationY', { duration: 0.6, ease: 'power3.out' });
