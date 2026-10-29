@@ -50,3 +50,7 @@
 @media (prefers-reduced-motion: reduce) and (min-width: 1024px) {
   .iz-film { flex-wrap: wrap; justify-content: center; overflow-x: visible; scroll-snap-type: none; }
 }
+
+/* Hero photo that failed to load: hidden, so the dark section background is the fallback without a broken-image icon
+   (S1.1.4). */
+img.iz-hero__img[data-failed="true"] { visibility: hidden; }
