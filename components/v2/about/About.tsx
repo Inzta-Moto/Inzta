@@ -1,4 +1,5 @@
 import HowToOrder from '@/components/v2/home/HowToOrder';
+import PageMotion from '@/components/v2/motion/PageMotion';
 import AboutHero from '@/components/v2/about/AboutHero';
 import ProcessSteps from '@/components/v2/about/ProcessSteps';
 import ValuesList from '@/components/v2/about/ValuesList';
@@ -17,6 +18,7 @@ export default function About({ gasberHref }: { gasberHref: string }) {
       <CommunityPanel gasberHref={gasberHref} />
       <HowToOrder flush={false} />
       <ContactCard />
+      <PageMotion page="about" />
     </>
   );
 }
