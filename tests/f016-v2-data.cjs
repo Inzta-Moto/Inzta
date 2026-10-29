@@ -180,9 +180,15 @@ const sideProduct = (extra = {}, kiri = {}, kanan = {}) => ({
     assert.strictEqual(H.isBagPosition('tail'), true);
     assert.strictEqual(H.isBagPosition(null), false);
   });
-  await check('design.md §4: cards and menu prices keep the four tile positions (extend/harian -> no chip, no menu price)', () => {
+  await check('S0.9: cards show all six position chips; menu prices keep the four tile positions (design.md §4)', () => {
     const card = H.toCard(simple('chest', 'Chestbag Inzta Ride'));
-    assert.strictEqual(card.position, null);
+    assert.strictEqual(card.position, 'harian');
+    assert.strictEqual(card.positionLabel, 'Tas harian');
+    assert.deepStrictEqual(H.positionsOf({ slug: 'tankbag-and-tailbag-wanderpack-10l', name: 'Tankbag and Tailbag wanderpack 10L' }), ['tank', 'tail']);
+    assert.strictEqual(H.toCard(simple('tankbag-and-tailbag-wanderpack-10l', 'Tankbag and Tailbag wanderpack 10L')).positionLabel, 'Tank bag / tail bag');
+    assert.strictEqual(H.badgeOf('Best Seller New'), 'best');
+    assert.strictEqual(H.badgeOf('Baru'), 'baru');
+    assert.strictEqual(H.badgeOf(null), null);
     assert.deepStrictEqual(H.minPriceByPosition([simple('e', 'Extend bag', { price: 1000 })]), { tank: null, side: null, tail: null, aksesori: null });
   });
 
