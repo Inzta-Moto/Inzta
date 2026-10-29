@@ -42,6 +42,11 @@ export default function SiteNav({
   const menuBtnRef = useRef<HTMLButtonElement>(null);
   const triggerRefs = { produk: useRef<HTMLButtonElement>(null), motor: useRef<HTMLButtonElement>(null) };
 
+  // Turns off the CSS :focus-within fallback; from here on data-open drives the panels (S0.4.1, VF-01).
+  useEffect(() => {
+    document.documentElement.classList.add('js-nav');
+  }, []);
+
   useEffect(() => {
     const end = document.querySelector('[data-hero-end]');
     if (!end) {

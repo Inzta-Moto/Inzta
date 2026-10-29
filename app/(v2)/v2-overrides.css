@@ -64,3 +64,7 @@
   .iz-page .iz-rfeature blockquote { font-size: clamp(22px, 2.1vw, 30px); }
 }
 .iz-footer .iz-footer__sub { margin-top: 16px; }
+
+/* Without JavaScript the panels still open from the keyboard; SiteNav adds .js-nav on mount and then drives data-open itself, so Escape and Tab-out behave (S0.4 ST-NOJS, VF-01). */
+html:not(.js-nav) .iz-navdd:focus-within .iz-navdd__menu { opacity: 1; visibility: visible; transform: none; transition-delay: 0s; }
+html:not(.js-nav) .iz-navdd:focus-within .iz-navdd__btn svg { transform: rotate(180deg); }
