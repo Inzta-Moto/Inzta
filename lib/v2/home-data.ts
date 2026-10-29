@@ -8,6 +8,7 @@ import {
   POSITION_BY_SLUG,
   UNIVERSAL_SLUGS,
 } from '@/lib/v2/product-copy';
+import { isFlashActive } from '@/lib/v2/flash-time';
 import { ARTICLE_CHIP_BY_SLUG, GASBER_SLUG, TOURMAX_SLUG } from '@/lib/v2/home-content';
 
 // Pure helpers for the v2 Beranda (F-016). No Firebase or React imports, so tests/f016-home.cjs can load them.
@@ -134,7 +135,9 @@ export function formatShortDate(ms: number | null): string {
     .replace('.', '');
 }
 
-export function buildHomeData(products: Product[], articles: PublicArticle[], flash: FlashSaleState): HomeData {
+// A sale that has already ended at render time is passed on as inactive, so a regenerated page never ships the
+// promo bar only to remove it after hydration (24.7). The client still hides it at zero for stale ISR copies.
+export function buildHomeData(products: Product[], articles: PublicArticle[], flash: FlashSaleState, now = Date.now()): HomeData {
   const productImages: Record<string, string> = {};
   for (const p of products) {
     const img = firstImage(p);
@@ -148,6 +151,6 @@ export function buildHomeData(products: Product[], articles: PublicArticle[], fl
     guides: selectGuides(articles),
     gasberPublished: articles.some(a => a.slug === GASBER_SLUG),
     productImages,
-    flash,
+    flash: isFlashActive(flash, now) ? flash : { isActive: false, endsAt: null },
   };
 }

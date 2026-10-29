@@ -80,13 +80,14 @@ export interface FilmPhoto {
   credit: string | null;
 }
 
+// Alt texts describe what each photo shows; the design's alts did not match the photos (D-11).
 // Every Gasber photo carries the organiser's credit (D-3).
 export const FILMSTRIP: readonly FilmPhoto[] = [
   { src: PHOTOS.gasber4, alt: 'Peserta Gasber 16 di jalur tanah', shape: 'wide', credit: GASBER_CREDIT },
-  { src: PHOTOS.road02, alt: 'Rider touring beristirahat', shape: 'tall', credit: null },
-  { src: PHOTOS.road03, alt: 'Rider di tanjakan', shape: 'wide', credit: null },
-  { src: PHOTOS.road04, alt: 'Motor di kebun teh', shape: 'tall', credit: null },
-  { src: PHOTOS.gasber1, alt: 'Debu jalur tanah', shape: 'wide', credit: GASBER_CREDIT },
+  { src: PHOTOS.road02, alt: 'Dua rider touring berpose di samping motor di padang pasir', shape: 'tall', credit: null },
+  { src: PHOTOS.road03, alt: 'Motor touring diparkir di depan tugu Cangar', shape: 'wide', credit: null },
+  { src: PHOTOS.road04, alt: 'Motor di tepi pantai saat matahari terbenam', shape: 'tall', credit: null },
+  { src: PHOTOS.gasber1, alt: 'Rider adventure memimpin rombongan di jalur tanah Gasber 16', shape: 'wide', credit: GASBER_CREDIT },
 ];
 
 // Articles have no category field (12.3).

@@ -12,7 +12,7 @@
 @media (prefers-reduced-motion: reduce) { html:has(.iz-page) { scroll-behavior: auto; } }
 
 /* 40 px navbar controls keep their look and get a 48 px hit area (20.4). */
-.iz-nav__menu, .iz-motorchip, .iz-nav__cta, .iz-promobar__close { position: relative; }
+.iz-nav__menu, .iz-motorchip, .iz-nav__cta { position: relative; }
 .iz-nav__menu::after, .iz-motorchip::after, .iz-nav__cta::after, .iz-promobar__close::after { content: ""; position: absolute; inset: -4px; }
 
 /* bundle.css only crops inside product tiles (the printed claim sits at the bottom of the photo); elsewhere show the top part. :where() keeps the tile rule stronger (17.4). */
@@ -37,3 +37,13 @@
 
 /* Shop names render as text until their URLs are known (16.4); same pill as the design's links. */
 .iz-footer__shops span { display: inline-flex; align-items: center; min-height: 40px; padding: 4px 14px; border-radius: var(--radius-pill); border: 1px solid var(--c-line-on-dark); color: var(--c-krem); font-size: 15px; }
+
+/* Placeholder text ("Foto produk: PLACEHOLDER"), same rule as bundle.css line 25 of the design source. */
+.iz-placeholder { font-weight: 600; }
+
+/* One published article: the feature card takes the full row, no empty side column (12.4). */
+.iz-guides--single { grid-template-columns: minmax(0, 1fr); }
+
+/* Article without a cover: centred text tile like the design's "Foto produk: PLACEHOLDER" (P-14). */
+.iz-photo--empty { display: grid; place-items: center; padding: 12px; text-align: center; }
+.iz-gfeature > .iz-photo--empty { position: absolute; inset: 0; z-index: -2; border-radius: 0; align-content: start; padding-top: var(--space-8); }

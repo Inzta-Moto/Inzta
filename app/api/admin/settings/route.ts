@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { getAdminDb } from '@/lib/firebaseAdmin';
 import { verifyAdminSession } from '@/lib/auth';
 
@@ -36,6 +37,14 @@ export async function POST(request: Request) {
         isActive: false,
         endsAt: null,
       }, { merge: true });
+    }
+
+    // F-016 24.6: the Beranda reads the flash sale in its ISR render, so purge it right after the write.
+    // A throw here must not turn a saved write into an error response; the 3600 s interval still refreshes the page.
+    try {
+      revalidatePath('/');
+    } catch (error) {
+      console.error('Revalidation failed:', { path: '/', error });
     }
 
     return NextResponse.json({ success: true });
