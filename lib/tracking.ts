@@ -23,7 +23,10 @@ export function validId(raw: string | undefined, pattern: RegExp): string | null
 
 export const GA_ID = validId(RAW_GA_ID, GA_ID_PATTERN);
 export const META_PIXEL_ID = validId(RAW_PIXEL_ID, PIXEL_ID_PATTERN);
-export const IS_PRODUCTION = process.env.NEXT_PUBLIC_VERCEL_ENV === 'production';
+// Hanya domain asli yang dihitung sebagai traffic produksi. Project Vercel
+// inzta-staging juga ber-VERCEL_ENV=production, jadi debug_mode ditentukan
+// dari hostname saat runtime: staging, Preview, dan localhost = debug.
+export const PRODUCTION_HOSTS = ['inzta.id', 'www.inzta.id'];
 
 const UNTRACKED = ['/admin', '/affiliate'];
 
