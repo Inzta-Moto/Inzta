@@ -29,7 +29,7 @@ const ARTBOARDS = {
   'produk-sisi': { mode: 'server', route: '/produk/side-bag-inzta-xsr-155', state: 'F016_KATEGORI=draft' },
   motor: { mode: 'server', route: '/tas-motor/retro', state: 'F016_KATEGORI=draft' },
   blog: { mode: 'server', route: '/blog' },
-  artikel: { mode: 'server', route: '/blog/komunitas-gasber-rider-bandung' },
+  artikel: { mode: 'server', route: '/blog/gasber-16-indonesia-ride-adventure' },
   tentang: { mode: 'server', route: '/tentang' },
   'admin-sisi': { mode: 'component' },
 };
