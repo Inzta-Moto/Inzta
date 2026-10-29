@@ -176,7 +176,8 @@ export default function CatalogBody({
               {visible.map((it, i) => (
                 <Fragment key={it.card.slug}>
                   <ProductCardV2 card={it.card} headingLevel={2} sizes={GRID_SIZES} />
-                  {i === helpAt && <HelpCard waHref={waHref} />}
+                  {/* Only between cards: as the last row it doubled the closing panel right below (Sehan, 2026-10-29). */}
+                  {i === helpAt && i < visible.length - 1 && <HelpCard waHref={waHref} />}
                 </Fragment>
               ))}
             </div>

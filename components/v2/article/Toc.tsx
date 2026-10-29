@@ -38,7 +38,7 @@ export default function Toc({ headings }: { headings: TocHeading[] }) {
 
   if (headings.length < 2) return null;
   return (
-    <aside className="iz-toc">
+    <aside className="iz-toc" data-lenis-prevent>
       <h2>Daftar isi</h2>
       {headings.map(h => (
         <a key={h.id} href={`#${h.id}`} aria-current={current === h.id ? 'true' : undefined}>

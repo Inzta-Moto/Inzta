@@ -22,6 +22,9 @@ html:has(.iz-page) { scrollbar-gutter: stable; }
 /* app/globals.css sets scroll-behavior: smooth on html; Lenis scrolls the window every frame, so the browser smoothed
    each of its steps again and the scroll felt uneven. Native smooth scrolling stays for pages without Lenis. */
 html.iz-js { scroll-behavior: auto; }
+/* globals.css gives body overflow-x: hidden, which silently makes it an overflow-y: auto box; clip keeps the
+   horizontal guard without turning body into a scroll container (it confused Lenis and sticky positioning). */
+html:has(.iz-page) body { overflow-x: clip; }
 html.iz-js[data-iz-curtain], html.iz-js[data-iz-covered] { overflow: hidden; }
 
 /* Caret of the hero retype loop (lib/v2/motion/engine.ts retype()). */
@@ -162,9 +165,9 @@ html.iz-motion .iz-film-scene.is-swipe .iz-film__progress > span { display: bloc
 /* Pointer follower (lib/v2/motion/cursor.ts, fine pointers only): dot and ring blend against any background; over
    cards the ring becomes a yellow pill with a short label. */
 .iz-cursor { position: fixed; top: 0; left: 0; z-index: 2147482000; pointer-events: none; visibility: hidden; opacity: 0; }
-.iz-cursor--dot { width: 8px; height: 8px; border-radius: 50%; background: #f3efe6; mix-blend-mode: difference; }
-.iz-cursor--ring { width: 38px; height: 38px; border-radius: 50%; border: 1.5px solid #f3efe6; mix-blend-mode: difference; transition: width 0.35s cubic-bezier(0.16, 1, 0.3, 1), height 0.35s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.35s ease; }
-.iz-cursor--ring[data-state="link"] { width: 64px; height: 64px; background: rgba(243, 239, 230, 0.12); }
+.iz-cursor--dot { width: 6px; height: 6px; border-radius: 50%; background: #f3efe6; mix-blend-mode: difference; }
+.iz-cursor--ring { width: 26px; height: 26px; border-radius: 50%; border: 1.5px solid #f3efe6; mix-blend-mode: difference; transition: width 0.35s cubic-bezier(0.16, 1, 0.3, 1), height 0.35s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.35s ease; }
+.iz-cursor--ring[data-state="link"] { width: 44px; height: 44px; background: rgba(243, 239, 230, 0.12); }
 .iz-cursor--pill { padding: 8px 16px; border-radius: 999px; background: #f59e0b; color: #1a1813; font-family: var(--font-sans-v2), system-ui, sans-serif; font-size: 14px; font-weight: 700; letter-spacing: 0.02em; white-space: nowrap; box-shadow: 0 10px 24px -10px rgba(22, 20, 15, 0.5); }
 
 /* Light cards catch a soft warm light under the pointer, so they read as surfaces rather than flat boxes. */
@@ -182,6 +185,73 @@ html.iz-motion .iz-film-scene.is-swipe .iz-film__progress > span { display: bloc
   .iz-page .iz-nav__cta { position: relative; isolation: isolate; overflow: hidden; transition: color 0.35s ease; }
   .iz-page .iz-btn--primary .iz-btn__icon, .iz-page .iz-nav__cta > span:first-child { transition: transform 0.55s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.35s ease, color 0.35s ease; }
   .iz-page .iz-btn--primary:hover .iz-btn__icon, .iz-page .iz-nav__cta:hover > span:first-child { background: var(--c-kuning); color: var(--c-on-kuning); }
-  .iz-page .iz-dark .iz-btn--primary::before, .iz-page .iz-on-photo .iz-btn--primary::before { background: var(--c-krem); }
-  .iz-page .iz-dark .iz-btn--primary:hover, .iz-page .iz-on-photo .iz-btn--primary:hover { color: var(--c-tinta); }
+  /* Every dark surface floods with krem; asphalt on asphalt made the button vanish (Sehan, 2026-10-29). */
+  .iz-page :is(.iz-dark, .iz-on-photo, .iz-band, .iz-closing, .iz-footer, .iz-helpcard, .iz-rfeature, .iz-mfill--wa) .iz-btn--primary::before { background: var(--c-krem); }
+  .iz-page :is(.iz-dark, .iz-on-photo, .iz-band, .iz-closing, .iz-footer, .iz-helpcard, .iz-rfeature, .iz-mfill--wa) .iz-btn--primary:hover { color: var(--c-tinta); }
 }
+
+/* Rounded boxes whose photo moves inside them (parallax, zoom, tilt): Chrome sometimes drops the border-radius clip of
+   overflow: hidden while the child is animated on the GPU, so a corner flashes square. A rounded clip-path always
+   holds (Sehan, 2026-10-29: hero bottom sometimes straight, sometimes round). */
+.iz-page .iz-hero { clip-path: inset(0 round 0 0 var(--radius-band) var(--radius-band)); }
+.iz-page :is(.iz-why__photo, .iz-overlap__photo, .iz-gfeature) { clip-path: inset(0 round var(--radius-panel)); }
+.iz-page .iz-cat, .iz-page .iz-film > .iz-photo { clip-path: inset(0 round var(--radius-tile-lg)); }
+.iz-page .iz-mtile, .iz-page .iz-step .iz-photo { clip-path: inset(0 round var(--radius-tile)); }
+.iz-page .iz-pcard__tile, .iz-page .iz-rfeature > .iz-photo { clip-path: inset(0 round var(--radius-thumb)); }
+@media (max-width: 767px) {
+  .iz-page :is(.iz-why__photo, .iz-gfeature) { clip-path: inset(0 round var(--radius-tile-lg)); }
+}
+
+/* Motor chip (Sehan, 2026-10-29): photo badge of the chosen category, "Motor saya" over the category name, and a
+   yellow "Ganti" pill as the clear action. */
+.iz-motorchip--set { gap: 10px; padding: 0 5px 0 5px; }
+.iz-motorchip__thumb { width: 30px; height: 30px; flex: none; border-radius: 50%; overflow: hidden; box-shadow: 0 0 0 2px var(--c-kuning); }
+.iz-motorchip__thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.iz-motorchip__text { display: grid; line-height: 1.05; text-align: left; }
+.iz-motorchip__text small { font-size: 10.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.65; }
+.iz-motorchip__text b { font-size: 14.5px; font-weight: 700; }
+.iz-motorchip__swap { display: inline-flex; align-items: center; height: 28px; padding: 0 12px; border-radius: var(--radius-pill); background: var(--c-kuning); color: var(--c-on-kuning); font-size: 13px; font-weight: 700; transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.25s ease; }
+@media (hover: hover) and (pointer: fine) {
+  .iz-motorchip--set:hover .iz-motorchip__swap { transform: translateX(2px); background: #ffb02e; }
+}
+@media (max-width: 767px) {
+  .iz-motorchip--set { padding: 0 12px 0 5px; }
+}
+
+/* Garasi: the chosen tile steps forward a little. The scale property composes with the tilt transform. */
+.iz-gtile { transition: background-color 0.15s ease, box-shadow 0.3s ease, scale 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
+.iz-gtile[aria-pressed="true"] { scale: 1.05; z-index: 1; box-shadow: 0 0 0 3px var(--c-kuning), 0 24px 40px -24px rgba(22, 20, 15, 0.45); }
+@media (prefers-reduced-motion: reduce) { .iz-gtile[aria-pressed="true"] { scale: 1; } }
+
+/* Horizontal card rows clip in both axes (overflow-x: auto forces overflow-y too), which cut hover shadows. The row
+   gets room for the shadow inside, given back with negative margins so the layout does not move. */
+.iz-page .iz-scroller { padding-block: 18px 34px; margin-block: -18px -26px; padding-inline: 14px; margin-inline: -14px; scroll-padding-inline: 14px; }
+@media (max-width: 767px) {
+  .iz-page .iz-scroller { padding-inline: var(--space-5); margin-inline: calc(var(--space-5) * -1); scroll-padding-inline: var(--space-5); }
+}
+
+/* Footer (Sehan, 2026-10-29): columns fade up as it arrives (engine footer()), link underlines draw on hover and the
+   divider draws in. */
+.iz-footer { overflow: hidden; }
+.iz-footer li a { position: relative; transition: color 0.3s ease, translate 0.45s cubic-bezier(0.16, 1, 0.3, 1); }
+.iz-footer li a::after { content: ""; position: absolute; left: 0; right: 0; bottom: 6px; height: 1px; background: currentColor; transform: scaleX(0); transform-origin: right center; transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .iz-footer li a:hover { translate: 4px 0; }
+  .iz-footer li a:hover::after { transform: scaleX(1); transform-origin: left center; }
+}
+.iz-footer__bottom { --line: 1; position: relative; border-top: 0; }
+.iz-footer__bottom::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: var(--c-line-on-dark); transform: scaleX(var(--line)); transform-origin: left center; }
+
+/* Scroll system (Sehan, 2026-10-29): a slim INZTA scrollbar (asphalt pill on a krem track, yellow on hover) and a
+   yellow reading-progress line along the top edge, driven by Lenis (SiteMotion startLenis). Chrome and Edge 121+
+   ignore ::-webkit-scrollbar once scrollbar-color is set, so the standard properties are only given to browsers
+   without the pseudo-elements (Firefox). */
+html:has(.iz-page)::-webkit-scrollbar { width: 12px; height: 12px; }
+html:has(.iz-page)::-webkit-scrollbar-track { background: #f6f4ef; }
+html:has(.iz-page)::-webkit-scrollbar-thumb { background: #16140f; border-radius: 999px; border: 3px solid #f6f4ef; }
+html:has(.iz-page)::-webkit-scrollbar-thumb:hover { background: #f59e0b; }
+html:has(.iz-page)::-webkit-scrollbar-button { display: none; height: 0; }
+@supports not selector(::-webkit-scrollbar) {
+  html:has(.iz-page) { scrollbar-width: thin; scrollbar-color: #16140f #f6f4ef; }
+}
+.iz-progress { position: fixed; top: 0; left: 0; right: 0; z-index: 60; height: 3px; background: #f59e0b; transform: scaleX(0); transform-origin: left center; pointer-events: none; }

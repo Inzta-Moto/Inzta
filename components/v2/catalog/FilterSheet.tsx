@@ -98,7 +98,7 @@ export default function FilterSheet({
             Tutup filter
           </button>
         </div>
-        <div className="iz-fsheet__body">
+        <div className="iz-fsheet__body" data-lenis-prevent>
           {category && categoryText && (
             <div className="iz-fsheet__group" role="group" aria-labelledby={`${uid}-g-motor`} data-group="motor">
               <span className="iz-fsheet__legend" id={`${uid}-g-motor`}>Motor saya</span>

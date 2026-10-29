@@ -31,6 +31,21 @@ export function transitionTarget(click: LinkClick, current: URL): URL | null {
   return url;
 }
 
+/** True when a plain click goes to the page that is already open (same path and query, no hash): the logo on the
+ * Beranda, for example. SiteMotion replays the page intro for it instead of doing nothing. */
+export function samePage(click: LinkClick, current: URL): boolean {
+  if (click.defaultPrevented || click.button !== 0 || click.modified || click.optOut || click.download) return false;
+  if (click.target && click.target !== '_self') return false;
+  if (!click.href || click.href.startsWith('#')) return false;
+  let url: URL;
+  try {
+    url = new URL(click.href, current);
+  } catch {
+    return false;
+  }
+  return url.origin === current.origin && isMotionRoute(url.pathname) && url.pathname === current.pathname && url.search === current.search && !url.hash;
+}
+
 const CATEGORY_LABEL: Record<string, string> = { matic: 'Motor Matic', adventure: 'Motor Adventure', retro: 'Motor Retro', trail: 'Motor Trail' };
 
 const POSITION_LABEL: Record<string, string> = {

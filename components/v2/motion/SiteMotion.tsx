@@ -9,7 +9,7 @@ import { CURTAIN_ATTR, isMotionRoute } from '@/lib/v2/motion/boot';
 import { FULL, cover, framesSettled, lift, pageReady, pageSettled } from '@/lib/v2/motion/curtain';
 import { initCursor } from '@/lib/v2/motion/cursor';
 import { initPage, type PageMode } from '@/lib/v2/motion/engine';
-import { routeLabel, transitionTarget } from '@/lib/v2/motion/links';
+import { routeLabel, samePage, transitionTarget } from '@/lib/v2/motion/links';
 import { HOVER, MOTION_OK, jumpTo, loadMotion, markCovered, markRevealed, setLenis, type MotionKit } from '@/lib/v2/motion/runtime';
 
 const WORD = 'INZTA';
@@ -94,8 +94,21 @@ function createController(curtain: HTMLDivElement, push: (href: string) => void,
     // Weighted scroll, the same both ways (Sehan, 2026-10-29). Duration mode restarted its 1.35 s ease on every wheel
     // notch, so a run of notches downward piled up and felt fast; a low lerp is plain inertia toward the target, which
     // feels equally heavy up and down, and each notch travels a little less.
-    const lenis = new Lenis({ lerp: 0.065, wheelMultiplier: 0.8, touchMultiplier: 1, smoothWheel: true, anchors: true, allowNestedScroll: true, stopInertiaOnNavigate: true });
+    // allowNestedScroll stays off: it handed every downward wheel to <body>, which globals.css turns into an overflow
+    // box (overflow-x: hidden makes overflow-y auto) 4 px taller than its content, so scrolling down was native and
+    // only scrolling up was smoothed (Sehan: heavy only upward, stutter, smooth only after waiting; probe in QA).
+    // Panels that scroll on their own carry data-lenis-prevent instead (phone menu, catalogue filter sheet, TOC).
+    const lenis = new Lenis({ lerp: 0.065, wheelMultiplier: 0.8, touchMultiplier: 1, smoothWheel: true, anchors: true, stopInertiaOnNavigate: true });
     lenis.on('scroll', ScrollTrigger.update);
+    // Reading progress along the top edge (v2-motion.css .iz-progress).
+    const bar = document.createElement('div');
+    bar.className = 'iz-progress';
+    bar.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(bar);
+    const onProgress = (l: { progress: number }) => {
+      bar.style.transform = `scaleX(${Math.min(1, Math.max(0, l.progress || 0)).toFixed(4)})`;
+    };
+    lenis.on('scroll', onProgress);
     const tick = (time: number) => lenis.raf(time * 1000);
     gsap.ticker.add(tick);
     gsap.ticker.lagSmoothing(0);
@@ -110,6 +123,7 @@ function createController(curtain: HTMLDivElement, push: (href: string) => void,
       ScrollTrigger.removeEventListener('refresh', resize);
       gsap.ticker.remove(tick);
       lenis.destroy();
+      bar.remove();
       setLenis(null);
       disposeLenis = null;
     };
@@ -217,10 +231,47 @@ function createController(curtain: HTMLDivElement, push: (href: string) => void,
     await lift(kit, curtain, markRevealed);
   }
 
+  // Covers the page with the load curtain (logo and INZTA), goes back to the top, rebuilds the page motion so the
+  // hero entrance plays again, and lifts.
+  async function replay() {
+    if (!kit) return;
+    busy = true;
+    markCovered();
+    if (word) word.hidden = false;
+    if (label) label.hidden = true;
+    curtain.setAttribute('data-active', '');
+    html.setAttribute('data-iz-covered', '');
+    try {
+      await cover(kit, curtain);
+      detach();
+      jumpTo(0);
+      const root = readyRoot();
+      if (root) attach(root);
+      kit.ScrollTrigger.refresh();
+      await framesSettled();
+      await lift(kit, curtain, markRevealed);
+    } catch (error) {
+      console.warn('[motion] intro replay failed', error);
+      markRevealed();
+    } finally {
+      html.removeAttribute('data-iz-covered');
+      curtain.removeAttribute('data-active');
+      busy = false;
+    }
+  }
+
   function onClick(e: MouseEvent) {
     if (!kit || !motionOk() || !document.querySelector('.iz-page')) return;
     const a = (e.target as Element | null)?.closest?.('a');
     if (!a) return;
+    const click = {
+      target: a.getAttribute('target'),
+      download: a.hasAttribute('download'),
+      button: e.button,
+      modified: e.metaKey || e.ctrlKey || e.shiftKey || e.altKey,
+      optOut: a.dataset.transition === 'off',
+      defaultPrevented: e.defaultPrevented,
+    };
     const url = transitionTarget(
       {
         href: a.getAttribute('href'),
@@ -233,7 +284,14 @@ function createController(curtain: HTMLDivElement, push: (href: string) => void,
       },
       new URL(window.location.href),
     );
-    if (!url) return;
+    if (!url) {
+      // The link points at this very page (the logo on the Beranda): replay the intro like a refresh (Sehan).
+      if (!busy && samePage({ ...click, href: a.getAttribute('href') }, new URL(window.location.href))) {
+        e.preventDefault();
+        void replay();
+      }
+      return;
+    }
     // A second click while the curtain runs is swallowed; reaching next/link it started a parallel navigation that
     // held the curtain for seconds (review REV-03).
     if (busy) {

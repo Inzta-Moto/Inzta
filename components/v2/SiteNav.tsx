@@ -278,12 +278,19 @@ export default function SiteNav({
         </div>
 
         <div className="iz-nav__actions">
-          <Link className="iz-motorchip" href={chipHref}>
+          <Link className={`iz-motorchip${chosen ? ' iz-motorchip--set' : ''}`} href={chipHref}>
             {chosen ? (
               <>
-                <span className="iz-motorchip__dot" />
-                <span className="iz-only-desk">Motor saya: {chosen} · ganti</span>
+                {/* The chosen category as a photo badge, a two-line label and a "Ganti" action (Sehan, 2026-10-29). */}
+                <span className="iz-motorchip__thumb" aria-hidden="true">
+                  <img src={MOTOR_CATEGORIES.find(c => c.value === category)?.image} alt="" width={28} height={28} />
+                </span>
+                <span className="iz-motorchip__text iz-only-desk">
+                  <small>Motor saya</small>
+                  <b>{chosen}</b>
+                </span>
                 <span className="iz-only-mob">{chosen}</span>
+                <span className="iz-motorchip__swap iz-only-desk">Ganti</span>
               </>
             ) : (
               <>

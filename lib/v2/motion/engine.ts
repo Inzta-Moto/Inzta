@@ -299,7 +299,9 @@ export function initPage(root: HTMLElement, kit: MotionKit, mode: PageMode): () 
         if (inHero(box) || inScene(box)) return;
         const img = box.querySelector<HTMLElement>('img');
         const tl = gsap.timeline({ paused: true });
-        tl.fromTo(box, { clipPath: 'inset(100% 0% 0% 0%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: 1.35, ease: 'expo.inOut' }, 0);
+        // clearProps hands the corners back to CSS: a square inset left behind cut the rounded corners while the photo
+        // inside kept moving (Sehan: corners sometimes straight, sometimes round).
+        tl.fromTo(box, { clipPath: 'inset(100% 0% 0% 0%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: 1.35, ease: 'expo.inOut', clearProps: 'clipPath' }, 0);
         if (img) tl.fromTo(img, { scale: 1.4 }, { scale: 1.16, duration: 1.8, ease: 'expo.out' }, 0.1);
         onEnter(box, tl, desktop ? 'top 82%' : START);
         if (img && desktop) {
@@ -326,7 +328,7 @@ export function initPage(root: HTMLElement, kit: MotionKit, mode: PageMode): () 
       const tl = gsap.timeline({ paused: true, defaults: { ease: 'expo.out' } });
       const photo = band.querySelector<HTMLElement>('.iz-band__photo');
       const img = photo?.querySelector<HTMLElement>('img');
-      if (photo) tl.fromTo(photo, { clipPath: desktop ? 'inset(0% 0% 0% 100%)' : 'inset(100% 0% 0% 0%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: 1.4, ease: 'expo.inOut' }, 0);
+      if (photo) tl.fromTo(photo, { clipPath: desktop ? 'inset(0% 0% 0% 100%)' : 'inset(100% 0% 0% 0%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: 1.4, ease: 'expo.inOut', clearProps: 'clipPath' }, 0);
       if (img) tl.fromTo(img, { scale: 1.35 }, { scale: 1.1, duration: 2 }, 0.1);
       const rows = band.querySelectorAll<HTMLElement>('.iz-spec');
       if (rows.length) {
@@ -433,7 +435,10 @@ export function initPage(root: HTMLElement, kit: MotionKit, mode: PageMode): () 
       tl.fromTo(cols, { y: 40, opacity: 0 }, { y: 0, opacity: 1, duration: 1.1, stagger: 0.07 }, 0);
       const pills = foot.querySelectorAll('.iz-footer__shops > *');
       if (pills.length) tl.fromTo(pills, { x: -24, opacity: 0 }, { x: 0, opacity: 1, duration: 0.9, stagger: 0.08 }, 0.35);
+      const bottom = foot.querySelector<HTMLElement>('.iz-footer__bottom');
+      if (bottom) tl.fromTo(bottom, { '--line': 0 }, { '--line': 1, duration: 1.3, ease: 'expo.inOut' }, 0.3);
       onEnter(foot, tl, 'top 92%');
+
     }
 
     // Phones: rows that scroll sideways nudge left and back once when they arrive, so the swipe is discoverable.
