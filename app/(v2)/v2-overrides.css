@@ -13,7 +13,8 @@
 
 /* 40 px navbar controls keep their look and get a 48 px hit area (20.4). */
 .iz-nav__menu, .iz-motorchip, .iz-nav__cta { position: relative; }
-.iz-nav__menu::after, .iz-motorchip::after, .iz-nav__cta::after, .iz-promobar__close::after { content: ""; position: absolute; inset: -4px; }
+.iz-nav__menu::after, .iz-motorchip::after, .iz-nav__cta::after { content: ""; position: absolute; inset: -4px; }
+.iz-promobar__close::after { content: ""; position: absolute; inset: -6px; }
 
 /* bundle.css only crops inside product tiles (the printed claim sits at the bottom of the photo); elsewhere show the top part. :where() keeps the tile rule stronger (17.4). */
 :where(.iz-page) img.iz-crop-top { object-fit: cover; object-position: 50% 0%; }

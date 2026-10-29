@@ -1,4 +1,6 @@
-import type { BagPosition, MotorCategory } from '@/types';
+import type { BagPosition, CategoryItem, FilmPhoto, MotorCategory, PositionItem, ReviewItem } from '@/types';
+
+export type { CategoryItem, FilmPhoto, PositionItem, ReviewItem };
 
 // Static Beranda content that is not in Firestore (F-016). Copy is from inzta-web-design @ 3281681
 // (claude-design/canvas/project/Main.dc.html); placeholders stay visible until INZTA sends the data
@@ -23,13 +25,6 @@ export const PHOTOS = {
 
 export const GASBER_CREDIT = 'Dok. Gasber 16 / Indonesia Ride Adventure';
 
-export interface CategoryItem {
-  value: MotorCategory;
-  label: string;
-  image: string;
-  alt: string;
-}
-
 // Example photos (Stitch and Unsplash), always tagged "Foto contoh" where the design tags them (P-1).
 export const MOTOR_CATEGORIES: readonly CategoryItem[] = [
   { value: 'matic', label: 'Matic', image: '/images/v2/contoh/contoh-motor-nmax.jpg', alt: 'Motor matic' },
@@ -40,15 +35,6 @@ export const MOTOR_CATEGORIES: readonly CategoryItem[] = [
 
 export function categoryLabel(value: MotorCategory): string {
   return MOTOR_CATEGORIES.find(c => c.value === value)?.label ?? value;
-}
-
-export interface PositionItem {
-  value: BagPosition;
-  menuLabel: string;
-  tileTitle: string;
-  tileText: string;
-  image: string;
-  alt: string;
 }
 
 export const POSITION_ITEMS: readonly PositionItem[] = [
@@ -73,13 +59,6 @@ export const TOURMAX_NOTES: readonly string[] = [
 // Size note kept without a unit: cm is unconfirmed (P-11).
 export const TOURMAX_SIZE = { from: '37 x 28 x 23', to: '37 x 28 x 28' };
 
-export interface FilmPhoto {
-  src: string;
-  alt: string;
-  shape: 'wide' | 'tall';
-  credit: string | null;
-}
-
 // Alt texts describe what each photo shows; the design's alts did not match the photos (D-11).
 // Every Gasber photo carries the organiser's credit (D-3).
 export const FILMSTRIP: readonly FilmPhoto[] = [
@@ -96,14 +75,6 @@ export const ARTICLE_CHIP_BY_SLUG: Record<string, string> = {
   'tas-samping-motor-xsr-155': 'Per motor',
   'panduan-memilih-tas-motor': 'Memilih tas',
 };
-
-export interface ReviewItem {
-  quote: string;
-  productSlug: string;
-  productName: string;
-  name: string;
-  month: string;
-}
 
 // PLACEHOLDER until Sehan or Angkasa picks real Shopee reviews with the buyer's permission (13.2, C-8).
 export const REVIEW_FEATURED: ReviewItem = {

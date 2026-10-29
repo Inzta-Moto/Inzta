@@ -1,5 +1,6 @@
-/* INZTA v2 tokens (F-016). Copied from inzta-web-design @ 3281681 claude-design/ds/project/tokens.css. */
-:root, [data-theme="light"] {
+/* INZTA v2 tokens (F-016). Copied from inzta-web-design @ 3281681 claude-design/ds/project/tokens.css, scoped to
+   .iz-page instead of :root so they stay inert on pages that do not use v2 (review REV-05). */
+.iz-page {
   --c-kertas: #f6f4ef;
   --c-kertas-terang: #fdfcf9;
   --c-pasir-muda: #ede8de;
@@ -28,7 +29,7 @@
   --shadow-float: 0 10px 15px -3px rgba(22, 20, 15, 0.12), 0 4px 6px -4px rgba(22, 20, 15, 0.1);
   --shadow-lift: 0 4px 6px -1px rgba(22, 20, 15, 0.08), 0 2px 4px -2px rgba(22, 20, 15, 0.08);
 }
-:root {
+.iz-page {
   --space-2: 8px;
   --space-3: 12px;
   --space-4: 16px;

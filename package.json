@@ -12,7 +12,8 @@
     "test:articles": "node tests/f012-articles.cjs",
     "test:editor": "node tests/f013-editor.cjs",
     "test:flash": "node tests/f016-flash.cjs",
-    "test:home": "node tests/f016-home.cjs"
+    "test:home": "node tests/f016-home.cjs",
+    "check:f016-release": "node scripts/check-f016-release.mjs"
   },
   "dependencies": {
     "@tiptap/core": "3.32.0",

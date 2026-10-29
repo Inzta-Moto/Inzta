@@ -1,4 +1,6 @@
-import type { FlashSaleState } from '@/types';
+import type { Countdown, FlashSaleState } from '@/types';
+
+export type { Countdown };
 
 // Pure flash-sale helpers (F-016 24.1, 24.3, 24.5), shared by server render, client components, and tests.
 
@@ -11,14 +13,6 @@ export function endsAtMs(fs: FlashSaleState): number | null {
 export function isFlashActive(fs: FlashSaleState, now: number): boolean {
   const end = endsAtMs(fs);
   return fs.isActive === true && end !== null && end > now;
-}
-
-export interface Countdown {
-  days: number;
-  hours: number;
-  minutes: number;
-  seconds: number;
-  ended: boolean;
 }
 
 export function countdown(endMs: number, now: number): Countdown {

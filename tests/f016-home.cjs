@@ -103,6 +103,7 @@ check('effectivePrice: same result as ProductCard on simple, variable, legacy, a
     simple('lower', 'Lower', 300000, 250000),
     { productType: 'variable', slug: 'v', name: 'Variable', priceFrom: 150000, variants: [{ compareAtPrice: 175000 }, { compareAtPrice: 0 }] },
     { productType: 'variable', slug: 'v2', name: 'Variable no compare', priceFrom: 150000, variants: [] },
+    { productType: 'variable', slug: 'v3', name: 'Variable product-level compare', priceFrom: 150000, compareAtPrice: 175000, variants: [{ compareAtPrice: 0 }] },
   ];
   for (const f of fixtures) assert.deepStrictEqual(H.effectivePrice(f), productCardPrice(f), f.slug);
 });

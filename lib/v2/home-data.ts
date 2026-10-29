@@ -27,7 +27,8 @@ export function effectivePrice(p: Product): { price: number; compareAt: number |
     const variants: any[] = any.variants || [];
     const compares = variants.map(v => v.compareAtPrice || 0).filter((v: number) => v > 0);
     const maxCompare = compares.length ? Math.max(...compares) : 0;
-    return { price, compareAt: maxCompare > price ? maxCompare : null };
+    const compareAt = maxCompare > price ? maxCompare : legacyCompare;
+    return { price, compareAt: compareAt && compareAt > price ? compareAt : null };
   }
   const price = any.price ?? 0;
   return { price, compareAt: legacyCompare && legacyCompare > price ? legacyCompare : null };

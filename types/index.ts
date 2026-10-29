@@ -316,3 +316,48 @@ export interface HomeData {
   productImages: Record<string, string>;
   flash: FlashSaleState;
 }
+
+// F-016 static Beranda content and flash-sale countdown (all types live here, docs/steering/rules.md).
+export interface CategoryItem {
+  value: MotorCategory;
+  label: string;
+  image: string;
+  alt: string;
+}
+
+export interface PositionItem {
+  value: BagPosition;
+  menuLabel: string;
+  tileTitle: string;
+  tileText: string;
+  image: string;
+  alt: string;
+}
+
+export interface FilmPhoto {
+  src: string;
+  alt: string;
+  shape: 'wide' | 'tall';
+  credit: string | null;
+}
+
+export interface ReviewItem {
+  quote: string;
+  productSlug: string;
+  productName: string;
+  name: string;
+  month: string;
+}
+
+export interface Countdown {
+  days: number;
+  hours: number;
+  minutes: number;
+  seconds: number;
+  ended: boolean;
+}
+
+export interface FlashCountdown {
+  value: Countdown | null;
+  ended: boolean;
+}

@@ -75,6 +75,17 @@ export default function SiteNav({
     };
   }, [open, closeMenu]);
 
+  // A phone menu left open while the window grows past the phone layout would keep the page locked (review REV-04).
+  useEffect(() => {
+    if (!sheetOpen) return;
+    const mq = window.matchMedia('(min-width: 768px)');
+    const onChange = () => {
+      if (mq.matches) setSheetOpen(false);
+    };
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, [sheetOpen]);
+
   const closeSheet = useCallback(() => {
     setSheetOpen(false);
     menuBtnRef.current?.focus();
@@ -121,6 +132,11 @@ export default function SiteNav({
     }
   };
 
+  // Tabbing out of an open dropdown closes it (review REV-06).
+  const onMenuBlur = (e: React.FocusEvent<HTMLDivElement>) => {
+    if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setOpen(null);
+  };
+
   const dark = overHero && !sheetOpen;
   const chosen = category ? categoryLabel(category) : null;
 
@@ -133,7 +149,7 @@ export default function SiteNav({
         </Link>
 
         <div className="iz-nav__links">
-          <div className="iz-navdd" data-open={open === 'produk' ? '' : undefined}>
+          <div className="iz-navdd" data-open={open === 'produk' ? '' : undefined} onBlur={onMenuBlur}>
             <button
               ref={triggerRefs.produk}
               className="iz-navdd__btn"
@@ -164,7 +180,7 @@ export default function SiteNav({
             </div>
           </div>
 
-          <div className="iz-navdd" data-open={open === 'motor' ? '' : undefined}>
+          <div className="iz-navdd" data-open={open === 'motor' ? '' : undefined} onBlur={onMenuBlur}>
             <button
               ref={triggerRefs.motor}
               className="iz-navdd__btn"

@@ -1,12 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { countdown, type Countdown } from '@/lib/v2/flash-time';
-
-export interface FlashCountdown {
-  value: Countdown | null;
-  ended: boolean;
-}
+import type { Countdown, FlashCountdown } from '@/types';
+import { countdown } from '@/lib/v2/flash-time';
 
 // F-016 24.5 and 24.6: shared by the promo bar and the countdown panel.
 // The state starts null on the server and on the first client render, so both print the same neutral markup;
