@@ -16,6 +16,14 @@ html.iz-js[data-iz-curtain] .iz-curtain, html.iz-js .iz-curtain[data-active] { d
 .iz-curtain__label { max-width: 14ch; font-family: var(--font-display-v2), "Arial Black", "Arial", sans-serif; font-weight: 800; font-size: clamp(34px, 5vw, 72px); line-height: 1.02; letter-spacing: -0.02em; text-wrap: balance; }
 @keyframes iz-curtain-rise { from { transform: translateY(110%); opacity: 0; } to { transform: none; opacity: 1; } }
 
+/* The scrollbar lane is always reserved on v2 pages, and the scrollbar is hidden while a curtain covers the page:
+   showing or hiding it no longer changes the page width, which made the layout jump as the curtain lifted. */
+html:has(.iz-page) { scrollbar-gutter: stable; }
+html.iz-js[data-iz-curtain], html.iz-js[data-iz-covered] { overflow: hidden; }
+
+/* Caret of the hero retype loop (lib/v2/motion/engine.ts retype()). */
+.iz-caret { position: absolute; top: 0.14em; left: 0; width: 0.07em; height: 0.8em; border-radius: 2px; background: var(--c-kuning); opacity: 0; visibility: hidden; pointer-events: none; }
+
 /* Navbar hides while scrolling down and returns on the way up (Sehan, 2026-10-29); SiteNav sets data-hidden. */
 .iz-navwrap .iz-nav { transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease; }
 .iz-navwrap[data-hidden="true"] .iz-nav { transform: translateY(calc(-100% - 40px)); box-shadow: none; }
@@ -67,3 +75,72 @@ html.iz-motion .iz-film-scene.is-pinned .iz-photo > .iz-smartimg { inset: 0; }
   .iz-navwrap[data-hidden="true"] .iz-nav { transform: none; }
   .iz-curtain { display: none; }
 }
+
+/* Phone menu (Sehan, 2026-10-29: animate the burger, after BookMate and the portfolio, in INZTA style): the three
+   lines fold into an X, the sheet wipes down from the capsule, rows rise in one after another, the page behind dims. */
+.iz-burger { position: relative; display: block; width: 18px; height: 12px; }
+.iz-burger > span { position: absolute; left: 0; right: 0; height: 2px; border-radius: 2px; background: currentColor; transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease, top 0.45s cubic-bezier(0.16, 1, 0.3, 1); }
+.iz-burger > span:nth-child(1) { top: 0; }
+.iz-burger > span:nth-child(2) { top: 5px; }
+.iz-burger > span:nth-child(3) { top: 10px; }
+.iz-nav__menu[aria-expanded="true"] .iz-burger > span:nth-child(1) { top: 5px; transform: rotate(45deg); }
+.iz-nav__menu[aria-expanded="true"] .iz-burger > span:nth-child(2) { opacity: 0; transform: scaleX(0.2); }
+.iz-nav__menu[aria-expanded="true"] .iz-burger > span:nth-child(3) { top: 5px; transform: rotate(-45deg); }
+.iz-msheet__row { justify-content: flex-start; }
+.iz-msheet__label { flex: 1; }
+.iz-msheet__ico { width: 36px; height: 36px; flex: none; border-radius: 10px; overflow: hidden; background: var(--c-pasir-muda); }
+.iz-msheet__ico img { width: 100%; height: 100%; object-fit: cover; }
+.iz-mbackdrop { position: fixed; inset: 0; z-index: -1; background: rgba(22, 20, 15, 0.5); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+@media (prefers-reduced-motion: no-preference) {
+  .iz-navwrap .iz-msheet[data-state="open"] { animation: iz-sheet-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) both; }
+  .iz-navwrap .iz-msheet[data-state="closing"] { animation: iz-sheet-out 0.3s cubic-bezier(0.7, 0, 0.84, 0) both; }
+  .iz-msheet[data-state="open"] .iz-msheet__group > *, .iz-msheet[data-state="open"] .iz-msheet__links > a, .iz-msheet[data-state="open"] > .iz-wa { animation: iz-sheet-item 0.55s cubic-bezier(0.16, 1, 0.3, 1) both; }
+  .iz-msheet__group > :nth-child(2) { animation-delay: 0.1s; }
+  .iz-msheet__group > :nth-child(3) { animation-delay: 0.14s; }
+  .iz-msheet__group > :nth-child(4) { animation-delay: 0.18s; }
+  .iz-msheet__group > :nth-child(5) { animation-delay: 0.22s; }
+  .iz-msheet__group > :nth-child(6) { animation-delay: 0.26s; }
+  .iz-msheet__group > :nth-child(n+7) { animation-delay: 0.3s; }
+  .iz-msheet__group + .iz-msheet__group > * { animation-delay: 0.3s; }
+  .iz-msheet__links > a, .iz-msheet > .iz-wa { animation-delay: 0.38s; }
+  .iz-mbackdrop[data-state="open"] { animation: iz-fade-in 0.4s ease both; }
+  .iz-mbackdrop[data-state="closing"] { animation: iz-fade-in 0.3s ease reverse both; }
+  .iz-msheet__row { transition: background-color 0.2s ease, transform 0.2s ease; }
+  .iz-msheet__row:active, .iz-msheet__links a:active { transform: scale(0.98); }
+}
+@keyframes iz-sheet-in { from { clip-path: inset(0 0 100% 0 round 24px); transform: translateY(-8px); } to { clip-path: inset(0 0 0 0 round 24px); transform: none; } }
+@keyframes iz-sheet-out { from { clip-path: inset(0 0 0 0 round 24px); } to { clip-path: inset(0 0 100% 0 round 24px); opacity: 0.4; } }
+@keyframes iz-sheet-item { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+@keyframes iz-fade-in { from { opacity: 0; } to { opacity: 1; } }
+
+/* Shop channel pills (Sehan, 2026-10-29): the link floods with krem from the pointer, lifts, and its arrow slides. */
+.iz-footer__shops a { position: relative; isolation: isolate; overflow: hidden; gap: 8px; transition: color 0.35s ease, border-color 0.35s ease, transform 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
+.iz-footer__shops a svg { width: 16px; height: 16px; flex: none; transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1); }
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .iz-footer__shops a::before { content: ""; position: absolute; inset: -2px; z-index: -1; border-radius: inherit; background: var(--c-krem); clip-path: circle(0% at var(--fx, 0%) var(--fy, 50%)); transition: clip-path 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
+  .iz-footer__shops a:hover::before { clip-path: circle(150% at var(--fx, 0%) var(--fy, 50%)); }
+  .iz-footer__shops a:hover { color: var(--c-tinta); border-color: var(--c-krem); transform: translateY(-2px); }
+  .iz-footer__shops a:hover svg { transform: translate(3px, -3px); }
+}
+.iz-footer__shops a:focus-visible { outline: 2px solid var(--c-kuning); outline-offset: 3px; }
+
+/* Phone hero (Sehan, 2026-10-29): full screen, copy anchored low on a stronger scrim, a compact second action and a
+   scroll cue, so the first screen reads as one composed frame. */
+@media (max-width: 767px) {
+  .iz-page .iz-hero:not(.iz-hero--short) { min-height: 100svh; }
+  .iz-page .iz-hero:not(.iz-hero--short)::after { background: linear-gradient(to top, var(--c-aspal) 0%, rgba(22, 20, 15, 0.82) 34%, rgba(22, 20, 15, 0.15) 66%, rgba(22, 20, 15, 0.35) 100%); }
+  .iz-page .iz-hero__body { padding-bottom: calc(var(--space-12) + env(safe-area-inset-bottom)); gap: var(--space-4); }
+  .iz-page .iz-hero__body > .iz-row { flex-direction: row; flex-wrap: wrap; gap: var(--space-3); }
+  .iz-page .iz-hero__body > .iz-row > .iz-btn--primary { flex: 1 1 100%; }
+  .iz-page .iz-hero__body > .iz-row > .iz-btn--secondary { flex: 1 1 100%; min-height: 48px; border-color: rgba(243, 239, 230, 0.4); }
+}
+.iz-hero__cue { display: none; }
+@media (max-width: 767px) and (prefers-reduced-motion: no-preference) {
+  .iz-hero__cue { position: absolute; z-index: 1; left: 50%; bottom: 14px; display: block; width: 2px; height: 26px; margin-left: -1px; border-radius: 2px; background: rgba(243, 239, 230, 0.25); overflow: hidden; }
+  .iz-hero__cue::after { content: ""; position: absolute; left: 0; right: 0; top: -40%; height: 40%; background: var(--c-kuning); animation: iz-cue 1.6s cubic-bezier(0.65, 0, 0.35, 1) infinite; }
+}
+@keyframes iz-cue { to { top: 100%; } }
+
+/* Phone swipe rows: a progress line under the filmstrip that follows the swipe (engine swipe()). */
+html.iz-motion .iz-film-scene.is-swipe .iz-film__progress { display: block; width: 120px; height: 3px; margin: var(--space-5) auto 0; border-radius: var(--radius-pill); background: var(--c-garis); overflow: hidden; }
+html.iz-motion .iz-film-scene.is-swipe .iz-film__progress > span { display: block; height: 100%; background: var(--c-kuning); transform: scaleX(0); transform-origin: left center; }

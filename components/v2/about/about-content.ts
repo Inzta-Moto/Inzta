@@ -1,4 +1,4 @@
-import { PHOTOS, GASBER_CREDIT, GASBER_SLUG, INSTAGRAM } from '@/lib/v2/home-content';
+import { HIRES, PHOTOS, GASBER_CREDIT, GASBER_SLUG, INSTAGRAM } from '@/lib/v2/home-content';
 
 // Static content of /tentang (F-016 S8). Copy is verbatim from tentang.dc.html (inzta-web-design @ 3281681); the
 // corrected alts are new strings of design.md §11, because the canvas alts do not describe the photos.
@@ -12,7 +12,7 @@ export const SHOW_VALUES_COPY = true;
 // S8.1.3: set to false if INZTA does not confirm 2023 (P-10); the eyebrow then reads "Tentang INZTA".
 export const SHOW_SINCE_2023 = true;
 
-export const HERO_PHOTO = { src: PHOTOS.road01, alt: 'Rider dengan side bag kuning INZTA di jalan berkelok yang hijau' };
+export const HERO_PHOTO = { src: HIRES.road01, alt: 'Rider dengan side bag kuning INZTA di jalan berkelok yang hijau' };
 
 export interface ProcessStep {
   title: string;
@@ -26,11 +26,11 @@ export interface ProcessStep {
 // S8.2: alts are empty because the h3 and the sentence carry the information (S8.2.4). The Cek photo is INZTA's
 // package photo used as a stand-in; it prints "free raincover", so it is cropped to its top half (S8.2.3, G-C4).
 export const PROCESS_STEPS: readonly ProcessStep[] = [
-  { title: 'Desain', text: 'Pola tas dirancang tim INZTA.', image: '/images/v2/contoh/desain-pola-unsplash-oTvBFTB0wow.jpg', crop: null, source: 'Erwin Bosman, https://unsplash.com/photos/oTvBFTB0wow, Unsplash License (CONTENT.md)' },
-  { title: 'Potong', text: 'Bahan dipotong sesuai pola.', image: '/images/v2/contoh/potong-kain-unsplash-SgLpZDf4P_c.jpg', crop: null, source: 'atelierbyvineeth, https://unsplash.com/photos/SgLpZDf4P_c, Unsplash License (CONTENT.md)' },
-  { title: 'Jahit', text: 'Dijahit oleh tim produksi INZTA.', image: '/images/v2/contoh/workshop-unsplash-5zg-ZDesJAk.jpg', crop: null, source: 'alex jhonson, https://unsplash.com/photos/5zg-ZDesJAk, Unsplash License, checked 2026-10-27 (CONTENT.md)' },
+  { title: 'Desain', text: 'Pola tas dirancang tim INZTA.', image: '/images/v2/contoh/desain-pola-unsplash-oTvBFTB0wow.webp', crop: null, source: 'Erwin Bosman, https://unsplash.com/photos/oTvBFTB0wow, Unsplash License (CONTENT.md)' },
+  { title: 'Potong', text: 'Bahan dipotong sesuai pola.', image: '/images/v2/contoh/potong-kain-unsplash-SgLpZDf4P_c.webp', crop: null, source: 'atelierbyvineeth, https://unsplash.com/photos/SgLpZDf4P_c, Unsplash License (CONTENT.md)' },
+  { title: 'Jahit', text: 'Dijahit oleh tim produksi INZTA.', image: '/images/v2/contoh/workshop-unsplash-5zg-ZDesJAk.webp', crop: null, source: 'alex jhonson, https://unsplash.com/photos/5zg-ZDesJAk, Unsplash License, checked 2026-10-27 (CONTENT.md)' },
   { title: 'Cek', text: 'PLACEHOLDER: langkah pengecekan dari INZTA.', image: '/images/v2/contoh/tail-bag-inzta-tourmax-30-3.jpg', crop: 'iz-crop-half', source: 'INZTA product photo (assets/photos/products/tail-bag-inzta-tourmax-30-3.jpg)' },
-  { title: 'Kirim', text: 'Dikemas dan dikirim dari gudang INZTA.', image: '/images/v2/contoh/kirim-paket-unsplash-MGaFENpDCsw.jpg', crop: null, source: 'Bench Accounting, https://unsplash.com/photos/MGaFENpDCsw, Unsplash License (CONTENT.md)' },
+  { title: 'Kirim', text: 'Dikemas dan dikirim dari gudang INZTA.', image: '/images/v2/contoh/kirim-paket-unsplash-MGaFENpDCsw.webp', crop: null, source: 'Bench Accounting, https://unsplash.com/photos/MGaFENpDCsw, Unsplash License (CONTENT.md)' },
 ];
 
 export const VALUES_PHOTO = { src: PHOTOS.road03, alt: 'Motor retro dengan side bag dan tail bag terparkir di depan tulisan Cangar' };
@@ -47,7 +47,7 @@ export const EVENT_FACTS: readonly [string, string][] = [
 export const COMMUNITY_PHOTOS = {
   // S8.4.2: the plate-blurred K-06 image, with the organiser credit.
   gasber: {
-    src: PHOTOS.gasber4,
+    src: HIRES.gasber4,
     alt: 'Skuter matic besar kuning-hitam melintas jalan setapak tanah merah di antara semak, diikuti motor adventure merah, pada Gasber 16 Indonesia Ride Adventure',
     credit: GASBER_CREDIT,
   },

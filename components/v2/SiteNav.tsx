@@ -8,7 +8,7 @@ import { formatRupiah } from '@/lib/v2/home-data';
 import { MOTOR_CATEGORIES, POSITION_ITEMS, categoryLabel } from '@/lib/v2/home-content';
 import { useMotorCategory } from '@/components/v2/MotorCategory';
 import CategoryLink from '@/components/v2/CategoryLink';
-import { ArrowRight, ChevronDown, Close, Menu, Motorcycle, WhatsApp } from '@/components/v2/icons';
+import { ArrowRight, ChevronDown, Motorcycle, WhatsApp } from '@/components/v2/icons';
 import Bounce from '@/components/v2/motion/Bounce';
 
 type OpenMenu = 'produk' | 'motor' | null;
@@ -39,6 +39,8 @@ export default function SiteNav({
   const { category } = useMotorCategory();
   const [open, setOpen] = useState<OpenMenu>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
+  // Keeps the phone menu mounted while its closing animation plays (v2-motion.css).
+  const [sheetShown, setSheetShown] = useState(false);
   const [overHero, setOverHero] = useState(darkHero);
   const [scrolledAway, setScrolledAway] = useState(false);
   const focusInside = useRef(false);
@@ -121,6 +123,17 @@ export default function SiteNav({
     mq.addEventListener('change', onChange);
     return () => mq.removeEventListener('change', onChange);
   }, [sheetOpen]);
+
+  useEffect(() => {
+    if (sheetOpen) {
+      setSheetShown(true);
+      return;
+    }
+    if (!sheetShown) return;
+    const ms = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 320;
+    const t = window.setTimeout(() => setSheetShown(false), ms);
+    return () => window.clearTimeout(t);
+  }, [sheetOpen, sheetShown]);
 
   const closeSheet = useCallback(() => {
     setSheetOpen(false);
@@ -295,22 +308,30 @@ export default function SiteNav({
             aria-controls="iz-msheet"
             onClick={() => (sheetOpen ? closeSheet() : setSheetOpen(true))}
           >
-            {sheetOpen ? <Close width={20} height={20} /> : <Menu width={20} height={20} />}
+            <span className="iz-burger" aria-hidden="true">
+              <span />
+              <span />
+              <span />
+            </span>
           </button>
         </div>
       </nav>
 
-      {sheetOpen && (
-        <div className="iz-msheet iz-only-mob" id="iz-msheet" ref={sheetRef} data-lenis-prevent>
+      {sheetShown && <div className="iz-mbackdrop iz-only-mob" data-state={sheetOpen ? 'open' : 'closing'} onClick={closeSheet} aria-hidden="true" />}
+      {sheetShown && (
+        <div className="iz-msheet iz-only-mob" id="iz-msheet" ref={sheetRef} data-lenis-prevent data-state={sheetOpen ? 'open' : 'closing'}>
           <div className="iz-msheet__group">
             <h2>Produk</h2>
-            {POSITION_ITEMS.map(item => (
-              <Link key={item.value} className="iz-msheet__row" href={`/produk?posisi=${item.value}`} onClick={() => setSheetOpen(false)}>
-                <span>{item.menuLabel}</span>
+            {POSITION_ITEMS.map((item, i) => (
+              <Link key={item.value} className="iz-msheet__row" href={`/produk?posisi=${item.value}`} onClick={() => setSheetOpen(false)} style={{ '--i': i + 1 } as React.CSSProperties}>
+                <span className="iz-msheet__ico">
+                  <img src={thumb(item.image)} alt="" width={36} height={36} loading="lazy" />
+                </span>
+                <span className="iz-msheet__label">{item.menuLabel}</span>
                 {minPrices[item.value] !== null && <small>Mulai {formatRupiah(minPrices[item.value] as number)}</small>}
               </Link>
             ))}
-            <Link className="iz-link" href="/produk" style={{ paddingInline: 8 }} onClick={() => setSheetOpen(false)}>
+            <Link className="iz-link" href="/produk" style={{ paddingInline: 8, '--i': POSITION_ITEMS.length + 1 } as React.CSSProperties} onClick={() => setSheetOpen(false)}>
               Semua produk <ArrowRight width={18} height={18} />
             </Link>
           </div>
@@ -318,7 +339,10 @@ export default function SiteNav({
             <h2>Pilih motor</h2>
             {MOTOR_CATEGORIES.map(c => (
               <CategoryLink key={c.value} value={c.value} className="iz-msheet__row" current={currentCategory === c.value} onChosen={() => setSheetOpen(false)}>
-                <span>{c.label}</span>
+                <span className="iz-msheet__ico">
+                  <img src={c.image} alt="" width={36} height={36} loading="lazy" />
+                </span>
+                <span className="iz-msheet__label">{c.label}</span>
                 {category === c.value && <span className="iz-navdd__mine">Motor saya</span>}
               </CategoryLink>
             ))}

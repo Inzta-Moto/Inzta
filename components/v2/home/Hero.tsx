@@ -29,6 +29,7 @@ export default function Hero() {
           </Link>
         </div>
       </div>
+      <span className="iz-hero__cue" aria-hidden="true" />
       <div data-hero-end aria-hidden="true" />
     </section>
   );

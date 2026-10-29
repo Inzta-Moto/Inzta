@@ -6,10 +6,10 @@ import 'lenis/dist/lenis.css';
 import '@/app/(v2)/v2-motion.css';
 import { fontDisplay } from '@/components/v2/fonts';
 import { CURTAIN_ATTR, isMotionRoute } from '@/lib/v2/motion/boot';
-import { FULL, cover, framesSettled, lift, pageSettled } from '@/lib/v2/motion/curtain';
+import { FULL, cover, framesSettled, lift, pageReady, pageSettled } from '@/lib/v2/motion/curtain';
 import { initPage, type PageMode } from '@/lib/v2/motion/engine';
 import { routeLabel, transitionTarget } from '@/lib/v2/motion/links';
-import { HOVER, MOTION_OK, getLenis, jumpTo, loadMotion, markCovered, markRevealed, setLenis, type MotionKit } from '@/lib/v2/motion/runtime';
+import { HOVER, MOTION_OK, jumpTo, loadMotion, markCovered, markRevealed, setLenis, type MotionKit } from '@/lib/v2/motion/runtime';
 
 const WORD = 'INZTA';
 // A route that never arrives (network error, redirect elsewhere) still lifts the curtain after this long.
@@ -129,7 +129,8 @@ function createController(curtain: HTMLDivElement, push: (href: string) => void,
     const root = readyRoot();
     if (root) attach(root);
     if (html.getAttribute(CURTAIN_ATTR) === 'load') {
-      await pageSettled(650, 1900);
+      // Only the hold on the logo is short (Sehan, 2026-10-29); the sheets keep their original pace.
+      await pageSettled(250, 1100);
       if (disposed) return;
       await lift(kit, curtain, markRevealed);
       endCurtain();
@@ -164,7 +165,10 @@ function createController(curtain: HTMLDivElement, push: (href: string) => void,
       label.textContent = text?.trim() || routeLabel(url.pathname);
     }
     curtain.setAttribute('data-active', '');
-    getLenis()?.stop();
+    // The scrollbar is hidden while covered; its lane stays reserved (scrollbar-gutter in v2-motion.css), so the page
+    // width never changes. Lenis is not stopped: its stop() clips overflow, which removed the scrollbar and reflowed
+    // the page right as the curtain lifted (the stutter Sehan saw on every route change).
+    html.setAttribute('data-iz-covered', '');
     await cover(kit, curtain);
     // The old page leaves while covered, so none of its pins or splits outlive it.
     detach();
@@ -175,11 +179,12 @@ function createController(curtain: HTMLDivElement, push: (href: string) => void,
     leaving = null;
     const target = url.hash ? document.getElementById(decodeURIComponent(url.hash.slice(1))) : null;
     jumpTo(target ?? 0);
+    await pageReady(root);
     if (root) attach(root);
-    getLenis()?.start();
     kit.ScrollTrigger.refresh();
     await framesSettled();
     await lift(kit, curtain, markRevealed);
+    html.removeAttribute('data-iz-covered');
     curtain.removeAttribute('data-active');
     if (word) word.hidden = false;
     if (label) label.hidden = true;
@@ -209,11 +214,25 @@ function createController(curtain: HTMLDivElement, push: (href: string) => void,
     void navigate(url, a.dataset.transitionLabel);
   }
 
+  // Hovering or touching an internal link prefetches its route, so it is usually ready when the curtain has covered
+  // the page and the transition is shorter.
+  const warmed = new Set<string>();
+  function warm(target: EventTarget | null) {
+    const a = (target as Element | null)?.closest?.('a');
+    const href = a?.getAttribute('href');
+    if (!a || !href || warmed.has(href) || a.target === '_blank') return;
+    const url = transitionTarget({ href, target: null, download: false, button: 0, modified: false, optOut: false, defaultPrevented: false }, new URL(window.location.href));
+    if (!url) return;
+    warmed.add(href);
+    prefetch(url.pathname + url.search);
+  }
+
   // Button hover (after BookMate): letters of a <Bounce> label drop, squash and spring back; outline buttons flood
   // from the point the pointer came in (CSS reads --fx/--fy).
   function onPointer(e: PointerEvent) {
+    if (e.type === 'pointerover') warm(e.target);
     if (e.pointerType !== 'mouse' || !window.matchMedia(HOVER).matches) return;
-    const btn = (e.target as Element | null)?.closest?.('.iz-page .iz-btn, .iz-page .iz-nav__cta');
+    const btn = (e.target as Element | null)?.closest?.('.iz-page .iz-btn, .iz-page .iz-nav__cta, .iz-page .iz-footer__shops a');
     if (!btn || (e.relatedTarget instanceof Node && btn.contains(e.relatedTarget))) return;
     const box = btn.getBoundingClientRect();
     (btn as HTMLElement).style.setProperty('--fx', `${((e.clientX - box.left) / box.width) * 100}%`);
@@ -238,6 +257,8 @@ function createController(curtain: HTMLDivElement, push: (href: string) => void,
 
   document.addEventListener('click', onClick, true);
   document.addEventListener('pointerover', onPointer);
+  const onTouch = (e: TouchEvent) => warm(e.target);
+  document.addEventListener('touchstart', onTouch, { passive: true });
   document.addEventListener('pointerout', onPointer);
   void boot();
 
@@ -266,12 +287,14 @@ function createController(curtain: HTMLDivElement, push: (href: string) => void,
       if (frame) window.clearTimeout(frame);
       document.removeEventListener('click', onClick, true);
       document.removeEventListener('pointerover', onPointer);
+      document.removeEventListener('touchstart', onTouch);
       document.removeEventListener('pointerout', onPointer);
       detach();
       disposeLenis?.();
       // Only the route curtain is dropped: in development Strict Mode disposes the first controller while the load
       // curtain is still up, and the second one must still lift it (the boot fallback covers a real unmount).
       curtain.removeAttribute('data-active');
+      html.removeAttribute('data-iz-covered');
     },
   };
 }

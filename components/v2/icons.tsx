@@ -24,6 +24,7 @@ function Line({ size, children, strokeWidth = 2, ...rest }: IconProps & { childr
 }
 
 export const ArrowRight = (p: IconProps) => <Line {...p}><path d="M5 12h14M13 6l6 6-6 6" /></Line>;
+export const ArrowUpRight = (p: IconProps) => <Line {...p}><path d="M7 17 17 7M8 7h9v9" /></Line>;
 export const ChevronDown = (p: IconProps) => <Line {...p}><path d="m6 9 6 6 6-6" /></Line>;
 export const ChevronLeft = (p: IconProps) => <Line {...p}><path d="m15 18-6-6 6-6" /></Line>;
 export const ChevronRight = (p: IconProps) => <Line {...p}><path d="m9 18 6-6-6-6" /></Line>;

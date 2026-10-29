@@ -1,5 +1,5 @@
 import type { MotorCategory } from '@/types';
-import { PHOTOS, MOTOR_CATEGORIES } from '@/lib/v2/home-content';
+import { HIRES, MOTOR_CATEGORIES } from '@/lib/v2/home-content';
 import Link from 'next/link';
 import SmartImage from '@/components/v2/ui/SmartImage';
 import { LEAD_PLACEHOLDER } from '@/components/v2/motor/motor-page';
@@ -7,10 +7,15 @@ import { LEAD_PLACEHOLDER } from '@/components/v2/motor/motor-page';
 // S5.1: Retro uses INZTA's own road-01. The canvas alt names a Yamaha XSR 155, but the photo shows an adventure bike
 // with a tall screen and crash bars, so the corrected alt of S8.1 is used (design.md §11, §17). Other categories use
 // their example photo with the "Foto contoh" tag (P-1).
-const RETRO_PHOTO = { src: PHOTOS.road01, alt: 'Rider dengan side bag kuning INZTA di jalan berkelok yang hijau', example: false };
+const RETRO_PHOTO = { src: HIRES.road01, alt: 'Rider dengan side bag kuning INZTA di jalan berkelok yang hijau', example: false };
+
+// Matic uses INZTA's own road-04 (a big scooter with a tail bag); the 512 px example photo looked soft at hero width
+// (Sehan, 2026-10-29). Adventure and Trail keep their example photos until INZTA photos exist.
+const MATIC_PHOTO = { src: HIRES.road04, alt: 'Skuter matik dengan tail bag di tepi pantai saat matahari terbenam', example: false };
 
 function heroPhoto(c: MotorCategory) {
   if (c === 'retro') return RETRO_PHOTO;
+  if (c === 'matic') return MATIC_PHOTO;
   const item = MOTOR_CATEGORIES.find(m => m.value === c);
   return { src: item?.image ?? null, alt: item?.alt ?? '', example: true };
 }

@@ -3,6 +3,7 @@ import { formatWaDisplay } from '@/lib/v2/home-data';
 import { INSTAGRAM, MOTOR_CATEGORIES, SHOP_LINKS } from '@/lib/v2/home-content';
 import type { MotorCategory } from '@/types';
 import CategoryLink from '@/components/v2/CategoryLink';
+import { ArrowUpRight } from '@/components/v2/icons';
 
 // F-016 S0.7: position keys shared with the catalog filter (S2.2).
 const PRODUCT_LINKS = [
@@ -25,6 +26,12 @@ export default function SiteFooter({ waHref, waNumber, currentCategory }: { waHr
             <span>INZTA</span>
           </Link>
           <p className="iz-footer__tag">Brand tas motor lokal sejak 2023.</p>
+          {/* Copy reused from the Tentang hero and the Beranda "Mengapa pilih INZTA" list, so it adds no new claim (Sehan, 2026-10-29). */}
+          <p className="iz-footer__about">
+            Tank bag, side bag, tail bag, dan aksesori touring untuk rider Indonesia. Dirancang dan diproduksi sendiri, lalu
+            dikirim dari gudang INZTA.
+          </p>
+          <p className="iz-footer__about">Pertanyaan dan pesanan dijawab admin INZTA lewat WhatsApp.</p>
         </div>
         <div>
           <h2>Produk</h2>
@@ -72,7 +79,10 @@ export default function SiteFooter({ waHref, waNumber, currentCategory }: { waHr
           <div className="iz-footer__shops">
             {SHOP_LINKS.map(s =>
               s.href ? (
-                <a key={s.label} href={s.href} target="_blank" rel="noopener noreferrer">{s.label}</a>
+                <a key={s.label} href={s.href} target="_blank" rel="noopener noreferrer">
+                  {s.label}
+                  <ArrowUpRight />
+                </a>
               ) : (
                 <span key={s.label}>{s.label}</span>
               ),

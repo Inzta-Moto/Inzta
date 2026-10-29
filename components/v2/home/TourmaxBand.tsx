@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { formatRupiah } from '@/lib/v2/home-data';
-import { PHOTOS, TOURMAX_NOTES, TOURMAX_SIZE, TOURMAX_SLUG } from '@/lib/v2/home-content';
+import { HIRES, TOURMAX_NOTES, TOURMAX_SIZE, TOURMAX_SLUG } from '@/lib/v2/home-content';
 import SmartImage from '@/components/v2/ui/SmartImage';
 import Bounce from '@/components/v2/motion/Bounce';
 
@@ -20,18 +20,15 @@ export default function TourmaxBand({ tourmax }: { tourmax: { price: number; com
       <div className="iz-band__body">
         <span className="iz-eyebrow">Tail bag</span>
         <h2 className="t-h2-landing">Tourmax 30, dari dekat.</h2>
-        <ul className="iz-notes" data-reveal-stagger="">
-          {TOURMAX_NOTES.map(note => (
-            <li key={note} className="iz-note">
-              {note}
+        {/* Numbered spec rows instead of pills (Sehan, 2026-10-29: the band looked empty); the size note moved to the
+            callout on the photo, so every note still shows once. */}
+        <ul className="iz-notes iz-specs">
+          {TOURMAX_NOTES.map((note, i) => (
+            <li key={note} className="iz-note iz-spec">
+              <span className="iz-spec__n">{String(i + 1).padStart(2, '0')}</span>
+              <span>{note}</span>
             </li>
           ))}
-          <li className="iz-note">
-            <span>
-              Tinggi bisa ditambah: <span className="iz-nowrap">{TOURMAX_SIZE.from}</span> menjadi{' '}
-              <span className="iz-nowrap">{TOURMAX_SIZE.to}</span>
-            </span>
-          </li>
         </ul>
         <div className="iz-band__foot" data-reveal="">
           <b className="iz-num iz-band__price">{formatRupiah(tourmax.price)}</b>
@@ -43,14 +40,21 @@ export default function TourmaxBand({ tourmax }: { tourmax: { price: number; com
       <div className="iz-band__media">
         <div className="iz-band__photo">
           <SmartImage
-            src={PHOTOS.tourmax}
+            src={HIRES.tourmax}
             alt="Tourmax 30 terpasang di skuter matik besar"
             tone="dark"
-            sizes="(max-width: 1023px) 92vw, 460px"
+            sizes="(max-width: 1023px) 100vw, 50vw"
             widths={[480, 720, 960, 1440]}
             width={960}
           />
         </div>
+        <p className="iz-band__callout">
+          <b>Tinggi bisa ditambah</b>
+          <span>
+            <span className="iz-nowrap">{TOURMAX_SIZE.from}</span> <span aria-hidden="true">→</span>
+            <span className="iz-sr">menjadi</span> <span className="iz-nowrap">{TOURMAX_SIZE.to}</span>
+          </span>
+        </p>
       </div>
     </section>
   );

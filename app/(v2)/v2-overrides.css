@@ -72,3 +72,6 @@ html:not(.js-nav) .iz-navdd:focus-within .iz-navdd__btn svg { transform: rotate(
 /* Two-tone headings are one colour (Sehan, 2026-10-29): the lighter second tone in the canvas only previewed the text
    animation, so the hero title now starts from that tone and lands on the heading colour (lib/v2/motion/engine.ts). */
 .iz-page .iz-tone2, .iz-page :is(.iz-dark, .iz-on-photo) .iz-tone2 { color: inherit; }
+
+/* Footer brand column: a short description under the tagline so the column is not empty (Sehan, 2026-10-29). */
+.iz-footer__about { margin-top: 12px; max-width: 36ch; color: var(--c-pasir); font-size: 15px; line-height: 1.6; }

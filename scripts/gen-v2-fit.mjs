@@ -18,8 +18,9 @@ const TOKENS = [
   ['--space-2', 8], ['--space-3', 12], ['--space-4', 16], ['--space-5', 20], ['--space-6', 24], ['--space-8', 32],
   ['--space-10', 40], ['--space-12', 48], ['--space-18', 72], ['--space-30', 120],
 ];
+// Tap targets and chips never shrink: G-A2 keeps every control at 48 px (chips get their 48 px hit area from ::after).
 const SIZED = [
-  ['--size-content', 1200, 960], ['--size-nav', 64, 56], ['--size-button', 56, 48], ['--size-tap', 48, 44], ['--size-chip', 40, 36],
+  ['--size-content', 1200, 960], ['--size-nav', 64, 56], ['--size-button', 56, 48], ['--size-tap', 48, 48], ['--size-chip', 40, 40],
 ];
 
 function splitTop(head) {

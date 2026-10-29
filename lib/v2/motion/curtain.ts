@@ -81,7 +81,7 @@ export function pageSettled(minMs: number, maxMs: number): Promise<void> {
  * Waits for a run of smooth frames after a route change, so the curtain leaves on calm frames instead of stuttering
  * through the first paint and image decoding of the new page (min/max in ms from the call).
  */
-export function framesSettled(minMs = 160, maxMs = 1100): Promise<void> {
+export function framesSettled(minMs = 80, maxMs = 700): Promise<void> {
   return new Promise(resolve => {
     const start = performance.now();
     let last = start;
@@ -97,4 +97,20 @@ export function framesSettled(minMs = 160, maxMs = 1100): Promise<void> {
     // requestAnimationFrame never fires in a hidden tab.
     window.setTimeout(resolve, maxMs + 400);
   });
+}
+
+/**
+ * Resolves when the new page is ready to be seen: its stylesheets have loaded and its hero photo has decoded, so the
+ * curtain never lifts onto an unstyled page or an empty hero (or after maxMs, whichever comes first).
+ */
+export function pageReady(root: HTMLElement | null, maxMs = 700): Promise<void> {
+  const sheets = Array.from(document.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"]'))
+    .filter(link => !link.sheet)
+    .map(link => new Promise<void>(r => {
+      link.addEventListener('load', () => r(), { once: true });
+      link.addEventListener('error', () => r(), { once: true });
+    }));
+  const img = root?.querySelector<HTMLImageElement>('.iz-hero img');
+  const hero = img && !img.complete ? img.decode().catch(() => undefined) : Promise.resolve();
+  return Promise.race([Promise.all([...sheets, hero]).then(() => undefined), new Promise<void>(r => window.setTimeout(r, maxMs))]);
 }

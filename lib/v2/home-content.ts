@@ -25,6 +25,17 @@ export const PHOTOS = {
   tourmax: `${CLD}/v1780979155/enfur6qamy877ftcltaz.jpg`,
 } as const;
 
+// Large photos as local WebP made from the biggest originals (inzta-web-design/assets/photos, Cloudinary for Tourmax),
+// enlarged with Lanczos and lightly sharpened where they are shown wider than their source (Sehan, 2026-10-29: sharper
+// images). Thumbnails and tiles keep the Cloudinary URLs above.
+export const HIRES = {
+  road01: '/images/v2/foto/road-01.webp',
+  road04: '/images/v2/foto/road-04.webp',
+  gasber1: '/images/v2/foto/gasber-1.webp',
+  gasber4: '/images/v2/foto/gasber-4.webp',
+  tourmax: '/images/v2/foto/tourmax-30-motor.webp',
+} as const;
+
 export const GASBER_CREDIT = 'Dok. Gasber 16 / Indonesia Ride Adventure';
 
 // Example photos (Stitch and Unsplash), always tagged "Foto contoh" where the design tags them (P-1).
@@ -69,11 +80,11 @@ export const TOURMAX_SIZE = { from: '37 x 28 x 23', to: '37 x 28 x 28' };
 // road-04 (a scooter at a beach at sunset) or gasber-1 (riders on a dirt track). Every Gasber photo carries the
 // organiser's credit and INZTA's own photos carry none (S1.7.2).
 export const FILMSTRIP: readonly FilmPhoto[] = [
-  { src: PHOTOS.gasber4, alt: 'Peserta Gasber 16 di jalur tanah', shape: 'wide', credit: GASBER_CREDIT },
+  { src: HIRES.gasber4, alt: 'Peserta Gasber 16 di jalur tanah', shape: 'wide', credit: GASBER_CREDIT },
   { src: PHOTOS.road02, alt: 'Dua rider di atas motor di jalur pasir', shape: 'tall', credit: null },
   { src: PHOTOS.road03, alt: 'Motor di depan tulisan Cangar', shape: 'wide', credit: null },
-  { src: PHOTOS.road04, alt: 'Motor di tepi pantai saat matahari terbenam', shape: 'tall', credit: null },
-  { src: PHOTOS.gasber1, alt: 'Rider adventure memimpin rombongan di jalur tanah Gasber 16', shape: 'wide', credit: GASBER_CREDIT },
+  { src: HIRES.road04, alt: 'Motor di tepi pantai saat matahari terbenam', shape: 'tall', credit: null },
+  { src: HIRES.gasber1, alt: 'Rider adventure memimpin rombongan di jalur tanah Gasber 16', shape: 'wide', credit: GASBER_CREDIT },
 ];
 
 // F-016 C-8: the Tokopedia reviews (lib/v2/reviews.ts, D4) render on the branch and on Preview, but not in Production
