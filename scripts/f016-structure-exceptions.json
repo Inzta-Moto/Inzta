@@ -236,5 +236,96 @@
     "value": "Checklist touring: perkakas, P3K, dan cara packing per posisi tas",
     "reason": "Article titles come from published articles in Firestore (data, not canvas copy); the canvas shows sample titles.",
     "requirement": "S7.6, design.md §19 data-driven text"
+  },
+  {
+    "artboard": "produk-detail",
+    "kind": "block",
+    "value": "iz-closing",
+    "reason": "The shared Closing component (components/v2/Closing.tsx) wraps .iz-closing in .iz-wrap because V2Layout owns <main>; the panel and its classes are identical one level down.",
+    "requirement": "S0.8, design.md §17 (V2Layout frame)"
+  },
+  {
+    "artboard": "produk-detail",
+    "kind": "block",
+    "value": "iz-mbar",
+    "reason": "The mobile order bar is a client-only island: not rendered without JavaScript, and placed inside main because the footer belongs to V2Layout.",
+    "requirement": "S3.9.1, S3.9 ST-NOJS"
+  },
+  {
+    "artboard": "produk-detail",
+    "kind": "class",
+    "value": "iz-for",
+    "reason": "The \"Untuk ...\" / \"Universal, pakai strap\" line comes only from the sourced list, which is empty at launch; the canvas Tourmax line is an example.",
+    "requirement": "S3.3, D10, E7"
+  },
+  {
+    "artboard": "produk-detail",
+    "kind": "class",
+    "value": "iz-sizerow",
+    "reason": "The size row needs structured size data; products have none yet, so the row is hidden.",
+    "requirement": "S3.3, P-15"
+  },
+  {
+    "artboard": "produk-detail",
+    "kind": "class",
+    "value": "iz-spec",
+    "reason": "Data-driven: the specification list renders only when the product has features; the fixture Tourmax 30 has none (the canvas rows are an example).",
+    "requirement": "S3.5, E7"
+  },
+  {
+    "artboard": "produk-detail",
+    "kind": "heading",
+    "value": "Spesifikasi",
+    "reason": "Data-driven: the Spesifikasi section is hidden for a product without features.",
+    "requirement": "S3.5"
+  },
+  {
+    "artboard": "produk-detail",
+    "kind": "heading",
+    "value": "Tankbag TK 5",
+    "reason": "Related product names come from data (S3.8 selection: other positions, best sellers first, newest next); the canvas shows sample cards.",
+    "requirement": "S3.8, design.md §19 data-driven text"
+  },
+  {
+    "artboard": "produk-detail",
+    "kind": "heading",
+    "value": "Acc Toolkit Rollkit",
+    "reason": "Related product names come from data (S3.8 selection: other positions, best sellers first, newest next); the canvas shows sample cards.",
+    "requirement": "S3.8, design.md §19 data-driven text"
+  },
+  {
+    "artboard": "produk-detail",
+    "kind": "heading",
+    "value": "Botol bag Inzta Xmax",
+    "reason": "Related product names come from data (S3.8 selection: other positions, best sellers first, newest next); the canvas shows sample cards.",
+    "requirement": "S3.8, design.md §19 data-driven text"
+  },
+  {
+    "artboard": "produk-detail",
+    "kind": "heading",
+    "value": "Side bag Inzta Foldbag 7L",
+    "reason": "Related product names come from data (S3.8 selection: other positions, best sellers first, newest next); the canvas shows sample cards.",
+    "requirement": "S3.8, design.md §19 data-driven text"
+  },
+  {
+    "artboard": "produk-sisi",
+    "kind": "class",
+    "value": "iz-ordersum",
+    "reason": "The summary appears only after a side is chosen; the server render has no choice (the canvas draws the Sepasang state).",
+    "requirement": "S4.2.1, S4.5"
+  },
+  {
+    "artboard": "produk-sisi",
+    "kind": "heading",
+    "value": "Side bag Inzta XSR 155",
+    "reason": "The product name comes from data; no public product is side-sold yet, so the check runs on a local demo product.",
+    "requirement": "S4.1.1, design.md §19 data-driven text"
+  },
+  {
+    "artboard": "produk-sisi",
+    "kind": "heading",
+    "value": "Pilihan sisi dalam tiga keadaan",
+    "reason": "The \"Keadaan lain\" state board is a design artefact and is not rendered on the site.",
+    "requirement": "S4.5.2"
   }
 ]
