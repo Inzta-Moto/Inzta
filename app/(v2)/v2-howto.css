@@ -1,0 +1,212 @@
+/* "Pesan dalam tiga langkah" as a journey (F-016 S1.10, Sehan 2026-10-29): three large outlined numerals joined by a
+   road, cards with depth, and a small decorative scene per step built from site assets (product photo, WhatsApp icon,
+   logo) and words already in the step copy. Every rule outside the motion blocks is the final state, so the section is
+   complete without JavaScript and under reduced motion. HowToStage adds .iz-howto--armed (entrance start states),
+   .iz-howto--tour (the active step travels 1 -> 2 -> 3) and the step classes --on / --done. Sizes go through --hu (the
+   fit unit of v2-fit.css, 1px outside 1024-1439 px) because the fit generator reads a fixed list of files that does
+   not include this one. The old .iz-howto panel rules in v2-components.css are overridden here, not edited. */
+
+.iz-howto.iz-howto--journey {
+  --hu: var(--u, 1px);
+  --hw-vu: calc(var(--hu) * 1.06);
+  --hw-gap: calc(24 * var(--hu));
+  --hw-rise: calc(56 * var(--hu));
+  --hw-ease: cubic-bezier(0.625, 0.05, 0, 1);
+  --hw-pop: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --hw-act: 3.4s;
+  display: block;
+  padding: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+}
+
+.iz-howto--journey .iz-howto__intro { flex-direction: row; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: var(--space-6); margin-bottom: calc(52 * var(--hu)); }
+.iz-howto__title { display: flex; flex-direction: column; gap: var(--space-4); }
+.iz-howto__title h2 { text-wrap: balance; }
+.iz-howto--journey .iz-howto__intro .iz-infopills { flex-direction: row; flex-wrap: wrap; justify-content: flex-start; margin: 0; }
+.iz-howto--journey .iz-howto__intro .iz-infopill { background: var(--c-kertas-terang); }
+
+/* Track: numeral, node and the road to the next step sit in one head row above each card. */
+.iz-journey { position: relative; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--hw-gap); }
+.iz-journey__step { position: relative; display: flex; flex-direction: column; gap: calc(20 * var(--hu)); min-width: 0; }
+.iz-journey__head { display: flex; align-items: center; gap: calc(14 * var(--hu)); padding-left: calc(6 * var(--hu)); }
+.iz-journey__n {
+  flex: none;
+  font-family: var(--font-display);
+  font-size: max(56px, calc(88 * var(--hu)));
+  font-weight: 800;
+  line-height: 0.8;
+  letter-spacing: -0.045em;
+  font-variation-settings: 'opsz' 96;
+  color: transparent;
+  -webkit-text-stroke: 1.5px var(--c-batu-muda);
+}
+.iz-journey__node { flex: none; display: grid; place-items: center; width: max(40px, calc(48 * var(--hu))); aspect-ratio: 1; border-radius: 50%; background: var(--c-kertas-terang); color: var(--c-tinta); box-shadow: 0 0 0 1px var(--c-garis), var(--shadow-lift); }
+.iz-journey__node svg { width: 44%; height: 44%; }
+/* The road reaches into the gap and stops just short of the next numeral. --hw-draw draws it in, --hw-fill paints the
+   travelled part yellow; at rest both are 1, so the static section shows the whole route done. */
+.iz-journey__road { position: relative; flex: 1; height: 2px; margin-right: calc(12 * var(--hu) - var(--hw-gap)); border-radius: 2px; background: repeating-linear-gradient(90deg, var(--c-pasir) 0 6px, transparent 6px 12px); transform-origin: 0 50%; transform: scaleX(var(--hw-draw, 1)); }
+.iz-journey__fill { position: absolute; inset: 0; border-radius: inherit; background: var(--c-kuning); transform-origin: 0 50%; transform: scaleX(var(--hw-fill, 1)); }
+
+.iz-journey__card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  padding: calc(10 * var(--hu)) calc(10 * var(--hu)) calc(26 * var(--hu));
+  border-radius: calc(26 * var(--hu));
+  background: var(--c-kertas-terang);
+  box-shadow: 0 0 0 1px var(--c-garis), inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 24px 48px -28px rgba(22, 20, 15, 0.32);
+}
+.iz-journey__stage {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  place-items: center;
+  height: calc(184 * var(--hu));
+  overflow: hidden;
+  border-radius: calc(18 * var(--hu));
+  background-color: var(--c-pasir-muda);
+  background-image: radial-gradient(circle, rgba(26, 24, 19, 0.1) 1px, transparent 1.4px);
+  background-size: calc(14 * var(--hu)) calc(14 * var(--hu));
+}
+.iz-journey__stage::before { content: ""; position: absolute; inset: 0; z-index: -1; background: radial-gradient(70% 65% at 50% 45%, rgba(253, 252, 249, 0.85), rgba(253, 252, 249, 0) 72%); }
+.iz-journey__body { display: flex; flex-direction: column; gap: calc(8 * var(--hu)); padding: calc(22 * var(--hu)) calc(14 * var(--hu)) 0; }
+.iz-journey__body h3 { font-family: var(--font-display); font-size: max(18px, calc(22 * var(--hu))); line-height: 1.2; font-weight: 700; letter-spacing: -0.01em; text-wrap: balance; }
+.iz-journey__body p { font-size: max(13.4px, calc(16 * var(--hu))); line-height: 1.55; color: var(--c-batu); text-wrap: pretty; }
+
+/* Active and travelled steps (tour only). */
+.iz-journey__step--on .iz-journey__n { color: var(--c-kuning); -webkit-text-stroke-color: var(--c-kuning-tua); }
+.iz-journey__step--on .iz-journey__node { background: var(--c-kuning); color: var(--c-on-kuning); box-shadow: 0 0 0 1px var(--c-kuning), 0 0 0 calc(7 * var(--hu)) rgba(245, 158, 11, 0.2), var(--shadow-float); }
+.iz-journey__step--on .iz-journey__card { translate: 0 calc(-8 * var(--hu)); box-shadow: 0 0 0 1.5px var(--c-kuning), inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 32px 56px -26px rgba(22, 20, 15, 0.4); }
+.iz-journey__step--done .iz-journey__n { -webkit-text-stroke-color: var(--c-tinta); }
+.iz-journey__step--done .iz-journey__node { background: var(--c-tinta); color: var(--c-krem); box-shadow: 0 0 0 1px var(--c-tinta), var(--shadow-lift); }
+.iz-howto--tour .iz-journey__road { --hw-fill: 0; }
+.iz-howto--tour .iz-journey__step--done .iz-journey__road { --hw-fill: 1; }
+
+/* Step scenes. Decorative (aria-hidden), nothing focusable; every size goes through --hw-vu. */
+.iz-vig { position: relative; width: calc(236 * var(--hw-vu)); color: var(--c-tinta); font-family: var(--font-sans); line-height: 1.2; }
+.iz-vig-bar { display: block; height: calc(7 * var(--hw-vu)); border-radius: var(--radius-pill); background: var(--c-tinta); transform-origin: 0 50%; }
+.iz-vig-bar--soft { background: var(--c-garis); }
+.iz-vig-bar--dim { background: rgba(26, 24, 19, 0.22); }
+
+/* 1 Pilih tas: a product card with a photo, variation chips and the quantity stepper. */
+.iz-vig-pick { display: grid; grid-template-columns: calc(80 * var(--hw-vu)) minmax(0, 1fr); gap: calc(14 * var(--hw-vu)); padding: calc(10 * var(--hw-vu)); border-radius: calc(16 * var(--hw-vu)); background: var(--c-kertas-terang); box-shadow: 0 0 0 1px var(--c-garis), 0 18px 30px -18px rgba(22, 20, 15, 0.38); rotate: -2.5deg; }
+.iz-vig-pick__thumb { position: relative; overflow: hidden; height: calc(104 * var(--hw-vu)); border-radius: calc(10 * var(--hw-vu)); background: #f1f1f1; }
+/* The photo is a two-shot product picture; the crop zooms onto the whole bag on the right. */
+.iz-vig-pick__thumb img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 100% 50%; transform: scale(1.56); transform-origin: 100% 55%; }
+.iz-vig-pick__info { display: flex; flex-direction: column; gap: calc(8 * var(--hw-vu)); min-width: 0; padding-top: calc(4 * var(--hw-vu)); }
+.iz-vig-pick__swatches { position: relative; display: flex; gap: calc(6 * var(--hw-vu)); margin-top: calc(4 * var(--hw-vu)); }
+.iz-vig-pick__swatches > span { width: calc(30 * var(--hw-vu)); height: calc(20 * var(--hw-vu)); border-radius: var(--radius-pill); background: var(--c-pasir-muda); box-shadow: inset 0 0 0 1px var(--c-garis); }
+.iz-vig-pick__swatches > .iz-vig-pick__ring { position: absolute; left: 0; top: 0; background: none; box-shadow: 0 0 0 2px var(--c-kuning), inset 0 0 0 1px var(--c-kertas-terang); }
+.iz-vig-pick__qty { display: inline-flex; align-items: center; align-self: flex-start; gap: calc(2 * var(--hw-vu)); margin-top: auto; padding: calc(2 * var(--hw-vu)); border-radius: var(--radius-pill); box-shadow: inset 0 0 0 1px var(--c-garis); font-size: max(9px, calc(12 * var(--hw-vu))); font-weight: 700; }
+.iz-vig-pick__qty > span { display: grid; place-items: center; width: calc(20 * var(--hw-vu)); height: calc(20 * var(--hw-vu)); border-radius: 50%; }
+.iz-vig-pick__qty > span:first-child, .iz-vig-pick__qty > span:last-child { background: var(--c-pasir-muda); color: var(--c-batu); }
+
+/* 2 Klik Pesan via WhatsApp: the pre-filled message (product, quantity, total) above the order button. */
+.iz-vig-send { display: flex; flex-direction: column; align-items: flex-end; gap: calc(12 * var(--hw-vu)); }
+.iz-vig-send__msg { align-self: stretch; display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: calc(7 * var(--hw-vu)) calc(10 * var(--hw-vu)); padding: calc(12 * var(--hw-vu)) calc(14 * var(--hw-vu)); border-radius: calc(16 * var(--hw-vu)) calc(16 * var(--hw-vu)) calc(4 * var(--hw-vu)) calc(16 * var(--hw-vu)); background: var(--c-kertas-terang); box-shadow: 0 0 0 1px var(--c-garis), 0 14px 26px -18px rgba(22, 20, 15, 0.35); }
+.iz-vig-send__msg b { font-size: max(9px, calc(11 * var(--hw-vu))); font-weight: 600; color: var(--c-batu); }
+.iz-vig-send__btn { position: relative; display: inline-flex; align-items: center; gap: calc(8 * var(--hw-vu)); height: calc(38 * var(--hw-vu)); padding: 0 calc(14 * var(--hw-vu)) 0 calc(5 * var(--hw-vu)); border-radius: var(--radius-pill); background: var(--c-kuning); color: var(--c-on-kuning); font-size: max(9.5px, calc(12.5 * var(--hw-vu))); font-weight: 700; white-space: nowrap; box-shadow: var(--shadow-lift); }
+.iz-vig-send__icon { display: grid; place-items: center; width: calc(28 * var(--hw-vu)); height: calc(28 * var(--hw-vu)); border-radius: 50%; background: var(--c-on-kuning); color: var(--c-krem); }
+.iz-vig-send__icon svg { width: 56%; height: 56%; }
+.iz-vig-send__tap { position: absolute; right: calc(16 * var(--hw-vu)); bottom: calc(-8 * var(--hw-vu)); width: calc(24 * var(--hw-vu)); aspect-ratio: 1; border-radius: 50%; background: rgba(26, 24, 19, 0.16); box-shadow: 0 0 0 2px rgba(26, 24, 19, 0.45); opacity: 0; pointer-events: none; }
+
+/* 3 Admin membalas: the sent order, then the admin's reply confirming shipping cost and payment. */
+.iz-vig-reply { display: flex; flex-direction: column; gap: calc(10 * var(--hw-vu)); }
+.iz-vig-reply__out { align-self: flex-end; display: flex; flex-direction: column; gap: calc(6 * var(--hw-vu)); width: 58%; padding: calc(10 * var(--hw-vu)) calc(12 * var(--hw-vu)); border-radius: calc(14 * var(--hw-vu)) calc(14 * var(--hw-vu)) calc(4 * var(--hw-vu)) calc(14 * var(--hw-vu)); background: color-mix(in srgb, var(--c-kuning) 24%, var(--c-kertas-terang)); }
+.iz-vig-reply__in { display: flex; align-items: flex-end; gap: calc(8 * var(--hw-vu)); }
+.iz-vig-reply__avatar { flex: none; display: grid; place-items: center; width: calc(30 * var(--hw-vu)); aspect-ratio: 1; border-radius: 50%; background: var(--c-aspal); }
+.iz-vig-reply__avatar img { width: 58%; height: auto; }
+.iz-vig-reply__bubble { position: relative; display: flex; flex-direction: column; gap: calc(7 * var(--hw-vu)); padding: calc(10 * var(--hw-vu)) calc(12 * var(--hw-vu)); border-radius: calc(14 * var(--hw-vu)) calc(14 * var(--hw-vu)) calc(14 * var(--hw-vu)) calc(4 * var(--hw-vu)); background: var(--c-kertas-terang); box-shadow: 0 0 0 1px var(--c-garis), 0 14px 26px -18px rgba(22, 20, 15, 0.35); }
+.iz-vig-reply__who { font-size: max(9px, calc(11 * var(--hw-vu))); font-weight: 700; }
+.iz-vig-reply__chips { display: flex; gap: calc(6 * var(--hw-vu)); }
+.iz-vig-reply__chip { display: inline-flex; align-items: center; gap: calc(4 * var(--hw-vu)); padding: calc(4 * var(--hw-vu)) calc(8 * var(--hw-vu)); border-radius: var(--radius-pill); background: var(--c-fit-bg); color: var(--c-fit); font-size: max(9px, calc(11 * var(--hw-vu))); font-weight: 700; white-space: nowrap; }
+.iz-vig-reply__chip svg { width: calc(11 * var(--hw-vu)); height: calc(11 * var(--hw-vu)); }
+.iz-vig-reply__typing { position: absolute; left: calc(14 * var(--hw-vu)); bottom: calc(13 * var(--hw-vu)); display: flex; gap: calc(4 * var(--hw-vu)); opacity: 0; }
+.iz-vig-reply__typing > span { width: calc(6 * var(--hw-vu)); height: calc(6 * var(--hw-vu)); border-radius: 50%; background: var(--c-batu-muda); }
+
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .iz-journey__card:hover { translate: 0 calc(-8 * var(--hu)); box-shadow: 0 0 0 1px var(--c-pasir), inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 32px 56px -26px rgba(22, 20, 15, 0.4); }
+}
+
+/* Motion. Transition delays come from the step index (--i), so the entrance runs 1 -> 2 -> 3; the delayed properties
+   only change during the entrance, so later hover and tour changes are not held back. */
+@media (prefers-reduced-motion: no-preference) {
+  .iz-journey__step { --hw-delay: calc(var(--i, 0) * 0.32s + 0.12s); }
+  .iz-journey__n { transition: opacity 0.8s ease var(--hw-delay), transform 1s var(--hw-ease) var(--hw-delay), color 0.5s ease, -webkit-text-stroke-color 0.5s ease; }
+  .iz-journey__node { transition: scale 0.6s var(--hw-pop) calc(var(--hw-delay) + 0.15s), background-color 0.45s ease, color 0.45s ease, box-shadow 0.45s ease; }
+  .iz-journey__road { transition: transform 0.8s var(--hw-ease) calc(var(--hw-delay) + 0.4s); }
+  .iz-journey__fill { transition: transform 0.7s var(--hw-ease); }
+  .iz-journey__card { transition: opacity 0.9s ease var(--hw-delay), transform 1.1s var(--hw-ease) var(--hw-delay), translate 0.6s var(--hw-ease), box-shadow 0.6s ease; }
+
+  .iz-howto--armed .iz-journey__n { opacity: 0; transform: translateY(40%); transition: none; }
+  .iz-howto--armed .iz-journey__node { scale: 0; transition: none; }
+  .iz-howto--armed .iz-journey__road { --hw-draw: 0; --hw-fill: 0; transition: none; }
+  .iz-howto--armed .iz-journey__fill { transition: none; }
+  .iz-howto--armed .iz-journey__card { opacity: 0; transform: translateY(var(--hw-rise)) rotate(1.5deg); transition: none; }
+
+  /* Each scene acts out its step while that step is active; the animations restart every time it lights up. */
+  .iz-howto--tour .iz-journey__step--on .iz-vig-pick { animation: iz-hw-nudge var(--hw-act) var(--hw-ease) both; }
+  .iz-howto--tour .iz-journey__step--on .iz-vig-pick__ring { animation: iz-hw-hop var(--hw-act) var(--hw-ease) both; }
+  .iz-howto--tour .iz-journey__step--on .iz-vig-pick__qty > span:last-child { animation: iz-hw-press var(--hw-act) ease both; }
+  .iz-howto--tour .iz-journey__step--on .iz-vig-send__msg .iz-vig-bar { animation: iz-hw-type 0.55s var(--hw-ease) both; }
+  .iz-howto--tour .iz-journey__step--on .iz-vig-send__msg .iz-vig-bar:nth-of-type(1) { animation-delay: 0.15s; }
+  .iz-howto--tour .iz-journey__step--on .iz-vig-send__msg .iz-vig-bar:nth-of-type(2) { animation-delay: 0.45s; }
+  .iz-howto--tour .iz-journey__step--on .iz-vig-send__msg .iz-vig-bar:nth-of-type(3) { animation-delay: 0.75s; }
+  .iz-howto--tour .iz-journey__step--on .iz-vig-send__btn { animation: iz-hw-press var(--hw-act) ease both; }
+  .iz-howto--tour .iz-journey__step--on .iz-vig-send__tap { animation: iz-hw-tap var(--hw-act) ease-out both; }
+  .iz-howto--tour .iz-journey__step--on .iz-vig-reply__out { animation: iz-hw-pop 0.5s var(--hw-pop) 0.1s both; }
+  .iz-howto--tour .iz-journey__step--on .iz-vig-reply__typing { animation: iz-hw-typing var(--hw-act) ease both; }
+  .iz-howto--tour .iz-journey__step--on .iz-vig-reply__typing > span { animation: iz-hw-dot 0.6s ease-in-out infinite; }
+  .iz-howto--tour .iz-journey__step--on .iz-vig-reply__typing > span:nth-child(2) { animation-delay: 0.12s; }
+  .iz-howto--tour .iz-journey__step--on .iz-vig-reply__typing > span:nth-child(3) { animation-delay: 0.24s; }
+  .iz-howto--tour .iz-journey__step--on .iz-vig-reply__who,
+  .iz-howto--tour .iz-journey__step--on .iz-vig-reply__chip { animation: iz-hw-pop 0.5s var(--hw-pop) 1.35s both; }
+  .iz-howto--tour .iz-journey__step--on .iz-vig-reply__chip:last-child { animation-delay: 1.55s; }
+}
+
+@keyframes iz-hw-nudge { 0% { translate: 0 0; } 18% { translate: 0 calc(-4 * var(--hw-vu)); } 40%, 100% { translate: 0 0; } }
+@keyframes iz-hw-hop { 0%, 14% { transform: translateX(0); } 26%, 100% { transform: translateX(calc(36 * var(--hw-vu))); } }
+@keyframes iz-hw-press { 0%, 44% { scale: 1; } 49% { scale: 0.88; } 56%, 100% { scale: 1; } }
+@keyframes iz-hw-type { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes iz-hw-tap { 0%, 40% { opacity: 0; scale: 1.8; } 47% { opacity: 1; scale: 1; } 60% { opacity: 0; scale: 2.4; } 100% { opacity: 0; scale: 2.4; } }
+@keyframes iz-hw-pop { from { opacity: 0; scale: 0.6; } to { opacity: 1; scale: 1; } }
+@keyframes iz-hw-typing { 0% { opacity: 0; } 8%, 34% { opacity: 1; } 40%, 100% { opacity: 0; } }
+@keyframes iz-hw-dot { 0%, 100% { translate: 0 0; } 50% { translate: 0 calc(-3 * var(--hw-vu)); } }
+
+/* Below 1024 px the route turns vertical: numeral and node in a narrow rail, the road runs down to the next step. */
+@media (max-width: 1023.98px) {
+  .iz-howto.iz-howto--journey { --hw-vu: 0.95px; --hw-rise: 40px; }
+  .iz-journey { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .iz-journey__step { display: grid; grid-template-columns: 56px minmax(0, 1fr); column-gap: var(--space-4); padding-bottom: var(--space-5); }
+  .iz-journey__step:last-child { padding-bottom: 0; }
+  .iz-journey__head { flex-direction: column; align-self: stretch; gap: var(--space-3); padding: var(--space-2) 0 0; }
+  .iz-journey__n { font-size: 40px; }
+  .iz-journey__road { flex: 1; width: 2px; height: auto; min-height: 24px; margin: 0 0 calc(-1 * var(--space-5) + 6px); background: repeating-linear-gradient(180deg, var(--c-pasir) 0 6px, transparent 6px 12px); transform-origin: 50% 0; transform: scaleY(var(--hw-draw, 1)); }
+  .iz-journey__fill { transform-origin: 50% 0; transform: scaleY(var(--hw-fill, 1)); }
+  .iz-journey__step--on .iz-journey__card { translate: 0 -4px; }
+}
+@media (min-width: 768px) and (max-width: 1023.98px) {
+  .iz-journey__card { display: grid; grid-template-columns: minmax(0, 300px) minmax(0, 1fr); align-items: center; padding-bottom: 10px; }
+  .iz-journey__stage { height: 176px; }
+  .iz-journey__body { padding: var(--space-2) var(--space-5) var(--space-2) var(--space-6); }
+}
+@media (max-width: 767.98px) {
+  .iz-howto.iz-howto--journey { --hw-vu: 0.86px; }
+  .iz-howto--journey .iz-howto__intro { margin-bottom: var(--space-8); }
+  .iz-journey__step { grid-template-columns: 44px minmax(0, 1fr); column-gap: var(--space-3); }
+  .iz-journey__n { font-size: 34px; }
+  .iz-journey__node { width: 40px; }
+  .iz-journey__card { padding: 8px 8px var(--space-5); border-radius: 22px; }
+  .iz-journey__stage { height: 156px; border-radius: 16px; }
+  .iz-journey__body { padding: var(--space-4) var(--space-3) 0; }
+  .iz-journey__body h3 { font-size: 19px; }
+  .iz-journey__body p { font-size: 15px; }
+}
+
+/* Solar duotone icons: the secondary layer turns kuning on the light node and back to ink on the active (kuning) one. */
+.iz-journey__node .iz-duo { color: var(--c-kuning); opacity: 1; }
+.iz-journey__step--on .iz-journey__node .iz-duo { color: inherit; opacity: 0.45; }
+.iz-journey__step--done .iz-journey__node .iz-duo { color: var(--c-kuning); opacity: 1; }
