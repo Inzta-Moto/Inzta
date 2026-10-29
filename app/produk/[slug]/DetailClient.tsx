@@ -426,12 +426,12 @@ export default function DetailClient({ slug, initialProduct, initialRelated }: {
       <section className="detail-page-header">
         <div className="container">
           <div className="breadcrumb-wrapper">
-            <nav className="breadcrumb">
+            <nav className="breadcrumb" aria-label="Breadcrumb">
               <Link href="/">Home</Link>
-              <span className="breadcrumb-sep">/</span>
+              <span className="breadcrumb-sep" aria-hidden="true">/</span>
               <Link href="/produk">Produk</Link>
-              <span className="breadcrumb-sep">/</span>
-              <span className="breadcrumb-current">{p.name}</span>
+              <span className="breadcrumb-sep breadcrumb-sep--current" aria-hidden="true">/</span>
+              <span className="breadcrumb-current" aria-current="page">{p.name}</span>
             </nav>
           </div>
         </div>
