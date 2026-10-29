@@ -19,6 +19,9 @@ html.iz-js[data-iz-curtain] .iz-curtain, html.iz-js .iz-curtain[data-active] { d
 /* The scrollbar lane is always reserved on v2 pages, and the scrollbar is hidden while a curtain covers the page:
    showing or hiding it no longer changes the page width, which made the layout jump as the curtain lifted. */
 html:has(.iz-page) { scrollbar-gutter: stable; }
+/* app/globals.css sets scroll-behavior: smooth on html; Lenis scrolls the window every frame, so the browser smoothed
+   each of its steps again and the scroll felt uneven. Native smooth scrolling stays for pages without Lenis. */
+html.iz-js { scroll-behavior: auto; }
 html.iz-js[data-iz-curtain], html.iz-js[data-iz-covered] { overflow: hidden; }
 
 /* Caret of the hero retype loop (lib/v2/motion/engine.ts retype()). */

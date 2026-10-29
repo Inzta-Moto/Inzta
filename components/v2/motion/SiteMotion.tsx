@@ -89,7 +89,9 @@ function createController(curtain: HTMLDivElement, push: (href: string) => void,
     const { default: Lenis } = await import('lenis');
     if (disposeLenis || !kit || disposed) return;
     const { gsap, ScrollTrigger } = kit;
-    const lenis = new Lenis({ lerp: 0.12, smoothWheel: true, anchors: true, allowNestedScroll: true, stopInertiaOnNavigate: true });
+    // A low lerp gives the long, soft glide Sehan asked for (2026-10-29); the wheel is slightly damped so one notch
+    // does not travel too far at that softness.
+    const lenis = new Lenis({ lerp: 0.075, wheelMultiplier: 0.9, touchMultiplier: 1, smoothWheel: true, anchors: true, allowNestedScroll: true, stopInertiaOnNavigate: true });
     lenis.on('scroll', ScrollTrigger.update);
     const tick = (time: number) => lenis.raf(time * 1000);
     gsap.ticker.add(tick);
