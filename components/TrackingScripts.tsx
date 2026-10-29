@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import Script from 'next/script';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { GA_ID, META_PIXEL_ID, IS_PRODUCTION, isTrackingAllowed } from '@/lib/tracking';
+import { GA_ID, META_PIXEL_ID, PRODUCTION_HOSTS, isTrackingAllowed } from '@/lib/tracking';
 import { browserStorage, captureFirstTouchUtm } from '@/lib/utm';
 
 // F-002: GA4 + Meta Pixel, plus capture UTM pertama. Tidak merender apa pun
@@ -26,11 +26,12 @@ export default function TrackingScripts() {
       {GA_ID && (
         <>
           <Script src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`} strategy="afterInteractive" />
+          {/* debug_mode tidak ditulis sama sekali di host produksi (kehadirannya = debug). */}
           <Script id="ga4-init" strategy="afterInteractive">{`
 window.dataLayer = window.dataLayer || [];
 function gtag(){dataLayer.push(arguments);}
 gtag('js', new Date());
-gtag('config', '${GA_ID}'${IS_PRODUCTION ? '' : ', { debug_mode: true }'});
+gtag('config', '${GA_ID}', ${JSON.stringify(PRODUCTION_HOSTS)}.indexOf(location.hostname) >= 0 ? {} : { debug_mode: true });
 `}</Script>
         </>
       )}
