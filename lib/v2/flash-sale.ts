@@ -1,6 +1,7 @@
 import { getAdminDb } from '@/lib/firebaseAdmin';
 import { readPublic } from '@/lib/public-content';
 import type { FlashSaleState } from '@/types';
+import { fixtureFlash } from '@/lib/v2/dev-fixture';
 
 const INACTIVE: FlashSaleState = { isActive: false, endsAt: null };
 
@@ -8,6 +9,8 @@ const INACTIVE: FlashSaleState = { isActive: false, endsAt: null };
 // A missing document or a malformed one counts as inactive; read errors propagate like the other public reads,
 // so a failed regeneration keeps the last good page.
 export async function getFlashSale(): Promise<FlashSaleState> {
+  const fixture = fixtureFlash();
+  if (fixture) return fixture;
   return readPublic('flashSale', async () => {
     const doc = await getAdminDb().collection('settings').doc('flashSale').get();
     if (!doc.exists) return INACTIVE;

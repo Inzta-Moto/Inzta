@@ -13,6 +13,7 @@
     "test:editor": "node tests/f013-editor.cjs",
     "test:flash": "node tests/f016-flash.cjs",
     "test:home": "node tests/f016-home.cjs",
+    "test:fixture": "node tests/f016-fixture.cjs",
     "check:f016-release": "node scripts/check-f016-release.mjs"
   },
   "dependencies": {
