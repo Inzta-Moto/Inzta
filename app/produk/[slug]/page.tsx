@@ -1,39 +1,31 @@
 import { Metadata } from 'next';
-import { cache } from 'react';
+import { notFound } from 'next/navigation';
 import DetailClient from './DetailClient';
+import { getCachedProduct } from './get-product';
 import { getAdminDb } from '@/lib/firebaseAdmin';
 import { normalizeProduct } from '@/lib/product-utils';
 import JsonLd from '@/components/JsonLd';
-import { canonicalUrl } from '@/lib/seo';
-
-const getCachedProduct = cache(async (slug: string) => {
-  const doc = await getAdminDb().collection('products').doc(slug).get();
-  if (!doc.exists) return null;
-  return doc.data();
-});
+import { canonicalUrl, breadcrumbJsonLd, jsonLdGraph, openGraph, PAGE_TEXT, plainTextSummary, productJsonLd } from '@/lib/seo';
 
 export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const slug = params.slug;
 
-  const defaultMeta: Metadata = {
-    title: 'Produk — INZTA MOTO',
-    description: 'Tas motor premium INZTA',
-    openGraph: {
-      url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://inzta.id'}/produk/${slug}`,
-      title: 'INZTA MOTO',
-      description: 'Tas motor premium INZTA',
-      images: ['/logo.png'],
-    },
-  };
+  // A failed read: no canonical and no og:url.
+  const defaultMeta: Metadata = { title: 'Produk', description: PAGE_TEXT.produk.description };
+
+  let data: any;
+  try {
+    data = await getCachedProduct(slug);
+  } catch (e: any) {
+    console.error("❌ [Meta Error] Gagal total:", e.message);
+    return defaultMeta;
+  }
+  // F-005 6.6: layout.tsx already answered 404 for an unknown slug; this keeps the metadata honest.
+  if (!data) notFound();
 
   try {
-    const data = await getCachedProduct(slug) as any;
-    if (!data) {
-      return defaultMeta;
-    }
-
     const name = data.name || 'Produk';
     const description = data.description || '';
     const images = data.images || [];
@@ -62,20 +54,20 @@ export async function generateMetadata({ params }: { params: { slug: string } })
       else if (ogImage.endsWith('.webp')) imageType = 'image/webp';
     }
     
-    const ogDescription = description ? description.split('\n')[0] : 'Tas motor premium INZTA';
+    // F-005 6.4: plain text, no Markdown markers or line breaks.
+    const ogDescription = plainTextSummary(description) || `${name} dari INZTA Moto. Pesan langsung lewat WhatsApp.`;
+    const url = canonicalUrl('produk', slug);
 
     return {
-      title: `${name} — INZTA MOTO`,
+      title: name,
       description: ogDescription,
-      alternates: { canonical: canonicalUrl('produk', slug) },
-      openGraph: {
-        url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://inzta.id'}/produk/${slug}`,
+      alternates: { canonical: url },
+      openGraph: openGraph({
+        url,
         title: name,
         description: ogDescription,
         images: [{ url: ogImage, width: 800, height: 800, alt: name, type: imageType }],
-        type: 'website',
-        siteName: 'INZTA MOTO',
-      },
+      }),
       twitter: {
         card: 'summary_large_image',
         title: name,
@@ -91,10 +83,9 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 
 export default async function DetailPage({ params }: { params: { slug: string } }) {
   let jsonLd = null;
+  let missing = false;
   let product = null;
   let related: any[] = [];
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://inzta.id';
-
   try {
     const db = getAdminDb();
     
@@ -104,6 +95,7 @@ export default async function DetailPage({ params }: { params: { slug: string } 
       db.collection('products').where('isActive', '==', true).limit(5).get()
     ]);
     
+    missing = !data;
     if (data) {
       const dataObj = data as any;
 
@@ -122,28 +114,15 @@ export default async function DetailPage({ params }: { params: { slug: string } 
         updatedAt: dataObj.updatedAt ? (dataObj.updatedAt.toMillis ? dataObj.updatedAt.toMillis() : dataObj.updatedAt) : null,
       };
 
-      const imageUrl = (dataObj.images && dataObj.images.length > 0) ? dataObj.images[0] : (dataObj.imageUrl || '/logo.png');
-      
-      jsonLd = {
-        '@context': 'https://schema.org',
-        '@type': 'Product',
-        name: dataObj.name || 'Produk INZTA',
-        image: imageUrl.startsWith('http') ? imageUrl : `${baseUrl}${imageUrl}`,
-        description: dataObj.description || 'Tas motor premium INZTA',
-        sku: dataObj.slug || params.slug,
-        offers: {
-          '@type': 'Offer',
-          url: `${baseUrl}/produk/${params.slug}`,
-          priceCurrency: 'IDR',
-          price: dataObj.price || 0,
-          availability: dataObj.stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
-          itemCondition: 'https://schema.org/NewCondition',
-        },
-        brand: {
-          '@type': 'Brand',
-          name: 'INZTA Moto'
-        }
-      };
+      // F-005 phase 2: Product from the normalized product (no price 0, plain description) + BreadcrumbList.
+      jsonLd = jsonLdGraph(
+        productJsonLd(product),
+        breadcrumbJsonLd([
+          { name: 'Home', url: canonicalUrl() },
+          { name: 'Produk', url: canonicalUrl('produk') },
+          { name: product.name, url: canonicalUrl('produk', params.slug) },
+        ]),
+      );
         
       related = relSnapshot.docs
         .map(d => {
@@ -164,6 +143,8 @@ export default async function DetailPage({ params }: { params: { slug: string } 
   } catch (error) {
     console.error('Error fetching product data:', error);
   }
+  // F-005 6.6: see layout.tsx. A failed read still renders and lets DetailClient retry.
+  if (missing) notFound();
 
   return (
     <>

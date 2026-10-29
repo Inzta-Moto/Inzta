@@ -31,7 +31,7 @@ export default function SeoPanel({ title, slug, excerpt, metaTitle, metaDescript
           <Counter length={metaTitle.trim().length} guide={META_TITLE_GUIDE} />
         </div>
         <input id="seo-title" className="form-input" value={metaTitle} maxLength={200} onChange={e => onChange('metaTitle', e.target.value)} placeholder={title} />
-        <p className="article-editor-help">Kosong: judul artikel dipakai, dengan akhiran &quot;— INZTA Article&quot;.</p>
+        <p className="article-editor-help">Kosong: judul artikel dipakai, dengan akhiran &quot; | INZTA Moto&quot;. Diisi: dipakai apa adanya, tanpa akhiran.</p>
       </div>
       <div className="form-group">
         <div className="article-label-row">
