@@ -160,3 +160,14 @@ export function sidePriceRow(
 export function sepasangWaLine(pairs: number): string {
   return `Pilihan: Sepasang (kiri + kanan), ${pairs} pasang`;
 }
+
+// F-016 S4.3: the "Pilihan" and "Isi pesanan" rows of the order summary after a choice.
+export function sideSummary(choice: SideChoice, quantity: number): { pilihan: string; isi: string } {
+  if (choice === 'sepasang') return { pilihan: 'Sepasang (kiri + kanan)', isi: `${quantity} kiri + ${quantity} kanan` };
+  return { pilihan: SIDE_LABEL[choice], isi: `${quantity} ${choice}` };
+}
+
+// F-016 S4.3.1: the quantity label reads "Jumlah pasang" only for Sepasang.
+export function quantityLabel(choice: SideChoice | null): string {
+  return choice === 'sepasang' ? 'Jumlah pasang' : 'Jumlah';
+}

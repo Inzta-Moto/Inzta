@@ -1,0 +1,79 @@
+/* F-016 S3, S4: product page states and fixes the canvas does not cover (produk-detail, produk-sisi). Tokens only;
+   every selector is an iz- class (S0.1.1). Imported by app/produk/[slug]/page.tsx. */
+
+/* The canvas puts iz-wrap and the top padding on <main>; here each block carries iz-wrap (V2Layout owns main). */
+.iz-pdp-crumb { padding-top: 128px; margin-bottom: 24px; }
+.iz-pdp-block { margin-top: 72px; }
+.iz-pdp-para + .iz-pdp-para { margin-top: 12px; }
+
+/* Gallery (S3.2): SmartImage fills the ported boxes, so the canvas inset and radius still apply. */
+.iz-gallery__main > .iz-smartimg { position: absolute; inset: var(--space-6); border-radius: 20px; background: transparent; }
+.iz-gallery__main > .iz-smartimg > img { position: static; inset: auto; width: 100%; height: 100%; border-radius: 0; }
+.iz-gallery__main .iz-fallback { border-radius: 20px; }
+.iz-gallery__main .iz-fallback__mark { position: static; width: 40%; height: auto; max-width: 96px; border-radius: 0; }
+.iz-gallery__noimg { position: absolute; inset: var(--space-6); display: grid; place-items: center; padding: 16px; text-align: center; border-radius: 20px; }
+@media (max-width: 767px) {
+  .iz-gallery__main > .iz-smartimg, .iz-gallery__noimg { inset: 12px; }
+}
+/* Crossfade only after the visitor switches photos (S3.2.1); the first paint never fades (LCP). */
+.iz-gallery__main--switched > .iz-smartimg > img { animation: iz-pdp-fade 150ms ease-out; }
+@keyframes iz-pdp-fade { from { opacity: 0; } }
+.iz-thumb > .iz-smartimg { position: absolute; inset: 0; background: transparent; }
+.iz-thumb .iz-fallback__mark { width: 50%; }
+.iz-thumbs { scrollbar-width: none; }
+/* More thumbnails than the four columns scroll sideways instead of wrapping (S3.2.4). */
+@media (min-width: 768px) {
+  .iz-thumbs { display: flex; overflow-x: auto; }
+  .iz-thumbs > .iz-thumb { flex: 0 0 calc((100% - 36px) / 4); }
+}
+/* Dashed side placeholder of produk-sisi.dc.html (inline style there), S4.4.1. */
+.iz-thumb__ph { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 6px; text-align: center; font-size: 14px; font-weight: 600; line-height: 1.2; color: var(--c-batu); border: 1.5px dashed var(--c-garis); border-radius: inherit; }
+.iz-thumb__ph svg { width: 20px; height: 20px; }
+
+/* Stepper buttons are 40 px with a 48 px hit area (S3.3.4, G-A2). */
+.iz-stepper button { position: relative; }
+.iz-stepper button::after { content: ""; position: absolute; inset: -4px; }
+.iz-voucher button:disabled { opacity: .5; cursor: not-allowed; }
+.iz-voucher input:disabled { color: var(--c-batu); }
+.iz-voucher:focus-within { box-shadow: 0 0 0 2px var(--c-tinta); }
+
+/* Disabled order button ("Memproses...", "Stok Habis", "Varian tidak tersedia"), like the aria-disabled rule. */
+.iz-btn:disabled { background: var(--c-pasir-muda); color: var(--c-batu); box-shadow: none; cursor: not-allowed; }
+.iz-btn:disabled .iz-btn__icon { background: var(--c-pasir-hover); color: var(--c-batu); }
+
+/* Live region for voucher and order messages (S3.3.1, S3.3.5); takes no gap while empty. */
+.iz-buybox__live { display: flex; flex-direction: column; gap: 8px; font-size: 15px; line-height: 1.45; }
+.iz-buybox__live:empty { margin-top: calc(-1 * var(--space-5)); }
+.iz-formmsg { color: var(--c-batu); }
+.iz-formmsg--error { color: var(--c-tinta); font-weight: 600; padding-left: 12px; border-left: 3px solid var(--c-kuning-tua); }
+.iz-formmsg--ok { display: flex; flex-direction: column; gap: 2px; padding: 10px 14px; border-radius: var(--radius-thumb); background: var(--c-fit-bg); color: var(--c-fit); }
+
+/* Generic variant picker (S3.3.9): native radios styled with DS tokens, like the side cards. */
+.iz-vpick { display: flex; flex-direction: column; gap: var(--space-4); }
+.iz-vpick__set { border: 0; margin: 0; padding: 0; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+.iz-vpick__set > legend { padding: 0; margin-bottom: 10px; }
+.iz-vpick__opts { display: flex; flex-wrap: wrap; gap: 8px; }
+.iz-vpick__opt { position: relative; display: inline-flex; align-items: center; min-height: 48px; padding: 8px 16px; border-radius: var(--radius-thumb); background: var(--c-kertas); box-shadow: 0 0 0 1px var(--c-garis); font-size: 16px; font-weight: 600; cursor: pointer; transition: background 160ms ease, box-shadow 160ms ease; }
+.iz-vpick__opt input { position: absolute; opacity: 0; pointer-events: none; }
+.iz-vpick__opt:hover { background: var(--c-pasir-muda); }
+.iz-vpick__opt:has(input:focus-visible) { outline: 3px solid var(--c-focus); outline-offset: 2px; }
+.iz-vpick__opt:has(input:checked) { background: var(--c-kertas-terang); box-shadow: 0 0 0 2px var(--c-kuning), var(--shadow-lift); }
+.iz-vpick__opt:has(input:disabled) { cursor: not-allowed; opacity: .45; background: var(--c-kertas); }
+
+/* Mobile order bar (S3.9): fixed instead of the canvas sticky, enters with translateY while the main button is off screen. */
+.iz-mbar--fixed { position: fixed; left: 0; right: 0; bottom: 12px; margin: 0 12px; transform: translateY(calc(100% + 24px)); visibility: hidden; transition: transform 200ms ease-out, visibility 0s linear 200ms; }
+.iz-mbar--fixed[data-shown="true"] { transform: none; visibility: visible; transition: transform 200ms ease-out; }
+.iz-mbar__item { flex: 1 1 auto; }
+.iz-mbar__item > div { min-width: 0; }
+.iz-mbar__item span { white-space: nowrap; }
+.iz-mbar .iz-btn { flex: none; }
+@media (max-width: 767px) {
+  .iz-page--mbar { padding-bottom: 96px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .iz-gallery__main--switched > .iz-smartimg > img { animation: none; }
+  .iz-mbar--fixed, .iz-mbar--fixed[data-shown="true"] { transition: none; }
+  .iz-acc__plus { transition: none; }
+  .iz-vpick__opt { transition: none; }
+}

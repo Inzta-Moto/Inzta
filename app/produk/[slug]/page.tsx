@@ -1,17 +1,22 @@
-import { Metadata } from 'next';
-import { cache } from 'react';
-import DetailClient from './DetailClient';
-import { getAdminDb } from '@/lib/firebaseAdmin';
-import { normalizeProduct } from '@/lib/product-utils';
+import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
+import { getActiveProducts } from '@/lib/public-content';
+import { getProduct } from '@/lib/v2/product-read';
+import V2Layout from '@/components/v2/V2Layout';
+import ProductDetail from '@/components/v2/product/ProductDetail';
+import { jsonLdScript, productJsonLd, selectRelated } from '@/components/v2/product/product-view';
+import '@/app/(v2)/v2-product.css';
 
-const getCachedProduct = cache(async (slug: string) => {
-  const doc = await getAdminDb().collection('products').doc(slug).get();
-  if (!doc.exists) return null;
-  return doc.data();
-});
+// F-016 E1, S3.10.1: ISR per slug instead of force-dynamic. Product writes and stock changes purge the page through
+// revalidateProductPaths(); nothing is prebuilt, so a build without credentials stays green.
+export const revalidate = 3600;
 
-export const dynamic = 'force-dynamic';
+export function generateStaticParams() {
+  return [];
+}
 
+// Kept from the previous page (S3.10.1): same title, description, Open Graph and Twitter fields. The product read
+// is shared with the page through cache().
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const slug = params.slug;
 
@@ -27,7 +32,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   };
 
   try {
-    const data = await getCachedProduct(slug) as any;
+    const data = (await getProduct(slug)) as any;
     if (!data) {
       return defaultMeta;
     }
@@ -36,12 +41,12 @@ export async function generateMetadata({ params }: { params: { slug: string } })
     const description = data.description || '';
     const images = data.images || [];
     const imageUrl = data.imageUrl || '';
-    
+
     const ogImageRaw = images.length > 0 ? images[0] : (imageUrl || '/logo.png');
-    
+
     let ogImage = ogImageRaw;
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://inzta.id';
-    
+
     // Pastikan ini adalah absolute URL
     if (!ogImage.startsWith('http')) {
       ogImage = `${siteUrl}${ogImage.startsWith('/') ? '' : '/'}${ogImage}`;
@@ -59,7 +64,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
       if (ogImage.endsWith('.png')) imageType = 'image/png';
       else if (ogImage.endsWith('.webp')) imageType = 'image/webp';
     }
-    
+
     const ogDescription = description ? description.split('\n')[0] : 'Tas motor premium INZTA';
 
     return {
@@ -81,96 +86,21 @@ export async function generateMetadata({ params }: { params: { slug: string } })
       },
     };
   } catch (e: any) {
-    console.error("❌ [Meta Error] Gagal total:", e.message);
+    console.error('❌ [Meta Error] Gagal total:', e.message);
     return defaultMeta;
   }
 }
 
 export default async function DetailPage({ params }: { params: { slug: string } }) {
-  let jsonLd = null;
-  let product = null;
-  let related: any[] = [];
+  // A read failure throws (S3.10.3): the last good ISR page stays, or error.tsx renders; never a cached 404.
+  const [product, active] = await Promise.all([getProduct(params.slug), getActiveProducts()]);
+  if (!product) notFound();
+
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://inzta.id';
-
-  try {
-    const db = getAdminDb();
-    
-    // Ambil data produk utama dan related secara paralel
-    const [data, relSnapshot] = await Promise.all([
-      getCachedProduct(params.slug),
-      db.collection('products').where('isActive', '==', true).limit(5).get()
-    ]);
-    
-    if (data) {
-      const dataObj = data as any;
-
-      // Normalisasi data Firestore dulu (set productType='simple' untuk legacy
-      // docs, alias compareAtPrice dari originalPrice, dll.) BARU serialize.
-      // Tanpa normalisasi, legacy products tanpa field `productType` akan bikin
-      // downstream `product.productType === 'simple'` di DetailClient gagal →
-      // harga & stok tampil 0.
-      const normalized = normalizeProduct(params.slug, dataObj) as any;
-
-      // Serialize produk agar aman di-pass ke Client Component
-      product = {
-        ...normalized,
-        slug: params.slug,
-        createdAt: dataObj.createdAt ? (dataObj.createdAt.toMillis ? dataObj.createdAt.toMillis() : dataObj.createdAt) : null,
-        updatedAt: dataObj.updatedAt ? (dataObj.updatedAt.toMillis ? dataObj.updatedAt.toMillis() : dataObj.updatedAt) : null,
-      };
-
-      const imageUrl = (dataObj.images && dataObj.images.length > 0) ? dataObj.images[0] : (dataObj.imageUrl || '/logo.png');
-      
-      jsonLd = {
-        '@context': 'https://schema.org',
-        '@type': 'Product',
-        name: dataObj.name || 'Produk INZTA',
-        image: imageUrl.startsWith('http') ? imageUrl : `${baseUrl}${imageUrl}`,
-        description: dataObj.description || 'Tas motor premium INZTA',
-        sku: dataObj.slug || params.slug,
-        offers: {
-          '@type': 'Offer',
-          url: `${baseUrl}/produk/${params.slug}`,
-          priceCurrency: 'IDR',
-          price: dataObj.price || 0,
-          availability: dataObj.stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
-          itemCondition: 'https://schema.org/NewCondition',
-        },
-        brand: {
-          '@type': 'Brand',
-          name: 'INZTA Moto'
-        }
-      };
-        
-      related = relSnapshot.docs
-        .map(d => {
-          const dData = d.data();
-          // Normalisasi juga untuk related products — agar ProductCard konsisten
-          // dengan harga yang benar (sebelumnya harga di kartu juga 0 untuk legacy).
-          const normalizedRel = normalizeProduct(d.id, dData) as any;
-          return {
-            ...normalizedRel,
-            slug: d.id,
-            createdAt: dData.createdAt ? (dData.createdAt.toMillis ? dData.createdAt.toMillis() : dData.createdAt) : null,
-            updatedAt: dData.updatedAt ? (dData.updatedAt.toMillis ? dData.updatedAt.toMillis() : dData.updatedAt) : null,
-          };
-        })
-        .filter(p => p.slug !== params.slug)
-        .slice(0, 4);
-    }
-  } catch (error) {
-    console.error('Error fetching product data:', error);
-  }
-
   return (
-    <>
-      {jsonLd && (
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-        />
-      )}
-      <DetailClient slug={params.slug} initialProduct={product} initialRelated={related} />
-    </>
+    <V2Layout current="produk" products={active}>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(productJsonLd(product, baseUrl)) }} />
+      <ProductDetail product={product} related={selectRelated(product, active)} />
+    </V2Layout>
   );
 }
