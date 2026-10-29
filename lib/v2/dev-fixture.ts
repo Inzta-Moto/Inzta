@@ -1,12 +1,14 @@
 import fs from 'node:fs';
 import { normalizeProduct } from '@/lib/product-utils';
 import { toMillis, toPublicArticle } from '@/lib/article-format';
+import { draftKategoriMotor } from '@/lib/v2/motor-category';
 import type { FlashSaleState, Product, PublicArticle } from '@/types';
 
 // F-016 task A5: local-only data so every v2 state can be reviewed without Firebase credentials. Off unless
 // NODE_ENV is not "production" AND F016_FIXTURE points to a JSON file of public data ({ products, articles }
 // copied from https://inzta.id/api/products and published articles). Never active in a production build.
-// Switches: F016_STATE=empty|error, F016_FLASH=off|active|soon|expired, F016_ARTICLES=<n>.
+// Switches: F016_STATE=empty|error, F016_FLASH=off|active|soon|expired, F016_ARTICLES=<n>, F016_KATEGORI=draft
+// (adds the P-22 draft category mapping to products without kategoriMotor; draft, needs Bang Raja validation, VF-03).
 
 type Raw = { products?: Record<string, any>[]; articles?: Record<string, any>[] };
 
@@ -39,6 +41,7 @@ export function fixtureProducts(env: NodeJS.ProcessEnv = process.env): Product[]
     .map(p => ({
       ...normalizeProduct(p.slug ?? p.id, p),
       slug: p.slug ?? p.id,
+      ...(env.F016_KATEGORI === 'draft' && !Array.isArray(p.kategoriMotor) ? { kategoriMotor: draftKategoriMotor(p as Product) } : {}),
       createdAt: toMillis(p.createdAt),
       updatedAt: toMillis(p.updatedAt),
     }) as unknown as Product);

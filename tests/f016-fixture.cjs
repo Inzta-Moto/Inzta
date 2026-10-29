@@ -72,6 +72,11 @@ check('A5: F016_STATE=empty returns empty lists, F016_STATE=error throws', () =>
   assert.deepStrictEqual(fx.fixtureProducts({ ...env, F016_STATE: 'empty' }), []);
   assert.throws(() => fx.fixtureProducts({ ...env, F016_STATE: 'error' }), /forced error/);
 });
+check('A5/VF-03: F016_KATEGORI=draft adds the draft mapping only when kategoriMotor is missing', () => {
+  const env = { NODE_ENV: 'development', F016_FIXTURE: file };
+  assert.strictEqual(fx.fixtureProducts(env)[0].kategoriMotor, undefined);
+  assert.ok(Array.isArray(fx.fixtureProducts({ ...env, F016_KATEGORI: 'draft' })[0].kategoriMotor));
+});
 check('A5: flash modes', () => {
   const env = { NODE_ENV: 'development', F016_FIXTURE: file };
   const now = Date.parse('2026-10-29T00:00:00.000Z');
