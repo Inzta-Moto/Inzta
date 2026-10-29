@@ -21,6 +21,8 @@ export const PHOTOS = {
   gasber1: `${CLD}/v1793176536/ysnx5dscgd87b46l9936.png`,
   gasber2: `${CLD}/v1792996227/gasber-16-foto-2_wfa6nv.png`,
   gasber4: `${CLD}/v1792996253/gasber-16-foto-4_ag7ggp.png`,
+  // Tourmax 30 on two big scooters, the 1440 x 1920 original of public/images/v2/tail-bag-inzta-tourmax-30-2.jpg (1000 px).
+  tourmax: `${CLD}/v1780979155/enfur6qamy877ftcltaz.jpg`,
 } as const;
 
 export const GASBER_CREDIT = 'Dok. Gasber 16 / Indonesia Ride Adventure';

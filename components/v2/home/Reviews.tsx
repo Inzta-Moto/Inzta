@@ -1,5 +1,5 @@
 import type { Product, TokopediaReview } from '@/types';
-import { optimizeCloudinaryUrl } from '@/lib/utils';
+import { cldWebp } from '@/lib/v2/image';
 import { REVIEWS_PERMISSION_RECORDED } from '@/lib/v2/home-content';
 import { TOKOPEDIA_REVIEWS, TOKOPEDIA_REVIEWS_URL, reviewChip, reviewMetaLine, splitReviews } from '@/lib/v2/reviews';
 import SmartImage from '@/components/v2/ui/SmartImage';
@@ -16,7 +16,7 @@ function ProductChip({ chip }: { chip: Chip }) {
       {chip.image && (
         <img
           className={chip.cropTop ? 'iz-crop-top' : undefined}
-          src={optimizeCloudinaryUrl(chip.image, 64)}
+          src={cldWebp(chip.image, 96)}
           alt=""
           width={32}
           height={32}
@@ -52,8 +52,21 @@ export default function Reviews({ products }: { products: Product[] }) {
   // Featured photo alt = the website product name; the chip label also carries the variant suffix (S1.9, S1.9.6).
   const featuredProduct = featured.productSlug ? products.find(p => p.slug === featured.productSlug && p.isActive !== false) : undefined;
 
+  // Two wall columns, alternating so reading order stays left to right. On desktop with motion each column runs as a
+  // slow vertical marquee beside the featured card (v2-home.css), which removes the empty band a stretched featured
+  // card left (Sehan, 2026-10-29); the second copy of each column exists only for the loop and is hidden from
+  // assistive tech and, without motion, from view.
+  const columns = [wall.filter((_, i) => i % 2 === 0), wall.filter((_, i) => i % 2 === 1)];
+  const card = (r: TokopediaReview, key: string, dup: boolean) => (
+    <figure className="iz-rcard" key={key} aria-hidden={dup || undefined} data-dup={dup ? '' : undefined}>
+      <blockquote>{r.quote}</blockquote>
+      <ProductChip chip={reviewChip(r, products)} />
+      <Meta review={r} />
+    </figure>
+  );
+
   return (
-    <section className="iz-section">
+    <section className="iz-section" data-scene="reviews">
       <div className="iz-wrap">
         <div className="iz-head iz-head--split">
           <div>
@@ -64,7 +77,7 @@ export default function Reviews({ products }: { products: Product[] }) {
             Lihat semua ulasan di Tokopedia <ArrowRight size={18} />
           </a>
         </div>
-        <div className="iz-reviews" data-reveal-stagger="">
+        <div className="iz-reviews">
           <figure className="iz-rfeature">
             {featuredChip.image && featuredProduct && (
               <div className="iz-photo">
@@ -73,8 +86,8 @@ export default function Reviews({ products }: { products: Product[] }) {
                   alt={featuredProduct.name}
                   tone="dark"
                   sizes="(max-width: 767px) 100vw, 40vw"
-                  widths={[480, 800, 1000]}
-                  width={800}
+                  widths={[480, 800, 1000, 1400]}
+                  width={1000}
                   imgClassName={featuredChip.cropTop ? 'iz-crop-top' : undefined}
                 />
               </div>
@@ -83,17 +96,20 @@ export default function Reviews({ products }: { products: Product[] }) {
               “
             </span>
             <blockquote>{featured.quote}</blockquote>
-            <ProductChip chip={featuredChip} />
-            <Meta review={featured} />
+            <div className="iz-rfeature__foot">
+              <ProductChip chip={featuredChip} />
+              <Meta review={featured} />
+            </div>
           </figure>
           {/* On phones the wall is a swipe row, so it is a focusable, labelled region for keyboard scrolling. */}
           <div className="iz-reviews__wall" tabIndex={0} role="region" aria-label="Ulasan pembeli">
-            {wall.map((r, i) => (
-              <figure className="iz-rcard" key={`${r.name}-${i}`}>
-                <blockquote>{r.quote}</blockquote>
-                <ProductChip chip={reviewChip(r, products)} />
-                <Meta review={r} />
-              </figure>
+            {columns.map((col, c) => (
+              <div className={`iz-rcol${c === 1 ? ' iz-rcol--down' : ''}`} key={c}>
+                <div className="iz-rcol__track">
+                  {col.map((r, i) => card(r, `a-${c}-${i}`, false))}
+                  {col.map((r, i) => card(r, `b-${c}-${i}`, true))}
+                </div>
+              </div>
             ))}
           </div>
         </div>

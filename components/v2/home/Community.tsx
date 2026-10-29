@@ -11,7 +11,7 @@ const FILM_SIZES = { wide: '(max-width: 767px) 82vw, 540px', tall: '(max-width: 
 // INZTA's own photos carry none (S1.7.2); alts describe the photos (S1.7.3).
 export default function Community({ gasberHref }: { gasberHref: string }) {
   return (
-    <section className="iz-section" style={{ paddingBottom: 0 }}>
+    <section className="iz-section iz-film-scene" style={{ paddingBottom: 0 }} data-scene="film">
       <div className="iz-wrap">
         <div className="iz-head iz-head--split">
           <div>
@@ -31,7 +31,8 @@ export default function Community({ gasberHref }: { gasberHref: string }) {
       </div>
       {/* S1.7.1: a focusable, labelled scroll region, so keyboard users scroll it with the arrow keys. Without
           JavaScript a thin scrollbar shows on fine pointers; under reduced motion at 1024 px and wider it becomes a
-          static wrapped grid (S1.7.4, v2-home.css). The phase C scrub targets data-motion="film". */}
+          static wrapped grid (S1.7.4, v2-home.css). On desktop with motion the section pins and vertical scroll moves
+          the strip sideways (lib/v2/motion/engine.ts film()). */}
       <div className="iz-film" tabIndex={0} role="region" aria-label="Foto dari jalan" data-motion="film">
         {FILMSTRIP.map(photo => (
           <div key={photo.src} className={`iz-photo iz-photo--${photo.shape}`}>
@@ -39,6 +40,9 @@ export default function Community({ gasberHref }: { gasberHref: string }) {
             {photo.credit && <span className="iz-tag">{photo.credit}</span>}
           </div>
         ))}
+      </div>
+      <div className="iz-film__progress" aria-hidden="true">
+        <span />
       </div>
       <div className="iz-wrap">
         <p className="iz-muted" style={{ textAlign: 'center', fontSize: 15, marginTop: 24 }}>
