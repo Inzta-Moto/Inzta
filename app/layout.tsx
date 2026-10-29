@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import AffiliateTracker from '@/components/AffiliateTracker';
+import TrackingScripts from '@/components/TrackingScripts';
 import { Inter } from 'next/font/google';
 import './globals.css';
 
@@ -56,6 +57,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={inter.className}>
         <Suspense fallback={null}>
           <AffiliateTracker />
+          <TrackingScripts />
         </Suspense>
         {children}
       </body>
