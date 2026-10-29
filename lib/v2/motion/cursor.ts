@@ -9,7 +9,7 @@ const LABELS: [string, string][] = [
   ['.iz-gfeature, .iz-grow, .iz-acard, .iz-featured', 'Baca'],
 ];
 // Light cards get a soft light that follows the pointer (CSS reads --mx/--my).
-const GLOW = '.iz-pcard, .iz-rcard, .iz-mfill, .iz-msheet__row';
+const GLOW = '.iz-pcard, .iz-rcard, .iz-mfill, .iz-msheet__row, .iz-about-community, .iz-contact__wa';
 
 /**
  * Pointer follower for fine pointers (Sehan, 2026-10-29, after the BookMate cursor): a dot that tracks the pointer,

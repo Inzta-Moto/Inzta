@@ -67,3 +67,106 @@
   .iz-dark.iz-about-community { padding: var(--space-8) var(--space-5); border-radius: var(--radius-panel); }
   .iz-contact .iz-contact__num { font-size: clamp(24px, 7.4vw, 32px); }
 }
+
+/* Route map behind the dark cards (Sehan, 2026-10-29: the closing band background on the Tentang cards, each at a
+   different spot). Same language as the closing band (v2-closing.css) and the same contour tile, one shared file
+   used as a mask so the light inside the layer only shows on the lines. Each card has its own tile offset, glow and
+   route (AboutMap). The map is painted at z-index -1 inside the card's own stacking context: above the card colour,
+   under every child, so no content rule changes and the card never clips its children (the WhatsApp button sticks
+   out of the 768 px card). The copy side is damped through --amap-calm so all text keeps AA contrast. Sizes go
+   through --amap-u, the fit unit of v2-fit.css (1px outside 1024-1439 px). */
+.iz-about-community, .iz-contact__wa { position: relative; isolation: isolate; }
+.iz-amap { --amap-u: var(--u, 1px); position: absolute; inset: 0; z-index: -1; overflow: hidden; border-radius: inherit; pointer-events: none; }
+.iz-amap::before { content: ""; position: absolute; left: var(--amap-gx); top: var(--amap-gy); width: calc(var(--amap-gs) * 0.86); aspect-ratio: 1; translate: -50% -50%; border-radius: 50%; background: radial-gradient(closest-side, rgba(245, 158, 11, 0.14), rgba(245, 158, 11, 0)); }
+.iz-amap__topo {
+  position: absolute;
+  inset: 0;
+  background: rgba(243, 239, 230, 0.15);
+  -webkit-mask-image: url("/images/v2/topo-contours.svg"), var(--amap-calm);
+  -webkit-mask-size: calc(640 * var(--amap-u)) calc(600 * var(--amap-u)), 100% 100%;
+  -webkit-mask-position: var(--amap-tile), 0 0;
+  -webkit-mask-repeat: repeat, no-repeat;
+  -webkit-mask-composite: source-in;
+  mask-image: url("/images/v2/topo-contours.svg"), var(--amap-calm);
+  mask-size: calc(640 * var(--amap-u)) calc(600 * var(--amap-u)), 100% 100%;
+  mask-position: var(--amap-tile), 0 0;
+  mask-repeat: repeat, no-repeat;
+  mask-composite: intersect;
+}
+.iz-amap__glow { position: absolute; left: var(--amap-gx); top: var(--amap-gy); width: var(--amap-gs); aspect-ratio: 1; translate: -50% -50%; border-radius: 50%; background: radial-gradient(closest-side, rgba(245, 158, 11, 0.5), rgba(245, 158, 11, 0.15) 55%, rgba(245, 158, 11, 0)); }
+.iz-amap__lamp { display: none; }
+.iz-amap__trail { position: absolute; overflow: visible; }
+.iz-amap__road { fill: none; stroke: var(--c-kuning); stroke-opacity: 0.6; stroke-width: 2.2; stroke-linecap: round; stroke-dasharray: 11 9; }
+.iz-amap__reveal { fill: none; stroke: #fff; stroke-width: 16; stroke-dasharray: 1 2; stroke-dashoffset: 0; }
+
+/* Community: the glow sits on the top edge where the road drops in above the photos; the road passes under the large
+   photo and leaves through the gap below it to the right edge. Its SVG covers the photo grid exactly (right column,
+   centred like the grid), so the road runs in the gap at every width from 1024 px; the text column stays damped. */
+.iz-amap--community {
+  --amap-tile: calc(-150 * var(--amap-u)) calc(-210 * var(--amap-u));
+  --amap-gx: 78%;
+  --amap-gy: 0%;
+  --amap-gs: calc(760 * var(--amap-u));
+  --amap-calm: linear-gradient(90deg, rgba(0, 0, 0, 0.26) 0 46%, #000 54%);
+}
+.iz-amap--community .iz-amap__trail--wide { left: calc(50% + var(--space-6) / 2); top: 50%; width: calc(50% - 48px - var(--space-6) / 2); height: auto; aspect-ratio: 516 / 499; translate: 0 -50%; }
+
+/* Contact: the road starts in a glow at the bottom right and climbs the empty right side to the top right corner; the
+   number, the reply hours and the button stay on the damped left. */
+.iz-amap--contact {
+  --amap-tile: calc(-300 * var(--amap-u)) calc(-90 * var(--amap-u));
+  --amap-gx: 86%;
+  --amap-gy: 92%;
+  --amap-gs: calc(640 * var(--amap-u));
+  --amap-calm: linear-gradient(90deg, rgba(0, 0, 0, 0.26) 0 60%, #000 78%);
+}
+.iz-amap--contact .iz-amap__trail--wide { right: 0; top: 0; width: auto; height: 100%; aspect-ratio: 160 / 337; }
+.iz-amap__trail--corner, .iz-amap__trail--stack { display: none; }
+.iz-amap__trail--corner { right: 0; top: 0; width: 140px; height: 140px; }
+.iz-amap__trail--stack { left: 0; width: 100%; height: 48px; translate: 0 50%; }
+
+/* Stacked layouts: the community text sits above the photos, so its lines are damped from the top and the road only
+   keeps its stretch through the gap under the large photo, with the glow where it leaves on the right. The gap is
+   found from the card width (container units): below it lie the bottom padding and the small photos, whose height
+   follows the width. The contact card keeps a short leg in the top right corner, above the number. */
+@media (max-width: 1023px) {
+  .iz-about-community { container-type: inline-size; }
+  .iz-amap--community {
+    --amap-gap: calc(48px + (100cqw - var(--space-6)) * 0.375 + var(--space-6) / 2);
+    --amap-gx: 100%;
+    --amap-gy: calc(100% - var(--amap-gap));
+    --amap-gs: 560px;
+    --amap-calm: linear-gradient(180deg, rgba(0, 0, 0, 0.26) 0 46%, #000 50%);
+  }
+  .iz-amap--community .iz-amap__trail--wide, .iz-amap--contact .iz-amap__trail--wide { display: none; }
+  .iz-amap--community .iz-amap__trail--stack { display: block; bottom: var(--amap-gap); }
+  .iz-amap--contact { --amap-gx: 100%; --amap-gy: 0%; --amap-gs: 440px; --amap-calm: radial-gradient(circle at 100% 0, #000 0 56px, rgba(0, 0, 0, 0.26) 150px); }
+  .iz-amap--contact .iz-amap__trail--corner { display: block; }
+}
+@media (max-width: 767px) {
+  .iz-amap--community { --amap-gap: calc(var(--space-8) * 2.5 + 150cqw); }
+}
+@media (forced-colors: active) {
+  .iz-amap { display: none; }
+}
+
+/* Headlight: on fine pointers lib/v2/motion/cursor.ts writes the pointer position into --mx/--my on the card and marks
+   it data-glow; the light sits inside the masked layer, so it only lights the contour lines, damped on the copy side
+   like the rest of the map. The short translate transition gives it the soft lag of the closing band's headlight. */
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .iz-amap__lamp { display: block; position: absolute; left: 0; top: 0; width: calc(420 * var(--amap-u)); aspect-ratio: 1; margin: calc(-210 * var(--amap-u)) 0 0 calc(-210 * var(--amap-u)); border-radius: 50%; background: radial-gradient(closest-side, rgba(245, 158, 11, 0.8), rgba(245, 158, 11, 0.28) 45%, rgba(245, 158, 11, 0)); opacity: 0; translate: var(--mx, 0px) var(--my, 0px); transition: opacity 0.6s ease, translate 0.4s cubic-bezier(0.16, 1, 0.3, 1); will-change: translate, opacity; }
+  .iz-page [data-glow] > .iz-amap .iz-amap__lamp { opacity: 1; }
+}
+
+/* Draw-in, once: AboutMap arms the map when motion is allowed (.iz-amap--armed holds the start state, paused) and
+   plays it when the card scrolls into view (.iz-amap--play). Without JavaScript and under reduced motion the route is
+   simply drawn. No loops. */
+@media (prefers-reduced-motion: no-preference) {
+  .iz-amap--armed { --amap-run: paused; }
+  .iz-amap--armed.iz-amap--play { --amap-run: running; }
+  .iz-amap--armed::before, .iz-amap--armed .iz-amap__glow { animation: iz-amap-fade 1.4s ease-out both; animation-play-state: var(--amap-run); }
+  .iz-amap--armed .iz-amap__reveal { animation: iz-amap-plot 1.8s cubic-bezier(0.65, 0, 0.35, 1) 0.15s both; animation-play-state: var(--amap-run); }
+  .iz-amap--contact.iz-amap--armed .iz-amap__reveal { animation-duration: 1.3s; }
+}
+@keyframes iz-amap-fade { from { opacity: 0; } }
+@keyframes iz-amap-plot { from { stroke-dashoffset: 1; } }

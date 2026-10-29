@@ -2,15 +2,18 @@ import { Fragment } from 'react';
 import Link from 'next/link';
 import SmartImage from '@/components/v2/ui/SmartImage';
 import { ArrowRight } from '@/components/v2/icons';
+import AboutMap from '@/components/v2/about/AboutMap';
 import { COMMUNITY_PHOTOS, EVENT_FACTS, INSTAGRAM, SHOW_VALUES_COPY } from '@/components/v2/about/about-content';
 
 // "Bersama komunitas." (F-016 S8.4). Facts from K-06 as a definition list (S8.4.1); only the Gasber photo carries
 // the organiser credit, hidden by CSS together with a failed photo (S8.4.2, S8.4.3). The lead line is part of P-8.
+// The route map behind the panel is decorative and positioned out of the grid flow (AboutMap, v2-about.css).
 export default function CommunityPanel({ gasberHref }: { gasberHref: string }) {
   const { gasber, road02, hero99 } = COMMUNITY_PHOTOS;
   return (
     <section className="iz-wrap">
       <div className="iz-dark iz-grid-2 iz-about-community">
+        <AboutMap variant="community" />
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
           <span className="iz-eyebrow" style={{ marginBottom: 0 }}>Komunitas</span>
           <h2 className="t-h2-landing">Bersama komunitas.</h2>

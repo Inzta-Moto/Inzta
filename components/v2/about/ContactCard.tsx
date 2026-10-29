@@ -1,6 +1,7 @@
 import { WA_NUMBER } from '@/lib/constants';
 import { formatWaDisplay } from '@/lib/v2/home-data';
 import { WhatsApp } from '@/components/v2/icons';
+import AboutMap from '@/components/v2/about/AboutMap';
 import { INSTAGRAM, TOKOPEDIA_URL } from '@/components/v2/about/about-content';
 
 const Bag = () => (
@@ -17,7 +18,8 @@ const External = () => (
 
 // "Hubungi INZTA." (F-016 S8.6). The number is formatted from WA_NUMBER so it always matches the link (S8.6.1); the
 // button has no prefilled text. Shopee has no known URL yet (P-7), so it is a non-interactive row without the arrow
-// (S8.6.2). Reply hours and shipping city stay PLACEHOLDER (S8.6.3, P-20, P-21). No contact form (S8.6.4).
+// (S8.6.2). Reply hours and shipping city stay PLACEHOLDER (S8.6.3, P-20, P-21). No contact form (S8.6.4). Only the
+// dark WhatsApp card gets the route map (AboutMap); the light channel rows stay plain.
 export default function ContactCard() {
   return (
     <section id="kontak" className="iz-wrap" style={{ paddingBottom: 0 }}>
@@ -26,6 +28,7 @@ export default function ContactCard() {
       </div>
       <div className="iz-contact">
         <div className="iz-contact__wa iz-dark">
+          <AboutMap variant="contact" />
           <span className="iz-eyebrow" style={{ marginBottom: 0 }}>WhatsApp Admin</span>
           <h3 className="iz-contact__num iz-nowrap">{formatWaDisplay(WA_NUMBER)}</h3>
           <p>Jam balas admin: PLACEHOLDER</p>
