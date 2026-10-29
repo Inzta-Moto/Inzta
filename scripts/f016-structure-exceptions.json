@@ -54,5 +54,61 @@
     "value": "iz-fchip--motor",
     "reason": "The \"Motor saya\" chip renders only when a motor category is chosen; the choice lives in the browser (localStorage), so the server HTML never has it. The canvas draws the chosen state (Retro).",
     "requirement": "S2.2, S0.6"
+  },
+  {
+    "artboard": "motor",
+    "kind": "heading",
+    "value": "Dibuat untuk XSR 155.",
+    "reason": "Replaced by \"Tas yang ditandai untuk motor <Kategori>.\": being in a category does not mean the product fits every motor in it (ADR-0019 point 4).",
+    "requirement": "S5.3, design.md §11"
+  },
+  {
+    "artboard": "motor",
+    "kind": "heading",
+    "value": "Side bag Inzta XSR 155",
+    "reason": "Card names come from the products whose kategoriMotor holds the category (data, not canvas copy); the canvas shows sample products and the draft mapping differs.",
+    "requirement": "S5.3, S5.5, D2, design.md §19 data-driven text"
+  },
+  {
+    "artboard": "motor",
+    "kind": "heading",
+    "value": "Side bag Inzta XSR Srcrambag",
+    "reason": "Card names come from the products whose kategoriMotor holds the category (data, not canvas copy); the canvas shows sample products and the draft mapping differs.",
+    "requirement": "S5.3, S5.5, D2, design.md §19 data-driven text"
+  },
+  {
+    "artboard": "motor",
+    "kind": "heading",
+    "value": "Side Bag Motor Inzta Foldpack Z10 Vol 10L",
+    "reason": "Card names come from the products whose kategoriMotor holds the category (data, not canvas copy); the canvas shows sample products and the draft mapping differs.",
+    "requirement": "S5.3, S5.5, D2, design.md §19 data-driven text"
+  },
+  {
+    "artboard": "motor",
+    "kind": "heading",
+    "value": "Sidebag inzta Adventure 20L",
+    "reason": "Card names come from the products whose kategoriMotor holds the category (data, not canvas copy); the canvas shows sample products and the draft mapping differs.",
+    "requirement": "S5.3, S5.5, D2, design.md §19 data-driven text"
+  },
+  {
+    "artboard": "motor",
+    "kind": "heading",
+    "value": "Side bag Inzta Foldbag 7L",
+    "reason": "Card names come from the products whose kategoriMotor holds the category (data, not canvas copy); the canvas shows sample products and the draft mapping differs.",
+    "requirement": "S5.3, S5.5, D2, design.md §19 data-driven text"
+  },
+  {
+    "artboard": "motor",
+    "kind": "heading",
+    "value": "Tankbag and Tailbag wanderpack 10L",
+    "reason": "Card names come from the products whose kategoriMotor holds the category (data, not canvas copy); the canvas shows sample products and the draft mapping differs.",
+    "requirement": "S5.3, S5.5, D2, design.md §19 data-driven text"
+  },
+  {
+    "artboard": "motor",
+    "kind": "heading",
+    "value": "Tas samping XSR 155: versi tali vs versi baut, depan vs belakang",
+    "reason": "The featured title comes from the newest published per-motor article of the category (data); hidden when none qualifies.",
+    "requirement": "S5.6, S5.6.3, design.md §19 data-driven text"
   }
 ]

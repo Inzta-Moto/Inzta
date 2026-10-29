@@ -16,6 +16,7 @@
     "test:fixture": "node tests/f016-fixture.cjs",
     "test:v2-data": "node tests/f016-v2-data.cjs",
     "test:catalog": "node tests/f016-catalog.cjs",
+    "test:motor": "node tests/f016-motor.cjs",
     "check:v2-css": "node scripts/check-v2-css.mjs",
     "check:f016-structure": "node scripts/check-f016-structure.mjs",
     "check:f016-release": "node scripts/check-f016-release.mjs"

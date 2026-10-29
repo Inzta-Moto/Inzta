@@ -1,5 +1,7 @@
 import { MetadataRoute } from 'next';
 import { getActiveProducts, getArticles, newestDate } from '@/lib/public-content';
+import { CATEGORY_SLUGS, categoryHref } from '@/lib/v2/motor-category';
+import { categoryIndexable } from '@/components/v2/motor/motor-page';
 
 // ISR like the pages it lists; article and product writes call revalidatePath('/sitemap.xml').
 export const revalidate = 3600;
@@ -52,5 +54,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
 
-  return [...staticRoutes, ...productRoutes, ...articleRoutes];
+  // F-016 S5.8.5: only category pages that the same helper as their metadata marks indexable (none at launch).
+  const categoryRoutes: MetadataRoute.Sitemap = CATEGORY_SLUGS.filter(c => categoryIndexable(c, products)).map(c => ({
+    url: `${baseUrl}${categoryHref(c)}`,
+    changeFrequency: 'weekly',
+    priority: 0.7,
+  }));
+
+  return [...staticRoutes, ...categoryRoutes, ...productRoutes, ...articleRoutes];
 }

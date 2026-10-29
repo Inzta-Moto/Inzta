@@ -1,0 +1,34 @@
+/* F-016 S5: states and fixes for /tas-motor/[kategori] that the canvas does not cover. Imported by the route page only. */
+
+/* Canvas inline styles (motor.dc.html): tabs and #produk sit 48 px below the previous block. */
+.iz-motor-tabs { margin-top: 48px; }
+.iz-motor-produk { margin-top: 48px; }
+
+/* SmartImage wrappers fill the boxes the canvas gives to a bare <img> (S5.1, S5.6, S5.7). */
+.iz-hero > .iz-smartimg.iz-hero__img { position: absolute; inset: 0; }
+.iz-afeature .iz-photo > .iz-smartimg,
+.iz-mtile > .iz-smartimg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.iz-afeature .iz-photo > .iz-fallback { position: absolute; inset: 0; }
+
+/* P-1 tag on example hero photos, below the floating navbar. */
+.iz-hero__tag { position: absolute; z-index: 2; top: 112px; right: var(--space-6); }
+
+/* S5.6 long title: three lines, full title stays in the DOM. */
+.iz-afeature__title { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; overflow: hidden; }
+
+/* The closing panel sits directly in main (as in motor.dc.html, where main is .iz-wrap), so it takes the wrap width. */
+.iz-motor-closing { width: min(calc(100% - 2 * var(--space-6)), calc(var(--size-content) - 2 * var(--space-6))); margin-inline: auto; }
+
+/* S5.5: with three strap cards the more-card takes the fourth column so the row stays one row on desktop. */
+.iz-grid-4 > .iz-pcard:nth-child(3) ~ .iz-morecard { grid-column: span 1; }
+
+/* S5.2 tabs: 48 px hit area around the 44 px pills on phones (G-A2). */
+.iz-motor-tabs .iz-fchip { position: relative; }
+.iz-motor-tabs .iz-fchip::after { content: ""; position: absolute; inset: -2px 0; }
+
+@media (max-width: 767px) {
+  .iz-hero__tag { top: 96px; right: var(--space-5); }
+  .iz-motor-tabs { padding-block: 2px; }
+  .iz-motor-closing { width: calc(100% - 2 * var(--space-5)); }
+  .iz-grid-4 > .iz-pcard:nth-child(3) ~ .iz-morecard { grid-column: 1 / -1; }
+}
