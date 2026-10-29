@@ -1,11 +1,8 @@
 import type { ComponentType, CSSProperties } from 'react';
-import Image from 'next/image';
-import { BadgeCheck, Bag, Chat, Check, Shield, Truck, WhatsApp } from '@/components/v2/icons';
+import { BadgeCheck, Bag, Chat, Shield, Truck } from '@/components/v2/icons';
 import HowToStage from '@/components/v2/home/HowToStage';
-import { PHOTO_QUALITY } from '@/lib/v2/image';
+import StepScene, { type Scene } from '@/components/v2/home/HowToScenes';
 import '@/app/(v2)/v2-howto.css';
-
-type Scene = 'pick' | 'send' | 'reply';
 
 const STEPS: readonly { icon: ComponentType; title: string; text: string; scene: Scene }[] = [
   { icon: Bag, title: 'Pilih tas', text: 'Buka halaman produk, pilih variasi dan jumlah.', scene: 'pick' },
@@ -13,92 +10,12 @@ const STEPS: readonly { icon: ComponentType; title: string; text: string; scene:
   { icon: BadgeCheck, title: 'Admin membalas', text: 'Admin INZTA mengonfirmasi ongkir dan pembayaran di WhatsApp.', scene: 'reply' },
 ];
 
-// Small decorative scenes, one per step (aria-hidden, nothing focusable). Their words are taken from the step copy and
-// the product page button; bars stand in for text, so no product name, price or time is shown.
-function StepScene({ scene }: { scene: Scene }) {
-  if (scene === 'pick') {
-    return (
-      <div className="iz-vig iz-vig-pick">
-        <span className="iz-vig-pick__thumb">
-          <Image src="/images/v2/tk-highway-3.jpg" alt="" width={208} height={208} sizes="128px" quality={PHOTO_QUALITY} />
-        </span>
-        <span className="iz-vig-pick__info">
-          <span className="iz-vig-bar" style={{ width: '88%' }} />
-          <span className="iz-vig-bar iz-vig-bar--soft" style={{ width: '56%' }} />
-          <span className="iz-vig-pick__swatches">
-            <span />
-            <span />
-            <span />
-            <span className="iz-vig-pick__ring" />
-          </span>
-          <span className="iz-vig-pick__qty">
-            <span>−</span>
-            <span>1</span>
-            <span>+</span>
-          </span>
-        </span>
-      </div>
-    );
-  }
-  if (scene === 'send') {
-    return (
-      <div className="iz-vig iz-vig-send">
-        <span className="iz-vig-send__msg">
-          <b>Produk</b>
-          <span className="iz-vig-bar" style={{ width: '86%' }} />
-          <b>Jumlah</b>
-          <span className="iz-vig-bar iz-vig-bar--dim" style={{ width: '24%' }} />
-          <b>Total</b>
-          <span className="iz-vig-bar iz-vig-bar--dim" style={{ width: '52%' }} />
-        </span>
-        <span className="iz-vig-send__btn">
-          <span className="iz-vig-send__icon">
-            <WhatsApp />
-          </span>
-          Pesan via WhatsApp
-          <span className="iz-vig-send__tap" />
-        </span>
-      </div>
-    );
-  }
-  return (
-    <div className="iz-vig iz-vig-reply">
-      <span className="iz-vig-reply__out">
-        <span className="iz-vig-bar iz-vig-bar--dim" style={{ width: '92%' }} />
-        <span className="iz-vig-bar iz-vig-bar--dim" style={{ width: '60%' }} />
-      </span>
-      <span className="iz-vig-reply__in">
-        <span className="iz-vig-reply__avatar">
-          <img src="/logo-inzta.png" alt="" width={18} height={21} loading="lazy" decoding="async" />
-        </span>
-        <span className="iz-vig-reply__bubble">
-          <span className="iz-vig-reply__who">Admin INZTA</span>
-          <span className="iz-vig-reply__chips">
-            <span className="iz-vig-reply__chip">
-              <Check />
-              Ongkir
-            </span>
-            <span className="iz-vig-reply__chip">
-              <Check />
-              Pembayaran
-            </span>
-          </span>
-          <span className="iz-vig-reply__typing">
-            <span />
-            <span />
-            <span />
-          </span>
-        </span>
-      </span>
-    </div>
-  );
-}
-
 // "Pesan dalam tiga langkah." (F-016 S1.10). Warranty and shipping time stay PLACEHOLDER until INZTA writes them
 // (A-023, P-5, P-6; listed by check:f016-release, S1.10.3). S1.10.2: the v2 reset removes the list markers, so each
-// number is announced once, from its visible numeral (the leading zero is visual only); the road, node icons and
-// scenes are aria-hidden. Layout and motion: v2-howto.css and HowToStage (story version, Sehan 2026-10-29).
-// The Beranda sits it right under the previous section (paddingTop 0); /tentang keeps the normal section padding (S8.5.2).
+// number is announced once, from its visible numeral (the leading zero and the yellow fill copy are visual only); the
+// road, node icons and scenes are aria-hidden. Motion: HowToStage (desktop: the section pins and scrolling walks the
+// steps; phones: each step plays as it arrives). The Beranda sits it right under the previous section (paddingTop 0);
+// /tentang keeps the normal section padding (S8.5.2).
 export default function HowToOrder({ flush = true }: { flush?: boolean }) {
   return (
     <section className="iz-section" id="cara-pesan" style={flush ? { paddingTop: 0 } : undefined}>
@@ -127,6 +44,9 @@ export default function HowToOrder({ flush = true }: { flush?: boolean }) {
                   <span className="iz-journey__n">
                     <span aria-hidden="true">0</span>
                     {i + 1}
+                    <span className="iz-journey__nfill" aria-hidden="true">
+                      0{i + 1}
+                    </span>
                   </span>
                   <span className="iz-journey__node" aria-hidden="true">
                     <Icon />
