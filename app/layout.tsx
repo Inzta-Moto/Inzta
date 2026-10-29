@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import AffiliateTracker from '@/components/AffiliateTracker';
 import TrackingScripts from '@/components/TrackingScripts';
+import { DEFAULT_OG_IMAGE, PAGE_TEXT, SITE_NAME } from '@/lib/seo';
 import { Inter } from 'next/font/google';
 import './globals.css';
 
@@ -13,35 +14,29 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://inzta.id'),
+  // F-005 phase 2: pages pass their own title; the template adds the brand (requirement 6.2).
   title: {
-    default: 'INZTA Moto | Premium Waterproof Motorcycle Bags',
-    template: '%s'
+    default: PAGE_TEXT.home.title,
+    template: `%s | ${SITE_NAME}`,
   },
-  description: 'Tas motor eksklusif dan perlengkapan touring untuk rider. Waterproof, ringan, tahan banting, dan stylish. Temukan Sidebag Inzta Adventure dan produk lainnya.',
-  keywords: ['inzta', 'inzta moto', 'tas motor', 'tas waterproof', 'sidebag motor', 'sidebag touring', 'tas touring waterproof', 'perlengkapan motor'],
-  authors: [{ name: 'Inzta Moto' }],
-  creator: 'Inzta Moto',
+  description: PAGE_TEXT.home.description,
+  keywords: ['inzta', 'inzta moto', 'tas motor', 'sidebag motor', 'sidebag touring', 'tas touring', 'perlengkapan motor'],
+  authors: [{ name: SITE_NAME }],
+  creator: SITE_NAME,
+  // No og:url here: public pages set their own through openGraph() (6.5), and admin/affiliate pages need none.
   openGraph: {
     type: 'website',
     locale: 'id_ID',
-    url: process.env.NEXT_PUBLIC_SITE_URL || 'https://inzta.id',
-    title: 'INZTA Moto | Premium Waterproof Motorcycle Bags',
-    description: 'Tas motor eksklusif untuk rider. Waterproof, ringan, tahan banting, dan stylish.',
-    siteName: 'INZTA Moto',
-    images: [
-      {
-        url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://inzta.id'}/logo-mtg.png`,
-        width: 1200,
-        height: 630,
-        alt: 'INZTA Moto',
-      },
-    ],
+    title: PAGE_TEXT.home.title,
+    description: PAGE_TEXT.home.description,
+    siteName: SITE_NAME,
+    images: [DEFAULT_OG_IMAGE],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'INZTA Moto | Premium Waterproof Motorcycle Bags',
-    description: 'Tas motor eksklusif untuk rider. Waterproof, ringan, tahan banting, dan stylish.',
-    images: [`${process.env.NEXT_PUBLIC_SITE_URL || 'https://inzta.id'}/logo-mtg.png`],
+    title: PAGE_TEXT.home.title,
+    description: PAGE_TEXT.home.description,
+    images: [DEFAULT_OG_IMAGE.url],
     creator: '@inztamoto',
   },
   icons: {
