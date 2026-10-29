@@ -14,6 +14,7 @@
     "test:flash": "node tests/f016-flash.cjs",
     "test:home": "node tests/f016-home.cjs",
     "test:fixture": "node tests/f016-fixture.cjs",
+    "test:v2-data": "node tests/f016-v2-data.cjs",
     "check:v2-css": "node scripts/check-v2-css.mjs",
     "check:f016-structure": "node scripts/check-f016-structure.mjs",
     "check:f016-release": "node scripts/check-f016-release.mjs"

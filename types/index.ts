@@ -42,6 +42,8 @@ export interface BaseProduct {
   badgeType?: string;
   isActive: boolean;
   createdAt?: any;
+  // F-016 D2: motor categories (ADR-0019) set in the admin form; missing means [] (no migration).
+  kategoriMotor?: MotorCategory[];
 }
 
 export interface SimpleProduct extends BaseProduct {
@@ -59,6 +61,10 @@ export interface VariableProduct extends BaseProduct {
   priceFrom: number | null;
   priceTo: number | null;
   totalStock: number;
+  // F-016 E3/S4.6: side-sold preset. Detection uses the variant structure (S4.1.1); these only record the
+  // admin's choice. bisaSepasang missing counts as true (S4.1.3).
+  jualPerSisi?: boolean;
+  bisaSepasang?: boolean;
 }
 
 export type Product = SimpleProduct | VariableProduct;
@@ -151,6 +157,10 @@ export interface Article {
   updatedAt?: StoredDate;
   // First publish; kept on unpublish so the slug stays locked.
   publishedAt?: StoredDate;
+  // F-016 D3/S6.8: optional topic ('' = no topic) and, for 'per-motor' only, motor categories. Readers treat
+  // missing or unknown values as no topic and [] (S6.8.4).
+  topik?: ArticleTopic | '';
+  kategoriMotor?: MotorCategory[];
 }
 
 export type StoredDate = { seconds: number; nanoseconds: number } | string | number;
@@ -360,4 +370,61 @@ export interface Countdown {
 export interface FlashCountdown {
   value: Countdown | null;
   ended: boolean;
+}
+
+// F-016 phase A3 (D2, D3, S4, S1.9). Article topics as stored in articles/{slug}.topik (S6.8.1).
+export type ArticleTopic = 'memilih-tas' | 'per-motor' | 'touring' | 'komunitas';
+
+// Every position key of design.md §4; BagPosition stays the four navbar/Beranda tiles (S0.4.3).
+export type ProductPosition = BagPosition | 'extend' | 'harian';
+
+// Card projection for v2 article lists (S6.7.2): never carries `content`.
+export interface ArticleCardV2 {
+  slug: string;
+  title: string;
+  excerpt: string;
+  photo: string | null;
+  coverCaption: string | null;
+  author: string;
+  date: number | null;
+  topik: ArticleTopic | null;
+}
+
+// One Tokopedia review from the 2026-10-29 snapshot (D4, S1.9). month is 'YYYY-MM' and approximate.
+export interface TokopediaReview {
+  quote: string;
+  productSlug: string | null;
+  productName: string;
+  variant: string | null;
+  name: string;
+  month: string;
+}
+
+// Side picker (S4). 'sepasang' is a display option that orders one Kiri and one Kanan item (E3).
+export type Side = 'kiri' | 'kanan';
+export type SideChoice = Side | 'sepasang';
+
+export interface SideOption {
+  choice: SideChoice;
+  label: string;
+  price: number;
+  stock: number;
+  disabled: boolean;
+  reason: string | null;
+}
+
+export interface SidePickerData {
+  attributeName: string;
+  variants: Record<Side, ProductVariant>;
+  options: SideOption[];
+  note: string | null;
+  allSoldOut: boolean;
+  equalPrices: boolean;
+}
+
+// Item shape of POST /api/orders (S3.3.5); unchanged by S4.
+export interface OrderItemInput {
+  productSlug: string;
+  variationId: string | null;
+  quantity: number;
 }

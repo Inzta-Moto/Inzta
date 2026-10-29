@@ -1,4 +1,4 @@
-import type { BagPosition, FitLabel, FlashSaleState, HomeData, HomeGuideCard, HomeProductCard, Product, PublicArticle } from '@/types';
+import type { BagPosition, FitLabel, FlashSaleState, HomeData, HomeGuideCard, HomeProductCard, Product, ProductPosition, PublicArticle } from '@/types';
 import { DEFAULT_AUTHOR } from '@/lib/constants';
 import {
   BANNED_LABEL_WORDS,
@@ -34,14 +34,28 @@ export function effectivePrice(p: Product): { price: number; compareAt: number |
   return { price, compareAt: legacyCompare && legacyCompare > price ? legacyCompare : null };
 }
 
-export function positionOf(p: Pick<Product, 'slug' | 'name'>): BagPosition | null {
+// design.md §4 (F-016 A3): extend and harian added for the Katalog filter (S2.2) and the card chip (S0.9).
+// The order matters: "Side bag Daily Ride" is a side bag, not a daily bag.
+export function positionOf(p: Pick<Product, 'slug' | 'name'>): ProductPosition | null {
   if (p.slug in POSITION_BY_SLUG) return POSITION_BY_SLUG[p.slug];
   const name = p.name.toLowerCase();
   if (/tank\s?bag/.test(name)) return 'tank';
   if (/side\s?bag/.test(name)) return 'side';
   if (/tail\s?bag/.test(name)) return 'tail';
+  if (/extend\s?bag/.test(name)) return 'extend';
   if (/\bbotol\b|\bacc\s|toolkit|medikit|rollkit/.test(name)) return 'aksesori';
+  if (/chest\s?bag|waist\s?bag|sling\s?bag|hand\s?bag|\bdaily\b/.test(name)) return 'harian';
   return null;
+}
+
+// Narrows to the four navbar/Beranda positions (S0.4.3); extend and harian have no tile or menu price.
+export function isBagPosition(v: ProductPosition | null): v is BagPosition {
+  return v !== null && (POSITIONS as readonly string[]).includes(v);
+}
+
+function bagPositionOf(p: Pick<Product, 'slug' | 'name'>): BagPosition | null {
+  const pos = positionOf(p);
+  return isBagPosition(pos) ? pos : null;
 }
 
 const MODEL_RULES: readonly [RegExp, string][] = [
@@ -78,7 +92,9 @@ export function toCard(p: Product): HomeProductCard {
     slug: p.slug,
     name: p.name,
     image: firstImage(p),
-    position: positionOf(p),
+    // HomeProductCard.position and POSITION_CHIP cover the four tile positions only, so extend and harian show
+    // no chip until both gain those keys (S0.9 labels "Extend bag", "Tas harian").
+    position: bagPositionOf(p),
     fit: fitLabel(p),
     price,
     compareAt,
@@ -89,7 +105,7 @@ export function toCard(p: Product): HomeProductCard {
 export function minPriceByPosition(products: Product[]): Record<BagPosition, number | null> {
   const out: Record<BagPosition, number | null> = { tank: null, side: null, tail: null, aksesori: null };
   for (const p of products) {
-    const pos = positionOf(p);
+    const pos = bagPositionOf(p);
     if (!pos) continue;
     const { price } = effectivePrice(p);
     if (price > 0 && (out[pos] === null || price < (out[pos] as number))) out[pos] = price;

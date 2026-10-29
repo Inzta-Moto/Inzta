@@ -1,7 +1,9 @@
-import type { ContentFormat } from '@/types';
+import type { ArticleTopic, ContentFormat, MotorCategory } from '@/types';
 import { SLUG_PATTERN } from './slug';
 import { DEFAULT_AUTHOR, RESERVED_ARTICLE_SLUGS } from './constants';
 import { isAllowedImageUrl } from './article-format';
+import { isArticleTopic } from './v2/article-v2';
+import { CATEGORY_SLUGS, isMotorCategory } from './v2/motor-category';
 
 export { SLUG_PATTERN };
 
@@ -19,6 +21,9 @@ export type ArticleFields = {
   author: string;
   metaTitle: string;
   metaDescription: string;
+  // F-016 S6.8.2: present only when the body has a `topik` key, so an update without it keeps the stored values.
+  topik?: ArticleTopic | '';
+  kategoriMotor?: MotorCategory[];
 };
 
 export type ArticleInputResult =
@@ -86,6 +91,9 @@ export function parseArticleInput(body: unknown, opts: ArticleInputOptions = {})
   const showCover = data.showCover == null ? true : data.showCover;
   if (typeof showCover !== 'boolean') return { ok: false, error: 'showCover: harus true atau false' };
 
+  const topic = parseTopic(data);
+  if ('error' in topic) return { ok: false, error: topic.error };
+
   // New articles are always Markdown, whatever the body says. On update, Markdown is one-way
   // (requirement 1.6): a request may convert a plain article, never the reverse.
   let contentFormat: ContentFormat = opts.currentFormat ?? 'markdown';
@@ -124,6 +132,29 @@ export function parseArticleInput(body: unknown, opts: ArticleInputOptions = {})
       author: values.author || DEFAULT_AUTHOR,
       metaTitle: values.metaTitle,
       metaDescription: values.metaDescription,
+      ...topic.value,
     },
   };
+}
+
+/**
+ * F-016 D3, S6.8.1–S6.8.3: `topik` is one of the four topics or ''/null (stored as ''); `kategoriMotor` counts
+ * only for 'per-motor' (deduplicated D1 slugs, missing = []) and is [] for any other topic. Without a `topik` key
+ * both fields are left out, so an old editor tab or another client cannot erase a stored topic.
+ */
+function parseTopic(data: Record<string, unknown>):
+  | { value: { topik?: ArticleTopic | ''; kategoriMotor?: MotorCategory[] } }
+  | { error: string } {
+  if (!('topik' in data) || data.topik === undefined) return { value: {} };
+  let topik: ArticleTopic | '';
+  if (data.topik === null || data.topik === '') topik = '';
+  else if (isArticleTopic(data.topik)) topik = data.topik;
+  else return { error: 'topik: pilih salah satu topik yang tersedia' };
+  if (topik !== 'per-motor') return { value: { topik, kategoriMotor: [] } };
+
+  const raw = data.kategoriMotor == null ? [] : data.kategoriMotor;
+  if (!Array.isArray(raw) || !raw.every(isMotorCategory)) {
+    return { error: 'kategoriMotor: pilih dari Matic, Adventure, Retro, Trail' };
+  }
+  return { value: { topik, kategoriMotor: CATEGORY_SLUGS.filter(c => raw.includes(c)) } };
 }
