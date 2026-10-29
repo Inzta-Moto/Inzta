@@ -47,3 +47,18 @@
 /* Article without a cover: centred text tile like the design's "Foto produk: PLACEHOLDER" (P-14). */
 .iz-photo--empty { display: grid; place-items: center; padding: 12px; text-align: center; }
 .iz-gfeature > .iz-photo--empty { position: absolute; inset: 0; z-index: -2; border-radius: 0; align-content: start; padding-top: var(--space-8); }
+
+/* Fit any desktop viewport at 100% zoom (Sehan, 2026-10-29). The design is drawn at 1440x900; on laptops with OS
+   scaling the viewport is about 1280x650, where a fixed 760 px hero and 88 px heading overflow the first screen.
+   Sizes scale with the viewport and stop at the design values, so 1440 wide and up renders exactly as the canvas. */
+@media (min-width: 768px) {
+  .iz-page .t-display { font-size: clamp(52px, min(6.1vw, 10.5vh), 88px); }
+  .iz-page .t-h2-landing { font-size: clamp(34px, 3.35vw, 48px); }
+  .iz-page .t-lead { font-size: clamp(18px, 1.46vw, 21px); }
+  .iz-page .iz-hero { min-height: clamp(540px, 100svh, 760px); }
+  .iz-page .iz-hero__body { padding-top: clamp(104px, 18vh, 160px); padding-bottom: clamp(40px, 9vh, 80px); gap: clamp(16px, 2.6vh, 24px); }
+  .iz-page .iz-band { min-height: clamp(440px, 72svh, 600px); }
+  .iz-page .iz-section { padding-block: clamp(48px, 5vw, 72px); }
+  .iz-page .iz-gfeature h3 { font-size: clamp(24px, 2.25vw, 32px); }
+  .iz-page .iz-rfeature blockquote { font-size: clamp(22px, 2.1vw, 30px); }
+}

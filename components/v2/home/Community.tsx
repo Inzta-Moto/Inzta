@@ -27,7 +27,8 @@ export default function Community({ gasberHref }: { gasberHref: string }) {
           </div>
         </div>
       </div>
-      <div className="iz-film">
+      {/* Scrollable on every width, so keyboard users must be able to focus and scroll it (axe scrollable-region-focusable). */}
+      <div className="iz-film" tabIndex={0} role="region" aria-label="Foto dari jalan">
         {FILMSTRIP.map(photo => {
           const { w, h } = FILM_SIZE[photo.shape];
           const src1x = optimizeCloudinaryUrl(photo.src, w, h);

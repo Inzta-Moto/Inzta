@@ -104,9 +104,10 @@ export default function SiteNav({ minPrices, waHref }: { minPrices: Record<BagPo
     if (e.key === 'ArrowDown') {
       e.preventDefault();
       setOpen(which);
-      requestAnimationFrame(() => {
+      // After React has rendered the open menu; setTimeout also runs in background tabs, unlike requestAnimationFrame.
+      setTimeout(() => {
         document.getElementById(`iz-menu-${which}`)?.querySelector<HTMLElement>('a')?.focus();
-      });
+      }, 0);
     }
   };
 

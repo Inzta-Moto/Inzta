@@ -85,7 +85,8 @@ export default function Reviews({ productImages }: { productImages: Record<strin
             <ProductChip review={REVIEW_FEATURED} images={productImages} />
             <Meta review={REVIEW_FEATURED} />
           </figure>
-          <div className="iz-reviews__wall">
+          {/* A horizontal scroller on phones; focusable so it can be scrolled by keyboard. */}
+          <div className="iz-reviews__wall" tabIndex={0} role="region" aria-label="Ulasan pembeli">
             {REVIEWS.map((r, i) => (
               <figure className="iz-rcard" key={`${r.productSlug}-${i}`}>
                 <blockquote>{r.quote}</blockquote>

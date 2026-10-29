@@ -1,6 +1,5 @@
 /* INZTA v2 components (F-016 phase 1). Ported from inzta-web-design @ 3281681 claude-design/ds/project/components/bundle.css:
    only rules for classes used by the Beranda, navbar, and flash sale; @container iz replaced by @media because .iz-page spans the viewport. */
-12..96, 800&family=Figtree:wght@400;500;600;700&display=swap");
 
 .iz-page { background: var(--c-kertas); color: var(--c-tinta); font-family: var(--font-sans); font-size: 18px; line-height: 1.6; -webkit-font-smoothing: antialiased; overflow-x: clip; }
 :where(.iz-page) *, :where(.iz-page) *::before, :where(.iz-page) *::after { box-sizing: border-box; }
