@@ -8,6 +8,7 @@
     "start": "next start",
     "test:auth": "node tests/f000-auth.cjs",
     "test:content": "node tests/f001-content.cjs",
+    "test:tracking": "node tests/f002-tracking.cjs",
     "test:markdown": "node tests/f012-markdown.cjs",
     "test:articles": "node tests/f012-articles.cjs",
     "test:editor": "node tests/f013-editor.cjs",

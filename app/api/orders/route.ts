@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getAdminDb } from '@/lib/firebaseAdmin';
 import { generateLabel } from '@/lib/product-utils';
 import { randomBytes } from 'crypto';
+import { sanitizeUtm } from '@/lib/utm';
 import type { OrderItem, VariantSnapshot } from '@/types';
 
 function generateOrderId(): string {
@@ -227,6 +228,7 @@ export async function POST(request: Request) {
       affiliateId: appliedAffiliateId,
       buyerUID: buyerUID || null,
       finalPrice: serverFinalPrice,
+      utm: sanitizeUtm(body.utm), // F-002: klien tidak dipercaya; UTM rusak = null, order tetap jalan
       status: 'pending',
       createdAt: new Date().toISOString(),
     });

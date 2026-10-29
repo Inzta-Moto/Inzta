@@ -20,6 +20,13 @@ You can start editing the page by modifying `app/page.js`. The page auto-updates
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Tracking (F-002)
+
+- `NEXT_PUBLIC_GA_ID`: Measurement ID GA4 (`G-...`) dari properti milik INZTA.
+- `NEXT_PUBLIC_META_PIXEL_ID`: Pixel ID (angka) dari Business Portfolio milik INZTA.
+
+Kosong atau formatnya salah berarti skrip vendor itu tidak dimuat. Nilainya di-inline saat build, jadi setelah mengubahnya di Vercel perlu redeploy. `debug_mode` GA4 aktif di semua host selain `inzta.id` / `www.inzta.id` (staging, Preview, localhost), sehingga traffic itu hanya muncul di DebugView dan disaring filter Developer traffic. Tidak ada tracking di `/admin` dan `/affiliate`. UTM pertama pengunjung disimpan di `localStorage` (`inzta_first_utm`, 30 hari) lalu ikut tersimpan di field `utm` pada order. Tes: `npm run test:tracking`.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:
