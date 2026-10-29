@@ -47,7 +47,8 @@ export default function LoadingV2({ variant }: { variant: Variant }) {
           )}
           {variant === 'motor' && (
             <>
-              <Skeleton h="clamp(240px, 40vh, 380px)" r="var(--radius-band)" />
+              <Skeleton h="clamp(240px, 40vh, 380px)" r="var(--radius-band)" dark />
+              <div className="iz-row">{Array.from({ length: 4 }, (_, i) => <Skeleton key={i} h="44px" w="120px" r="var(--radius-pill)" />)}</div>
               <Cards n={4} />
             </>
           )}
@@ -68,8 +69,9 @@ export default function LoadingV2({ variant }: { variant: Variant }) {
           )}
           {variant === 'about' && (
             <>
-              <Skeleton h="clamp(320px, 60vh, 560px)" r="var(--radius-band)" />
-              <div className="iz-grid-4">{Array.from({ length: 4 }, (_, i) => <Skeleton key={i} h="200px" r="var(--radius-tile)" />)}</div>
+              <Skeleton h="clamp(320px, 60vh, 560px)" r="var(--radius-band)" dark />
+              <Skeleton h="40px" w="min(520px, 85%)" />
+              <div className="iz-skelsteps">{Array.from({ length: 5 }, (_, i) => <Skeleton key={i} h="auto" r="var(--radius-tile)" className="iz-skel--portrait" />)}</div>
             </>
           )}
         </div>

@@ -4,7 +4,8 @@
 /* Shimmer moves a pseudo-element with transform, so it stays on the compositor (S0.12.1). */
 .iz-skel { position: relative; display: block; overflow: hidden; width: var(--w, 100%); height: var(--h, 1em); border-radius: var(--r, 8px); background: var(--c-pasir-muda); }
 .iz-skel::after { content: ""; position: absolute; inset: 0; transform: translateX(-100%); background: linear-gradient(90deg, transparent, rgba(253, 252, 249, .6), transparent); animation: iz-shimmer 1.2s infinite; }
-.iz-dark .iz-skel, .iz-skel--dark { background: rgba(253, 252, 249, .08); }
+.iz-dark .iz-skel { background: rgba(253, 252, 249, .08); }
+.iz-skel--dark { background: var(--c-aspal); }
 .iz-dark .iz-skel::after, .iz-skel--dark::after { background: linear-gradient(90deg, transparent, rgba(253, 252, 249, .08), transparent); }
 @keyframes iz-shimmer { to { transform: translateX(100%); } }
 @media (prefers-reduced-motion: reduce) { .iz-skel::after { animation: none; opacity: 0; } }
@@ -44,3 +45,8 @@
 .iz-pcard__noimg { position: absolute; inset: 0; display: grid; place-items: center; padding: 16px; text-align: center; }
 /* Long names clamp to two lines; the full name stays in the DOM (S0.9.6). */
 .iz-pcard__name { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
+
+/* Loading skeletons for S5 (tab row) and S8 (five 4:5 steps, a swipe row below 1024 px) (S5.10.1, S8.7.6). */
+.iz-skel--portrait { aspect-ratio: 4 / 5; }
+.iz-skelsteps { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--space-4); }
+@media (max-width: 1023px) { .iz-skelsteps { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: 60%; overflow: hidden; } }

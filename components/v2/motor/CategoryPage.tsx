@@ -8,7 +8,7 @@ import InstallNotice from '@/components/v2/motor/InstallNotice';
 import MoreCard from '@/components/v2/motor/MoreCard';
 import ArticleFeature from '@/components/v2/motor/ArticleFeature';
 import OtherCategories from '@/components/v2/motor/OtherCategories';
-import CategoryClosing from '@/components/v2/motor/CategoryClosing';
+import Closing from '@/components/v2/Closing';
 
 const GRID_ID = 'iz-motor-grid';
 const CARD_SIZES = '(max-width: 767px) 50vw, 282px';
@@ -80,7 +80,7 @@ export default function CategoryPage({ data }: { data: CategoryPageData }) {
 
       <OtherCategories current={category} />
 
-      <CategoryClosing waHref={waHref} />
+      <Closing waHref={waHref} label="Tanya admin soal motor Anda" wrapped={false} className="iz-motor-closing" />
     </>
   );
 }

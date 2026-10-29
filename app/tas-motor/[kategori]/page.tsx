@@ -42,7 +42,7 @@ export default async function TasMotorPage({ params }: Props) {
   const c = params.kategori;
   const [products, articles] = await Promise.all([readProducts(), getArticles()]);
   return (
-    <V2Layout dark current="motor" currentCategory={c} products={products}>
+    <V2Layout dark current="motor" currentCategory={c} products={products} chipHref="#motor-lain">
       <CategoryPage data={buildCategoryPage(c, products, articles)} />
     </V2Layout>
   );

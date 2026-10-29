@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { formatWaDisplay } from '@/lib/v2/home-data';
 import { INSTAGRAM, MOTOR_CATEGORIES, SHOP_LINKS } from '@/lib/v2/home-content';
+import type { MotorCategory } from '@/types';
 import CategoryLink from '@/components/v2/CategoryLink';
 
 // F-016 S0.7: position keys shared with the catalog filter (S2.2).
@@ -14,7 +15,7 @@ const PRODUCT_LINKS = [
 ];
 
 // Footer (F-016 16, P2-3). Shop links stay text until their URLs are known (16.4).
-export default function SiteFooter({ waHref, waNumber }: { waHref: string; waNumber: string }) {
+export default function SiteFooter({ waHref, waNumber, currentCategory }: { waHref: string; waNumber: string; currentCategory?: MotorCategory }) {
   return (
     <footer className="iz-footer iz-dark">
       <div className="iz-footer__in">
@@ -40,7 +41,7 @@ export default function SiteFooter({ waHref, waNumber }: { waHref: string; waNum
           <ul>
             {MOTOR_CATEGORIES.map(c => (
               <li key={c.value}>
-                <CategoryLink value={c.value}>{c.label}</CategoryLink>
+                <CategoryLink value={c.value} current={currentCategory === c.value}>{c.label}</CategoryLink>
               </li>
             ))}
           </ul>

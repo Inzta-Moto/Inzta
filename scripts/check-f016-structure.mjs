@@ -83,7 +83,9 @@ const norm = s => s.replace(/&nbsp;|&#160;/g, ' ').replace(/&amp;/g, '&').replac
 
 // Page-level blocks: children of .iz-page; on the site, main#isi is unwrapped so its sections line up with the canvas.
 function blocks(tree) {
-  const page = find(tree, e => classes(e).includes('iz-page'));
+  // In dev the loading.tsx fallback streams first; the rendered page is the last .iz-page.
+  const pages = all(tree, e => classes(e).includes('iz-page'));
+  const page = pages[pages.length - 1];
   if (!page) return [];
   const out = [];
   for (const c of page.children) {

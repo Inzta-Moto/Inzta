@@ -25,12 +25,14 @@ export default function SiteNav({
   current,
   dark: darkHero = true,
   currentCategory,
+  chipHref = '/#garasi',
 }: {
   minPrices: Record<BagPosition, number | null>;
   waHref: string;
   current?: NavTab;
   dark?: boolean;
   currentCategory?: MotorCategory;
+  chipHref?: string;
 }) {
   const page = (tab: NavTab) => (current === tab ? ({ 'aria-current': 'page' } as const) : {});
   const { category } = useMotorCategory();
@@ -223,7 +225,7 @@ export default function SiteNav({
         </div>
 
         <div className="iz-nav__actions">
-          <Link className="iz-motorchip" href="/#garasi">
+          <Link className="iz-motorchip" href={chipHref}>
             {chosen ? (
               <>
                 <span className="iz-motorchip__dot" />
@@ -275,7 +277,7 @@ export default function SiteNav({
           <div className="iz-msheet__group">
             <h2>Pilih motor</h2>
             {MOTOR_CATEGORIES.map(c => (
-              <CategoryLink key={c.value} value={c.value} className="iz-msheet__row" onChosen={() => setSheetOpen(false)}>
+              <CategoryLink key={c.value} value={c.value} className="iz-msheet__row" current={currentCategory === c.value} onChosen={() => setSheetOpen(false)}>
                 <span>{c.label}</span>
                 {category === c.value && <span className="iz-navdd__mine">Motor saya</span>}
               </CategoryLink>

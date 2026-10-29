@@ -17,21 +17,23 @@ export default async function V2Layout({
   currentCategory,
   products,
   dark = false,
+  chipHref,
 }: {
   children: ReactNode;
   current?: NavTab;
   currentCategory?: MotorCategory;
   products?: Product[];
   dark?: boolean;
+  chipHref?: string;
 }) {
   const { minPrices, flash } = await getNavData(products);
   const waHref = `https://wa.me/${WA_NUMBER}`;
   return (
     <V2Page>
       <FlashBar flash={flash} />
-      <SiteNav current={current} currentCategory={currentCategory} minPrices={minPrices} waHref={waHref} dark={dark} />
+      <SiteNav current={current} currentCategory={currentCategory} minPrices={minPrices} waHref={waHref} dark={dark} chipHref={chipHref} />
       <main id="isi">{children}</main>
-      <SiteFooter waHref={waHref} waNumber={WA_NUMBER} />
+      <SiteFooter waHref={waHref} waNumber={WA_NUMBER} currentCategory={currentCategory} />
     </V2Page>
   );
 }

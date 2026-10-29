@@ -1,12 +1,22 @@
 import Image from 'next/image';
 import { WhatsApp } from '@/components/v2/icons';
 
-// Closing panel (F-016 15). The chat mock is decorative and holds no invented admin reply (15.2);
-// CSS hides it below 768 px and stops the typing dots under reduced motion (15.3).
-export default function Closing({ waHref }: { waHref: string }) {
-  return (
-    <div className="iz-wrap">
-      <section className="iz-closing iz-closing--split iz-dark">
+// Closing panel (F-016 S0.8). The chat mock is decorative and holds no invented admin reply; CSS hides it below
+// 768 px and stops the typing dots under reduced motion. S5 sets its own button label and places the section
+// directly in main (motor.dc.html), so `wrapped` and `className` cover that layout (S5.9.3).
+export default function Closing({
+  waHref,
+  label = 'Chat admin via WhatsApp',
+  wrapped = true,
+  className,
+}: {
+  waHref: string;
+  label?: string;
+  wrapped?: boolean;
+  className?: string;
+}) {
+  const panel = (
+      <section className={`iz-closing iz-closing--split iz-dark${className ? ` ${className}` : ''}`}>
         <div className="iz-closing__body">
           <h2 className="t-h2-landing">Belum yakin tas mana yang pas untuk motor Anda?</h2>
           <p className="t-body">Kirim foto motor Anda ke admin INZTA. Kami bantu pilihkan tas dan ukurannya.</p>
@@ -16,7 +26,7 @@ export default function Closing({ waHref }: { waHref: string }) {
               <span className="iz-btn__icon">
                 <WhatsApp />
               </span>
-              <span>Chat admin via WhatsApp</span>
+              <span>{label}</span>
             </a>
           </div>
         </div>
@@ -44,6 +54,6 @@ export default function Closing({ waHref }: { waHref: string }) {
           </div>
         </div>
       </section>
-    </div>
   );
+  return wrapped ? <div className="iz-wrap">{panel}</div> : panel;
 }
