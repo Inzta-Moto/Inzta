@@ -90,3 +90,7 @@ html:not(.js-nav) .iz-navdd:focus-within .iz-navdd__btn svg { transform: rotate(
 @media (min-width: 1440px) {
   .iz-page { --size-content: min(1440px, calc(1200px + (100vw - 1440px))); }
 }
+
+/* The eyebrow inside the "Mengapa pilih INZTA" photo panel sat on the dark photo in the light-page brown and could
+   not be read (Sehan, 2026-10-29); on photos it uses the bright yellow like every other on-photo eyebrow. */
+.iz-why__photo .iz-eyebrow { color: var(--c-kuning); text-shadow: 0 1px 12px rgba(22, 20, 15, 0.6); }
