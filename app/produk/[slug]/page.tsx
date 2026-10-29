@@ -8,6 +8,7 @@ import { productJsonLd, selectRelated } from '@/components/v2/product/product-vi
 import JsonLd from '@/components/JsonLd';
 import TrackView from '@/components/v2/product/TrackView';
 import { canonicalUrl } from '@/lib/seo';
+import { isValidSlug } from '@/lib/slug';
 import '@/app/(v2)/v2-product.css';
 
 // F-016 E1, S3.10.1: ISR per slug instead of force-dynamic. Product writes and stock changes purge the page through
@@ -22,6 +23,7 @@ export function generateStaticParams() {
 // is shared with the page through cache().
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const slug = params.slug;
+  if (!isValidSlug(slug)) return { title: 'Produk — INZTA MOTO', robots: { index: false } };
 
   const defaultMeta: Metadata = {
     title: 'Produk — INZTA MOTO',
@@ -97,8 +99,12 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 
 export default async function DetailPage({ params }: { params: { slug: string } }) {
   // A read failure throws (S3.10.3): the last good ISR page stays, or error.tsx renders; never a cached 404.
-  const [product, active] = await Promise.all([getProduct(params.slug), getActiveProducts()]);
+  // REV-01: an impossible slug answers 404 without a read, and the active list (related cards, navbar prices) is
+  // read only once the product exists, so random URLs cost one document read instead of the whole collection.
+  if (!isValidSlug(params.slug)) notFound();
+  const product = await getProduct(params.slug);
   if (!product) notFound();
+  const active = await getActiveProducts();
 
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://inzta.id';
   return (

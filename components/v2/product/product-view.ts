@@ -128,8 +128,3 @@ export function productJsonLd(p: Product, baseUrl: string): Record<string, unkno
   };
 }
 
-// Escapes "<" so a product name or description from Firestore cannot close the script element (S3.10.4).
-export function jsonLdScript(data: Record<string, unknown>): string {
-  return JSON.stringify(data).replace(/</g, '\\u003c');
-}
-

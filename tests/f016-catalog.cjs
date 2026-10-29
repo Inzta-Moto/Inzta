@@ -251,7 +251,7 @@ const src = rel => fs.readFileSync(path.join(ROOT, rel), 'utf8');
 
 check('route contract: ISR 3600, no force-dynamic, no server searchParams, no catch that renders an empty list (S2.7, S2.2.8)', () => {
   // Comments may name what the route no longer does, so only code is checked.
-  const page = src('app/produk/page.tsx').replace(/^\s*\/\/.*$/gm, '');
+  const page = src('app/produk/(katalog)/page.tsx').replace(/^\s*\/\/.*$/gm, '');
   assert.match(page, /export const revalidate = 3600;/);
   assert.doesNotMatch(page, /force-dynamic|searchParams|catch\s*\(/);
   assert.match(page, /getActiveProducts\(\)/);
@@ -261,7 +261,7 @@ check('route contract: ISR 3600, no force-dynamic, no server searchParams, no ca
   assert.match(shell, /<Suspense fallback={<CatalogBody /);
   assert.match(src('components/v2/catalog/CatalogQuery.tsx'), /useSearchParams\(\)/);
   assert.doesNotMatch(src('components/v2/catalog/CatalogBody.tsx'), /useSearchParams/);
-  assert.ok(fs.existsSync(path.join(ROOT, 'app/produk/loading.tsx')));
+  assert.ok(fs.existsSync(path.join(ROOT, 'app/produk/(katalog)/loading.tsx')));
   assert.match(src('app/produk/error.tsx'), /current="produk"/);
 });
 
@@ -271,7 +271,7 @@ check('route: a failed product read rejects the page render instead of rendering
   stub('lib/public-content', { getActiveProducts: async () => { throw boom; } });
   stub('components/v2/V2Layout', { __esModule: true, default: () => null });
   stub('components/v2/catalog/CatalogPage', { __esModule: true, default: () => null });
-  const page = require(path.join(ROOT, 'app/produk/page.tsx'));
+  const page = require(path.join(ROOT, 'app/produk/(katalog)/page.tsx'));
   await assert.rejects(() => page.default(), e => e === boom);
   assert.strictEqual(page.revalidate, 3600);
 });

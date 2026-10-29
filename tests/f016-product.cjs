@@ -266,8 +266,9 @@ function mockFetch(table) {
     assert.strictEqual(sold.offers.availability, 'https://schema.org/OutOfStock');
     const simple = V.productJsonLd(BUILTIN[0], 'https://inzta.id');
     assert.deepStrictEqual([simple.offers.price, simple.offers.availability, simple.sku, simple.brand.name], [520000, 'https://schema.org/InStock', 'tail-bag-inzta-tourmax-30', 'INZTA Moto']);
-    const s = V.jsonLdScript(V.productJsonLd({ ...BUILTIN[0], name: '</script><script>x' }, 'https://inzta.id'));
-    assert.ok(!s.includes('<') && s.includes('\\u003c/script>'));
+    // REV-04: the page serializes through F-005 serializeJsonLd (components/JsonLd.tsx).
+    const s = require(path.join(ROOT, 'lib/seo.ts')).serializeJsonLd(V.productJsonLd({ ...BUILTIN[0], name: '</script><script>x' }, 'https://inzta.id'));
+    assert.ok(!s.includes('<') && !s.includes('>') && s.includes('\\u003c/script\\u003e'));
     assert.ok(!/aggregateRating|review/i.test(JSON.stringify(ld)));
   });
   await check('S3.3.8: plain WhatsApp link text and sold-out-at-render rule', () => {
