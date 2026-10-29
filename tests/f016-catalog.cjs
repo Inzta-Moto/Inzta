@@ -34,7 +34,7 @@ Module._load = function (request, parent, ...rest) {
 const compile = (m, filename) => {
   const src = fs.readFileSync(filename, 'utf8');
   const out = ts.transpileModule(src, {
-    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020, esModuleInterop: true, jsx: ts.JsxEmit.React },
+    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020, esModuleInterop: true, jsx: ts.JsxEmit.ReactJSX },
     fileName: filename,
   });
   m._compile(out.outputText, filename);
@@ -202,6 +202,49 @@ check('help card after the 8th card, or the last one when fewer, none when empty
 check('stateKey ignores value order and default sort', () => {
   assert.strictEqual(F.stateKey(st({ posisi: ['tank', 'side'] })), F.stateKey(q('posisi=side,tank&urut=sesuai')));
   assert.ok(F.sameState(F.DEFAULT_STATE, q('motor=vespa')));
+});
+
+// Server render of the catalog components (react-dom/server) with next/link, next/image, and the closing panel
+// stubbed, so the empty and fallback states are checked without a dev server.
+const React = require(path.join(ROOT, 'node_modules/react'));
+const { renderToStaticMarkup } = require(path.join(ROOT, 'node_modules/react-dom/server'));
+STUBS.set('next/link', { __esModule: true, default: ({ href, children, ...rest }) => React.createElement('a', { href, ...rest }, children) });
+STUBS.set('next/image', { __esModule: true, default: ({ fill, priority, ...rest }) => React.createElement('img', rest) });
+STUBS.set(path.join(ROOT, 'components/v2/Closing'), { __esModule: true, default: () => React.createElement('div', { className: 'iz-wrap' }, 'closing') });
+const CatalogPage = require(path.join(ROOT, 'components/v2/catalog/CatalogPage.tsx')).default;
+const CatalogBody = require(path.join(ROOT, 'components/v2/catalog/CatalogBody.tsx')).default;
+const WA = 'https://wa.me/6289513482410';
+const html = el => renderToStaticMarkup(el);
+
+check('render: 0 active products shows "Belum ada produk." + Chat admin, no lead, no filter bar (S2.1.2, S2.6.2)', () => {
+  const out = html(React.createElement(CatalogPage, { items: [], waHref: WA }));
+  assert.match(out, /<h1 class="t-h1-shop">Semua tas motor INZTA<\/h1>/);
+  assert.doesNotMatch(out, /t-lead/);
+  assert.doesNotMatch(out, /iz-filters/);
+  assert.match(out, /iz-empty__title">Belum ada produk\.</);
+  assert.match(out, /<a class="iz-btn iz-btn--primary" href="https:\/\/wa\.me\/6289513482410" target="_blank" rel="noopener noreferrer">Chat admin<\/a>/);
+});
+
+check('render: Suspense fallback lists every product (h2 names), help card after the 8th, "Muat lagi" hidden (S2.2.8, S2.5.1, S0.9.6)', () => {
+  const many = Array.from({ length: 14 }, (_, i) => simple(`tankbag-${i}`, `Tankbag Nomor ${i}`, 100000 + i, null, { createdAt: i }));
+  const items = many.map(F.toCatalogItem);
+  const out = html(React.createElement(CatalogBody, { items, waHref: WA }));
+  const names = [...out.matchAll(/<h2 class="iz-pcard__name">([^<]*)<\/h2>/g)].map(m => m[1]);
+  assert.strictEqual(names.length, 14);
+  const grid = out.slice(out.indexOf('iz-catalog__grid'));
+  assert.ok(grid.indexOf('Tankbag Nomor 6') < grid.indexOf('iz-helpcard') && grid.indexOf('iz-helpcard') < grid.indexOf('Tankbag Nomor 5'), 'help card after the 8th card (newest first)');
+  assert.match(out, /<div class="iz-catalog__more" hidden="">/);
+  assert.match(out, /Menampilkan 14 dari 14 produk/);
+  assert.match(out, /<div class="iz-row" style="gap:10px" hidden="">/);
+});
+
+check('render: filters that match nothing show the filtered EmptyState with "Hapus semua filter" and Chat admin (S2.6.1)', () => {
+  const out = html(React.createElement(CatalogBody, { items: ITEMS, waHref: WA, state: st({ posisi: ['extend'], harga: 'atas-500rb', urut: 'terbaru' }), search: 'posisi=extend&harga=atas-500rb&urut=terbaru' }));
+  assert.match(out, /iz-empty__title">Tidak ada tas yang sesuai filter\.</);
+  assert.match(out, /href="\/produk\?urut=terbaru"[^>]*>Hapus semua filter<\/a>/);
+  assert.match(out, /Chat admin<\/a>/);
+  assert.doesNotMatch(out, /iz-catalog__grid/);
+  assert.match(out, /Menampilkan 0 dari 0 produk/);
 });
 
 const src = rel => fs.readFileSync(path.join(ROOT, rel), 'utf8');
