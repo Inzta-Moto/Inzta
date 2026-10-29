@@ -15,6 +15,7 @@
     "test:home": "node tests/f016-home.cjs",
     "test:fixture": "node tests/f016-fixture.cjs",
     "check:v2-css": "node scripts/check-v2-css.mjs",
+    "check:f016-structure": "node scripts/check-f016-structure.mjs",
     "check:f016-release": "node scripts/check-f016-release.mjs"
   },
   "dependencies": {

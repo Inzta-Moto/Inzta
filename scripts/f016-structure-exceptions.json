@@ -1,0 +1,51 @@
+[
+  {
+    "artboard": "admin-sisi",
+    "kind": "artboard",
+    "value": "*",
+    "reason": "The side picker preset sits inside the existing admin form, which keeps the admin style and needs a login; only its preview uses .iz-page. Checked by component render and screenshots in B4.",
+    "requirement": "S4.6"
+  },
+  {
+    "artboard": "Main",
+    "kind": "heading",
+    "value": "Gasber 16 Indonesia Ride Adventure: matic sampai bigbike di jalur tanah Banten–Bogor",
+    "reason": "Article card titles come from published articles in Firestore (data, not canvas copy); the canvas shows sample titles.",
+    "requirement": "S1.8, design.md §19 data-driven text"
+  },
+  {
+    "artboard": "Main-flash",
+    "kind": "heading",
+    "value": "Gasber 16 Indonesia Ride Adventure: matic sampai bigbike di jalur tanah Banten–Bogor",
+    "reason": "Article card titles come from published articles in Firestore (data, not canvas copy); the canvas shows sample titles.",
+    "requirement": "S1.8, design.md §19 data-driven text"
+  },
+  {
+    "artboard": "Main",
+    "kind": "heading",
+    "value": "Tas samping XSR 155: versi tali vs versi baut, depan vs belakang",
+    "reason": "Article card titles come from published articles in Firestore (data, not canvas copy); the canvas shows sample titles.",
+    "requirement": "S1.8, design.md §19 data-driven text"
+  },
+  {
+    "artboard": "Main-flash",
+    "kind": "heading",
+    "value": "Tas samping XSR 155: versi tali vs versi baut, depan vs belakang",
+    "reason": "Article card titles come from published articles in Firestore (data, not canvas copy); the canvas shows sample titles.",
+    "requirement": "S1.8, design.md §19 data-driven text"
+  },
+  {
+    "artboard": "Main",
+    "kind": "heading",
+    "value": "Panduan memilih tas motor: tank bag, tail bag, side bag, atau box?",
+    "reason": "Article card titles come from published articles in Firestore (data, not canvas copy); the canvas shows sample titles.",
+    "requirement": "S1.8, design.md §19 data-driven text"
+  },
+  {
+    "artboard": "Main-flash",
+    "kind": "heading",
+    "value": "Panduan memilih tas motor: tank bag, tail bag, side bag, atau box?",
+    "reason": "Article card titles come from published articles in Firestore (data, not canvas copy); the canvas shows sample titles.",
+    "requirement": "S1.8, design.md §19 data-driven text"
+  }
+]
