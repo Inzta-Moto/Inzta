@@ -93,7 +93,7 @@ img.iz-hero__img[data-failed="true"] { visibility: hidden; }
 }
 
 /* Reviews: two wall columns. Desktop with motion: the columns hang beside the featured card and loop as slow
-   opposite marquees; the wall adds no height of its own, so the row is exactly as tall as the featured card. */
+   opposite marquees that never pause, even while the page scrolls or the pointer rests on them (Sehan, 2026-10-29); the wall adds no height of its own, so the row is exactly as tall as the featured card. */
 .iz-reviews { align-items: start; }
 .iz-rfeature__foot { display: flex; flex-direction: column; gap: var(--space-4); margin-top: auto; }
 .iz-rfeature .iz-rfeature__foot .iz-rmeta { margin-top: 0; }
@@ -112,9 +112,8 @@ img.iz-hero__img[data-failed="true"] { visibility: hidden; }
   html.iz-motion .iz-rcol { position: absolute; top: 0; bottom: 0; width: calc(50% - var(--space-2)); overflow: hidden; }
   html.iz-motion .iz-rcol--down { right: 0; }
   html.iz-motion .iz-rcard[data-dup] { display: flex; }
-  html.iz-motion .iz-rcol__track { animation: iz-marquee-up 46s linear infinite; will-change: transform; }
-  html.iz-motion .iz-rcol--down .iz-rcol__track { animation-name: iz-marquee-down; animation-duration: 54s; }
-  html.iz-motion .iz-reviews__wall:hover .iz-rcol__track, html.iz-motion .iz-reviews__wall:focus-within .iz-rcol__track { animation-play-state: paused; }
+  html.iz-motion .iz-rcol__track { animation: iz-marquee-up 30s linear infinite; will-change: transform; }
+  html.iz-motion .iz-rcol--down .iz-rcol__track { animation-name: iz-marquee-down; animation-duration: 36s; }
 }
 @keyframes iz-marquee-up { from { transform: translateY(0); } to { transform: translateY(calc(-50% - var(--space-4) / 2)); } }
 @keyframes iz-marquee-down { from { transform: translateY(calc(-50% - var(--space-4) / 2)); } to { transform: translateY(0); } }

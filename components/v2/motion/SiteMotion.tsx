@@ -118,6 +118,8 @@ function createController(curtain: HTMLDivElement, push: (href: string) => void,
   }
 
   async function boot() {
+    // Lenis downloads alongside GSAP instead of after it, so the load curtain is not held by two chunk round trips.
+    void import('lenis');
     try {
       kit = await loadMotion();
     } catch {
@@ -158,13 +160,31 @@ function createController(curtain: HTMLDivElement, push: (href: string) => void,
   async function navigate(url: URL, text: string | undefined) {
     if (!kit) return;
     busy = true;
+    // Whatever happens below (a malformed hash, a failed route), the curtain comes down and the page stays usable
+    // (review REV-05).
+    try {
+      await travel(url, text, kit);
+    } catch (error) {
+      console.warn('[motion] route transition failed', error);
+      markRevealed();
+    } finally {
+      leaving = null;
+      html.removeAttribute('data-iz-covered');
+      curtain.removeAttribute('data-active');
+      if (word) word.hidden = false;
+      if (label) label.hidden = true;
+      busy = false;
+    }
+  }
+
+  async function travel(url: URL, text: string | undefined, kit: MotionKit) {
     const href = url.pathname + url.search + url.hash;
     prefetch(href);
     markCovered();
     if (word) word.hidden = true;
     if (label) {
       label.hidden = false;
-      label.textContent = text?.trim() || routeLabel(url.pathname);
+      label.textContent = text?.trim() || routeLabel(url.pathname, url.search);
     }
     curtain.setAttribute('data-active', '');
     // The scrollbar is hidden while covered; its lane stays reserved (scrollbar-gutter in v2-motion.css), so the page
@@ -179,22 +199,22 @@ function createController(curtain: HTMLDivElement, push: (href: string) => void,
     push(href);
     const root = await waitForPage();
     leaving = null;
-    const target = url.hash ? document.getElementById(decodeURIComponent(url.hash.slice(1))) : null;
+    let target: HTMLElement | null = null;
+    try {
+      target = url.hash ? document.getElementById(decodeURIComponent(url.hash.slice(1))) : null;
+    } catch {
+      target = null;
+    }
     jumpTo(target ?? 0);
     await pageReady(root);
     if (root) attach(root);
     kit.ScrollTrigger.refresh();
     await framesSettled();
     await lift(kit, curtain, markRevealed);
-    html.removeAttribute('data-iz-covered');
-    curtain.removeAttribute('data-active');
-    if (word) word.hidden = false;
-    if (label) label.hidden = true;
-    busy = false;
   }
 
   function onClick(e: MouseEvent) {
-    if (!kit || busy || !motionOk() || !document.querySelector('.iz-page')) return;
+    if (!kit || !motionOk() || !document.querySelector('.iz-page')) return;
     const a = (e.target as Element | null)?.closest?.('a');
     if (!a) return;
     const url = transitionTarget(
@@ -210,6 +230,12 @@ function createController(curtain: HTMLDivElement, push: (href: string) => void,
       new URL(window.location.href),
     );
     if (!url) return;
+    // A second click while the curtain runs is swallowed; reaching next/link it started a parallel navigation that
+    // held the curtain for seconds (review REV-03).
+    if (busy) {
+      e.preventDefault();
+      return;
+    }
     // Captured before React sees the click: next/link skips its own navigation once the default is prevented, and
     // the link's own onClick (closing a menu, saving the motor category) still runs.
     e.preventDefault();

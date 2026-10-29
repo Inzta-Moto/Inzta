@@ -147,3 +147,14 @@ html.iz-motion .iz-film-scene.is-pinned .iz-photo > .iz-smartimg { inset: 0; }
 /* Phone swipe rows: a progress line under the filmstrip that follows the swipe (engine swipe()). */
 html.iz-motion .iz-film-scene.is-swipe .iz-film__progress { display: block; width: 120px; height: 3px; margin: var(--space-5) auto 0; border-radius: var(--radius-pill); background: var(--c-garis); overflow: hidden; }
 html.iz-motion .iz-film-scene.is-swipe .iz-film__progress > span { display: block; height: 100%; background: var(--c-kuning); transform: scaleX(0); transform-origin: left center; }
+
+/* Reduced motion switched on after the page opened: the CSS-driven loops stop too (review REV-07). */
+@media (prefers-reduced-motion: reduce) {
+  .iz-rcol__track { animation: none !important; transform: none !important; }
+  .iz-rcard[data-dup] { display: none !important; }
+}
+
+/* Windows high contrast drops text-shadow, which carries the roll copy; the label stays still there (review REV-08). */
+@media (forced-colors: active) {
+  .iz-roll > span { text-shadow: none; transform: none !important; }
+}

@@ -77,6 +77,10 @@ test('hash-only, same-pathname, external, admin and non-http links never cover t
 test('route labels name the destination', () => {
   assert.strictEqual(L.routeLabel('/'), 'Beranda');
   assert.strictEqual(L.routeLabel('/produk'), 'Semua tas');
+  assert.strictEqual(L.routeLabel('/produk', '?posisi=tank'), 'Tank bag');
+  assert.strictEqual(L.routeLabel('/produk', '?posisi=aksesori'), 'Aksesori touring');
+  assert.strictEqual(L.routeLabel('/produk', '?posisi=side,tail'), 'Semua tas');
+  assert.strictEqual(L.routeLabel('/produk', '?posisi=x'), 'Semua tas');
   assert.strictEqual(L.routeLabel('/produk/tail-bag-inzta-tourmax-30'), 'Detail produk');
   assert.strictEqual(L.routeLabel('/blog/gasber-16'), 'Artikel');
   assert.strictEqual(L.routeLabel('/tentang'), 'Tentang INZTA');

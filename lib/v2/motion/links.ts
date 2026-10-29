@@ -33,10 +33,22 @@ export function transitionTarget(click: LinkClick, current: URL): URL | null {
 
 const CATEGORY_LABEL: Record<string, string> = { matic: 'Motor Matic', adventure: 'Motor Adventure', retro: 'Motor Retro', trail: 'Motor Trail' };
 
-/** Text under the logo while the curtain covers a route change. */
-export function routeLabel(pathname: string): string {
+const POSITION_LABEL: Record<string, string> = {
+  tank: 'Tank bag',
+  side: 'Side bag',
+  tail: 'Tail bag',
+  extend: 'Extend bag',
+  aksesori: 'Aksesori touring',
+  harian: 'Tas harian',
+};
+
+/** Text under the logo while the curtain covers a route change; the catalogue names the position filter it opens. */
+export function routeLabel(pathname: string, search = ''): string {
   if (pathname === '/') return 'Beranda';
-  if (pathname === '/produk') return 'Semua tas';
+  if (pathname === '/produk') {
+    const positions = new URLSearchParams(search).get('posisi')?.split(',').filter(p => POSITION_LABEL[p]) ?? [];
+    return positions.length === 1 ? POSITION_LABEL[positions[0]] : 'Semua tas';
+  }
   if (pathname.startsWith('/produk/')) return 'Detail produk';
   if (pathname === '/blog') return 'Artikel';
   if (pathname.startsWith('/blog/')) return 'Artikel';

@@ -95,7 +95,8 @@ export const REVIEWS_PERMISSION_RECORDED = false;
 // Unknown until Sehan gives the URLs (Q-4): rendered as text, not as links (13.5, 16.4).
 export const SHOPEE_REVIEWS_URL: string | null = null;
 export const SHOP_LINKS: readonly { label: string; href: string | null }[] = [
-  { label: 'Shopee: Inztamoto', href: null },
+  // Shop URL from docs/steering/business.md (inzta-hq): Shopee "Inztamoto", shopee.co.id/inztamoto.
+  { label: 'Shopee: Inztamoto', href: 'https://shopee.co.id/inztamoto' },
   { label: 'Tokopedia: Inzta moto Ride', href: 'https://www.tokopedia.com/lentoratoko' },
 ];
 

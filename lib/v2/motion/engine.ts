@@ -24,7 +24,8 @@ const textOnly = (el: Element) => el.children.length === 0 && !!el.textContent?.
  * Scroll and entrance motion for one v2 page (F-016 C5, design.md §8). It runs while the curtain still covers the
  * page: every from-state and every ScrollTrigger is created here, so the layout work happens out of sight, and the
  * entrances only play once the curtain lifts (whenRevealed). Creating dozens of triggers during the lift made the
- * curtain stutter. Only transform, opacity, clip-path, filter and colour on split text are animated. Everything
+ * curtain stutter. Hidden from-states use opacity, not visibility, so content waiting for its reveal stays in the
+ * tab order (review REV-02). Only transform, opacity, clip-path, filter and colour on split text are animated. Everything
  * lives in one gsap.matchMedia, so the returned cleanup reverts every tween, trigger, pin and split before the next
  * route starts. Reduced motion matches neither query and leaves the page untouched.
  */
@@ -101,7 +102,7 @@ export function initPage(root: HTMLElement, kit: MotionKit, mode: PageMode): () 
           tl.fromTo(s.lines, { yPercent: 105 }, { yPercent: 0, duration: 1, stagger: 0.08, onComplete: unsplit(s) }, 0.55);
         }
         const extras = section.querySelectorAll('.iz-eyebrow, .iz-crumb, .iz-hero__body > .iz-row, .iz-hero__meta, .iz-hero__cue');
-        tl.fromTo(extras, { y: 26, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.9, stagger: 0.08 }, 0.7);
+        tl.fromTo(extras, { y: 26, opacity: 0 }, { y: 0, opacity: 1, duration: 0.9, stagger: 0.08 }, 0.7);
         play(tl);
         // A tab that paints no frames would leave the H1 hidden; finish the entrance instead.
         const safety = window.setTimeout(() => tl.progress(1), 6000);
@@ -116,7 +117,7 @@ export function initPage(root: HTMLElement, kit: MotionKit, mode: PageMode): () 
         gsap.to(img, { yPercent: 9, ease: 'none', scrollTrigger: { trigger: section, start: 'top top', end: 'bottom top', scrub: true } });
       }
       if (body && desktop) {
-        gsap.to(body, { y: -70, autoAlpha: 0.2, ease: 'none', scrollTrigger: { trigger: section, start: 'top top', end: 'bottom 25%', scrub: true } });
+        gsap.to(body, { y: -70, opacity: 0.2, ease: 'none', scrollTrigger: { trigger: section, start: 'top top', end: 'bottom 25%', scrub: true } });
       }
     }
 
@@ -151,7 +152,7 @@ export function initPage(root: HTMLElement, kit: MotionKit, mode: PageMode): () 
           .to(caret, { autoAlpha: 1, duration: 0.15 })
           .to(chars.slice().reverse(), {
             yPercent: 70,
-            autoAlpha: 0,
+            opacity: 0,
             filter: 'blur(6px)',
             duration: 0.24,
             ease: 'power2.in',
@@ -165,10 +166,10 @@ export function initPage(root: HTMLElement, kit: MotionKit, mode: PageMode): () 
           .to(caret, { autoAlpha: 0.15, duration: 0.14, repeat: 3, yoyo: true, ease: 'steps(1)' })
           .fromTo(
             chars,
-            { yPercent: -70, autoAlpha: 0, filter: 'blur(6px)' },
+            { yPercent: -70, opacity: 0, filter: 'blur(6px)' },
             {
               yPercent: 0,
-              autoAlpha: 1,
+              opacity: 1,
               filter: 'blur(0px)',
               duration: 0.42,
               ease: 'power3.out',
@@ -217,7 +218,7 @@ export function initPage(root: HTMLElement, kit: MotionKit, mode: PageMode): () 
       scope.querySelectorAll<HTMLElement>(selector).forEach(el => {
         if (inHero(el) || !el.textContent?.trim()) return;
         if (!splitWords) {
-          onEnter(el, gsap.fromTo(el, { y: 22, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.8, paused: true }));
+          onEnter(el, gsap.fromTo(el, { y: 22, opacity: 0 }, { y: 0, opacity: 1, duration: 0.8, paused: true }));
           return;
         }
         const s = split(el, 'lines,words');
@@ -246,8 +247,8 @@ export function initPage(root: HTMLElement, kit: MotionKit, mode: PageMode): () 
         undo.push(() => el.replaceChildren(document.createTextNode(text)));
         const tween = gsap.fromTo(
           vis,
-          { autoAlpha: 0 },
-          { autoAlpha: 1, duration: 1.1, ease: 'none', paused: true, scrambleText: { text, chars: 'ABCDEFGHIJKLMNOPRSTUVWXYZ', speed: 0.6, revealDelay: 0.25 } },
+          { opacity: 0 },
+          { opacity: 1, duration: 1.1, ease: 'none', paused: true, scrambleText: { text, chars: 'ABCDEFGHIJKLMNOPRSTUVWXYZ', speed: 0.6, revealDelay: 0.25 } },
         );
         onEnter(el, tween);
       });
@@ -256,14 +257,14 @@ export function initPage(root: HTMLElement, kit: MotionKit, mode: PageMode): () 
     function leads(scope: HTMLElement) {
       scope.querySelectorAll<HTMLElement>('main .iz-head > p, main .iz-head > div > p, main .iz-head .t-lead').forEach(el => {
         if (inHero(el)) return;
-        onEnter(el, gsap.fromTo(el, { y: 24, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 1, delay: 0.15, paused: true }));
+        onEnter(el, gsap.fromTo(el, { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 1, delay: 0.15, paused: true }));
       });
     }
 
     function singles(scope: HTMLElement) {
       scope.querySelectorAll<HTMLElement>('main [data-reveal]').forEach(el => {
         if (inHero(el)) return;
-        onEnter(el, gsap.fromTo(el, { y: 30, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 1, paused: true }));
+        onEnter(el, gsap.fromTo(el, { y: 30, opacity: 0 }, { y: 0, opacity: 1, duration: 1, paused: true }));
       });
     }
 
@@ -275,17 +276,17 @@ export function initPage(root: HTMLElement, kit: MotionKit, mode: PageMode): () 
         if (!items.length) return;
         if (light) {
           // Long catalogue grids reveal row by row as they come into view.
-          gsap.set(items, { y: 28, autoAlpha: 0 });
+          gsap.set(items, { y: 28, opacity: 0 });
           ScrollTrigger.batch(items, {
             start: 'top 94%',
             once: true,
-            onEnter: batch => play(gsap.to(batch, { y: 0, autoAlpha: 1, duration: 0.6, stagger: 0.05, overwrite: true, paused: true, clearProps: 'transform,opacity,visibility' })),
+            onEnter: batch => play(gsap.to(batch, { y: 0, opacity: 1, duration: 0.6, stagger: 0.05, overwrite: true, paused: true, clearProps: 'transform,opacity,visibility' })),
           });
           return;
         }
         const tl = gsap.timeline({ paused: true });
         // clearProps hands the cards back to CSS afterwards; a leftover inline transform blocked their hover lift.
-        tl.fromTo(items, { y: desktop ? 80 : 36, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 1.15, ease: 'expo.out', stagger: 0.085, clearProps: 'transform,opacity,visibility' }, 0);
+        tl.fromTo(items, { y: desktop ? 80 : 36, opacity: 0 }, { y: 0, opacity: 1, duration: 1.15, ease: 'expo.out', stagger: 0.085, clearProps: 'transform,opacity,visibility' }, 0);
         const imgs = items.map(item => item.querySelector('img')).filter((img): img is HTMLImageElement => !!img);
         if (imgs.length) tl.fromTo(imgs, { scale: 1.28 }, { scale: 1, duration: 1.7, ease: 'expo.out', stagger: 0.085, clearProps: 'scale' }, 0);
         onEnter(group, tl);
@@ -330,10 +331,10 @@ export function initPage(root: HTMLElement, kit: MotionKit, mode: PageMode): () 
       const rows = band.querySelectorAll<HTMLElement>('.iz-spec');
       if (rows.length) {
         tl.fromTo(rows, { '--line': 0 }, { '--line': 1, duration: 1.2, ease: 'expo.inOut', stagger: 0.1 }, 0.2);
-        tl.fromTo(Array.from(rows).map(r => r.children), { yPercent: 60, autoAlpha: 0 }, { yPercent: 0, autoAlpha: 1, duration: 0.9, stagger: 0.05 }, 0.35);
+        tl.fromTo(Array.from(rows).map(r => r.children), { yPercent: 60, opacity: 0 }, { yPercent: 0, opacity: 1, duration: 0.9, stagger: 0.05 }, 0.35);
       }
       const callout = band.querySelector<HTMLElement>('.iz-band__callout');
-      if (callout) tl.fromTo(callout, { y: 30, autoAlpha: 0, scale: 0.96 }, { y: 0, autoAlpha: 1, scale: 1, duration: 1 }, 0.9);
+      if (callout) tl.fromTo(callout, { y: 30, opacity: 0, scale: 0.96 }, { y: 0, opacity: 1, scale: 1, duration: 1 }, 0.9);
       onEnter(band, tl, desktop ? 'top 70%' : 'top 85%');
       if (img && desktop) {
         gsap.fromTo(img, { yPercent: -6 }, { yPercent: 6, ease: 'none', scrollTrigger: { trigger: band, start: 'top bottom', end: 'bottom top', scrub: true } });
@@ -352,7 +353,7 @@ export function initPage(root: HTMLElement, kit: MotionKit, mode: PageMode): () 
         // Phones keep the native swipe (a vertical scroll that moves things sideways feels wrong on touch); a
         // progress line follows the swipe.
         const tl = gsap.timeline({ paused: true });
-        tl.fromTo(photosIn, { x: 60, autoAlpha: 0 }, { x: 0, autoAlpha: 1, duration: 1, ease: 'expo.out', stagger: 0.08 });
+        tl.fromTo(photosIn, { x: 60, opacity: 0 }, { x: 0, opacity: 1, duration: 1, ease: 'expo.out', stagger: 0.08 });
         onEnter(track, tl);
         const bar = section.querySelector<HTMLElement>('.iz-film__progress > span');
         if (bar && track.scrollWidth > track.clientWidth + 8) {
@@ -393,7 +394,7 @@ export function initPage(root: HTMLElement, kit: MotionKit, mode: PageMode): () 
       move.to(track, { x: () => -distance(), ease: 'none' }, 0);
       if (imgs.length) move.fromTo(imgs, { xPercent: -8, scale: 1.2 }, { xPercent: 8, ease: 'none' }, 0);
       const tl = gsap.timeline({ paused: true });
-      tl.fromTo(photosIn, { y: 90, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 1.2, ease: 'expo.out', stagger: 0.07 });
+      tl.fromTo(photosIn, { y: 90, opacity: 0 }, { y: 0, opacity: 1, duration: 1.2, ease: 'expo.out', stagger: 0.07 });
       onEnter(section, tl, 'top 70%');
     }
 
@@ -404,8 +405,8 @@ export function initPage(root: HTMLElement, kit: MotionKit, mode: PageMode): () 
       const feature = section.querySelector<HTMLElement>('.iz-rfeature');
       const cols = section.querySelectorAll<HTMLElement>('.iz-rcol');
       const tl = gsap.timeline({ paused: true });
-      if (feature) tl.fromTo(feature, { x: desktop ? -60 : 0, y: desktop ? 0 : 40, autoAlpha: 0 }, { x: 0, y: 0, autoAlpha: 1, duration: 1.2, ease: 'expo.out' }, 0);
-      if (cols.length) tl.fromTo(cols, { y: 70, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 1.2, ease: 'expo.out', stagger: 0.12 }, 0.1);
+      if (feature) tl.fromTo(feature, { x: desktop ? -60 : 0, y: desktop ? 0 : 40, opacity: 0 }, { x: 0, y: 0, opacity: 1, duration: 1.2, ease: 'expo.out' }, 0);
+      if (cols.length) tl.fromTo(cols, { y: 70, opacity: 0 }, { y: 0, opacity: 1, duration: 1.2, ease: 'expo.out', stagger: 0.12 }, 0.1);
       onEnter(section.querySelector('.iz-reviews') ?? section, tl, desktop ? 'top 80%' : START);
     }
 
@@ -418,7 +419,7 @@ export function initPage(root: HTMLElement, kit: MotionKit, mode: PageMode): () 
         );
         const actions = el.querySelectorAll('.iz-btn, .iz-wa, .iz-link');
         if (actions.length) {
-          onEnter(el, gsap.fromTo(actions, { y: 30, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 1, stagger: 0.08, delay: 0.25, paused: true }), desktop ? 'top 75%' : START);
+          onEnter(el, gsap.fromTo(actions, { y: 30, opacity: 0 }, { y: 0, opacity: 1, duration: 1, stagger: 0.08, delay: 0.25, paused: true }), desktop ? 'top 75%' : START);
         }
       });
     }
@@ -429,9 +430,9 @@ export function initPage(root: HTMLElement, kit: MotionKit, mode: PageMode): () 
       const cols = foot?.querySelector('.iz-footer__in')?.children;
       if (!foot || !cols?.length) return;
       const tl = gsap.timeline({ paused: true, defaults: { ease: 'expo.out' } });
-      tl.fromTo(cols, { y: 40, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 1.1, stagger: 0.07 }, 0);
+      tl.fromTo(cols, { y: 40, opacity: 0 }, { y: 0, opacity: 1, duration: 1.1, stagger: 0.07 }, 0);
       const pills = foot.querySelectorAll('.iz-footer__shops > *');
-      if (pills.length) tl.fromTo(pills, { x: -24, autoAlpha: 0 }, { x: 0, autoAlpha: 1, duration: 0.9, stagger: 0.08 }, 0.35);
+      if (pills.length) tl.fromTo(pills, { x: -24, opacity: 0 }, { x: 0, opacity: 1, duration: 0.9, stagger: 0.08 }, 0.35);
       onEnter(foot, tl, 'top 92%');
     }
 
@@ -453,7 +454,7 @@ export function initPage(root: HTMLElement, kit: MotionKit, mode: PageMode): () 
       if (!block) return;
       const parts = Array.from(block.children) as HTMLElement[];
       const tl = gsap.timeline({ paused: true });
-      tl.fromTo(parts, { y: 24, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.8, stagger: 0.1 });
+      tl.fromTo(parts, { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 0.8, stagger: 0.1 });
       play(tl);
     }
 
@@ -480,6 +481,22 @@ export function initPage(root: HTMLElement, kit: MotionKit, mode: PageMode): () 
         });
       });
     }
+
+    // Catalogue filters, article topics and position tabs add, move or hide cards after load. Their triggers are
+    // measured again, so a card moved into view reveals instead of staying invisible (review REV-01). Only these
+    // containers are watched: split text also mutates the DOM, and refreshing on every split would stutter.
+    let refreshTimer = 0;
+    const relayout = new MutationObserver(() => {
+      window.clearTimeout(refreshTimer);
+      refreshTimer = window.setTimeout(() => ScrollTrigger.refresh(), 120);
+    });
+    root.querySelectorAll('main :is(.iz-catalog__grid, .iz-alist, .iz-motor-produk .iz-grid-4, .iz-guides)').forEach(list =>
+      relayout.observe(list, { childList: true, attributes: true, attributeFilter: ['hidden', 'class'], subtree: true }),
+    );
+    undo.push(() => {
+      relayout.disconnect();
+      window.clearTimeout(refreshTimer);
+    });
 
     ScrollTrigger.refresh();
     const stop = whenRevealed(() => {

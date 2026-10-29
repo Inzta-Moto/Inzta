@@ -26,7 +26,7 @@ export default function ProductCardV2({
   const chip = best || badge === 'best' ? 'Best seller' : badge === 'baru' ? 'Baru' : null;
 
   return (
-    <Link className="iz-pcard" href={`/produk/${slug}`}>
+    <Link className="iz-pcard" href={`/produk/${slug}`} data-transition-label={name}>
       <div className="iz-pcard__tile">
         {image ? (
           <SmartImage src={image} alt="" sizes={sizes} imgClassName={cropClass ?? undefined} className="iz-pcard__img" fallbackLabel="Foto produk" />
