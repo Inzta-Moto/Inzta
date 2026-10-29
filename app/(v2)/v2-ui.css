@@ -16,7 +16,7 @@
 /* SmartImage: the box keeps its ratio before the image loads, so nothing shifts (S0.12.2). */
 .iz-smartimg { position: relative; display: block; overflow: hidden; background: var(--c-pasir-muda); }
 .iz-smartimg--dark { background: var(--c-aspal); }
-.iz-smartimg > img { width: 100%; height: 100%; object-fit: cover; }
+:where(.iz-smartimg) > img { width: 100%; height: 100%; object-fit: cover; }
 .iz-smartimg > .iz-skel { position: absolute; inset: 0; width: auto; height: auto; border-radius: 0; background: transparent; pointer-events: none; }
 .iz-smartimg[data-state="loaded"] > .iz-skel, .iz-smartimg[data-state="error"] > .iz-skel { display: none; }
 .iz-fallback { position: absolute; inset: 0; display: grid; place-items: center; align-content: center; gap: 8px; padding: 12px; text-align: center; color: var(--c-batu); font-size: 14px; font-weight: 600; background: var(--c-pasir-muda); }
@@ -37,3 +37,10 @@
 /* Loading pages render under a light navbar; the first block clears the capsule like the real pages do. */
 .iz-loading { padding-block: calc(var(--space-12) + 72px) var(--space-18); }
 .iz-skel--square { aspect-ratio: 1; }
+
+/* Product card (S0.9): SmartImage fills the tile so the ported .iz-pcard__tile img rule keeps placing the photo. */
+.iz-pcard__tile > .iz-smartimg { position: absolute; inset: 0; background: transparent; }
+.iz-pcard__tile .iz-fallback__mark { position: static; width: 40%; height: auto; max-width: 72px; border-radius: 0; }
+.iz-pcard__noimg { position: absolute; inset: 0; display: grid; place-items: center; padding: 16px; text-align: center; }
+/* Long names clamp to two lines; the full name stays in the DOM (S0.9.6). */
+.iz-pcard__name { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }

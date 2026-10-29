@@ -6,10 +6,12 @@ import {
   CROP_TOP_SLUGS,
   FOR_LINE_BY_SLUG,
   POSITION_BY_SLUG,
+  POSITION_LABEL_BY_SLUG,
+  SECOND_POSITION_BY_SLUG,
   UNIVERSAL_SLUGS,
 } from '@/lib/v2/product-copy';
 import { isFlashActive } from '@/lib/v2/flash-time';
-import { ARTICLE_CHIP_BY_SLUG, GASBER_SLUG, TOURMAX_SLUG } from '@/lib/v2/home-content';
+import { ARTICLE_CHIP_BY_SLUG, GASBER_SLUG, POSITION_CHIP, TOURMAX_SLUG } from '@/lib/v2/home-content';
 
 // Pure helpers for the v2 Beranda (F-016). No Firebase or React imports, so tests/f016-home.cjs can load them.
 
@@ -86,15 +88,35 @@ function firstImage(p: Product): string | null {
   return p.images?.[0] || p.imageUrl || null;
 }
 
+// F-016 S0.9.3: a badge with "best" wins over "new"/"baru".
+export function badgeOf(badge: string | null | undefined): HomeProductCard['badge'] {
+  const b = (badge ?? '').toLowerCase();
+  if (b.includes('best')) return 'best';
+  if (/\b(new|baru)\b/.test(b)) return 'baru';
+  return null;
+}
+
+// Every position a product is listed under: the main one and, for a few slugs, a second (S2.2, S5.2 tabs).
+export function positionsOf(p: Pick<Product, 'slug' | 'name'>): ProductPosition[] {
+  const main = positionOf(p);
+  const second = SECOND_POSITION_BY_SLUG[p.slug];
+  return [main, second].filter((x, i, all): x is ProductPosition => !!x && all.indexOf(x) === i);
+}
+
+function positionLabelOf(p: Pick<Product, 'slug' | 'name'>): string | null {
+  const pos = positionOf(p);
+  return POSITION_LABEL_BY_SLUG[p.slug] ?? (pos ? POSITION_CHIP[pos] : null);
+}
+
 export function toCard(p: Product): HomeProductCard {
   const { price, compareAt } = effectivePrice(p);
   return {
     slug: p.slug,
     name: p.name,
     image: firstImage(p),
-    // HomeProductCard.position and POSITION_CHIP cover the four tile positions only, so extend and harian show
-    // no chip until both gain those keys (S0.9 labels "Extend bag", "Tas harian").
-    position: bagPositionOf(p),
+    position: positionOf(p),
+    positionLabel: positionLabelOf(p),
+    badge: badgeOf(p.badge),
     fit: fitLabel(p),
     price,
     compareAt,

@@ -1,4 +1,4 @@
-import type { BagPosition, CategoryItem, FilmPhoto, MotorCategory, PositionItem, ReviewItem } from '@/types';
+import type { BagPosition, CategoryItem, FilmPhoto, MotorCategory, PositionItem, ReviewItem, ProductPosition } from '@/types';
 
 export type { CategoryItem, FilmPhoto, PositionItem, ReviewItem };
 
@@ -44,11 +44,14 @@ export const POSITION_ITEMS: readonly PositionItem[] = [
   { value: 'aksesori', menuLabel: 'Aksesori touring', tileTitle: 'Aksesori', tileText: 'Perkakas, P3K, dan botol di perjalanan.', image: '/images/v2/acc-toolkit-rollkit.jpg', alt: 'Aksesori touring' },
 ];
 
-export const POSITION_CHIP: Record<BagPosition, string> = {
+// F-016 S0.9 chip labels, keyed like the catalog filter (S2.2).
+export const POSITION_CHIP: Record<ProductPosition, string> = {
   tank: 'Tank bag',
   side: 'Side bag',
   tail: 'Tail bag',
+  extend: 'Extend bag',
   aksesori: 'Aksesori',
+  harian: 'Tas harian',
 };
 
 export const TOURMAX_NOTES: readonly string[] = [

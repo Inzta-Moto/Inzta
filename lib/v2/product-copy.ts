@@ -1,4 +1,4 @@
-import type { BagPosition } from '@/types';
+import type { BagPosition, ProductPosition } from '@/types';
 
 // Static product copy for v2 cards (F-016 17). Data in Firestore has no position or fitment fields.
 
@@ -6,6 +6,14 @@ import type { BagPosition } from '@/types';
 export const POSITION_BY_SLUG: Record<string, BagPosition | null> = {
   'tankbag-and-tailbag-wanderpack-10l': 'tank',
   'xbags-tas-bagasi-xmax': null,
+};
+
+// Products listed under a second position too (README: Wanderpack is a tank bag and a tail bag), with their chip text.
+export const SECOND_POSITION_BY_SLUG: Record<string, ProductPosition> = {
+  'tankbag-and-tailbag-wanderpack-10l': 'tail',
+};
+export const POSITION_LABEL_BY_SLUG: Record<string, string> = {
+  'tankbag-and-tailbag-wanderpack-10l': 'Tank bag / tail bag',
 };
 
 // Gate 0 (C-7, 17.1a): fitment stays at the most careful level until A-012 is validated, so these ship empty.

@@ -293,7 +293,10 @@ export interface HomeProductCard {
   slug: string;
   name: string;
   image: string | null;
-  position: BagPosition | null;
+  position: ProductPosition | null;
+  // Chip text; differs from the position label only for products shown under two positions (S0.9).
+  positionLabel: string | null;
+  badge: 'best' | 'baru' | null;
   fit: FitLabel;
   price: number;
   compareAt: number | null;
