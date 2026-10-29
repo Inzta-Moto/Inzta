@@ -8,7 +8,7 @@ import { fontDisplay } from '@/components/v2/fonts';
 import { CURTAIN_ATTR, isMotionRoute } from '@/lib/v2/motion/boot';
 import { FULL, cover, framesSettled, lift, pageReady, pageSettled } from '@/lib/v2/motion/curtain';
 import { initCursor } from '@/lib/v2/motion/cursor';
-import { initPage, type PageMode } from '@/lib/v2/motion/engine';
+import { initPage, type PageMode, type PageMotion } from '@/lib/v2/motion/engine';
 import { routeLabel, samePage, transitionTarget } from '@/lib/v2/motion/links';
 import { HOVER, MOTION_OK, jumpTo, loadMotion, markCovered, markRevealed, setLenis, type MotionKit } from '@/lib/v2/motion/runtime';
 
@@ -17,6 +17,13 @@ const WORD = 'INZTA';
 const ROUTE_SAFETY_MS = 8000;
 
 const modeFor = (pathname: string): PageMode => (pathname === '/produk' || pathname.startsWith('/produk/') ? 'light' : 'full');
+
+// The GSAP chunks start downloading as soon as this module runs, while React is still hydrating, instead of after
+// the first effect; the load curtain lifts sooner. Admin routes and reduced-motion visitors download nothing.
+if (typeof window !== 'undefined' && isMotionRoute(window.location.pathname) && window.matchMedia(MOTION_OK).matches) {
+  void loadMotion().catch(() => undefined);
+  void import('lenis').catch(() => undefined);
+}
 
 // The page to animate: a hydrated v2 page (PageReady), not the loading skeleton (LoadingV2 renders .iz-loading).
 function readyRoot(): HTMLElement | null {
@@ -28,7 +35,7 @@ type Controller = { routeChanged: (pathname: string) => void; dispose: () => voi
 
 function createController(curtain: HTMLDivElement, push: (href: string) => void, prefetch: (href: string) => void): Controller {
   let kit: MotionKit | null = null;
-  let revert: (() => void) | null = null;
+  let revert: PageMotion | null = null;
   let committed = window.location.pathname;
   let stale = true;
   let busy = false;
@@ -224,15 +231,17 @@ function createController(curtain: HTMLDivElement, push: (href: string) => void,
       target = null;
     }
     jumpTo(target ?? 0);
-    await pageReady(root);
+    // Shorter waits than before: the label is not meant to be read twice (Sehan, 2026-10-29: the hold on the curtain
+    // text felt long). The engine only sets up the first screen now, so the page is ready sooner anyway.
+    await pageReady(root, 500);
     if (root) attach(root);
     kit.ScrollTrigger.refresh();
-    await framesSettled();
+    await framesSettled(60, 360);
     await lift(kit, curtain, markRevealed);
   }
 
-  // Covers the page with the load curtain (logo and INZTA), goes back to the top, rebuilds the page motion so the
-  // hero entrance plays again, and lifts.
+  // Covers the page with the load curtain (logo and INZTA), goes back to the top, rebuilds the hero entrance so it
+  // plays again, and lifts. The rest of the page keeps its motion; rebuilding all of it held the logo for seconds.
   async function replay() {
     if (!kit) return;
     busy = true;
@@ -243,12 +252,11 @@ function createController(curtain: HTMLDivElement, push: (href: string) => void,
     html.setAttribute('data-iz-covered', '');
     try {
       await cover(kit, curtain);
-      detach();
       jumpTo(0);
       const root = readyRoot();
-      if (root) attach(root);
-      kit.ScrollTrigger.refresh();
-      await framesSettled();
+      if (revert) revert.intro();
+      else if (root) attach(root);
+      await framesSettled(60, 300);
       await lift(kit, curtain, markRevealed);
     } catch (error) {
       console.warn('[motion] intro replay failed', error);

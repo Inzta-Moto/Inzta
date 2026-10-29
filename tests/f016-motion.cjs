@@ -74,6 +74,23 @@ test('hash-only, same-pathname, external, admin and non-http links never cover t
   assert.strictEqual(target({ href: 'http://[bad' }), null);
 });
 
+test('product detail pages open without the curtain; leaving them still travels', () => {
+  assert.strictEqual(target({ href: '/produk/tankbag-inzta-tk-11' }), null);
+  assert.strictEqual(target({ href: '/produk/tankbag-inzta-tk-11?varian=hitam' }, new URL('https://inzta.id/produk')), null);
+  assert.strictEqual(target({ href: '/produk' }, new URL('https://inzta.id/produk/tankbag-inzta-tk-11')), '/produk');
+  assert.strictEqual(target({ href: '/' }, new URL('https://inzta.id/produk/tankbag-inzta-tk-11')), '/');
+});
+
+test('a link to the page that is open replays the intro; other links do not', () => {
+  const page = new URL('https://inzta.id/');
+  assert.strictEqual(L.samePage(click({ href: '/' }), page), true);
+  assert.strictEqual(L.samePage(click({ href: '/#garasi' }), page), false);
+  assert.strictEqual(L.samePage(click({ href: '/?posisi=side' }), page), false);
+  assert.strictEqual(L.samePage(click({ href: '/produk' }), page), false);
+  assert.strictEqual(L.samePage(click({ href: '/', modified: true }), page), false);
+  assert.strictEqual(L.samePage(click({ href: '/admin' }), new URL('https://inzta.id/admin')), false);
+});
+
 test('route labels name the destination', () => {
   assert.strictEqual(L.routeLabel('/'), 'Beranda');
   assert.strictEqual(L.routeLabel('/produk'), 'Semua tas');

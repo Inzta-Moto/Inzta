@@ -46,7 +46,7 @@ export function loadMotion(): Promise<MotionKit> {
 let revealed: boolean | null = null;
 const listeners = new Set<() => void>();
 
-function isRevealed(): boolean {
+export function isRevealed(): boolean {
   revealed ??= !document.documentElement.hasAttribute(CURTAIN_ATTR);
   return revealed;
 }

@@ -13,8 +13,9 @@ export type LinkClick = {
 /**
  * The URL a click should travel to behind the page curtain, or null to leave the click to the browser and Next:
  * other origins, new tabs and windows, downloads, modified or non-primary clicks, opted-out links
- * (data-transition="off"), hash-only links, admin routes, and links that stay on the same pathname (catalogue
- * filters, in-page anchors), which must not cover the page.
+ * (data-transition="off"), hash-only links, admin routes, links that stay on the same pathname (catalogue
+ * filters, in-page anchors), which must not cover the page, and product detail pages, which open straight away
+ * (Sehan, 2026-10-29: no transition when a buyer opens a product).
  */
 export function transitionTarget(click: LinkClick, current: URL): URL | null {
   if (click.defaultPrevented || click.button !== 0 || click.modified || click.optOut || click.download) return null;
@@ -28,6 +29,7 @@ export function transitionTarget(click: LinkClick, current: URL): URL | null {
   }
   if (url.origin !== current.origin || !/^https?:$/.test(url.protocol)) return null;
   if (!isMotionRoute(url.pathname) || url.pathname === current.pathname) return null;
+  if (/^\/produk\/[^/]+/.test(url.pathname)) return null;
   return url;
 }
 

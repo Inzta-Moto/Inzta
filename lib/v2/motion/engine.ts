@@ -1,10 +1,13 @@
 import type { SplitText as SplitTextType } from 'gsap/SplitText';
 import type { MotionKit } from '@/lib/v2/motion/runtime';
-import { DESKTOP, HOVER, MOBILE, whenRevealed } from '@/lib/v2/motion/runtime';
+import { DESKTOP, HOVER, MOBILE, isRevealed, whenRevealed } from '@/lib/v2/motion/runtime';
 
 // "full" for the story pages (Beranda, Pilih motor, Artikel, Tentang); "light" for the shop routes under /produk,
 // where only short fades run so nothing slows a buyer down (Sehan, 2026-10-29).
 export type PageMode = 'full' | 'light';
+
+/** Cleanup for one page's motion; intro() plays the hero entrance again behind the curtain (logo click). */
+export type PageMotion = (() => void) & { intro: () => void };
 
 type Split = InstanceType<typeof SplitTextType>;
 
@@ -29,12 +32,14 @@ const textOnly = (el: Element) => el.children.length === 0 && !!el.textContent?.
  * lives in one gsap.matchMedia, so the returned cleanup reverts every tween, trigger, pin and split before the next
  * route starts. Reduced motion matches neither query and leaves the page untouched.
  */
-export function initPage(root: HTMLElement, kit: MotionKit, mode: PageMode): () => void {
+export function initPage(root: HTMLElement, kit: MotionKit, mode: PageMode): PageMotion {
   const { gsap, ScrollTrigger, SplitText } = kit;
   const mm = gsap.matchMedia();
+  let intro = () => {};
 
-  mm.add({ desktop: DESKTOP, mobile: MOBILE }, () => {
+  mm.add({ desktop: DESKTOP, mobile: MOBILE }, context => {
     const desktop = window.matchMedia(DESKTOP).matches;
+    const hover = window.matchMedia(HOVER).matches;
     // On phones the next block is often only a few pixels into view; a later start left it blank under the fold.
     const START = desktop ? 'top 86%' : 'top 97%';
     const splits: Split[] = [];
@@ -54,27 +59,53 @@ export function initPage(root: HTMLElement, kit: MotionKit, mode: PageMode): () 
     };
     const unsplit = (s: Split) => () => s.revert();
 
-    if (mode === 'full') {
-      hero(root);
-      headings(root, HEADINGS_FULL, true);
-      eyebrows(root);
-      leads(root);
-      singles(root);
-      groups(root, false);
-      photos(root);
-      tourmax(root);
-      film(root);
-      reviews(root);
-      closing(root);
-      footer(root);
-      if (!desktop) swipe(root);
-      if (window.matchMedia(HOVER).matches) tilt(root);
-    } else {
-      headings(root, HEADINGS_LIGHT, false);
-      groups(root, true);
-      pdp(root);
-      footer(root);
-    }
+    // Only the blocks in or above the first screen are set up while the curtain covers the page; the blocks further
+    // down follow once it has lifted, one per frame. Setting up every block (splitting every heading, creating every
+    // trigger) was most of the time the logo sat on the curtain (QA profile; Sehan, 2026-10-29: the hold felt long).
+    // Blocks are measured once, before anything is written, and stay in page order, so triggers are still created
+    // top to bottom and a pin only ever pushes triggers created after it.
+    const main = root.querySelector<HTMLElement>('main');
+    const blocks = (main ? Array.from(main.children) : []) as HTMLElement[];
+    const foot = root.querySelector<HTMLElement>('.iz-footer');
+    if (foot && !blocks.some(b => b.contains(foot))) blocks.push(foot);
+    const fold = window.innerHeight * 1.15;
+    const later = blocks.filter(b => b.getBoundingClientRect().top > fold);
+    let active: HTMLElement | null = null;
+    const mine = (el: Element) => {
+      const block = blocks.find(b => b.contains(el));
+      return active ? block === active : !block || !later.includes(block);
+    };
+    // Cara pesan runs its own scroll journey (HowToStage), so the generic reveals and tilt leave it alone.
+    const owned = (el: Element) => inScene(el, 'howto');
+    // A page that arrives without the curtain (product detail, back/forward) is painted before this runs; hiding
+    // what is already on screen to fade it in would make it blink, so the shop routes skip that first screen.
+    const bare = isRevealed();
+
+    const setup = () => {
+      if (mode === 'full') {
+        headings(root, HEADINGS_FULL, true);
+        eyebrows(root);
+        leads(root);
+        singles(root);
+        groups(root, false);
+        photos(root);
+        tourmax(root);
+        film(root);
+        reviews(root);
+        closing(root);
+        footer(root);
+        if (!desktop) swipe(root);
+        if (hover) tilt(root);
+      } else {
+        headings(root, HEADINGS_LIGHT, false);
+        groups(root, true);
+        pdp(root);
+        footer(root);
+      }
+    };
+    let replayHero: (() => void) | null = null;
+    if (mode === 'full') hero(root);
+    setup();
 
     function hero(scope: HTMLElement) {
       const section = scope.querySelector<HTMLElement>('main .iz-hero');
@@ -82,23 +113,36 @@ export function initPage(root: HTMLElement, kit: MotionKit, mode: PageMode): () 
       const img = section.querySelector<HTMLElement>('img');
       const body = section.querySelector<HTMLElement>('.iz-hero__body');
       const title = section.querySelector<HTMLElement>('h1');
-      // A reload half-way down the page keeps the hero as it is; its entrance would play off screen.
-      const visible = section.getBoundingClientRect().bottom > window.innerHeight * 0.35;
-      if (visible) {
+      let stop = () => {};
+      const entrance = () => {
+        stop();
         const tl = gsap.timeline({ paused: true, defaults: { ease: 'expo.out' } });
+        const parts: Split[] = [];
+        let stopRetype = () => {};
         if (img) tl.fromTo(img, { scale: 1.22 }, { scale: 1.08, duration: 2.2 }, 0);
         if (title) {
           const s = split(title, 'lines,words,chars');
+          parts.push(s);
           tl.fromTo(
             s.chars,
             { yPercent: 118, rotate: 7, color: BATU_MUDA },
-            { yPercent: 0, rotate: 0, color: KREM, duration: 1.15, stagger: 0.018, onComplete: () => retype(section, title, s) },
+            {
+              yPercent: 0,
+              rotate: 0,
+              color: KREM,
+              duration: 1.15,
+              stagger: 0.018,
+              onComplete: () => {
+                stopRetype = retype(section, title, s);
+              },
+            },
             0.15,
           );
         }
         const lead = section.querySelector<HTMLElement>('.t-lead');
         if (lead) {
           const s = split(lead, 'lines');
+          parts.push(s);
           tl.fromTo(s.lines, { yPercent: 105 }, { yPercent: 0, duration: 1, stagger: 0.08, onComplete: unsplit(s) }, 0.55);
         }
         const extras = section.querySelectorAll('.iz-eyebrow, .iz-crumb, .iz-hero__body > .iz-row, .iz-hero__meta, .iz-hero__cue');
@@ -106,11 +150,28 @@ export function initPage(root: HTMLElement, kit: MotionKit, mode: PageMode): () 
         play(tl);
         // A tab that paints no frames would leave the H1 hidden; finish the entrance instead.
         const safety = window.setTimeout(() => tl.progress(1), 6000);
-        undo.push(() => window.clearTimeout(safety));
-      } else {
+        stop = () => {
+          window.clearTimeout(safety);
+          stopRetype();
+          tl.kill();
+          parts.forEach(s => s.revert());
+        };
+      };
+      // A reload half-way down the page keeps the hero as it is; its entrance would play off screen.
+      if (section.getBoundingClientRect().bottom > window.innerHeight * 0.35) entrance();
+      else {
         if (img) gsap.set(img, { scale: 1.08 });
-        if (title) retype(section, title, split(title, 'lines,words,chars'));
+        if (title) {
+          const s = split(title, 'lines,words,chars');
+          const stopRetype = retype(section, title, s);
+          stop = () => {
+            stopRetype();
+            s.revert();
+          };
+        }
       }
+      replayHero = entrance;
+      undo.push(() => stop());
       // Leaving: the photo sinks slower than the page and the copy lifts and fades (scrubbed, no pin). Desktop only:
       // scrubbed parallax on phones fights the collapsing address bar.
       if (img && desktop) {
@@ -121,11 +182,13 @@ export function initPage(root: HTMLElement, kit: MotionKit, mode: PageMode): () 
       }
     }
 
-    // The production hero types its title; this retypes the last line of the hero title in a loop after the
-    // entrance: letters drop out from the end behind a yellow caret, the caret blinks, then they rise back sharp
-    // (Sehan, 2026-10-29). The H1 keeps its full text for screen readers and search (SplitText aria). The loop
-    // pauses while the hero is off screen, and a width change re-splits the lines and starts again.
-    function retype(section: HTMLElement, title: HTMLElement, first: Split) {
+    // The production hero types its title; this re-types the last line of the title in a loop after the entrance. The
+    // caret appears at the left edge and runs right while each letter flips out upward and lands again from below
+    // just behind it, so the line is never left empty (Sehan, 2026-10-29: the old right-to-left erase stood blank too
+    // long; run it more often at the same letter speed). The H1 keeps its full text for screen readers and search
+    // (SplitText aria). The loop pauses while the hero is off screen, and a width change re-splits the lines and
+    // starts again. Returns a stop function.
+    function retype(section: HTMLElement, title: HTMLElement, first: Split): () => void {
       let s = first;
       let loop: gsap.core.Timeline | null = null;
       let caret: HTMLElement | null = null;
@@ -145,43 +208,27 @@ export function initPage(root: HTMLElement, kit: MotionKit, mode: PageMode): () 
           const x = i < 0 ? chars[0].getBoundingClientRect().left - base.left : chars[i].getBoundingClientRect().right - base.left;
           gsap.set(caret, { x });
         };
-        const index = (t: gsap.core.Tween) => chars.indexOf(t.targets()[0] as HTMLElement);
-        loop = gsap.timeline({ repeat: -1, repeatDelay: 3.4, delay: 1.4 });
+        // One sub-timeline per letter, 0.05 s apart: out for 0.24 s, back in for 0.42 s, the caret stepping behind
+        // each letter as it lands. About five letters are in flight at once, so the gap travels like a wave.
+        const wave = gsap.timeline();
+        chars.forEach((c, i) => {
+          wave.add(
+            gsap
+              .timeline()
+              .to(c, { yPercent: -70, opacity: 0, filter: 'blur(6px)', duration: 0.24, ease: 'power2.in' })
+              .call(() => at(i))
+              .set(c, { yPercent: 70 })
+              .to(c, { yPercent: 0, opacity: 1, filter: 'blur(0px)', duration: 0.42, ease: 'power3.out' }),
+            i * 0.05,
+          );
+        });
+        loop = gsap.timeline({ repeat: -1, repeatDelay: 2.2, delay: 0.8 });
         loop
-          .call(() => at(chars.length - 1))
-          .to(caret, { autoAlpha: 1, duration: 0.15 })
-          .to(chars.slice().reverse(), {
-            yPercent: 70,
-            opacity: 0,
-            filter: 'blur(6px)',
-            duration: 0.24,
-            ease: 'power2.in',
-            stagger: {
-              each: 0.042,
-              onStart() {
-                at(index(this as unknown as gsap.core.Tween) - 1);
-              },
-            },
-          })
+          .call(() => at(-1))
+          .to(caret, { autoAlpha: 1, duration: 0.18 })
+          .add(wave, '-=0.06')
           .to(caret, { autoAlpha: 0.15, duration: 0.14, repeat: 3, yoyo: true, ease: 'steps(1)' })
-          .fromTo(
-            chars,
-            { yPercent: -70, opacity: 0, filter: 'blur(6px)' },
-            {
-              yPercent: 0,
-              opacity: 1,
-              filter: 'blur(0px)',
-              duration: 0.42,
-              ease: 'power3.out',
-              stagger: {
-                each: 0.058,
-                onStart() {
-                  at(index(this as unknown as gsap.core.Tween));
-                },
-              },
-            },
-          )
-          .to(caret, { autoAlpha: 0, duration: 0.3 }, '+=0.7');
+          .to(caret, { autoAlpha: 0, duration: 0.3 });
       };
       build();
       const watch = ScrollTrigger.create({
@@ -205,19 +252,22 @@ export function initPage(root: HTMLElement, kit: MotionKit, mode: PageMode): () 
         }, 250);
       };
       window.addEventListener('resize', onResize);
-      undo.push(() => {
+      return () => {
         window.removeEventListener('resize', onResize);
         window.clearTimeout(timer);
         watch.kill();
         loop?.kill();
         caret?.remove();
-      });
+        // A width change re-split the title; the caller only knows the first split.
+        if (s !== first) s.revert();
+      };
     }
 
     function headings(scope: HTMLElement, selector: string, splitWords: boolean) {
       scope.querySelectorAll<HTMLElement>(selector).forEach(el => {
-        if (inHero(el) || !el.textContent?.trim()) return;
+        if (inHero(el) || !mine(el) || !el.textContent?.trim()) return;
         if (!splitWords) {
+          if (bare && !active) return;
           onEnter(el, gsap.fromTo(el, { y: 22, opacity: 0 }, { y: 0, opacity: 1, duration: 0.8, paused: true }));
           return;
         }
@@ -235,7 +285,7 @@ export function initPage(root: HTMLElement, kit: MotionKit, mode: PageMode): () 
     // decorative, and the label is restored when the page leaves.
     function eyebrows(scope: HTMLElement) {
       scope.querySelectorAll<HTMLElement>('main .iz-eyebrow').forEach(el => {
-        if (inHero(el) || !textOnly(el)) return;
+        if (inHero(el) || !mine(el) || !textOnly(el)) return;
         const text = el.textContent!.trim();
         const sr = document.createElement('span');
         sr.className = 'iz-sr';
@@ -256,14 +306,14 @@ export function initPage(root: HTMLElement, kit: MotionKit, mode: PageMode): () 
 
     function leads(scope: HTMLElement) {
       scope.querySelectorAll<HTMLElement>('main .iz-head > p, main .iz-head > div > p, main .iz-head .t-lead').forEach(el => {
-        if (inHero(el)) return;
+        if (inHero(el) || !mine(el)) return;
         onEnter(el, gsap.fromTo(el, { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 1, delay: 0.15, paused: true }));
       });
     }
 
     function singles(scope: HTMLElement) {
       scope.querySelectorAll<HTMLElement>('main [data-reveal]').forEach(el => {
-        if (inHero(el)) return;
+        if (inHero(el) || !mine(el) || owned(el)) return;
         onEnter(el, gsap.fromTo(el, { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 1, paused: true }));
       });
     }
@@ -271,10 +321,11 @@ export function initPage(root: HTMLElement, kit: MotionKit, mode: PageMode): () 
     function groups(scope: HTMLElement, light: boolean) {
       scope.querySelectorAll<HTMLElement>(`main :is(${GROUPS})`).forEach(group => {
         // Only leaf groups animate, so a grid inside a grid is not moved twice; scenes run their own motion.
-        if (inHero(group) || inScene(group, 'film') || inScene(group, 'reviews') || inScene(group, 'tourmax') || group.querySelector(GROUPS)) return;
+        if (inHero(group) || !mine(group) || owned(group) || inScene(group, 'film') || inScene(group, 'reviews') || inScene(group, 'tourmax') || group.querySelector(GROUPS)) return;
         const items = Array.from(group.children) as HTMLElement[];
         if (!items.length) return;
         if (light) {
+          if (bare && !active) return;
           // Long catalogue grids reveal row by row as they come into view.
           gsap.set(items, { y: 28, opacity: 0 });
           ScrollTrigger.batch(items, {
@@ -296,7 +347,7 @@ export function initPage(root: HTMLElement, kit: MotionKit, mode: PageMode): () 
     // Large photos open from the bottom while the image settles, then drift slower than the page.
     function photos(scope: HTMLElement) {
       scope.querySelectorAll<HTMLElement>(`main :is(${PHOTOS})`).forEach(box => {
-        if (inHero(box) || inScene(box)) return;
+        if (inHero(box) || inScene(box) || !mine(box)) return;
         const img = box.querySelector<HTMLElement>('img');
         const tl = gsap.timeline({ paused: true });
         // clearProps hands the corners back to CSS: a square inset left behind cut the rounded corners while the photo
@@ -315,7 +366,7 @@ export function initPage(root: HTMLElement, kit: MotionKit, mode: PageMode): () 
     // so the page never holds on an empty gap.
     function tourmax(scope: HTMLElement) {
       const band = scope.querySelector<HTMLElement>('[data-scene="tourmax"]');
-      if (!band) return;
+      if (!band || !mine(band)) return;
       gsap.fromTo(
         band,
         { clipPath: desktop ? 'inset(6% 4% 6% 4% round 56px)' : 'inset(2% 3% 2% 3% round 40px)' },
@@ -349,7 +400,7 @@ export function initPage(root: HTMLElement, kit: MotionKit, mode: PageMode): () 
     function film(scope: HTMLElement) {
       const section = scope.querySelector<HTMLElement>('[data-scene="film"]');
       const track = section?.querySelector<HTMLElement>('.iz-film');
-      if (!section || !track) return;
+      if (!section || !track || !mine(section)) return;
       const photosIn = Array.from(track.children) as HTMLElement[];
       if (!desktop) {
         // Phones keep the native swipe (a vertical scroll that moves things sideways feels wrong on touch); a
@@ -403,7 +454,7 @@ export function initPage(root: HTMLElement, kit: MotionKit, mode: PageMode): () 
     // Reviews: the featured card slides in; the two wall columns run as a slow CSS marquee (v2-home.css).
     function reviews(scope: HTMLElement) {
       const section = scope.querySelector<HTMLElement>('[data-scene="reviews"]');
-      if (!section) return;
+      if (!section || !mine(section)) return;
       const feature = section.querySelector<HTMLElement>('.iz-rfeature');
       const cols = section.querySelectorAll<HTMLElement>('.iz-rcol');
       const tl = gsap.timeline({ paused: true });
@@ -414,6 +465,7 @@ export function initPage(root: HTMLElement, kit: MotionKit, mode: PageMode): () 
 
     function closing(scope: HTMLElement) {
       scope.querySelectorAll<HTMLElement>('main .iz-closing').forEach(el => {
+        if (!mine(el)) return;
         gsap.fromTo(
           el,
           { clipPath: 'inset(0% 4% 0% 4% round 48px)' },
@@ -430,7 +482,7 @@ export function initPage(root: HTMLElement, kit: MotionKit, mode: PageMode): () 
     function footer(scope: HTMLElement) {
       const foot = scope.querySelector<HTMLElement>('.iz-footer');
       const cols = foot?.querySelector('.iz-footer__in')?.children;
-      if (!foot || !cols?.length) return;
+      if (!foot || !cols?.length || !mine(foot)) return;
       const tl = gsap.timeline({ paused: true, defaults: { ease: 'expo.out' } });
       tl.fromTo(cols, { y: 40, opacity: 0 }, { y: 0, opacity: 1, duration: 1.1, stagger: 0.07 }, 0);
       const pills = foot.querySelectorAll('.iz-footer__shops > *');
@@ -444,7 +496,7 @@ export function initPage(root: HTMLElement, kit: MotionKit, mode: PageMode): () 
     // Phones: rows that scroll sideways nudge left and back once when they arrive, so the swipe is discoverable.
     function swipe(scope: HTMLElement) {
       scope.querySelectorAll<HTMLElement>('main :is(.iz-film, .iz-scroller, .iz-reviews__wall)').forEach(row => {
-        if (row.scrollWidth <= row.clientWidth + 8) return;
+        if (!mine(row) || owned(row) || row.scrollWidth <= row.clientWidth + 8) return;
         const items = Array.from(row.children).filter(el => (el as HTMLElement).offsetParent !== null);
         if (!items.length) return;
         const hint = gsap.timeline({ paused: true, delay: 0.9 });
@@ -456,7 +508,7 @@ export function initPage(root: HTMLElement, kit: MotionKit, mode: PageMode): () 
     // Product page: gallery and buy box arrive once, quickly; nothing scrubs.
     function pdp(scope: HTMLElement) {
       const block = scope.querySelector<HTMLElement>('.iz-pdp');
-      if (!block) return;
+      if (!block || bare || !mine(block)) return;
       const parts = Array.from(block.children) as HTMLElement[];
       const tl = gsap.timeline({ paused: true });
       tl.fromTo(parts, { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 0.8, stagger: 0.1 });
@@ -466,6 +518,7 @@ export function initPage(root: HTMLElement, kit: MotionKit, mode: PageMode): () 
     // Garasi and position tiles lean a few degrees toward the pointer (fine pointers only).
     function tilt(scope: HTMLElement) {
       scope.querySelectorAll<HTMLElement>('.iz-gtile, .iz-cat, .iz-mtile, .iz-step, .iz-gfeature').forEach(card => {
+        if (!mine(card) || owned(card)) return;
         gsap.set(card, { transformPerspective: 900 });
         const rx = gsap.quickTo(card, 'rotationX', { duration: 0.6, ease: 'power3.out' });
         const ry = gsap.quickTo(card, 'rotationY', { duration: 0.6, ease: 'power3.out' });
@@ -504,17 +557,63 @@ export function initPage(root: HTMLElement, kit: MotionKit, mode: PageMode): () 
     });
 
     ScrollTrigger.refresh();
-    const stop = whenRevealed(() => {
+
+    // The blocks below the first screen, in page order, one per frame once the curtain is up. The hero entrance gets
+    // its first frames to itself; a visitor who scrolls or types straight away starts the rest at once.
+    const queue = later.slice();
+    const inputs = ['wheel', 'touchstart', 'keydown'] as const;
+    let lateTimer = 0;
+    let lateFrame = 0;
+    const next = () => {
+      lateFrame = 0;
+      const block = queue.shift();
+      if (!block) return;
+      context.add(() => {
+        active = block;
+        try {
+          setup();
+        } finally {
+          active = null;
+        }
+      });
+      lateFrame = requestAnimationFrame(next);
+    };
+    const startLate = () => {
+      window.clearTimeout(lateTimer);
+      inputs.forEach(type => window.removeEventListener(type, startLate));
+      if (!lateFrame && queue.length) lateFrame = requestAnimationFrame(next);
+    };
+    if (queue.length) inputs.forEach(type => window.addEventListener(type, startLate, { passive: true }));
+    const release = () => {
       shown = true;
       queued.splice(0).forEach(a => a.play());
+    };
+    let stop = whenRevealed(() => {
+      release();
+      lateTimer = window.setTimeout(startLate, 600);
     });
 
+    // Logo click on the page you are on (SiteMotion replay): only the hero entrance is rebuilt behind the curtain and
+    // plays when it lifts; the rest of the page keeps its motion, so the logo hold stays short.
+    intro = () =>
+      context.add(() => {
+        stop();
+        shown = false;
+        replayHero?.();
+        stop = whenRevealed(release);
+      });
+
     return () => {
+      intro = () => {};
       stop();
+      window.clearTimeout(lateTimer);
+      if (lateFrame) cancelAnimationFrame(lateFrame);
+      inputs.forEach(type => window.removeEventListener(type, startLate));
+      queue.length = 0;
       undo.forEach(fn => fn());
       splits.forEach(s => s.revert());
     };
   });
 
-  return () => mm.revert();
+  return Object.assign(() => mm.revert(), { intro: () => intro() });
 }

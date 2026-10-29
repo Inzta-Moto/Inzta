@@ -34,13 +34,18 @@ function leave(tl: gsap.core.Timeline, path: SVGPathElement, at: number) {
   tl.to(edge, { e: 0, c: 0, duration: 0.46, ease: 'power3.out', onUpdate: draw }, at + 0.34);
 }
 
-/** Covers the page: yellow then asphalt rise, then the logo and the destination label pop in. Resolves when covered. */
+/**
+ * Covers the page: yellow then asphalt rise, then the logo and the destination label pop in. Resolves as soon as the
+ * sheets cover the viewport, so the page swap starts while the mark settles instead of after it (the hold on the
+ * curtain text felt long; Sehan, 2026-10-29).
+ */
 export function cover(kit: MotionKit, root: HTMLElement): Promise<void> {
   const { gsap } = kit;
   const { sheets, mark } = parts(root);
   return new Promise(resolve => {
     const tl = gsap.timeline({ onComplete: resolve });
     sheets.forEach((path, i) => rise(tl, path, i * 0.09));
+    tl.call(resolve, undefined, (sheets.length - 1) * 0.09 + 0.58);
     tl.fromTo(mark, { yPercent: 120, autoAlpha: 0 }, { yPercent: 0, autoAlpha: 1, duration: 0.5, ease: 'expo.out', stagger: 0.06 }, 0.3);
     // A ticker that stalls (hidden tab) must not leave the visitor waiting for the push.
     window.setTimeout(() => tl.progress(1), 2500);
@@ -56,7 +61,8 @@ export function lift(kit: MotionKit, root: HTMLElement, onReveal: () => void): P
   const { sheets, mark } = parts(root);
   return new Promise(resolve => {
     const tl = gsap.timeline({ onComplete: resolve });
-    tl.to(mark, { yPercent: -70, autoAlpha: 0, duration: 0.34, ease: 'power2.in', stagger: 0.03 }, 0);
+    // cover() resolves before its mark has settled, so this takes the mark over instead of fighting that tween.
+    tl.to(mark, { yPercent: -70, autoAlpha: 0, duration: 0.34, ease: 'power2.in', stagger: 0.03, overwrite: 'auto' }, 0);
     // DOM order is yellow, asphalt (asphalt paints on top and leaves first).
     sheets
       .slice()
