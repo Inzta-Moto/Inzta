@@ -6,7 +6,7 @@ import { renderArticle } from '@/lib/markdown';
 import { resolveEmbeds, visibleBlocks } from '@/lib/article-embeds';
 import { firstLineSummary } from '@/lib/article-format';
 import { optimizeCloudinaryUrl } from '@/lib/utils';
-import { articleJsonLd, canonicalUrl } from '@/lib/seo';
+import { articleJsonLd, breadcrumbJsonLd, canonicalUrl, jsonLdGraph, openGraph } from '@/lib/seo';
 import JsonLd from '@/components/JsonLd';
 import type { PublicArticle } from '@/types';
 
@@ -36,21 +36,15 @@ function articleDescription(article: Pick<PublicArticle, 'metaDescription' | 'ex
 }
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
-  const defaultMeta: Metadata = {
-    title: 'Artikel — INZTA MOTO',
-    description: DEFAULT_DESCRIPTION,
-    openGraph: {
-      title: 'INZTA Article',
-      description: DEFAULT_DESCRIPTION,
-      images: ['/logo.png'],
-    },
-  };
+  const defaultMeta: Metadata = { title: 'Artikel', description: DEFAULT_DESCRIPTION };
 
   // Shares the cached read with the page below, so one render costs one Firestore read.
   const article = await getArticle(params.slug);
   if (!article) return defaultMeta;
 
-  const title = article.metaTitle?.trim() || `${article.title} — INZTA Article`;
+  // F-005 6.2: the layout template adds " | INZTA Moto"; a metaTitle is used as the whole title, unchanged.
+  const metaTitle = article.metaTitle?.trim();
+  const title = metaTitle ? { absolute: metaTitle } : article.title;
   const socialTitle = article.metaTitle?.trim() || article.title;
   const description = articleDescription(article);
   const image = toOgImage(
@@ -63,14 +57,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
     title,
     description,
     alternates: { canonical: url },
-    openGraph: {
-      url,
-      title: socialTitle,
-      description,
-      images: [image],
-      type: 'article',
-      siteName: 'INZTA MOTO',
-    },
+    openGraph: openGraph({ url, title: socialTitle, description, images: [image], type: 'article' }),
     twitter: {
       card: 'summary_large_image',
       title: socialTitle,
@@ -87,12 +74,21 @@ export default async function BlogDetailPage({ params }: { params: { slug: strin
   // Rendered and sanitized here on the server; the raw content is not sent to the browser.
   const { blocks } = renderArticle(article);
   const embeds = await resolveEmbeds(blocks, { exclude: article.slug });
-  const jsonLd = articleJsonLd(article); // needs content for the body-image fallback
+  const url = canonicalUrl('blog', article.slug);
+  // One block: Article (needs content for the body-image fallback) + BreadcrumbList with the visible labels (7.1).
+  const jsonLd = jsonLdGraph(
+    articleJsonLd(article),
+    breadcrumbJsonLd([
+      { name: 'Home', url: canonicalUrl() },
+      { name: 'Blog', url: canonicalUrl('blog') },
+      { name: article.title, url },
+    ]),
+  );
   const { content, ...rest } = article;
   return (
     <>
       <JsonLd data={jsonLd} />
-      <BlogDetailClient article={rest} blocks={visibleBlocks(blocks, embeds)} embeds={embeds} articleUrl={canonicalUrl('blog', article.slug)} />
+      <BlogDetailClient article={rest} blocks={visibleBlocks(blocks, embeds)} embeds={embeds} articleUrl={url} />
     </>
   );
 }
