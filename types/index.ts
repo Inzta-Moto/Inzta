@@ -270,3 +270,49 @@ export interface Commission {
   paidAt: any;
   createdAt: any;
 }
+
+// F-016 landing page v2. Motor categories follow ADR-0019 (inzta-hq), positions are where a bag sits,
+// not the Firestore `category` field (hardcase/softcase/tank).
+export type MotorCategory = 'matic' | 'adventure' | 'retro' | 'trail';
+export type BagPosition = 'tank' | 'side' | 'tail' | 'aksesori';
+
+// Only one label shows per card (F-016 17.1); null means no label.
+export type FitLabel = { kind: 'model' | 'universal' | 'for'; text: string } | null;
+
+export interface HomeProductCard {
+  slug: string;
+  name: string;
+  image: string | null;
+  position: BagPosition | null;
+  fit: FitLabel;
+  price: number;
+  compareAt: number | null;
+  cropClass: 'iz-crop-top' | 'iz-crop-half' | null;
+}
+
+export interface HomeGuideCard {
+  slug: string;
+  title: string;
+  image: string | null;
+  imageAlt: string;
+  author: string;
+  date: number | null;
+  chip: string | null;
+  credit: string | null;
+}
+
+// settings/flashSale as stored by the admin settings route; endsAt is an ISO string.
+export interface FlashSaleState {
+  isActive: boolean;
+  endsAt: string | null;
+}
+
+export interface HomeData {
+  bestSellers: HomeProductCard[];
+  minPrices: Record<BagPosition, number | null>;
+  tourmax: { price: number; compareAt: number | null } | null;
+  guides: HomeGuideCard[];
+  gasberPublished: boolean;
+  productImages: Record<string, string>;
+  flash: FlashSaleState;
+}

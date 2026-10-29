@@ -1,0 +1,39 @@
+/* F-016 additions on top of the ported Design System. Every selector stays inside .iz-page or an iz- class. */
+
+/* Fonts come from next/font (components/v2/fonts.ts), scoped to v2 pages only (3.2). */
+.iz-page {
+  --font-display: var(--font-display-v2), "Arial", sans-serif;
+  --font-sans: var(--font-sans-v2), system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+/* Section headings must not hide under the sticky navbar (4.10). */
+:where(.iz-page) [id] { scroll-margin-top: 80px; }
+@media (max-width: 767px) { :where(.iz-page) [id] { scroll-margin-top: 68px; } }
+@media (prefers-reduced-motion: reduce) { html:has(.iz-page) { scroll-behavior: auto; } }
+
+/* 40 px navbar controls keep their look and get a 48 px hit area (20.4). */
+.iz-nav__menu, .iz-motorchip, .iz-nav__cta, .iz-promobar__close { position: relative; }
+.iz-nav__menu::after, .iz-motorchip::after, .iz-nav__cta::after, .iz-promobar__close::after { content: ""; position: absolute; inset: -4px; }
+
+/* bundle.css only crops inside product tiles (the printed claim sits at the bottom of the photo); elsewhere show the top part. :where() keeps the tile rule stronger (17.4). */
+:where(.iz-page) img.iz-crop-top { object-fit: cover; object-position: 50% 0%; }
+
+/* Headings that the design writes as h4 are h2 here so the outline has no skipped levels (D-6, 20.2). */
+.iz-footer h2 { color: var(--c-kuning); font-size: 15px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 12px; font-family: var(--font-sans); line-height: 1.3; }
+.iz-msheet__group h2 { font-size: 14px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--c-batu); padding: 0 8px 6px; font-family: var(--font-sans); line-height: 1.3; }
+
+/* Phone menu sits under the capsule inside the zero-height sticky wrapper (m-nav.dc.html). */
+.iz-navwrap .iz-msheet { margin: 12px auto 0; max-width: var(--size-content); max-height: calc(100vh - 96px); overflow-y: auto; overscroll-behavior: contain; }
+
+/* Garasi button keeps its space while no category is chosen (5.2, 5.3). */
+.iz-garasi__cta[data-hidden="true"] { visibility: hidden; }
+
+/* Skip link (20.6). */
+.iz-skip { position: absolute; left: 16px; top: -100px; z-index: 100; padding: 12px 20px; border-radius: var(--radius-pill); background: var(--c-kuning); color: var(--c-on-kuning); font-weight: 700; }
+.iz-skip:focus { top: 16px; }
+
+/* Visually hidden text for screen readers. */
+.iz-sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+
+/* Shop names render as text until their URLs are known (16.4); same pill as the design's links. */
+.iz-footer__shops span { display: inline-flex; align-items: center; min-height: 40px; padding: 4px 14px; border-radius: var(--radius-pill); border: 1px solid var(--c-line-on-dark); color: var(--c-krem); font-size: 15px; }

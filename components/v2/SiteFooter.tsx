@@ -1,0 +1,77 @@
+import Link from 'next/link';
+import { formatWaDisplay } from '@/lib/v2/home-data';
+import { INSTAGRAM, MOTOR_CATEGORIES, SHOP_LINKS } from '@/lib/v2/home-content';
+import CategoryLink from '@/components/v2/CategoryLink';
+
+const PRODUCT_LINKS = ['Tank bag', 'Side bag', 'Tail bag', 'Extend bag', 'Aksesori touring', 'Tas harian'];
+
+// Footer (F-016 16). Pages that do not exist yet use temporary targets so no link is a 404 (4.9).
+export default function SiteFooter({ waHref, waNumber }: { waHref: string; waNumber: string }) {
+  return (
+    <footer className="iz-footer iz-dark">
+      <div className="iz-footer__in">
+        <div className="iz-footer__brand">
+          <Link className="iz-brand" href="/">
+            <img src="/logo-inzta.png" alt="" width={32} height={32} loading="lazy" />
+            <span>INZTA</span>
+          </Link>
+          <p className="iz-footer__tag">Brand tas motor lokal sejak 2023.</p>
+        </div>
+        <div>
+          <h2>Produk</h2>
+          <ul>
+            {PRODUCT_LINKS.map(label => (
+              <li key={label}>
+                <Link href="/produk">{label}</Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div>
+          <h2>Pilih motor</h2>
+          <ul>
+            {MOTOR_CATEGORIES.map(c => (
+              <li key={c.value}>
+                <CategoryLink value={c.value}>{c.label}</CategoryLink>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div>
+          <h2>Informasi</h2>
+          <ul>
+            <li><Link href="/#mengapa">Tentang INZTA</Link></li>
+            <li><Link href="/#cara-pesan">Cara pesan</Link></li>
+            <li><Link href="/blog">Artikel</Link></li>
+          </ul>
+        </div>
+        <div>
+          <h2>Kontak</h2>
+          <ul>
+            <li>
+              <a href={waHref} target="_blank" rel="noopener noreferrer">
+                <span>WhatsApp <span className="iz-nowrap">{formatWaDisplay(waNumber)}</span></span>
+              </a>
+            </li>
+            <li>
+              <a href={INSTAGRAM.href} target="_blank" rel="noopener noreferrer">
+                <span>Instagram <span className="iz-nowrap">{INSTAGRAM.handle}</span></span>
+              </a>
+            </li>
+          </ul>
+          <h2 style={{ marginTop: 16 }}>Kanal toko</h2>
+          <div className="iz-footer__shops">
+            {SHOP_LINKS.map(s =>
+              s.href ? (
+                <a key={s.label} href={s.href} target="_blank" rel="noopener noreferrer">{s.label}</a>
+              ) : (
+                <span key={s.label}>{s.label}</span>
+              ),
+            )}
+          </div>
+        </div>
+        <p className="iz-footer__bottom">© 2026 PT Inzta Gear Indonesia</p>
+      </div>
+    </footer>
+  );
+}

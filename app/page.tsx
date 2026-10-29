@@ -1,16 +1,13 @@
-import HomeClient from './HomeClient';
-import { getActiveProducts, getArticles, toArticleCard } from '@/lib/public-content';
+import HomeV2 from '@/components/v2/HomeV2';
+import { getActiveProducts, getArticles } from '@/lib/public-content';
+import { getFlashSale } from '@/lib/v2/flash-sale';
+import { buildHomeData } from '@/lib/v2/home-data';
 
-// ISR: rendered on the server so Google sees products and articles; admin writes call revalidatePath.
+// ISR: rendered on the server so Google sees products and articles; admin writes call revalidatePath (F-001).
+// F-016: the flash-sale state is read in the same render so the promo bar is in the HTML and never shifts the page.
 export const revalidate = 3600;
 
 export default async function HomePage() {
-  const [products, articles] = await Promise.all([getActiveProducts(), getArticles()]);
-
-  return (
-    <HomeClient
-      products={products.slice(0, 10)}
-      articles={articles.slice(0, 3).map(toArticleCard)}
-    />
-  );
+  const [products, articles, flash] = await Promise.all([getActiveProducts(), getArticles(), getFlashSale()]);
+  return <HomeV2 data={buildHomeData(products, articles, flash)} />;
 }
