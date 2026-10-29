@@ -26,7 +26,7 @@ const ARTBOARDS = {
   'm-nav': { mode: 'dom', route: '/', state: 'phone menu open' },
   produk: { mode: 'server', route: '/produk' },
   'produk-detail': { mode: 'server', route: '/produk/tail-bag-inzta-tourmax-30' },
-  'produk-sisi': { mode: 'server', route: '/produk/side-bag-inzta-xsr-155', state: 'F016_KATEGORI=draft' },
+  'produk-sisi': { mode: 'server', route: '/produk/demo-side-bag-per-sisi', state: 'local demo product in the fixture (make-sisi.cjs)' },
   motor: { mode: 'server', route: '/tas-motor/retro', state: 'F016_KATEGORI=draft' },
   blog: { mode: 'server', route: '/blog' },
   artikel: { mode: 'server', route: '/blog/gasber-16-indonesia-ride-adventure' },

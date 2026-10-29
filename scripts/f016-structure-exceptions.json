@@ -182,13 +182,6 @@
     "requirement": "S8.6.1, design.md §19 data-driven text"
   },
   {
-    "artboard": "motor",
-    "kind": "block",
-    "value": "iz-tabs",
-    "reason": "The position tablist renders only when the category products cover two or more of Side/Tank/Tail; with the draft mapping (F016_KATEGORI=draft) Retro lists side bags only, so there is no tablist. With two or more positions the block is present and matches.",
-    "requirement": "S5.2.2"
-  },
-  {
     "artboard": "artikel",
     "kind": "block",
     "value": "iz-closing",
@@ -236,6 +229,13 @@
     "value": "Checklist touring: perkakas, P3K, dan cara packing per posisi tas",
     "reason": "Article titles come from published articles in Firestore (data, not canvas copy); the canvas shows sample titles.",
     "requirement": "S7.6, design.md §19 data-driven text"
+  },
+  {
+    "artboard": "motor",
+    "kind": "block",
+    "value": "iz-tabs",
+    "reason": "The position tablist renders only when the category products cover two or more of Side/Tank/Tail; with the draft mapping (F016_KATEGORI=draft) Retro lists side bags only, so there is no tablist. With two or more positions the block is present and matches.",
+    "requirement": "S5.2.2"
   },
   {
     "artboard": "produk-detail",
