@@ -3,6 +3,8 @@ import { cache } from 'react';
 import DetailClient from './DetailClient';
 import { getAdminDb } from '@/lib/firebaseAdmin';
 import { normalizeProduct } from '@/lib/product-utils';
+import JsonLd from '@/components/JsonLd';
+import { canonicalUrl } from '@/lib/seo';
 
 const getCachedProduct = cache(async (slug: string) => {
   const doc = await getAdminDb().collection('products').doc(slug).get();
@@ -65,6 +67,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
     return {
       title: `${name} — INZTA MOTO`,
       description: ogDescription,
+      alternates: { canonical: canonicalUrl('produk', slug) },
       openGraph: {
         url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://inzta.id'}/produk/${slug}`,
         title: name,
@@ -164,12 +167,7 @@ export default async function DetailPage({ params }: { params: { slug: string } 
 
   return (
     <>
-      {jsonLd && (
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-        />
-      )}
+      {jsonLd && <JsonLd data={jsonLd} />}
       <DetailClient slug={params.slug} initialProduct={product} initialRelated={related} />
     </>
   );

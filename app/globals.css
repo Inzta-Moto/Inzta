@@ -1180,6 +1180,13 @@ ul, ol { list-style: none; }
 .breadcrumb-wrapper .breadcrumb a:hover { color: var(--accent-hover); }
 .breadcrumb-wrapper .breadcrumb-sep { color: var(--border-dark); margin: 0 4px; }
 .breadcrumb-wrapper .breadcrumb-current { color: var(--text-primary); font-weight: 600; }
+/* F-005: one line. The current page (already the h1 below) gets an ellipsis on desktop and is hidden on phones. */
+.breadcrumb { min-width: 0; }
+.breadcrumb a, .breadcrumb-sep { flex-shrink: 0; white-space: nowrap; }
+.breadcrumb-current { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 767px) {
+  .breadcrumb-current, .breadcrumb-sep--current { display: none; }
+}
 
 
 /* ============================================

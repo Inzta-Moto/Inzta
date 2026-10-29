@@ -44,12 +44,12 @@ export default function BlogDetailClient({ article, blocks, embeds, articleUrl, 
       <section className="detail-page-header">
         <div className="container">
           <div className="breadcrumb-wrapper">
-            <nav className="breadcrumb">
+            <nav className="breadcrumb" aria-label="Breadcrumb">
               <Link href="/">Home</Link>
-              <span className="breadcrumb-sep">/</span>
-              <Link href="/blog">Article</Link>
-              <span className="breadcrumb-sep">/</span>
-              <span className="breadcrumb-current">{a.title}</span>
+              <span className="breadcrumb-sep" aria-hidden="true">/</span>
+              <Link href="/blog">Blog</Link>
+              <span className="breadcrumb-sep breadcrumb-sep--current" aria-hidden="true">/</span>
+              <span className="breadcrumb-current" aria-current="page">{a.title}</span>
             </nav>
           </div>
         </div>
