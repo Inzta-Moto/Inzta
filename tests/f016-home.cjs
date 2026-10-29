@@ -1,4 +1,5 @@
-// F-016: pure helpers of the v2 Beranda (lib/v2/home-data.ts). Requirements 7.2, 9.3, 12.2, 12.3, 16.3, 17.1–17.4.
+// F-016: pure helpers of the v2 Beranda (lib/v2/home-data.ts) and the review helpers it renders (lib/v2/reviews.ts).
+// Requirements S0.9, S1.3, S1.5, S1.6, S1.8, S1.9, S1.11.
 // Usage: npm run test:home  (or: node tests/f016-home.cjs <repo-root>)
 const path = require('path');
 const fs = require('fs');
@@ -25,10 +26,15 @@ require.extensions['.ts'] = function (m, filename) {
 
 const H = require(path.join(ROOT, 'lib/v2/home-data.ts'));
 const M = require(path.join(ROOT, 'lib/v2/motor-category.ts'));
+const R = require(path.join(ROOT, 'lib/v2/reviews.ts'));
 
 const results = [];
+const pending = [];
 function check(name, fn) {
   try { fn(); results.push(['PASS', name]); } catch (e) { results.push(['FAIL', name + ': ' + e.message]); }
+}
+function checkAsync(name, fn) {
+  pending.push(fn().then(() => results.push(['PASS', name]), e => results.push(['FAIL', name + ': ' + e.message])));
 }
 
 const simple = (slug, name, price, compareAtPrice = null, extra = {}) =>
@@ -125,21 +131,46 @@ check('selectBestSellers: badge contains "best", order kept, cap 8, empty list (
   assert.strictEqual(card.position, 'side');
 });
 
-check('selectGuides: newest first as given, cap 3, author default, cover fallback, chip map (12.2, 12.3)', () => {
+check('selectGuides: published only, newest first by publishedAt ?? createdAt, cap 3, author default, cover fallback (S1.8)', () => {
   const art = (slug, extra = {}) => ({ slug, title: slug, createdAt: 1, publishedAt: 2, images: [], ...extra });
   const g = H.selectGuides([
-    art('gasber-16-indonesia-ride-adventure', { coverImage: 'https://x/c.png', coverAlt: 'Alt', coverCaption: 'Dok. Gasber 16 / Indonesia Ride Adventure', author: 'Tim INZTA' }),
-    art('lain', { author: '  ', publishedAt: null }),
-    art('c'),
-    art('d'),
+    art('old', { publishedAt: 5 }),
+    art('gasber-16-indonesia-ride-adventure', { publishedAt: 30, topik: 'komunitas', coverImage: 'https://x/c.png', coverAlt: 'Alt', coverCaption: 'Dok. Gasber 16 / Indonesia Ride Adventure', author: 'Tim INZTA' }),
+    art('lain', { author: '  ', publishedAt: null, createdAt: 20 }),
+    art('draft', { publishedAt: 40, status: 'draft' }),
+    art('undated', { publishedAt: null, createdAt: null }),
   ]);
-  assert.strictEqual(g.length, 3);
-  assert.strictEqual(g[0].chip, 'Komunitas');
+  assert.deepStrictEqual(g.map(x => x.slug), ['gasber-16-indonesia-ride-adventure', 'lain', 'old']);
   assert.strictEqual(g[0].credit, 'Dok. Gasber 16 / Indonesia Ride Adventure');
   assert.strictEqual(g[1].author, 'Tim INZTA');
-  assert.strictEqual(g[1].date, 1);
+  assert.strictEqual(g[1].date, 20);
   assert.strictEqual(g[1].image, null);
-  assert.strictEqual(g[1].chip, null);
+});
+
+check('selectGuides: chip from topik through topicLabel; none without topik or for an unknown value (D3, S1.8.3)', () => {
+  const art = (slug, topik) => ({ slug, title: slug, publishedAt: 1, images: [], topik });
+  assert.deepStrictEqual(H.selectGuides([art('a', 'komunitas'), art('b', 'per-motor'), art('c', 'memilih-tas')]).map(x => x.chip), ['Komunitas', 'Per motor', 'Memilih tas']);
+  assert.deepStrictEqual(H.selectGuides([art('d', 'touring'), art('e', ''), art('f', 'vespa')]).map(x => x.chip), ['Touring', null, null]);
+  // The old slug map is gone: a known slug without topik gets no chip.
+  assert.strictEqual(H.selectGuides([art('gasber-16-indonesia-ride-adventure', undefined)])[0].chip, null);
+});
+
+check('selectGuides: one-line credit; invalid or missing date reads as null so the meta shows the author only (S1.8.3)', () => {
+  const g = H.selectGuides([{ slug: 'x', title: 'x', images: [], publishedAt: NaN, coverCaption: 'Baris satu\nBaris dua' }]);
+  assert.strictEqual(g[0].date, null);
+  assert.strictEqual(g[0].credit, 'Baris satu');
+  assert.strictEqual(H.selectGuides([{ slug: 'y', title: 'y', images: [], coverCaption: '   ' }])[0].credit, null);
+});
+
+check('selectGuides: layout counts 0, 1, 2, 3+ follow the list length (S1.8.2)', () => {
+  const art = i => ({ slug: `a${i}`, title: `a${i}`, publishedAt: 100 - i, images: [] });
+  for (const n of [0, 1, 2, 3, 5]) assert.strictEqual(H.selectGuides(Array.from({ length: n }, (_, i) => art(i))).length, Math.min(n, 3), String(n));
+});
+
+check('guideAction: "Baca catatan" only for Komunitas, else "Baca panduan" (S1.8.1)', () => {
+  assert.strictEqual(H.guideAction({ chip: 'Komunitas' }), 'Baca catatan');
+  assert.strictEqual(H.guideAction({ chip: 'Per motor' }), 'Baca panduan');
+  assert.strictEqual(H.guideAction({ chip: null }), 'Baca panduan');
 });
 
 check('formatRupiah and formatWaDisplay (9.3, 16.3)', () => {
@@ -164,6 +195,58 @@ check('buildHomeData: Tourmax price, Gasber flag, product images, flash active o
   assert.strictEqual(H.buildHomeData([], [], flash, before).tourmax, null);
   assert.deepStrictEqual(H.buildHomeData([], [], flash, Date.parse('2026-11-01T00:00:00Z')).flash, { isActive: false, endsAt: null });
   assert.deepStrictEqual(H.buildHomeData([], [], { isActive: true, endsAt: '2026-10-03T04:04:32.877Z' }, before).flash, { isActive: false, endsAt: null });
+  assert.strictEqual(H.buildHomeData(DESIGN, [], flash, before).gasberPublished, false);
+});
+
+check('buildHomeData: Tourmax band hidden when the product is missing, inactive, or priced 0 (S1.6.1)', () => {
+  const t = DESIGN[0];
+  const none = { isActive: false, endsAt: null };
+  assert.strictEqual(H.buildHomeData(DESIGN.slice(1), [], none).tourmax, null);
+  assert.strictEqual(H.buildHomeData([{ ...t, isActive: false }], [], none).tourmax, null);
+  assert.strictEqual(H.buildHomeData([{ ...t, price: 0 }], [], none).tourmax, null);
+  assert.strictEqual(H.buildHomeData([{ slug: t.slug, name: t.name, productType: 'variable', variants: [] }], [], none).tourmax, null);
+});
+
+checkAsync('readHomeSources: products failure throws; articles and flash failures degrade and log (S1.11.2, S1.8.4, S0.3.6)', async () => {
+  const ok = { products: async () => DESIGN, articles: async () => [{ slug: 'a' }], flash: async () => ({ isActive: true, endsAt: 'x' }) };
+  const boom = async () => { throw new Error('read failed'); };
+  const logged = [];
+  const orig = console.error;
+  console.error = (...a) => logged.push(a.join(' '));
+  try {
+    const r = await H.readHomeSources({ ...ok, articles: boom, flash: boom });
+    assert.strictEqual(r.products, DESIGN);
+    assert.deepStrictEqual(r.articles, []);
+    assert.deepStrictEqual(r.flash, { isActive: false, endsAt: null });
+    assert.strictEqual(logged.length, 2);
+    await assert.rejects(H.readHomeSources({ ...ok, products: boom }), /read failed/);
+    assert.strictEqual((await H.readHomeSources(ok)).articles.length, 1);
+  } finally {
+    console.error = orig;
+  }
+});
+
+check('reviews: featured + even wall, "[tertutup]" as "...", Tokopedia meta, chip name, photo, variant (S1.9)', () => {
+  const { featured, wall } = R.splitReviews(R.TOKOPEDIA_REVIEWS);
+  assert.strictEqual(R.TOKOPEDIA_REVIEWS.length, 8);
+  assert.strictEqual(featured, R.TOKOPEDIA_REVIEWS[0]);
+  assert.strictEqual(wall.length, 6);
+  assert.ok(!wall.includes(R.TOKOPEDIA_REVIEWS[7]));
+  assert.deepStrictEqual(R.splitReviews([]), { featured: null, wall: [] });
+  assert.strictEqual(R.splitReviews([1, 2, 3, 4]).wall.length, 2);
+  assert.ok(!R.TOKOPEDIA_REVIEWS.some(r => r.quote.includes('[tertutup]')));
+  assert.ok(R.TOKOPEDIA_REVIEWS[1].quote.includes(' ... '));
+  assert.strictEqual(R.reviewMetaLine({ month: '2026-08' }), 'Ulasan di Tokopedia, sekitar Agustus 2026');
+  const products = [{ ...DESIGN[3], isActive: true }];
+  const c1 = R.reviewChip(R.TOKOPEDIA_REVIEWS[0], products);
+  assert.strictEqual(c1.label, 'Side Bag Motor Inzta Foldpack Z10 Vol 10L · Sepasang');
+  assert.strictEqual(c1.cropTop, true);
+  assert.ok(c1.image);
+  const c6 = R.reviewChip(R.TOKOPEDIA_REVIEWS[5], products);
+  assert.strictEqual(c6.label, 'Sidebag XSR Daily Ride · Sepasang');
+  assert.strictEqual(c6.image, null);
+  assert.strictEqual(R.reviewChip(R.TOKOPEDIA_REVIEWS[0], [{ ...DESIGN[3], isActive: false }]).image, null);
+  for (const r of R.TOKOPEDIA_REVIEWS) assert.ok(!/rating|bintang|★/i.test(JSON.stringify(r)), r.name);
 });
 
 check('motor categories: placement only by the model in the product name, universal by name (P2-2)', () => {
@@ -180,10 +263,12 @@ check('motor categories: placement only by the model in the product name, univer
   assert.strictEqual(M.categoryHref('trail'), '/tas-motor/trail');
 });
 
-let failed = 0;
-for (const [s, n] of results) {
-  if (s === 'FAIL') failed++;
-  console.log(`${s}  ${n}`);
-}
-console.log(`\n${results.length - failed}/${results.length} passed`);
-process.exit(failed ? 1 : 0);
+Promise.all(pending).then(() => {
+  let failed = 0;
+  for (const [s, n] of results) {
+    if (s === 'FAIL') failed++;
+    console.log(`${s}  ${n}`);
+  }
+  console.log(`\n${results.length - failed}/${results.length} passed`);
+  process.exit(failed ? 1 : 0);
+});

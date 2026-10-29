@@ -11,7 +11,9 @@ import {
   UNIVERSAL_SLUGS,
 } from '@/lib/v2/product-copy';
 import { isFlashActive } from '@/lib/v2/flash-time';
-import { ARTICLE_CHIP_BY_SLUG, GASBER_SLUG, POSITION_CHIP, TOURMAX_SLUG } from '@/lib/v2/home-content';
+import { publicDate, statusOf } from '@/lib/article-format';
+import { topicLabel } from '@/lib/v2/article-v2';
+import { GASBER_SLUG, POSITION_CHIP, TOURMAX_SLUG } from '@/lib/v2/home-content';
 
 // Pure helpers for the v2 Beranda (F-016). No Firebase or React imports, so tests/f016-home.cjs can load them.
 
@@ -140,17 +142,36 @@ export function selectBestSellers(products: Product[], max = BEST_SELLER_MAX): H
   return products.filter(p => (p.badge || '').toLowerCase().includes('best')).slice(0, max).map(toCard);
 }
 
+function validDate(v: unknown): number | null {
+  return typeof v === 'number' && Number.isFinite(v) ? v : null;
+}
+
+// F-016 S1.8: published articles, newest first by publishedAt ?? createdAt (undated last, ties keep the input order),
+// at most three. Chip from `topik` (D3) through the shared label map; no topic, no chip. An invalid date reads as null
+// so the meta shows the author only (S1.8.3).
 export function selectGuides(articles: PublicArticle[], max = GUIDES_MAX): HomeGuideCard[] {
-  return articles.slice(0, max).map(a => ({
-    slug: a.slug,
-    title: a.title,
-    image: a.coverImage || a.images?.[0] || a.imageUrl || null,
-    imageAlt: a.coverAlt || '',
-    author: a.author?.trim() || DEFAULT_AUTHOR,
-    date: a.publishedAt ?? a.createdAt ?? null,
-    chip: ARTICLE_CHIP_BY_SLUG[a.slug] ?? null,
-    credit: a.coverCaption?.trim() || null,
-  }));
+  return articles
+    .filter(a => statusOf(a) === 'published')
+    .map((a, i) => ({ a, i, d: validDate(publicDate(a)) }))
+    .sort((x, y) => (y.d ?? -Infinity) - (x.d ?? -Infinity) || x.i - y.i)
+    .slice(0, max)
+    .map(({ a, d }) => ({
+      slug: a.slug,
+      title: a.title,
+      image: a.coverImage || a.images?.[0] || a.imageUrl || null,
+      imageAlt: a.coverAlt || '',
+      author: a.author?.trim() || DEFAULT_AUTHOR,
+      date: d,
+      chip: topicLabel(a.topik),
+      // One line (S1.8): a multi-line caption keeps its first line only.
+      credit: a.coverCaption?.trim().split(/\r?\n/)[0].trim() || null,
+    }));
+}
+
+// F-016 S1.8.1: the featured card says "Baca catatan" for a Komunitas article and "Baca panduan" otherwise; the chip
+// is topicLabel(topik), so comparing with the same label keeps one source for the topic.
+export function guideAction(card: Pick<HomeGuideCard, 'chip'>): 'Baca catatan' | 'Baca panduan' {
+  return card.chip !== null && card.chip === topicLabel('komunitas') ? 'Baca catatan' : 'Baca panduan';
 }
 
 // "Rp520.000" as in the design; lib/utils formatPrice writes "Rp 520.000" (D-10).
@@ -182,14 +203,42 @@ export function buildHomeData(products: Product[], articles: PublicArticle[], fl
     const img = firstImage(p);
     if (img) productImages[p.slug] = img;
   }
-  const tourmaxProduct = products.find(p => p.slug === TOURMAX_SLUG);
+  // S1.6.1: missing, inactive, or priced 0 means no band; the component also guards price 0.
+  const tourmaxProduct = products.find(p => p.slug === TOURMAX_SLUG && p.isActive !== false);
+  const tourmax = tourmaxProduct ? effectivePrice(tourmaxProduct) : null;
   return {
     bestSellers: selectBestSellers(products),
     minPrices: minPriceByPosition(products),
-    tourmax: tourmaxProduct ? effectivePrice(tourmaxProduct) : null,
+    tourmax: tourmax && tourmax.price > 0 ? tourmax : null,
     guides: selectGuides(articles),
     gasberPublished: articles.some(a => a.slug === GASBER_SLUG),
     productImages,
     flash: isFlashActive(flash, now) ? flash : { isActive: false, endsAt: null },
   };
+}
+
+const NO_SALE: FlashSaleState = { isActive: false, endsAt: null };
+
+/**
+ * F-016 S1.11, S1.8.4, S0.3.6: the Beranda's three reads. Products are the page itself, so their failure throws
+ * (ISR keeps the last good page; the first render shows error.tsx). Articles and the flash-sale setting are optional
+ * sections: a failure is logged and the page renders without the article section and without a sale.
+ */
+export async function readHomeSources(read: {
+  products: () => Promise<Product[]>;
+  articles: () => Promise<PublicArticle[]>;
+  flash: () => Promise<FlashSaleState>;
+}): Promise<{ products: Product[]; articles: PublicArticle[]; flash: FlashSaleState }> {
+  const [products, articles, flash] = await Promise.all([
+    read.products(),
+    read.articles().catch(err => {
+      console.error('[beranda] articles read failed, rendering without the article section', err);
+      return [] as PublicArticle[];
+    }),
+    read.flash().catch(err => {
+      console.error('[beranda] flash-sale read failed, rendering without a sale', err);
+      return NO_SALE;
+    }),
+  ]);
+  return { products, articles, flash };
 }

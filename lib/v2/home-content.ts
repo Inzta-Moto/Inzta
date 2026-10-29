@@ -1,10 +1,10 @@
-import type { BagPosition, CategoryItem, FilmPhoto, MotorCategory, PositionItem, ReviewItem, ProductPosition } from '@/types';
+import type { CategoryItem, FilmPhoto, MotorCategory, PositionItem, ReviewItem, ProductPosition } from '@/types';
 
 export type { CategoryItem, FilmPhoto, PositionItem, ReviewItem };
 
 // Static Beranda content that is not in Firestore (F-016). Copy is from inzta-web-design @ 3281681
 // (claude-design/canvas/project/Main.dc.html); placeholders stay visible until INZTA sends the data
-// (inventory in inzta-hq docs/specs/F-016-landing-page-v2/design.md section 10).
+// (placeholder register P-* in inzta-hq docs/specs/F-016-website-v2/requirements.md §5).
 
 export const TOURMAX_SLUG = 'tail-bag-inzta-tourmax-30';
 export const GASBER_SLUG = 'gasber-16-indonesia-ride-adventure';
@@ -62,44 +62,22 @@ export const TOURMAX_NOTES: readonly string[] = [
 // Size note kept without a unit: cm is unconfirmed (P-11).
 export const TOURMAX_SIZE = { from: '37 x 28 x 23', to: '37 x 28 x 28' };
 
-// Alt texts describe what each photo shows; the design's alts did not match the photos (D-11).
-// Every Gasber photo carries the organiser's credit (D-3).
+// Alt texts describe what each photo shows (S0.12.6). Photos 2 and 3 use the corrected alts of S1.7.3 (design.md §11);
+// photos 4 and 5 keep descriptive alts because the canvas alts ("Motor di kebun teh", "Debu jalur tanah") do not match
+// road-04 (a scooter at a beach at sunset) or gasber-1 (riders on a dirt track). Every Gasber photo carries the
+// organiser's credit and INZTA's own photos carry none (S1.7.2).
 export const FILMSTRIP: readonly FilmPhoto[] = [
   { src: PHOTOS.gasber4, alt: 'Peserta Gasber 16 di jalur tanah', shape: 'wide', credit: GASBER_CREDIT },
-  { src: PHOTOS.road02, alt: 'Dua rider touring berpose di samping motor di padang pasir', shape: 'tall', credit: null },
-  { src: PHOTOS.road03, alt: 'Motor touring diparkir di depan tugu Cangar', shape: 'wide', credit: null },
+  { src: PHOTOS.road02, alt: 'Dua rider di atas motor di jalur pasir', shape: 'tall', credit: null },
+  { src: PHOTOS.road03, alt: 'Motor di depan tulisan Cangar', shape: 'wide', credit: null },
   { src: PHOTOS.road04, alt: 'Motor di tepi pantai saat matahari terbenam', shape: 'tall', credit: null },
   { src: PHOTOS.gasber1, alt: 'Rider adventure memimpin rombongan di jalur tanah Gasber 16', shape: 'wide', credit: GASBER_CREDIT },
 ];
 
-// Articles have no category field (12.3).
-export const ARTICLE_CHIP_BY_SLUG: Record<string, string> = {
-  [GASBER_SLUG]: 'Komunitas',
-  'tas-samping-motor-xsr-155': 'Per motor',
-  'panduan-memilih-tas-motor': 'Memilih tas',
-};
-
-// PLACEHOLDER until Sehan or Angkasa picks real Shopee reviews with the buyer's permission (13.2, C-8).
-export const REVIEW_FEATURED: ReviewItem = {
-  quote: 'PLACEHOLDER: satu ulasan terbaik, misalnya pembeli yang menyebut motornya dan cerita pemakaian saat touring atau hujan.',
-  productSlug: TOURMAX_SLUG,
-  productName: 'Tail bag Inzta Tourmax 30',
-  name: 'Nama tersamar',
-  month: 'Bulan: PLACEHOLDER',
-};
-export const REVIEW_FEATURED_PHOTO = { src: '/images/v2/tail-bag-inzta-tourmax-30-2.jpg', alt: 'Tail bag Inzta Tourmax 30 terpasang di motor' };
-
-export const REVIEWS: readonly ReviewItem[] = [
-  { quote: 'PLACEHOLDER: ulasan yang menyebut motor pembeli, misalnya pas atau tidaknya di jok belakang.', productSlug: 'side-bag-inzta-xsr-155', productName: 'Side bag Inzta XSR 155', name: 'Nama tersamar', month: 'Bulan: PLACEHOLDER' },
-  { quote: 'PLACEHOLDER: ulasan pendek dari Shopee.', productSlug: 'tankbag-tk-5', productName: 'Tankbag TK 5', name: 'Nama tersamar', month: 'Bulan: PLACEHOLDER' },
-  { quote: 'PLACEHOLDER: ulasan yang lebih panjang, misalnya pembeli yang memakai tas untuk harian dan perjalanan beberapa hari, ditulis persis seperti di Shopee.', productSlug: 'side-bage-motor-inzta-oke', productName: 'Side Bag Motor Inzta Foldpack Z10 Vol 10L', name: 'Nama tersamar', month: 'Bulan: PLACEHOLDER' },
-  { quote: 'PLACEHOLDER: ulasan tentang pemasangan.', productSlug: 'botol-bag-inzta-xmax', productName: 'Botol bag Inzta Xmax', name: 'Nama tersamar', month: 'Bulan: PLACEHOLDER' },
-  { quote: 'PLACEHOLDER: ulasan tentang balasan admin di WhatsApp atau chat Shopee.', productSlug: 'acc-medikit-ride', productName: 'Acc Medikit Ride', name: 'Nama tersamar', month: 'Bulan: PLACEHOLDER' },
-  { quote: 'PLACEHOLDER: ulasan tentang bahan atau jahitan setelah dipakai beberapa kali perjalanan.', productSlug: 'sidebag-inzta-adventure-20l-tas-touring-motor', productName: 'Sidebag inzta Adventure 20L', name: 'Nama tersamar', month: 'Bulan: PLACEHOLDER' },
-];
-
-// True while REVIEWS are placeholders; outside the polish branch the section must not render (13.2).
-export const REVIEWS_ARE_PLACEHOLDERS = true;
+// F-016 C-8: the Tokopedia reviews (lib/v2/reviews.ts, D4) render on the branch and on Preview, but not in Production
+// until buyer permission or Bang Raja's written approval is recorded (design.md §15 condition 3). Set to true only
+// with that record; check:f016-release lists the section while it is false.
+export const REVIEWS_PERMISSION_RECORDED = false;
 
 // Unknown until Sehan gives the URLs (Q-4): rendered as text, not as links (13.5, 16.4).
 export const SHOPEE_REVIEWS_URL: string | null = null;
