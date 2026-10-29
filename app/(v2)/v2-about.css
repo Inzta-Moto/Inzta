@@ -1,0 +1,49 @@
+/* F-016 S8: states and fixes for /tentang that the canvas does not cover. Imported by the route page only. */
+
+/* SmartImage wrappers fill the boxes the canvas gives to a bare <img> (S8.1-S8.4). */
+.iz-hero > .iz-smartimg.iz-hero__img { position: absolute; inset: 0; }
+.iz-step .iz-photo > .iz-smartimg,
+.iz-about-photos .iz-photo > .iz-smartimg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.iz-why__photo > .iz-smartimg { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; }
+.iz-step .iz-photo > .iz-step__badge { z-index: 1; }
+.iz-about-photos .iz-photo > .iz-tag { z-index: 1; }
+
+/* S8.4.2 ST-ERR: the organiser credit disappears together with a failed Gasber photo. */
+.iz-photo:has(> .iz-smartimg[data-state="error"]) > .iz-tag { display: none; }
+
+/* S8.4: canvas inline styles of the dark panel and photo grid, with a smaller padding on phones so 360 px fits. */
+.iz-dark.iz-about-community { border-radius: 32px; padding: 48px; align-items: center; }
+.iz-about-photos { gap: 12px; }
+.iz-about-photo--wide { grid-column: 1 / -1; aspect-ratio: 16 / 9; }
+.iz-about-photo { aspect-ratio: 4 / 3; }
+
+/* S8.2.6: the region is the scroll container below 1024 px (arrow keys scroll the focused element); the canvas grid
+   of five columns starts at 1024 px instead of 768 px. */
+.iz-steps-region { overflow-x: auto; scrollbar-width: none; scroll-snap-type: x mandatory; padding-bottom: var(--space-2); }
+.iz-steps-region > .iz-steps { overflow: visible; scroll-snap-type: none; padding-bottom: 0; }
+.iz-steps-region:focus-visible { outline: 3px solid var(--c-focus); outline-offset: 4px; border-radius: var(--radius-tile); }
+@media (min-width: 768px) and (max-width: 1023px) {
+  .iz-steps-region > .iz-steps { display: flex; }
+  .iz-steps-region > .iz-steps > .iz-step { width: 280px; }
+}
+@media (min-width: 1024px) {
+  .iz-steps-region { overflow: visible; scroll-snap-type: none; padding-bottom: 0; }
+}
+
+/* S8.6.2: Shopee has no URL yet (P-7), so its row is static: no hover change. */
+.iz-channel--static:hover { border-color: var(--c-garis); }
+
+/* S8.5.1, S8.6.6: anchors from the footer and "Hubungi admin" land with the H2 below the floating navbar. */
+.iz-page #cara-pesan,
+.iz-page #kontak { scroll-margin-top: calc(var(--size-nav) + var(--space-4) + var(--space-6)); }
+
+/* S8.6.5: the number stays on one line in the two-column card from 768 px and in the phone card down to 360 px. */
+.iz-contact .iz-contact__num { font-size: min(40px, 3.4vw); }
+
+@media (max-width: 1023px) {
+  .iz-dark.iz-about-community { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 767px) {
+  .iz-dark.iz-about-community { padding: var(--space-8) var(--space-5); border-radius: var(--radius-panel); }
+  .iz-contact .iz-contact__num { font-size: clamp(24px, 7.4vw, 32px); }
+}

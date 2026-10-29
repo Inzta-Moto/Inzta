@@ -166,5 +166,26 @@
     "value": "Tail bag vs top box: mana yang cocok untuk harian dan touring?",
     "reason": "Article titles come from published articles in Firestore (data, not canvas copy); the canvas shows sample titles.",
     "requirement": "S6.3, S6.4, design.md §19 data-driven text"
+  },
+  {
+    "artboard": "tentang",
+    "kind": "class",
+    "value": "iz-steps",
+    "reason": "The process row sits inside a focusable role=region wrapper (.iz-steps-region) so the swipe row below 1024 px scrolls with the arrow keys; .iz-steps moves one level down (accessibility fix).",
+    "requirement": "S8.2.6, design.md §17"
+  },
+  {
+    "artboard": "tentang",
+    "kind": "heading",
+    "value": "+62 895-1348-2410",
+    "reason": "The number is formatted from WA_NUMBER (NEXT_PUBLIC_WA_NUMBER); a checkout without that variable shows the constant fallback, so the text is data, not canvas copy.",
+    "requirement": "S8.6.1, design.md §19 data-driven text"
+  },
+  {
+    "artboard": "motor",
+    "kind": "block",
+    "value": "iz-tabs",
+    "reason": "The position tablist renders only when the category products cover two or more of Side/Tank/Tail; with the draft mapping (F016_KATEGORI=draft) Retro lists side bags only, so there is no tablist. With two or more positions the block is present and matches.",
+    "requirement": "S5.2.2"
   }
 ]

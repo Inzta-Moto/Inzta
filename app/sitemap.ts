@@ -36,6 +36,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'weekly',
       priority: 0.8,
     },
+    // F-016 S8.7.4: static page without a document date, so no lastModified.
+    {
+      url: `${baseUrl}/tentang`,
+      changeFrequency: 'monthly',
+      priority: 0.6,
+    },
   ];
 
   // Halaman dinamis produk
