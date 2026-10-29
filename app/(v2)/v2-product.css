@@ -20,11 +20,11 @@
 @keyframes iz-pdp-fade { from { opacity: 0; } }
 .iz-thumb > .iz-smartimg { position: absolute; inset: 0; background: transparent; }
 .iz-thumb .iz-fallback__mark { width: 50%; }
-.iz-thumbs { scrollbar-width: none; }
+.iz-gallery .iz-thumbs { scrollbar-width: none; padding: 3px; margin: -3px; }
 /* More thumbnails than the four columns scroll sideways instead of wrapping (S3.2.4). */
 @media (min-width: 768px) {
-  .iz-thumbs { display: flex; overflow-x: auto; }
-  .iz-thumbs > .iz-thumb { flex: 0 0 calc((100% - 36px) / 4); }
+  .iz-gallery .iz-thumbs { display: flex; overflow-x: auto; }
+  .iz-gallery .iz-thumbs > .iz-thumb { flex: 0 0 calc((100% - 36px) / 4); }
 }
 /* Dashed side placeholder of produk-sisi.dc.html (inline style there), S4.4.1. */
 .iz-thumb__ph { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 6px; text-align: center; font-size: 14px; font-weight: 600; line-height: 1.2; color: var(--c-batu); border: 1.5px dashed var(--c-garis); border-radius: inherit; }
