@@ -2,8 +2,10 @@ import { getAdminDb } from '@/lib/firebaseAdmin';
 import ProdukClient from './ProdukClient';
 import { Product } from '@/types';
 import { normalizeProduct } from '@/lib/product-utils';
+import { canonicalUrl } from '@/lib/seo';
 
 export const dynamic = 'force-dynamic';
+export const metadata = { alternates: { canonical: canonicalUrl('produk') } };
 
 export default async function ProdukPage() {
   let products: Product[] = [];

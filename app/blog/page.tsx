@@ -7,6 +7,9 @@ import { Calendar } from 'lucide-react';
 import { formatDate, optimizeCloudinaryUrl, generateCloudinarySrcSet } from '@/lib/utils';
 import { getArticles } from '@/lib/public-content';
 import { publicDate } from '@/lib/article-format';
+import { canonicalUrl } from '@/lib/seo';
+
+export const metadata = { alternates: { canonical: canonicalUrl('blog') } };
 
 // ISR: rendered on the server so Google sees every article; admin writes call revalidatePath.
 export const revalidate = 3600;
