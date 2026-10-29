@@ -47,5 +47,12 @@
     "value": "Panduan memilih tas motor: tank bag, tail bag, side bag, atau box?",
     "reason": "Article card titles come from published articles in Firestore (data, not canvas copy); the canvas shows sample titles.",
     "requirement": "S1.8, design.md §19 data-driven text"
+  },
+  {
+    "artboard": "produk",
+    "kind": "class",
+    "value": "iz-fchip--motor",
+    "reason": "The \"Motor saya\" chip renders only when a motor category is chosen; the choice lives in the browser (localStorage), so the server HTML never has it. The canvas draws the chosen state (Retro).",
+    "requirement": "S2.2, S0.6"
   }
 ]
