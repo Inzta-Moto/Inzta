@@ -12,7 +12,11 @@ import {
   buildVariablePayload,
 } from './_helpers';
 
+// F-014: the full catalog (inactive products included) is admin-only; reject before reading Firestore.
 export async function GET() {
+  const auth = await requireAdmin();
+  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
+
   try {
     const snapshot = await getAdminDb().collection('products').get();
     const products = snapshot.docs.map((doc) =>

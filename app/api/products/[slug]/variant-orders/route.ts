@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getAdminDb } from '@/lib/firebaseAdmin';
+import { requireAdmin } from '@/lib/auth';
+
+export const dynamic = 'force-dynamic';
 
 /**
  * GET /api/products/[slug]/variant-orders
@@ -16,6 +19,10 @@ export async function GET(
   _request: Request,
   { params }: { params: { slug: string } },
 ) {
+  // F-014: admin-only. Each call scans every order, so a public route multiplies Firestore reads.
+  const auth = await requireAdmin();
+  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
+
   try {
     const db = getAdminDb();
     const withOrders = new Set<string>();

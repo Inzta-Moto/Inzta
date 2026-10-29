@@ -21,7 +21,7 @@ export default function DetailClient({ slug, initialProduct, initialRelated }: {
   initialRelated?: any[];
 }) {
   const [product, setProduct] = useState<Product | null>(initialProduct || null);
-  const [related, setRelated] = useState<Product[]>(initialRelated || []);
+  const [related] = useState<Product[]>(initialRelated || []);
   const [loading, setLoading] = useState<boolean>(!initialProduct);
   const [error, setError] = useState<string | null>(null);
   const [activeImg, setActiveImg] = useState<number>(0);
@@ -165,13 +165,8 @@ export default function DetailClient({ slug, initialProduct, initialRelated }: {
       const res = await fetch(`/api/products/${slug}`);
       const data = await res.json();
       if (!res.ok) { setError(data.error || 'Produk tidak ditemukan'); return; }
+      // F-014: no related products in this fallback; GET /api/products is admin-only.
       setProduct(data.product as Product);
-
-      const relRes = await fetch('/api/products');
-      const relData = await relRes.json();
-      if (relRes.ok && relData.products) {
-        setRelated((relData.products as Product[]).filter((p) => p.isActive && p.slug !== slug).slice(0, 4));
-      }
     } catch (e: any) {
       setError(e.message);
     } finally {

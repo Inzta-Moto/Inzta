@@ -22,6 +22,7 @@ const idTokens = {
   'token-affiliate': { uid: 'u-aff', email: 'aff@example.com' },
 };
 let writes = 0;
+let reads = 0;
 
 function docRef(col, id) {
   const key = col + '/' + id;
@@ -43,7 +44,7 @@ function docRef(col, id) {
 const fakeDb = {
   collection: (col) => ({
     doc: (id) => docRef(col, id),
-    get: async () => ({ docs: [...docs.entries()].filter(([k]) => k.startsWith(col + '/')).map(([k, v]) => ({ id: k.split('/')[1], data: () => v })) }),
+    get: async () => { reads++; return { docs: [...docs.entries()].filter(([k]) => k.startsWith(col + '/')).map(([k, v]) => ({ id: k.split('/')[1], data: () => v })) }; },
     where: () => ({ limit: () => ({ get: async () => ({ empty: true, docs: [] }) }) }),
   }),
 };
@@ -94,6 +95,7 @@ const articles = require(path.join(ROOT, 'app/api/articles/route.ts'));
 const article = require(path.join(ROOT, 'app/api/articles/[slug]/route.ts'));
 const products = require(path.join(ROOT, 'app/api/products/route.ts'));
 const product = require(path.join(ROOT, 'app/api/products/[slug]/route.ts'));
+const variantOrders = require(path.join(ROOT, 'app/api/products/[slug]/variant-orders/route.ts'));
 const session = require(path.join(ROOT, 'app/api/auth/session/route.ts'));
 const { middleware } = require(path.join(ROOT, 'middleware.ts'));
 const { NextRequest } = require(path.join(ROOT, 'node_modules/next/server'));
@@ -136,6 +138,15 @@ const simpleProduct = { slug: 'tas-uji', name: 'Tas uji', productType: 'simple',
     await check(`${name}: affiliate session as admin cookie -> 403, no write`, async () => { as('cookie-affiliate'); const w = writes; const r = await call(); assert.strictEqual(r.status, 403); assert.strictEqual(writes, w); });
     await check(`${name}: invalid cookie -> 401`, async () => { as('forged'); const r = await call(); assert.strictEqual(r.status, 401); });
   }
+
+  // F-014: the full catalog (inactive products included) is admin-only and rejected before any Firestore read.
+  await check('GET /api/products: no cookie -> 401, no read', async () => { as(null); const n = reads; const r = await products.GET(); assert.strictEqual(r.status, 401); assert.strictEqual(reads, n); });
+  await check('GET /api/products: affiliate session -> 403, no read', async () => { as('cookie-affiliate'); const n = reads; const r = await products.GET(); assert.strictEqual(r.status, 403); assert.strictEqual(reads, n); });
+  await check('GET /api/products: invalid cookie -> 401', async () => { as('forged'); assert.strictEqual((await products.GET()).status, 401); });
+  await check('GET /api/products: admin -> 200 with products', async () => {
+    as('cookie-admin'); const r = await products.GET();
+    assert.strictEqual(r.status, 200); assert.ok(Array.isArray((await r.json()).products));
+  });
 
   await check('session: affiliate token asking role admin -> 403, no admin cookie', async () => {
     jar.clear(); const r = await session.POST(req({ idToken: 'token-affiliate', role: 'admin' }));
@@ -261,10 +272,22 @@ const simpleProduct = { slug: 'tas-uji', name: 'Tas uji', productType: 'simple',
     assert.match(adminErrorMessage(401), /Sesi admin habis/); assert.match(adminErrorMessage(403), /tidak punya akses admin/);
     assert.strictEqual(adminErrorMessage(400, 'slug: wajib diisi'), 'slug: wajib diisi');
   });
-  await check('public: GET articles and products still work without login', async () => {
+  await check('GET /api/products/[slug]/variant-orders: no cookie -> 401, affiliate -> 403, no read', async () => {
+    const call = () => variantOrders.GET(req({}), { params: { slug: 'tas-uji' } });
+    const n = reads;
+    as(null); assert.strictEqual((await call()).status, 401);
+    as('cookie-affiliate'); assert.strictEqual((await call()).status, 403);
+    assert.strictEqual(reads, n);
+  });
+  // An anonymous GET never reads cookies(), so only this export keeps Next from caching a product per slug.
+  await check('GET product routes are force-dynamic (no cached product after deactivation)', () => {
+    assert.strictEqual(product.dynamic, 'force-dynamic');
+    assert.strictEqual(variantOrders.dynamic, 'force-dynamic');
+  });
+  // F-014: GET /api/products is admin-only now (cases above); public product reads go through /api/products/[slug].
+  await check('public: GET articles still work without login', async () => {
     as(null);
     assert.strictEqual((await articles.GET()).status, 200);
-    assert.strictEqual((await products.GET()).status, 200);
     assert.strictEqual((await article.GET(req({}), { params: { slug: 'Legacy_Slug' } })).status, 200);
   });
 

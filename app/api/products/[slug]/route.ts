@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getAdminDb } from '@/lib/firebaseAdmin';
 import { requireAdmin } from '@/lib/auth';
+import { isValidSlug } from '@/lib/slug';
 import { revalidateProductPaths } from '@/lib/revalidate';
 import {
   normalizeProduct,
@@ -10,14 +11,21 @@ import {
   buildVariablePayload,
 } from '../_helpers';
 
+// F-014: an anonymous GET never touches cookies(), so without this Next caches the response per slug
+// and keeps serving a product after it is deactivated or deleted.
+export const dynamic = 'force-dynamic';
+
 export async function GET(
   _request: Request,
   { params }: { params: { slug: string } },
 ) {
+  // F-014: an inactive product is a 404 for anyone but an admin, same body as a missing one.
+  const notFound = () => NextResponse.json({ error: 'Product not found' }, { status: 404 });
+  if (!isValidSlug(params.slug)) return notFound();
   try {
     const doc = await getAdminDb().collection('products').doc(params.slug).get();
-    if (!doc.exists)
-      return NextResponse.json({ error: 'Product not found' }, { status: 404 });
+    if (!doc.exists) return notFound();
+    if (doc.data()?.isActive !== true && !(await requireAdmin()).ok) return notFound();
 
     return NextResponse.json({
       product: normalizeProduct(doc.id, doc.data() as Record<string, any>),

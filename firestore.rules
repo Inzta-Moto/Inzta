@@ -10,7 +10,10 @@ service cloud.firestore {
 
     // Koleksi Publik: Katalog Produk & Artikel (Hanya BACA)
     match /products/{productId} {
-      allow read: if true;
+      // F-014: produk nonaktif (atau tanpa isActive) hanya terbaca lewat Admin SDK (server).
+      // List ditolak: tidak ada kode client yang me-list produk.
+      allow get: if resource.data.get('isActive', false) == true;
+      allow list: if false;
       allow write: if false;
     }
     
