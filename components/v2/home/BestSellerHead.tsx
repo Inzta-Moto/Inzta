@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useEffect, useRef, type RefObject } from 'react';
 import type { FlashSaleState } from '@/types';
 import { endsAtMs, formatPanel, type Countdown } from '@/lib/v2/flash-time';
 import { useFlashCountdown } from '@/components/v2/useFlashCountdown';
@@ -16,48 +17,76 @@ const UNITS: { key: UnitKey; label: string }[] = [
   { key: 'seconds', label: 'Detik' },
 ];
 
-// "--" until mount so the server HTML and the first client render match (24.5).
+// "--" until mount so the server HTML and the first client render match (S1.3.1). Days of 100 or more keep every
+// digit; zero units show "00" (S1.3.2).
 function digits(value: Countdown | null, key: UnitKey): string {
   return value ? String(value[key]).padStart(2, '0') : '--';
 }
 
-// Minute resolution on purpose: the string changes once per minute, so the attribute is only touched that often
-// and screen readers are not handed a new value every second (24.5).
-function timerLabel(value: Countdown | null, endMs: number): string {
-  if (!value) return `Berakhir ${formatPanel(endMs)}`;
-  const { days, hours, minutes } = value;
-  if (days === 0 && hours === 0 && minutes === 0) return 'Berakhir dalam kurang dari 1 menit';
-  const out: string[] = [];
-  if (days > 0) out.push(`${days} hari`);
-  if (days > 0 || hours > 0) out.push(`${hours} jam`);
-  out.push(`${minutes} menit`);
-  return `Berakhir dalam ${out.join(' ')}`;
+// S1.3.2: "Berakhir dalam" until mount, then the canvas form. Minute resolution on purpose: the string changes once
+// per minute, so React touches the attribute only that often and screen readers are not handed a value every second.
+export function timerLabel(value: Countdown | null): string {
+  if (!value) return 'Berakhir dalam';
+  return `Berakhir dalam ${value.days} hari ${value.hours} jam ${value.minutes} menit`;
 }
 
-// F-016 7.1 and 24.4: normal "Pilihan best seller INZTA." heading with ScrollerArrows, or the flash-sale countdown panel.
-// hasCards: after a sale ends with no best seller, the plain heading would sit above nothing, so render nothing (7.2).
-export default function BestSellerHead({ flash, scrollerId, hasCards = true }: { flash: FlashSaleState; scrollerId: string; hasCards?: boolean }) {
+// Same rule as FlashBar: no clock comparison during render (hydration); an ended sale is caught after mount by the
+// shared countdown, on the same clock as the promo bar (S0.3.2).
+function useFlash(flash: FlashSaleState) {
   const end = endsAtMs(flash);
-  // Same rule as FlashBar: no clock comparison during render (hydration); an ended sale is caught after mount.
   const eligible = flash.isActive === true && end !== null;
   const { value, ended } = useFlashCountdown(eligible ? flash.endsAt : null);
+  return { end, live: eligible && end !== null && !ended, value, ended };
+}
 
-  if (!eligible || end === null || ended) {
-    if (!hasCards) return null;
-    return (
-      <div className="iz-head iz-head--split">
-        <div>
-          <span className="iz-eyebrow">Best seller</span>
-          <h2 className="t-h2-landing">Pilihan best seller INZTA.</h2>
-        </div>
-        <ScrollerArrows targetId={scrollerId} />
-      </div>
-    );
-  }
+/**
+ * S1.3.3: when the panel disappears while focus is inside it, focus moves to the section that follows the best-seller
+ * section. The next section is remembered while the panel is mounted because, without cards, the whole section is
+ * removed together with the panel. A click or focus outside the panel forgets the last focused element, so a sale
+ * that ends while the visitor is elsewhere never steals focus.
+ */
+function useFocusRescue(live: boolean) {
+  const panelRef = useRef<HTMLDivElement>(null);
+  const nextRef = useRef<Element | null>(null);
+  const lastRef = useRef<Element | null>(null);
 
-  // Digits are plain text swaps without a transition, so reduced motion needs nothing extra (24.9).
+  useEffect(() => {
+    if (!live) return;
+    nextRef.current = panelRef.current?.closest('section')?.nextElementSibling ?? null;
+    const onIn = (e: Event) => {
+      lastRef.current = panelRef.current?.contains(e.target as Node) ? (e.target as Element) : null;
+    };
+    const onDown = (e: Event) => {
+      if (!panelRef.current?.contains(e.target as Node)) lastRef.current = null;
+    };
+    document.addEventListener('focusin', onIn);
+    document.addEventListener('pointerdown', onDown);
+    return () => {
+      document.removeEventListener('focusin', onIn);
+      document.removeEventListener('pointerdown', onDown);
+    };
+  }, [live]);
+
+  useEffect(() => {
+    if (live) return;
+    const last = lastRef.current;
+    const next = nextRef.current as HTMLElement | null;
+    lastRef.current = null;
+    if (!last || last.isConnected || !next?.isConnected) return;
+    const active = document.activeElement;
+    if (active && active !== document.body) return;
+    if (!next.hasAttribute('tabindex')) next.setAttribute('tabindex', '-1');
+    next.focus();
+  }, [live]);
+
+  return panelRef;
+}
+
+// The Main-flash panel (S1.3, FlashSale README): no rotating text, no flash label on cards (S1.3.7). Digits are plain
+// text swaps without a transition, so reduced motion needs nothing extra.
+function FlashPanel({ end, value, panelRef }: { end: number; value: Countdown | null; panelRef: RefObject<HTMLDivElement> }) {
   return (
-    <div className="iz-flashhead">
+    <div className="iz-flashhead" ref={panelRef} data-reveal="">
       <div className="iz-flashhead__text">
         <span className="iz-eyebrow">
           <Bolt />
@@ -67,7 +96,7 @@ export default function BestSellerHead({ flash, scrollerId, hasCards = true }: {
         <p>Diskon dari harga produk di website. Berakhir {formatPanel(end)}.</p>
       </div>
       <div className="iz-flashhead__side">
-        <div className="iz-countdown" role="timer" aria-label={timerLabel(value, end)}>
+        <div className="iz-countdown" role="timer" aria-label={timerLabel(value)}>
           <span className="iz-countdown__label">Berakhir dalam</span>
           {UNITS.map((u, i) => (
             <UnitBox key={u.key} withSep={i > 0} digits={digits(value, u.key)} label={u.label} />
@@ -78,6 +107,41 @@ export default function BestSellerHead({ flash, scrollerId, hasCards = true }: {
         </Link>
       </div>
     </div>
+  );
+}
+
+// S1.3 with cards: the "Pilihan best seller INZTA." heading with arrows, or the flash panel while the sale runs. When
+// the sale ends in the browser the heading returns in the panel's place.
+export default function BestSellerHead({ flash, scrollerId }: { flash: FlashSaleState; scrollerId: string }) {
+  const { end, live, value } = useFlash(flash);
+  const panelRef = useFocusRescue(live);
+
+  if (!live || end === null) {
+    return (
+      <div className="iz-head iz-head--split">
+        <div>
+          <span className="iz-eyebrow">Best seller</span>
+          <h2 className="t-h2-landing">Pilihan best seller INZTA.</h2>
+        </div>
+        <ScrollerArrows targetId={scrollerId} />
+      </div>
+    );
+  }
+  return <FlashPanel end={end} value={value} panelRef={panelRef} />;
+}
+
+// S1.3.4: a sale without any best-seller card renders the panel alone; when that sale ends the whole section goes
+// (S1.3.3), because a heading above nothing would be an empty section.
+export function FlashOnlySection({ flash }: { flash: FlashSaleState }) {
+  const { end, live, value } = useFlash(flash);
+  const panelRef = useFocusRescue(live);
+  if (!live || end === null) return null;
+  return (
+    <section className="iz-section--tight" style={{ paddingTop: 0 }} data-motion="best">
+      <div className="iz-wrap">
+        <FlashPanel end={end} value={value} panelRef={panelRef} />
+      </div>
+    </section>
   );
 }
 

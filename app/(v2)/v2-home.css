@@ -1,0 +1,52 @@
+/* F-016 S1 Beranda: states and fixes the canvas does not draw. Imported only by components/v2/HomeV2.tsx; every
+   selector is an iz- class or inside :where(.iz-page) (S0.1.1). */
+
+/* SmartImage in the canvas photo slots: the ported rules place a direct <img>, so the wrapper takes that place and
+   the <img> inside fills it (S0.12.2, S0.12.5). */
+.iz-why__photo > .iz-smartimg, .iz-gfeature > .iz-smartimg { position: absolute; inset: 0; z-index: -2; }
+.iz-band > .iz-smartimg, .iz-cat > .iz-smartimg, .iz-photo > .iz-smartimg { position: absolute; inset: 0; }
+.iz-cat > .iz-smartimg > img { transition: transform .4s ease; }
+.iz-cat:hover > .iz-smartimg > img { transform: scale(1.04); }
+.iz-gfeature > .iz-smartimg > img, .iz-grow .iz-photo > .iz-smartimg > img { transition: transform 500ms cubic-bezier(0.23, 1, 0.32, 1); }
+.iz-photo--empty .iz-placeholder { color: inherit; }
+
+/* Garasi: choice ring and background in 150 ms (S1.2.4, MOTION.md §1); photo zoom on fine pointers only (§2). */
+.iz-gtile { transition: background-color .15s ease, box-shadow .15s ease; }
+.iz-gtile img { transition: transform .15s ease; }
+
+/* The Garasi button keeps one width for every category label, so a choice after mount moves nothing (S1.2.3). */
+@media (min-width: 768px) {
+  .iz-garasi__cta { min-width: 20em; }
+}
+
+/* Article titles clamp at three lines and keep the full text in the DOM (S1.8.5). The underline lives on an inline
+   span so it follows every line of a wrapped title. */
+.iz-gfeature h3, .iz-grow h3 { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; overflow: hidden; }
+.iz-uline { background-image: linear-gradient(currentColor, currentColor); background-repeat: no-repeat; background-position: 0 100%; background-size: 0% 2px; transition: background-size 200ms ease; }
+
+/* Hover effects only on fine pointers and only without reduced motion (S1.2.4, S1.8.5). */
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .iz-gtile:hover img { transform: scale(1.03); }
+  .iz-gfeature:hover > .iz-smartimg > img, .iz-grow:hover .iz-photo > .iz-smartimg > img { transform: scale(1.03); }
+  .iz-gfeature:hover .iz-uline, .iz-grow:hover .iz-uline, .iz-gfeature:focus-visible .iz-uline, .iz-grow:focus-visible .iz-uline { background-size: 100% 2px; }
+}
+
+/* Scroller arrows (S1.3.5): aria-disabled at either end, hidden while the cards fit. */
+.iz-arrows[hidden] { display: none; }
+.iz-iconbtn[aria-disabled="true"] { opacity: .4; cursor: default; }
+.iz-iconbtn[aria-disabled="true"]:hover { background: var(--c-pasir-muda); }
+
+/* Without JavaScript mouse users get a thin scrollbar to reach every card and photo (S1.3.6, S1.7.4). SiteNav sets
+   .js-nav on mount, which marks "JavaScript has run". */
+@media (hover: hover) and (pointer: fine) {
+  html:not(.js-nav) .iz-scroller, html:not(.js-nav) .iz-film { scrollbar-width: thin; }
+}
+
+/* Reduced motion: the ported tile zoom is switched off as well; at 1024 px and wider the filmstrip becomes a static
+   wrapped grid with no horizontal scroll (S1.7.4, MOTION.md §6). */
+@media (prefers-reduced-motion: reduce) {
+  .iz-cat:hover > .iz-smartimg > img, .iz-cat:hover > img { transform: none; }
+}
+@media (prefers-reduced-motion: reduce) and (min-width: 1024px) {
+  .iz-film { flex-wrap: wrap; justify-content: center; overflow-x: visible; scroll-snap-type: none; }
+}

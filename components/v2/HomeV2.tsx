@@ -1,4 +1,4 @@
-import type { HomeData } from '@/types';
+import type { HomeData, Product } from '@/types';
 import { WA_NUMBER } from '@/lib/constants';
 import { GASBER_SLUG } from '@/lib/v2/home-content';
 import V2Page from '@/components/v2/V2Page';
@@ -16,15 +16,19 @@ import Guides from '@/components/v2/home/Guides';
 import Reviews from '@/components/v2/home/Reviews';
 import HowToOrder from '@/components/v2/home/HowToOrder';
 import Closing from '@/components/v2/Closing';
+import '@/app/(v2)/v2-home.css';
 
-// Beranda v2 "Rider's shop" (F-016), section order of Main.dc.html (requirement 1.1).
-export default function HomeV2({ data }: { data: HomeData }) {
+// Beranda v2 "Rider's shop" (F-016 S1.11): promo bar, navbar, S1.1–S1.10, closing, footer, in the order of Main.dc.html.
+// The Beranda builds its own frame instead of V2Layout because it already holds the products and the flash state
+// from its one ISR render; the navbar starts dark over the hero (S0.4.4). `products` reaches only server components
+// (Reviews), so it is never serialised to the client.
+export default function HomeV2({ data, products }: { data: HomeData; products: Product[] }) {
   const waHref = `https://wa.me/${WA_NUMBER}`;
   const gasberHref = data.gasberPublished ? `/blog/${GASBER_SLUG}` : '/blog';
   return (
     <V2Page>
       <FlashBar flash={data.flash} />
-      <SiteNav minPrices={data.minPrices} waHref={waHref} />
+      <SiteNav minPrices={data.minPrices} waHref={waHref} dark />
       <main id="isi">
         <Hero />
         <Garasi />
@@ -34,7 +38,7 @@ export default function HomeV2({ data }: { data: HomeData }) {
         <TourmaxBand tourmax={data.tourmax} />
         <Community gasberHref={gasberHref} />
         <Guides guides={data.guides} />
-        <Reviews productImages={data.productImages} />
+        <Reviews products={products} />
         <HowToOrder />
         <Closing waHref={waHref} />
       </main>

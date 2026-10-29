@@ -1,12 +1,14 @@
 import Link from 'next/link';
-import { optimizeCloudinaryUrl } from '@/lib/utils';
 import { FILMSTRIP, INSTAGRAM } from '@/lib/v2/home-content';
+import SmartImage from '@/components/v2/ui/SmartImage';
 import { ArrowRight } from '@/components/v2/icons';
 
-// Desktop filmstrip boxes are 520 x 360 (wide) and 280 x 360 (tall); Cloudinary c_fill crops like object-fit: cover.
-const FILM_SIZE = { wide: { w: 520, h: 360 }, tall: { w: 280, h: 360 } } as const;
+// Desktop boxes are 520 x 360 (wide) and 280 x 360 (tall). The photos are landscape, so in a tall box object-fit:
+// cover renders them about twice the box width; the sizes hints ask for the rendered width.
+const FILM_SIZES = { wide: '(max-width: 767px) 82vw, 540px', tall: '(max-width: 767px) 120vw, 700px' } as const;
 
-// "Dari jalan, bersama rider." (F-016 11). Every Gasber photo carries the organiser's credit (D-3).
+// "Dari jalan, bersama rider." (F-016 S1.7). Every photo owned by the Gasber organiser carries the credit tag and
+// INZTA's own photos carry none (S1.7.2); alts describe the photos (S1.7.3).
 export default function Community({ gasberHref }: { gasberHref: string }) {
   return (
     <section className="iz-section" style={{ paddingBottom: 0 }}>
@@ -27,27 +29,16 @@ export default function Community({ gasberHref }: { gasberHref: string }) {
           </div>
         </div>
       </div>
-      {/* Scrollable on every width, so keyboard users must be able to focus and scroll it (axe scrollable-region-focusable). */}
-      <div className="iz-film" tabIndex={0} role="region" aria-label="Foto dari jalan">
-        {FILMSTRIP.map(photo => {
-          const { w, h } = FILM_SIZE[photo.shape];
-          const src1x = optimizeCloudinaryUrl(photo.src, w, h);
-          const src2x = optimizeCloudinaryUrl(photo.src, w * 2, h * 2);
-          return (
-            <div key={photo.src} className={`iz-photo iz-photo--${photo.shape}`}>
-              <img
-                src={src1x}
-                srcSet={`${src1x} 1x, ${src2x} 2x`}
-                alt={photo.alt}
-                width={w}
-                height={h}
-                loading="lazy"
-                decoding="async"
-              />
-              {photo.credit && <span className="iz-tag">{photo.credit}</span>}
-            </div>
-          );
-        })}
+      {/* S1.7.1: a focusable, labelled scroll region, so keyboard users scroll it with the arrow keys. Without
+          JavaScript a thin scrollbar shows on fine pointers; under reduced motion at 1024 px and wider it becomes a
+          static wrapped grid (S1.7.4, v2-home.css). The phase C scrub targets data-motion="film". */}
+      <div className="iz-film" tabIndex={0} role="region" aria-label="Foto dari jalan" data-motion="film">
+        {FILMSTRIP.map(photo => (
+          <div key={photo.src} className={`iz-photo iz-photo--${photo.shape}`}>
+            <SmartImage src={photo.src} alt={photo.alt} sizes={FILM_SIZES[photo.shape]} widths={[540, 800, 1200]} width={800} />
+            {photo.credit && <span className="iz-tag">{photo.credit}</span>}
+          </div>
+        ))}
       </div>
       <div className="iz-wrap">
         <p className="iz-muted" style={{ textAlign: 'center', fontSize: 15, marginTop: 24 }}>

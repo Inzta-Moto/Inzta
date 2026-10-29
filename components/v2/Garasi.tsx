@@ -1,15 +1,14 @@
 'use client';
 
 import Image from 'next/image';
-import Link from 'next/link';
-import { categoryHref } from '@/lib/v2/motor-category';
 import { MOTOR_CATEGORIES, categoryLabel } from '@/lib/v2/home-content';
 import { useMotorCategory } from '@/components/v2/MotorCategory';
+import CategoryLink from '@/components/v2/CategoryLink';
 import { Check } from '@/components/v2/icons';
 
-// F-016 5. The server render is "not chosen" (5.2); the stored choice arrives through useMotorCategory after mount.
-// Tile photos get alt="" because the label already names the button (20.5, D-9). The button to the category page
-// (P2-4) stays in the DOM, hidden, while nothing is chosen so a choice never shifts the layout (5.2, 5.3).
+// F-016 S1.2. The server render is "not chosen" (S0.6.2); the stored choice arrives through useMotorCategory after
+// mount and updates the navbar chip and the "Motor saya" marks through the same provider (S1.2.1). Tile photos get
+// alt="" because the label already names the button (S0.12.6). Choosing never navigates or scrolls (S1.2.2).
 export default function Garasi() {
   const { category, setCategory } = useMotorCategory();
   const chosen = category ? categoryLabel(category) : null;
@@ -21,7 +20,7 @@ export default function Garasi() {
           <h2 className="t-h2-landing">Motor Anda apa?</h2>
           <p className="t-body">Pilih kategori motor Anda sekali. Kami tandai tas yang cocok di seluruh toko.</p>
         </div>
-        <div className="iz-garasi">
+        <div className="iz-garasi" data-reveal-stagger="">
           {MOTOR_CATEGORIES.map(c => {
             const pressed = category === c.value;
             return (
@@ -47,15 +46,17 @@ export default function Garasi() {
           })}
         </div>
         <div style={{ display: 'flex', justifyContent: 'center', marginTop: 40 }}>
-          <Link
-            className="iz-btn iz-btn--primary iz-btn--block iz-garasi__cta"
-            href={category ? categoryHref(category) : '/#garasi'}
-            data-hidden={chosen ? undefined : 'true'}
-            aria-hidden={chosen ? undefined : true}
-            tabIndex={chosen ? undefined : -1}
-          >
-            {chosen ? `Lihat tas untuk motor ${chosen}` : 'Lihat tas untuk motor'}
-          </Link>
+          {category && chosen ? (
+            <CategoryLink value={category} className="iz-btn iz-btn--primary iz-btn--block iz-garasi__cta">
+              {`Lihat tas untuk motor ${chosen}`}
+            </CategoryLink>
+          ) : (
+            // S1.2.3: same box, kept in the layout but invisible and out of the tab order, so a choice made after
+            // mount (or restored from storage) does not shift the page.
+            <span className="iz-btn iz-btn--primary iz-btn--block iz-garasi__cta" data-hidden="true" aria-hidden="true">
+              Lihat tas untuk motor
+            </span>
+          )}
         </div>
       </div>
     </section>

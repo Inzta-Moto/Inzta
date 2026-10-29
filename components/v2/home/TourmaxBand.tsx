@@ -1,29 +1,31 @@
-import Image from 'next/image';
 import Link from 'next/link';
 import { formatRupiah } from '@/lib/v2/home-data';
 import { TOURMAX_NOTES, TOURMAX_SIZE, TOURMAX_SLUG } from '@/lib/v2/home-content';
+import SmartImage from '@/components/v2/ui/SmartImage';
 
-// Tourmax 30 band (F-016 10). Renders only when the product is active in Firestore (10.2).
-// A variable product without priceFrom yields price 0; "Rp0" would be a wrong price, so it is treated as missing.
-// The size note has no unit because cm is unconfirmed (10.3, P-11).
+// Tourmax 30 band (F-016 S1.6). Renders only when the product is active with an effective price above 0 (S1.6.1);
+// a variable product without priceFrom yields 0, and "Rp0" would be a wrong price. Only the effective price shows, no
+// struck price (S1.6.2). The size note has no unit because cm is unconfirmed (P-11). The photo is on the dark band, so
+// it uses the dark tone (S0.12.5). The desktop pin of S1.6.3 belongs to the phase C motion; data-* are its hooks.
 export default function TourmaxBand({ tourmax }: { tourmax: { price: number; compareAt: number | null } | null }) {
   if (!tourmax || tourmax.price <= 0) return null;
   return (
-    <section className="iz-band iz-on-photo">
-      <Image
+    <section className="iz-band iz-on-photo" data-motion="tourmax">
+      <SmartImage
         src="/images/v2/tail-bag-inzta-tourmax-30-2.jpg"
         alt="Tourmax 30 terpasang di skuter matik besar"
-        width={1000}
-        height={1333}
+        tone="dark"
         sizes="100vw"
       />
       <div className="iz-band__body">
         <h2 className="t-h2-landing">
           Tourmax 30, <span className="iz-tone2">dari dekat.</span>
         </h2>
-        <ul className="iz-notes">
+        <ul className="iz-notes" data-reveal-stagger="">
           {TOURMAX_NOTES.map(note => (
-            <li key={note} className="iz-note">{note}</li>
+            <li key={note} className="iz-note">
+              {note}
+            </li>
           ))}
           <li className="iz-note">
             <span>
@@ -32,9 +34,13 @@ export default function TourmaxBand({ tourmax }: { tourmax: { price: number; com
             </span>
           </li>
         </ul>
-        <div className="iz-band__foot">
-          <b className="iz-num" style={{ fontSize: 32 }}>{formatRupiah(tourmax.price)}</b>
-          <Link className="iz-btn iz-btn--primary" href={`/produk/${TOURMAX_SLUG}`}>Lihat Tourmax 30</Link>
+        <div className="iz-band__foot" data-reveal="">
+          <b className="iz-num" style={{ fontSize: 32 }}>
+            {formatRupiah(tourmax.price)}
+          </b>
+          <Link className="iz-btn iz-btn--primary" href={`/produk/${TOURMAX_SLUG}`}>
+            Lihat Tourmax 30
+          </Link>
         </div>
       </div>
     </section>

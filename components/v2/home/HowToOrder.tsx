@@ -7,7 +7,9 @@ const STEPS: readonly { icon: ComponentType; title: string; text: string }[] = [
   { icon: BadgeCheck, title: 'Admin membalas', text: 'Admin INZTA mengonfirmasi ongkir dan pembayaran di WhatsApp.' },
 ];
 
-// "Pesan dalam tiga langkah." (F-016 14). Warranty and shipping time stay PLACEHOLDER until INZTA writes them (A-023, P-5, P-6).
+// "Pesan dalam tiga langkah." (F-016 S1.10). Warranty and shipping time stay PLACEHOLDER until INZTA writes them
+// (A-023, P-5, P-6; listed by check:f016-release, S1.10.3). S1.10.2: the v2 reset removes the list markers, so each
+// number is announced once, from its visible span; the arrows between steps are CSS pseudo-elements, unseen by AT.
 export default function HowToOrder() {
   return (
     <section className="iz-section" id="cara-pesan" style={{ paddingTop: 0 }}>
@@ -27,7 +29,7 @@ export default function HowToOrder() {
               </span>
             </div>
           </div>
-          <ol className="iz-ordersteps">
+          <ol className="iz-ordersteps" data-motion="howto">
             {STEPS.map(({ icon: Icon, title, text }, i) => (
               <li key={title}>
                 <div className="iz-ordersteps__top">

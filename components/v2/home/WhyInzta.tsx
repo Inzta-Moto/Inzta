@@ -1,30 +1,34 @@
 import Link from 'next/link';
-import { optimizeCloudinaryUrl } from '@/lib/utils';
 import { PHOTOS } from '@/lib/v2/home-content';
+import SmartImage from '@/components/v2/ui/SmartImage';
 import { ArrowRight, Chat, CircleCheck, Road, Scissors } from '@/components/v2/icons';
 
-// The panel is portrait while road-02 is 1200 x 630 landscape, so object-fit: cover needs the full width.
-const PANEL_PHOTO = optimizeCloudinaryUrl(PHOTOS.road02, 1200);
+// road-02 is 1200 x 630 landscape inside a portrait panel, so object-fit: cover renders it about 1.9x the panel
+// height wide; the sizes hint asks for that width instead of the panel width.
+const PANEL_SIZES = '(max-width: 767px) 170vw, 70vw';
 
-// "Mengapa pilih INZTA" (F-016 8). Items 1, 3, 4 are team copy waiting for INZTA's G2 approval (P-8).
-// "Tentang INZTA" uses the temporary target /#mengapa until a Tentang page exists (4.9, P-12).
+// "Mengapa pilih INZTA" (F-016 S1.4). Items 1, 3, 4 are team copy waiting for INZTA's G2 approval (P-8, listed by
+// check:f016-release, S1.4.3); "sejak 2023" waits for P-10. The photo sits on the dark panel, so it uses the dark
+// tone: on error the fallback is --c-aspal and the H2 stays readable (S0.12.5). The canvas alt does not describe the
+// photo (two riders seated on a motorcycle on sand), so the corrected alt of S1.4 is used. The example chips are
+// plain text (S1.4.2).
 export default function WhyInzta({ gasberHref, waHref }: { gasberHref: string; waHref: string }) {
   return (
     <section className="iz-section" id="mengapa">
       <div className="iz-wrap iz-why">
-        <div className="iz-why__photo">
-          <img
-            src={PANEL_PHOTO}
-            alt="Dua rider touring berpose di samping motor di padang pasir"
+        <div className="iz-why__photo" data-reveal-clip="">
+          <SmartImage
+            src={PHOTOS.road02}
+            alt="Dua rider di atas motor di jalur pasir"
+            tone="dark"
+            sizes={PANEL_SIZES}
+            widths={[800, 1200, 1600]}
             width={1200}
-            height={630}
-            loading="lazy"
-            decoding="async"
           />
           <span className="iz-eyebrow">Mengapa pilih INZTA</span>
           <h2 className="t-h2-landing">Dibuat di Indonesia. Dipakai di jalan Indonesia.</h2>
         </div>
-        <ul className="iz-why__list">
+        <ul className="iz-why__list" data-reveal-stagger="">
           <li className="iz-why__item">
             <span className="iz-why__icon"><CircleCheck /></span>
             <h3>Jujur soal kecocokan</h3>
