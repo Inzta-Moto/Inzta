@@ -3,8 +3,10 @@ import '@/app/(v2)/v2-tokens.css';
 import '@/app/(v2)/v2-components.css';
 import '@/app/(v2)/v2-overrides.css';
 import '@/app/(v2)/v2-ui.css';
+import '@/app/(v2)/v2-fit.css';
 import { fontDisplay, fontSans } from '@/components/v2/fonts';
 import { MotorCategoryProvider } from '@/components/v2/MotorCategory';
+import PageReady from '@/components/v2/motion/PageReady';
 
 // Without JavaScript the image load event never reaches React, so the shimmer layer would cover the photo (S0.12).
 const NOSCRIPT_STYLE = '<style>.iz-smartimg > .iz-skel { display: none; }</style>';
@@ -17,6 +19,7 @@ export default function V2Page({ children }: { children: ReactNode }) {
       <noscript dangerouslySetInnerHTML={{ __html: NOSCRIPT_STYLE }} />
       <a className="iz-skip" href="#isi">Langsung ke isi</a>
       <MotorCategoryProvider>{children}</MotorCategoryProvider>
+      <PageReady />
     </div>
   );
 }

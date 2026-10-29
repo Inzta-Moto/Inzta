@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import HeroImage from '@/components/v2/home/HeroImage';
 import { Motorcycle } from '@/components/v2/icons';
+import Bounce from '@/components/v2/motion/Bounce';
 
 // F-016 S1.1. Server component so the H1 and the LCP photo are in the server HTML (S1.1.1); HeroImage is the only
 // client part (failure handling, S1.1.4). The hero sits under the zero-height sticky navbar wrapper; the sentinel at the
@@ -21,10 +22,10 @@ export default function Hero() {
         <div className="iz-row" data-reveal="">
           <a className="iz-btn iz-btn--primary" href="#garasi">
             <Motorcycle width={20} height={20} />
-            Pilih motor Anda
+            <Bounce text="Pilih motor Anda" />
           </a>
           <Link className="iz-btn iz-btn--secondary" href="/produk">
-            Lihat semua tas
+            <Bounce text="Lihat semua tas" />
           </Link>
         </div>
       </div>

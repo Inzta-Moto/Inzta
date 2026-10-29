@@ -1,0 +1,69 @@
+/* F-016 C5 site motion (SiteMotion, lib/v2/motion/*). Loaded by the root layout through SiteMotion, so every rule is
+   scoped to an iz- class or to html.iz-js / html.iz-motion, which only public v2 routes ever get (S0.1.1). */
+
+/* Page curtain: shown over the first paint only when the boot script set data-iz-curtain (JS present, motion
+   allowed, public route), and during a route change while SiteMotion holds data-active. */
+.iz-curtain { position: fixed; inset: 0; z-index: 2147483000; display: none; pointer-events: none; }
+html.iz-js[data-iz-curtain] .iz-curtain, html.iz-js .iz-curtain[data-active] { display: block; pointer-events: auto; cursor: progress; }
+.iz-curtain__sheets { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.iz-curtain__sheet--kuning { fill: #f59e0b; }
+.iz-curtain__sheet--aspal { fill: #16140f; }
+.iz-curtain__mark { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; padding: 24px; color: #f3efe6; text-align: center; }
+.iz-curtain__mark [hidden] { display: none; }
+.iz-curtain__logo { width: 46px; height: auto; animation: iz-curtain-rise 0.9s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.iz-curtain__word { display: flex; overflow: hidden; padding-bottom: 0.08em; font-family: var(--font-display-v2), "Arial Black", "Arial", sans-serif; font-weight: 800; font-size: clamp(48px, 7vw, 104px); line-height: 1; letter-spacing: -0.02em; }
+.iz-curtain__word > span { display: inline-block; animation: iz-curtain-rise 0.9s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.iz-curtain__label { max-width: 14ch; font-family: var(--font-display-v2), "Arial Black", "Arial", sans-serif; font-weight: 800; font-size: clamp(34px, 5vw, 72px); line-height: 1.02; letter-spacing: -0.02em; text-wrap: balance; }
+@keyframes iz-curtain-rise { from { transform: translateY(110%); opacity: 0; } to { transform: none; opacity: 1; } }
+
+/* Navbar hides while scrolling down and returns on the way up (Sehan, 2026-10-29); SiteNav sets data-hidden. */
+.iz-navwrap .iz-nav { transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease; }
+.iz-navwrap[data-hidden="true"] .iz-nav { transform: translateY(calc(-100% - 40px)); box-shadow: none; }
+
+/* Roll text: the label carries its own copy as a text-shadow one line below and slides up to it on hover. */
+.iz-roll { display: inline-flex; overflow: hidden; height: 1.3em; line-height: 1.3; vertical-align: middle; }
+.iz-roll > span { display: block; text-shadow: 0 1.3em currentColor; transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
+
+/* Bounce labels (components/v2/motion/Bounce.tsx). */
+.iz-bounce { display: inline-flex; }
+.iz-bounce__w { display: inline-flex; white-space: nowrap; }
+.iz-bounce__w:not(:last-child) { margin-right: 0.27em; }
+.iz-bounce__c { display: inline-block; transform-origin: 50% 75%; }
+/* The navbar CTA styles every span as its round icon; the letters and the screen-reader copy opt out. */
+.iz-nav__cta .iz-bounce, .iz-nav__cta .iz-bounce__w, .iz-nav__cta .iz-bounce__c { width: auto; height: auto; border-radius: 0; background: none; color: inherit; place-items: normal; }
+.iz-nav__cta .iz-bounce, .iz-nav__cta .iz-bounce__w { display: inline-flex; }
+.iz-nav__cta .iz-bounce__c { display: inline-block; }
+.iz-nav__cta .iz-sr { width: 1px; height: 1px; }
+
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .iz-nav__links :is(a, button):hover .iz-roll > span, .iz-footer a:hover .iz-roll > span { transform: translateY(-1.3em); }
+
+  /* Buttons lift on a soft landing; outline buttons flood from the pointer's entry point (--fx/--fy from SiteMotion). */
+  .iz-page .iz-btn { position: relative; isolation: isolate; overflow: hidden; transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.5s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s ease, color 0.35s ease, border-color 0.35s ease, filter 0.2s ease; }
+  .iz-page .iz-btn:hover { transform: translateY(-3px); box-shadow: 0 16px 30px -16px rgba(22, 20, 15, 0.6); }
+  .iz-page .iz-btn:active { transform: translateY(0) scale(0.98); transition-duration: 0.15s; }
+  .iz-page .iz-btn--secondary::before { content: ""; position: absolute; inset: -2px; z-index: -1; border-radius: inherit; background: var(--c-tinta); clip-path: circle(0% at var(--fx, 50%) var(--fy, 50%)); transition: clip-path 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
+  .iz-page .iz-btn--secondary:hover::before { clip-path: circle(150% at var(--fx, 50%) var(--fy, 50%)); }
+  .iz-page .iz-btn--secondary:hover { background: transparent; color: var(--c-krem); }
+  .iz-page :is(.iz-dark, .iz-on-photo) .iz-btn--secondary::before { background: var(--c-krem); }
+  .iz-page :is(.iz-dark, .iz-on-photo) .iz-btn--secondary:hover { background: transparent; color: var(--c-tinta); }
+  .iz-page .iz-btn > svg, .iz-page .iz-btn__icon { transition: transform 0.55s cubic-bezier(0.16, 1, 0.3, 1); }
+  .iz-page .iz-btn:hover > svg { transform: translateX(-2px) rotate(-10deg); }
+  .iz-page .iz-btn:hover .iz-btn__icon, .iz-page .iz-nav__cta:hover > span:first-child { transform: translateX(4px) rotate(-14deg) scale(1.06); }
+  .iz-page .iz-link svg { transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1); }
+  .iz-page .iz-link:hover svg { transform: translateX(6px); }
+}
+
+/* Community filmstrip while SiteMotion pins it (desktop): the section fills the viewport so the pin never shows an
+   empty band, and the strip becomes a track that GSAP moves sideways. */
+html.iz-motion .iz-film-scene.is-pinned { min-height: 100svh; display: flex; flex-direction: column; justify-content: center; overflow: clip; padding-block: 64px 32px; }
+/* Auto margins stop a column flex item from stretching, so the header wrap takes the full row again. */
+html.iz-motion .iz-film-scene.is-pinned > .iz-wrap { width: 100%; }
+html.iz-motion .iz-film-scene.is-pinned .iz-film { overflow: visible; scroll-snap-type: none; }
+html.iz-motion .iz-film-scene.is-pinned .iz-photo > .iz-smartimg { inset: 0; }
+
+/* Reduced motion: nothing moves, nothing hides. */
+@media (prefers-reduced-motion: reduce) {
+  .iz-navwrap[data-hidden="true"] .iz-nav { transform: none; }
+  .iz-curtain { display: none; }
+}

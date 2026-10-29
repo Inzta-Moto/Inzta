@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const dir = process.argv[2] || path.join('app', '(v2)');
-const ALLOWED = [/^\.iz-/, /^\.t-/, /^img\.iz-/, /^:where\(\.iz-/, /^html:has\(\.iz-page\)/, /^html:not\(\.js-nav\) \.iz-/, /^html\.js-motion \.iz-/];
+const ALLOWED = [/^\.iz-/, /^\.t-/, /^img\.iz-/, /^:where\(\.iz-/, /^html:has\(\.iz-page\)/, /^html:not\(\.js-nav\) \.iz-/, /^html\.js-motion \.iz-/, /^html\.iz-js(\[[^\]]+\])? \.iz-/, /^html\.iz-motion \.iz-/, /^html \.iz-page\b/];
 
 // Splits a selector list on top-level commas only; :where(a, b) stays one selector.
 function splitTop(head) {
@@ -62,9 +62,9 @@ for (const file of fs.readdirSync(dir).filter(f => f.endsWith('.css'))) {
     if (!ALLOWED.some(re => re.test(sel))) problems.push(`${file}: unscoped selector "${sel}"`);
     for (const m of sel.matchAll(/\.([a-zA-Z][\w-]*)/g)) {
       const cls = m[1];
-      if (cls === 'iz-page' || cls === 'js-nav' || cls === 'js-motion') continue;
+      if (cls === 'iz-page' || cls === 'js-nav' || cls === 'js-motion' || cls === 'iz-js' || cls === 'iz-motion') continue;
       // F-016 S7.3.8: the article body keeps its F-012/F-013 classes; v2 restyles them only under .iz-page .iz-article.
-      if (globalClasses.has(cls) && !sel.startsWith('.iz-page .iz-article')) problems.push(`${file}: class ".${cls}" also exists in app/globals.css`);
+      if (globalClasses.has(cls) && !sel.replace(/^html /, '').startsWith('.iz-page .iz-article')) problems.push(`${file}: class ".${cls}" also exists in app/globals.css`);
     }
   }
 }

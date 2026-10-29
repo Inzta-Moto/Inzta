@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import AffiliateTracker from '@/components/AffiliateTracker';
 import TrackingScripts from '@/components/TrackingScripts';
+import SiteMotion from '@/components/v2/motion/SiteMotion';
+import { bootScript } from '@/lib/v2/motion/boot';
 import { Inter } from 'next/font/google';
 import './globals.css';
 
@@ -53,8 +55,10 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="id">
+    // The boot script marks <html> (iz-js, data-iz-curtain) before hydration on public v2 routes (F-016 C5).
+    <html lang="id" suppressHydrationWarning>
       <head>
+        <script dangerouslySetInnerHTML={{ __html: bootScript }} />
       </head>
       <body className={inter.className}>
         <Suspense fallback={null}>
@@ -62,6 +66,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <TrackingScripts />
         </Suspense>
         {children}
+        <SiteMotion />
       </body>
     </html>
   );

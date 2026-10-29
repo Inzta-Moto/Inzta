@@ -5,6 +5,8 @@ import { MOTOR_CATEGORIES, categoryLabel } from '@/lib/v2/home-content';
 import { useMotorCategory } from '@/components/v2/MotorCategory';
 import CategoryLink from '@/components/v2/CategoryLink';
 import { Check } from '@/components/v2/icons';
+import Bounce from '@/components/v2/motion/Bounce';
+import { PHOTO_QUALITY } from '@/lib/v2/image';
 
 // F-016 S1.2. The server render is "not chosen" (S0.6.2); the stored choice arrives through useMotorCategory after
 // mount and updates the navbar chip and the "Motor saya" marks through the same provider (S1.2.1). Tile photos get
@@ -31,7 +33,7 @@ export default function Garasi() {
                 aria-pressed={pressed}
                 onClick={() => setCategory(c.value)}
               >
-                <Image src={c.image} alt="" width={512} height={384} sizes="(max-width: 767px) 50vw, 282px" />
+                <Image src={c.image} alt="" width={512} height={384} sizes="(max-width: 767px) 50vw, 282px" quality={PHOTO_QUALITY} />
                 <span className="iz-gtile__label">{c.label}</span>
                 {pressed && (
                   <span className="iz-gtile__check">
@@ -48,7 +50,7 @@ export default function Garasi() {
         <div style={{ display: 'flex', justifyContent: 'center', marginTop: 40 }}>
           {category && chosen ? (
             <CategoryLink value={category} className="iz-btn iz-btn--primary iz-btn--block iz-garasi__cta">
-              {`Lihat tas untuk motor ${chosen}`}
+              <Bounce text={`Lihat tas untuk motor ${chosen}`} />
             </CategoryLink>
           ) : (
             // S1.2.3: same box, kept in the layout but invisible and out of the tab order, so a choice made after

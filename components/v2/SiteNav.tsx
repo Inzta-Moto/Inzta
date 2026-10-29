@@ -3,18 +3,19 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { BagPosition, MotorCategory } from '@/types';
-import { optimizeCloudinaryUrl } from '@/lib/utils';
+import { cldWebp } from '@/lib/v2/image';
 import { formatRupiah } from '@/lib/v2/home-data';
 import { MOTOR_CATEGORIES, POSITION_ITEMS, categoryLabel } from '@/lib/v2/home-content';
 import { useMotorCategory } from '@/components/v2/MotorCategory';
 import CategoryLink from '@/components/v2/CategoryLink';
 import { ArrowRight, ChevronDown, Close, Menu, Motorcycle, WhatsApp } from '@/components/v2/icons';
+import Bounce from '@/components/v2/motion/Bounce';
 
 type OpenMenu = 'produk' | 'motor' | null;
 export type NavTab = 'produk' | 'motor' | 'artikel' | 'tentang';
 
 function thumb(src: string): string {
-  return src.includes('res.cloudinary.com') ? optimizeCloudinaryUrl(src, 80, 80) : src;
+  return src.includes('res.cloudinary.com') ? cldWebp(src, 96, 96) : src;
 }
 
 // Capsule navbar (F-016 4): dropdowns open on hover for fine pointers (CSS) and by click or keyboard (state),
@@ -39,6 +40,8 @@ export default function SiteNav({
   const [open, setOpen] = useState<OpenMenu>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [overHero, setOverHero] = useState(darkHero);
+  const [scrolledAway, setScrolledAway] = useState(false);
+  const focusInside = useRef(false);
   const navRef = useRef<HTMLElement>(null);
   const sheetRef = useRef<HTMLDivElement>(null);
   const menuBtnRef = useRef<HTMLButtonElement>(null);
@@ -60,6 +63,28 @@ export default function SiteNav({
     });
     io.observe(end);
     return () => io.disconnect();
+  }, []);
+
+  // Hides while scrolling down and returns on the way up, so the capsule never sits over what is being read (Sehan,
+  // 2026-10-29). It stays under reduced motion, while a menu is open, and while it holds keyboard focus.
+  useEffect(() => {
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+    let last = window.scrollY;
+    let ticking = false;
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        ticking = false;
+        const y = window.scrollY;
+        const delta = y - last;
+        if (Math.abs(delta) < 8 && y > 120) return;
+        last = y;
+        setScrolledAway(!reduce.matches && !focusInside.current && y > 160 && delta > 0);
+      });
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
   const closeMenu = useCallback((focusTrigger: boolean) => {
@@ -149,10 +174,21 @@ export default function SiteNav({
   };
 
   const dark = overHero && !sheetOpen;
+  const navHidden = scrolledAway && !open && !sheetOpen;
   const chosen = category ? categoryLabel(category) : null;
 
   return (
-    <div className="iz-navwrap">
+    <div
+      className="iz-navwrap"
+      data-hidden={navHidden ? 'true' : undefined}
+      onFocus={() => {
+        focusInside.current = true;
+        setScrolledAway(false);
+      }}
+      onBlur={e => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) focusInside.current = false;
+      }}
+    >
       <nav ref={navRef} className={`iz-nav${dark ? ' iz-nav--dark' : ''}`} aria-label="Utama">
         <Link className="iz-brand" href="/">
           <img src="/logo-inzta.png" alt="" width={32} height={32} />
@@ -171,7 +207,7 @@ export default function SiteNav({
               onClick={() => setOpen(o => (o === 'produk' ? null : 'produk'))}
               onKeyDown={onTriggerKey('produk')}
             >
-              Produk <ChevronDown />
+              <span className="iz-roll"><span>Produk</span></span> <ChevronDown />
             </button>
             <div className="iz-navdd__menu" id="iz-menu-produk">
               {POSITION_ITEMS.map(item => (
@@ -202,7 +238,7 @@ export default function SiteNav({
               onClick={() => setOpen(o => (o === 'motor' ? null : 'motor'))}
               onKeyDown={onTriggerKey('motor')}
             >
-              Pilih motor <ChevronDown />
+              <span className="iz-roll"><span>Pilih motor</span></span> <ChevronDown />
             </button>
             <div className="iz-navdd__menu" id="iz-menu-motor">
               {MOTOR_CATEGORIES.map(c => (
@@ -220,8 +256,12 @@ export default function SiteNav({
             </div>
           </div>
 
-          <Link href="/blog" {...page('artikel')}>Artikel</Link>
-          <Link href="/tentang" {...page('tentang')}>Tentang</Link>
+          <Link href="/blog" {...page('artikel')}>
+            <span className="iz-roll"><span>Artikel</span></span>
+          </Link>
+          <Link href="/tentang" {...page('tentang')}>
+            <span className="iz-roll"><span>Tentang</span></span>
+          </Link>
         </div>
 
         <div className="iz-nav__actions">
@@ -244,7 +284,7 @@ export default function SiteNav({
             <span>
               <WhatsApp />
             </span>
-            Chat admin
+            <Bounce text="Chat admin" />
           </a>
           <button
             ref={menuBtnRef}
@@ -261,7 +301,7 @@ export default function SiteNav({
       </nav>
 
       {sheetOpen && (
-        <div className="iz-msheet iz-only-mob" id="iz-msheet" ref={sheetRef}>
+        <div className="iz-msheet iz-only-mob" id="iz-msheet" ref={sheetRef} data-lenis-prevent>
           <div className="iz-msheet__group">
             <h2>Produk</h2>
             {POSITION_ITEMS.map(item => (

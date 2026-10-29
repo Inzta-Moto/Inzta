@@ -16,7 +16,6 @@ import Guides from '@/components/v2/home/Guides';
 import Reviews from '@/components/v2/home/Reviews';
 import HowToOrder from '@/components/v2/home/HowToOrder';
 import Closing from '@/components/v2/Closing';
-import PageMotion from '@/components/v2/motion/PageMotion';
 import '@/app/(v2)/v2-home.css';
 
 // Beranda v2 "Rider's shop" (F-016 S1.11): promo bar, navbar, S1.1–S1.10, closing, footer, in the order of Main.dc.html.
@@ -44,7 +43,6 @@ export default function HomeV2({ data, products }: { data: HomeData; products: P
         <Closing waHref={waHref} />
       </main>
       <SiteFooter waHref={waHref} waNumber={WA_NUMBER} />
-      <PageMotion page="home" />
     </V2Page>
   );
 }

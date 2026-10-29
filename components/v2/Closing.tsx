@@ -1,5 +1,7 @@
 import Image from 'next/image';
 import { WhatsApp } from '@/components/v2/icons';
+import Bounce from '@/components/v2/motion/Bounce';
+import { PHOTO_QUALITY } from '@/lib/v2/image';
 
 // Closing panel (F-016 S0.8). The chat mock is decorative and holds no invented admin reply; CSS hides it below
 // 768 px and stops the typing dots under reduced motion. S5 sets its own button label and places the section
@@ -26,7 +28,9 @@ export default function Closing({
               <span className="iz-btn__icon">
                 <WhatsApp />
               </span>
-              <span>{label}</span>
+              <span>
+                <Bounce text={label} />
+              </span>
             </a>
           </div>
         </div>
@@ -42,7 +46,7 @@ export default function Closing({
           </div>
           <div className="iz-chat__out">
             <div className="iz-photo">
-              <Image src="/images/v2/contoh/contoh-motor-xsr-155.jpg" alt="" width={382} height={512} sizes="320px" />
+              <Image src="/images/v2/contoh/contoh-motor-xsr-155.jpg" alt="" width={382} height={512} sizes="320px" quality={PHOTO_QUALITY} />
               <span className="iz-tag">Foto contoh</span>
             </div>
             <p>Yamaha XSR 155</p>
