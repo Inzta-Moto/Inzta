@@ -4,7 +4,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const dir = process.argv[2] || path.join('app', '(v2)');
-const ALLOWED = [/^\.iz-/, /^\.t-/, /^img\.iz-/, /^:where\(\.iz-/, /^html:has\(\.iz-page\)/, /^html:not\(\.js-nav\) \.iz-/, /^html\.js-motion \.iz-/, /^html\.iz-js(\[[^\]]+\])?( \.iz-|$)/, /^html\.iz-motion \.iz-/, /^html \.iz-page\b/];
+// html.iz-v2 is the v2-page class the boot script sets on <html> (it replaced html:has(.iz-page), which cost style
+// time on every frame).
+const ALLOWED = [/^\.iz-/, /^\.t-/, /^img\.iz-/, /^:where\(\.iz-/, /^html:has\(\.iz-page\)/, /^html\.iz-v2(\b|::|$)/, /^html:not\(\.js-nav\) \.iz-/, /^html\.js-motion \.iz-/, /^html\.iz-js(\[[^\]]+\])?( \.iz-|$)/, /^html\.iz-motion \.iz-/, /^html \.iz-page\b/];
 
 // Splits a selector list on top-level commas only; :where(a, b) stays one selector.
 function splitTop(head) {

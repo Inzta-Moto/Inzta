@@ -195,6 +195,13 @@
 @media (prefers-reduced-motion: no-preference) {
   .iz-closing--motion { --closing-idle: paused; }
   .iz-closing--motion.iz-closing--live { --closing-idle: running; }
+  /* Phones and tablets keep the one-time assembly but not the endless idle loops (map drift, glow, card float, dots,
+     stamp spin, route rider): their keyframes use var(), so Chrome runs them on the main thread, and with the band on
+     screen they took frames from every scroll on a phone (trace, 2026-10-29). */
+  @media (max-width: 1023.98px) {
+    .iz-closing--motion.iz-closing--live { --closing-idle: paused; }
+    .iz-closing.iz-closing--ride.iz-closing--live { --closing-ride-run: paused; }
+  }
   .iz-closing--armed { --closing-run: paused; }
   .iz-closing--armed.iz-closing--play { --closing-run: running; }
 

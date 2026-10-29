@@ -9,7 +9,7 @@
 /* Section headings must not hide under the sticky navbar (4.10). */
 :where(.iz-page) [id] { scroll-margin-top: 80px; }
 @media (max-width: 767px) { :where(.iz-page) [id] { scroll-margin-top: 68px; } }
-@media (prefers-reduced-motion: reduce) { html:has(.iz-page) { scroll-behavior: auto; } }
+@media (prefers-reduced-motion: reduce) { html.iz-v2 { scroll-behavior: auto; } }
 
 /* 40 px navbar controls keep their look and get a 48 px hit area (20.4). */
 .iz-nav__menu, .iz-motorchip, .iz-nav__cta { position: relative; }
@@ -123,7 +123,9 @@ html:not(.js-nav) .iz-navdd:focus-within .iz-navdd__btn svg { transform: rotate(
    padding and the centring slack already part it from the band above, so the rhythm margin is dropped there and the
    block below sits 64 px under the stage. Both sides then read 64 px plus the slack, one section gap at 1440x900. */
 .iz-page main > .iz-film-scene.is-pinned { margin-top: 0; }
-.iz-page main > .iz-film-scene.is-pinned + *, .iz-page main > :has(> .iz-film-scene.is-pinned) + * { margin-top: 64px; }
+/* .iz-after-pin is set by the engine on the block after the pinned film (a :has() selector here cost style time on
+   every frame of a phone scroll). */
+.iz-page main > .iz-after-pin { margin-top: 64px; }
 
 /* A link row keeps its 48 px hit area outside its box (as the navbar controls, 20.4), so the space around the row is
    measured from its text: "Lihat semua produk" under the best-seller row, and on phones the link a split heading

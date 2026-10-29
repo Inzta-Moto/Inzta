@@ -18,13 +18,13 @@ html.iz-js[data-iz-curtain] .iz-curtain, html.iz-js .iz-curtain[data-active] { d
 
 /* The scrollbar lane is always reserved on v2 pages, and the scrollbar is hidden while a curtain covers the page:
    showing or hiding it no longer changes the page width, which made the layout jump as the curtain lifted. */
-html:has(.iz-page) { scrollbar-gutter: stable; }
+html.iz-v2 { scrollbar-gutter: stable; }
 /* app/globals.css sets scroll-behavior: smooth on html; Lenis scrolls the window every frame, so the browser smoothed
    each of its steps again and the scroll felt uneven. Native smooth scrolling stays for pages without Lenis. */
 html.iz-js { scroll-behavior: auto; }
 /* globals.css gives body overflow-x: hidden, which silently makes it an overflow-y: auto box; clip keeps the
    horizontal guard without turning body into a scroll container (it confused Lenis and sticky positioning). */
-html:has(.iz-page) body { overflow-x: clip; }
+html.iz-v2 body { overflow-x: clip; }
 html.iz-js[data-iz-curtain], html.iz-js[data-iz-covered] { overflow: hidden; }
 
 /* Caret of the hero retype loop (lib/v2/motion/engine.ts retype()). */
@@ -182,9 +182,11 @@ html.iz-motion .iz-film-scene.is-pinned .iz-photo > .iz-smartimg { inset: 0; }
 .iz-hero__cue { display: none; }
 @media (max-width: 767px) and (prefers-reduced-motion: no-preference) {
   .iz-hero__cue { position: absolute; z-index: 1; left: 50%; bottom: 14px; display: block; width: 2px; height: 26px; margin-left: -1px; border-radius: 2px; background: rgba(243, 239, 230, 0.25); overflow: hidden; }
-  .iz-hero__cue::after { content: ""; position: absolute; left: 0; right: 0; top: -40%; height: 40%; background: var(--c-kuning); animation: iz-cue 1.6s cubic-bezier(0.65, 0, 0.35, 1) infinite; }
+  /* Four runs, then still: an endless loop restyled this pseudo-element on the main thread every frame of a phone
+     scroll (trace, 2026-10-29). It moves with transform; animating top forced a layout per frame. */
+  .iz-hero__cue::after { content: ""; position: absolute; left: 0; right: 0; top: -40%; height: 40%; background: var(--c-kuning); animation: iz-cue 1.6s cubic-bezier(0.65, 0, 0.35, 1) 0.8s 4; }
 }
-@keyframes iz-cue { to { top: 100%; } }
+@keyframes iz-cue { to { transform: translateY(350%); } }
 
 /* Phone swipe rows: a progress line under the filmstrip that follows the swipe (engine swipe()). */
 html.iz-motion .iz-film-scene.is-swipe .iz-film__progress { display: block; width: 120px; height: 3px; margin: var(--space-5) auto 0; border-radius: var(--radius-pill); background: var(--c-garis); overflow: hidden; }
@@ -294,14 +296,15 @@ html.iz-motion .iz-film-scene.is-swipe .iz-film__progress > span { display: bloc
    yellow reading-progress line along the top edge, driven by Lenis (SiteMotion startLenis). Chrome and Edge 121+
    ignore ::-webkit-scrollbar once scrollbar-color is set, so the standard properties are only given to browsers
    without the pseudo-elements (Firefox). */
-html:has(.iz-page)::-webkit-scrollbar { width: 12px; height: 12px; }
-html:has(.iz-page)::-webkit-scrollbar-track { background: #f6f4ef; }
-html:has(.iz-page)::-webkit-scrollbar-thumb { background: #16140f; border-radius: 999px; border: 3px solid #f6f4ef; }
-html:has(.iz-page)::-webkit-scrollbar-thumb:hover { background: #f59e0b; }
-html:has(.iz-page)::-webkit-scrollbar-button { display: none; height: 0; }
+html.iz-v2::-webkit-scrollbar { width: 12px; height: 12px; }
+html.iz-v2::-webkit-scrollbar-track { background: #f6f4ef; }
+html.iz-v2::-webkit-scrollbar-thumb { background: #16140f; border-radius: 999px; border: 3px solid #f6f4ef; }
+html.iz-v2::-webkit-scrollbar-thumb:hover { background: #f59e0b; }
+html.iz-v2::-webkit-scrollbar-button { display: none; height: 0; }
 @supports not selector(::-webkit-scrollbar) {
-  html:has(.iz-page) { scrollbar-width: thin; scrollbar-color: #16140f #f6f4ef; }
+  html.iz-v2 { scrollbar-width: thin; scrollbar-color: #16140f #f6f4ef; }
 }
+/* html.iz-v2 comes from the boot script (and SiteMotion on route changes). These rules used html:has(.iz-page),
+   which made Chrome re-check the whole document on every style change; in a phone scroll trace that single selector
+   cost more than any other (2026-10-29). Article pages hide the line in SiteMotion (they have their own S7.7 bar). */
 .iz-readline { position: fixed; top: 0; left: 0; right: 0; z-index: 60; height: 3px; background: #f59e0b; transform: scaleX(0); transform-origin: left center; pointer-events: none; }
-/* Article pages already have their own reading bar over the body (S7.7, .iz-progress); one line at the top is enough. */
-html:has(.iz-page):has(.iz-progress) .iz-readline { display: none; }

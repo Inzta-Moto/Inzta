@@ -61,6 +61,8 @@ function createController(curtain: HTMLDivElement, push: (href: string) => void,
     stale = false;
     if (!kit || !motionOk()) return;
     html.classList.add('iz-motion');
+    // Article pages have their own reading bar over the body (S7.7, .iz-progress); one line at the top is enough.
+    document.querySelector<HTMLElement>('.iz-readline')?.toggleAttribute('hidden', !!root.querySelector('.iz-progress'));
     revert = initPage(root, kit, modeFor(committed));
   }
 
@@ -386,6 +388,8 @@ function createController(curtain: HTMLDivElement, push: (href: string) => void,
       if (pathname === committed) return;
       committed = pathname;
       stale = true;
+      // The boot script set it for the first page; client navigation to or from admin keeps it in step.
+      html.classList.toggle('iz-v2', isMotionRoute(pathname));
       if (!isMotionRoute(pathname)) {
         detach();
         disposeLenis?.();

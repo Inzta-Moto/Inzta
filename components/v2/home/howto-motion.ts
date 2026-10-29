@@ -1,5 +1,5 @@
 import type { MotionKit } from '@/lib/v2/motion/runtime';
-import { DESKTOP, MOBILE, whenRevealed } from '@/lib/v2/motion/runtime';
+import { DESKTOP, MOBILE, handBack, scrollIdle, whenRevealed } from '@/lib/v2/motion/runtime';
 
 type Gsap = MotionKit['gsap'];
 type Timeline = gsap.core.Timeline;
@@ -109,6 +109,9 @@ function control(gsap: Gsap, step: HTMLElement): SceneControl {
   else if (el.classList.contains('iz-vig-pick')) tl = pickScene(gsap, el);
   else if (el.classList.contains('iz-vig-send')) tl = sendScene(gsap, el);
   else tl = replyScene(gsap, el);
+  // Initialise every tween now, while the page is still (the build waits for that), instead of on first play, when a
+  // to() reads its start values from computed style in the middle of a scroll. Events are suppressed both ways.
+  tl.progress(1, true).progress(0, true);
   return {
     duration: tl.duration(),
     play: () => {
@@ -126,10 +129,14 @@ function control(gsap: Gsap, step: HTMLElement): SceneControl {
 // Cards rise, numerals come up, nodes pop and the roads draw in, step by step.
 function entrance(gsap: Gsap, steps: HTMLElement[]): Timeline {
   const pick = (sel: string) => steps.map(s => q(s, sel)).filter((el): el is HTMLElement => !!el);
-  const tl = gsap.timeline({ paused: true, defaults: { ease: 'expo.out' } });
-  tl.fromTo(pick('.iz-journey__card'), { y: 56, opacity: 0, rotate: 1.2 }, { y: 0, opacity: 1, rotate: 0, duration: 1.15, stagger: 0.14, clearProps: 'transform,opacity' }, 0)
-    .fromTo(pick('.iz-journey__n'), { yPercent: 60, opacity: 0 }, { yPercent: 0, opacity: 1, duration: 0.9, stagger: 0.14, clearProps: 'transform,opacity' }, 0.05)
-    .fromTo(pick('.iz-journey__node'), { scale: 0 }, { scale: 1, duration: 0.6, ease: 'back.out(2)', stagger: 0.14, clearProps: 'transform' }, 0.3);
+  const cards = pick('.iz-journey__card');
+  const numerals = pick('.iz-journey__n');
+  const nodes = pick('.iz-journey__node');
+  // handBack instead of clearProps: clearing transforms made GSAP re-read them from computed style mid-scroll.
+  const tl = gsap.timeline({ paused: true, defaults: { ease: 'expo.out' }, onComplete: () => handBack([...cards, ...numerals, ...nodes]) });
+  tl.fromTo(cards, { y: 56, opacity: 0, rotate: 1.2 }, { y: 0, opacity: 1, rotate: 0, duration: 1.15, stagger: 0.14 }, 0)
+    .fromTo(numerals, { yPercent: 60, opacity: 0 }, { yPercent: 0, opacity: 1, duration: 0.9, stagger: 0.14 }, 0.05)
+    .fromTo(nodes, { scale: 0 }, { scale: 1, duration: 0.6, ease: 'back.out(2)', stagger: 0.14 }, 0.3);
   const roads = pick('.iz-journey__road');
   if (roads.length) tl.fromTo(roads, { '--hw-draw': 0 }, { '--hw-draw': 1, duration: 0.9, ease: 'expo.inOut', stagger: 0.14 }, 0.45);
   return tl;
@@ -193,14 +200,15 @@ export function attachHowTo(root: HTMLElement, kit: MotionKit): () => void {
       gsap.set(roads, { '--hw-fill': 0 });
       const reach = (i: number) => {
         if (i <= active) return;
-        for (let j = Math.max(0, active); j < i; j++) gsap.to(roads[j], { '--hw-fill': 1, duration: 0.7, ease: 'power2.inOut' });
+        // fromTo: a to() read the custom property's start from computed style while the visitor scrolled.
+        for (let j = Math.max(0, active); j < i; j++) gsap.fromTo(roads[j], { '--hw-fill': 0 }, { '--hw-fill': 1, duration: 0.7, ease: 'power2.inOut' });
         setActive(i);
       };
       steps.forEach((step, i) => {
         const card = q(step, '.iz-journey__card');
         if (!card) return;
         if (card.getBoundingClientRect().top >= window.innerHeight) {
-          const rise = gsap.fromTo(card, { y: 36, opacity: 0 }, { y: 0, opacity: 1, duration: 0.9, ease: 'expo.out', paused: true, clearProps: 'transform,opacity' });
+          const rise = gsap.fromTo(card, { y: 36, opacity: 0 }, { y: 0, opacity: 1, duration: 0.9, ease: 'expo.out', paused: true, onComplete: () => handBack([card]) });
           ScrollTrigger.create({ trigger: card, start: 'top 96%', once: true, onEnter: () => rise.play() });
         }
         // Lights up once the card is well in view; at 72% the next card lit while the first was still mid-screen.
@@ -286,7 +294,9 @@ export function attachHowTo(root: HTMLElement, kit: MotionKit): () => void {
     const tick = () => {
       frame = 0;
       if (disposed) return;
-      if (engineReady() || performance.now() - since > ENGINE_WAIT_MS) start();
+      // Building the scenes and the pin makes GSAP read computed styles; done mid-scroll it dropped frames on phones,
+      // so it waits for a still moment (runtime scrollIdle).
+      if ((engineReady() || performance.now() - since > ENGINE_WAIT_MS) && scrollIdle()) start();
       else frame = requestAnimationFrame(tick);
     };
     tick();
@@ -305,7 +315,9 @@ export function attachHowTo(root: HTMLElement, kit: MotionKit): () => void {
         io = null;
         begin();
       },
-      { rootMargin: '0px 0px 150% 0px' },
+      // Far ahead (four screens), so the build usually happens while the visitor is still reading above, not when the
+      // section is about to arrive.
+      { rootMargin: '0px 0px 400% 0px' },
     );
     io.observe(root);
   });

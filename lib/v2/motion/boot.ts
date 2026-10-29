@@ -9,7 +9,7 @@ export const CURTAIN_ATTR = 'data-iz-curtain';
 // Same rule as isMotionRoute(), written for the inline script.
 const SKIP = '^\\/(admin|affiliate|api)(\\/|$)';
 
-export const bootScript = `(function(){try{var r=document.documentElement;if(new RegExp('${SKIP}').test(location.pathname))return;if(!window.matchMedia||matchMedia('(prefers-reduced-motion: reduce)').matches)return;r.classList.add('iz-js');r.setAttribute('${CURTAIN_ATTR}','load');setTimeout(function(){if(r.getAttribute('${CURTAIN_ATTR}')==='load')r.removeAttribute('${CURTAIN_ATTR}')},${BOOT_FALLBACK_MS})}catch(e){}})();`;
+export const bootScript = `(function(){try{var r=document.documentElement;if(new RegExp('${SKIP}').test(location.pathname))return;r.classList.add('iz-v2');if(!window.matchMedia||matchMedia('(prefers-reduced-motion: reduce)').matches)return;r.classList.add('iz-js');r.setAttribute('${CURTAIN_ATTR}','load');setTimeout(function(){if(r.getAttribute('${CURTAIN_ATTR}')==='load')r.removeAttribute('${CURTAIN_ATTR}')},${BOOT_FALLBACK_MS})}catch(e){}})();`;
 
 export function isMotionRoute(pathname: string): boolean {
   return !new RegExp(SKIP).test(pathname);

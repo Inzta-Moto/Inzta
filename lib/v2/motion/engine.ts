@@ -1,6 +1,6 @@
 import type { SplitText as SplitTextType } from 'gsap/SplitText';
 import type { MotionKit } from '@/lib/v2/motion/runtime';
-import { DESKTOP, HOVER, MOBILE, isRevealed, whenRevealed } from '@/lib/v2/motion/runtime';
+import { DESKTOP, HOVER, MOBILE, handBack, isRevealed, scrollIdle, whenRevealed } from '@/lib/v2/motion/runtime';
 
 // "full" for the story pages (Beranda, Pilih motor, Artikel, Tentang); "light" for the shop routes under /produk,
 // where only short fades run so nothing slows a buyer down (Sehan, 2026-10-29).
@@ -49,6 +49,10 @@ export function initPage(root: HTMLElement, kit: MotionKit, mode: PageMode): Pag
     const play = (a: gsap.core.Animation) => (shown ? a.play() : queued.push(a));
 
     const onEnter = (trigger: Element, tween: gsap.core.Animation, start = START) => {
+      // Initialise the tween now (setup runs under the curtain or in a still moment) instead of on first play: a tween
+      // reads the start values it was not given from computed style when it first renders, and on its first play that
+      // read forced a style recalc mid-scroll. Rendering to the end and back, events suppressed, leaves the from-state.
+      tween.progress(1, true).progress(0, true);
       ScrollTrigger.create({ trigger, start, once: true, onEnter: () => play(tween) });
     };
     // Split text is put back once its entrance has played, so later reflows and React updates see the original DOM.
@@ -327,15 +331,18 @@ export function initPage(root: HTMLElement, kit: MotionKit, mode: PageMode): Pag
           ScrollTrigger.batch(items, {
             start: 'top 94%',
             once: true,
-            onEnter: batch => play(gsap.to(batch, { y: 0, opacity: 1, duration: 0.6, stagger: 0.05, overwrite: true, paused: true, clearProps: 'transform,opacity,visibility' })),
+            // fromTo with explicit starts: a plain to() read each card's opacity from computed style mid-scroll.
+            onEnter: batch =>
+              play(gsap.fromTo(batch, { y: 28, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6, stagger: 0.05, overwrite: true, paused: true, onComplete: () => handBack(batch) })),
           });
           return;
         }
-        const tl = gsap.timeline({ paused: true });
-        // clearProps hands the cards back to CSS afterwards; a leftover inline transform blocked their hover lift.
-        tl.fromTo(items, { y: desktop ? 44 : 28, opacity: 0 }, { y: 0, opacity: 1, duration: 1.15, ease: 'expo.out', stagger: 0.085, clearProps: 'transform,opacity,visibility' }, 0);
         const imgs = items.map(item => item.querySelector('img')).filter((img): img is HTMLImageElement => !!img);
-        if (imgs.length) tl.fromTo(imgs, { scale: 1.28 }, { scale: 1, duration: 1.7, ease: 'expo.out', stagger: 0.085, clearProps: 'scale' }, 0);
+        // The cards go back to CSS afterwards (a leftover inline transform blocked their hover lift), through handBack
+        // rather than clearProps, which re-read every transform from computed style as the cards landed mid-scroll.
+        const tl = gsap.timeline({ paused: true, onComplete: () => handBack([...items, ...imgs]) });
+        tl.fromTo(items, { y: desktop ? 44 : 28, opacity: 0 }, { y: 0, opacity: 1, duration: 1.15, ease: 'expo.out', stagger: 0.085 }, 0);
+        if (imgs.length) tl.fromTo(imgs, { scale: 1.28 }, { scale: 1, duration: 1.7, ease: 'expo.out', stagger: 0.085 }, 0);
         onEnter(group, tl);
       });
     }
@@ -420,7 +427,13 @@ export function initPage(root: HTMLElement, kit: MotionKit, mode: PageMode): Pag
         return;
       }
       section.classList.add('is-pinned');
-      undo.push(() => section.classList.remove('is-pinned'));
+      // The block after the pinned stage sits a fixed 64 px below it (v2-overrides.css .iz-after-pin).
+      const after = blocks.find(b => b.contains(section))?.nextElementSibling;
+      after?.classList.add('iz-after-pin');
+      undo.push(() => {
+        section.classList.remove('is-pinned');
+        after?.classList.remove('iz-after-pin');
+      });
       const distance = () => Math.max(0, track.scrollWidth - window.innerWidth);
       if (distance() <= 0) return;
       const bar = section.querySelector<HTMLElement>('.iz-film__progress > span');
@@ -496,7 +509,10 @@ export function initPage(root: HTMLElement, kit: MotionKit, mode: PageMode): Pag
         const items = Array.from(row.children).filter(el => (el as HTMLElement).offsetParent !== null);
         if (!items.length) return;
         const hint = gsap.timeline({ paused: true, delay: 0.9 });
-        hint.to(items, { x: -36, duration: 0.5, ease: 'power2.inOut', stagger: 0.03 }).to(items, { x: 0, duration: 0.7, ease: 'expo.out', stagger: 0.03 });
+        // fromTo initialises at setup (an idle moment); a to() first read the cards' transforms as the row arrived.
+        hint
+          .fromTo(items, { x: 0 }, { x: -36, duration: 0.5, ease: 'power2.inOut', stagger: 0.03 })
+          .to(items, { x: 0, duration: 0.7, ease: 'expo.out', stagger: 0.03, onComplete: () => handBack(items) });
         onEnter(row, hint, 'top 75%');
       });
     }
@@ -555,12 +571,20 @@ export function initPage(root: HTMLElement, kit: MotionKit, mode: PageMode): Pag
     ScrollTrigger.refresh();
 
     // The blocks below the first screen, in page order, once the curtain is up: one setup step of one block at a time,
-    // about 8 ms of work per frame, so the hero entrance and the scroll keep their frames. The entrance gets its run
-    // to itself first; a visitor who scrolls or types straight away starts the rest at once.
+    // about 8 ms of work per frame, and never while the page is moving. Setting a block up (splitting headings, from-
+    // states, triggers) makes GSAP read computed styles, which forced a style recalc in the middle of scroll frames:
+    // 36% of the main thread during a phone fling in the production profile (Sehan, 2026-10-29: scrolling stuttered,
+    // worst on phones). The work waits for a pause instead. A block that reaches the screen before its turn is left as
+    // it is (hiding it to play an entrance would blink), so a fast scroller simply sees it without one.
     const queue: (() => void)[] = [];
-    later.forEach(block =>
+    const seen = new Set<HTMLElement>();
+    later.forEach(block => {
+      queue.push(() => {
+        if (block.getBoundingClientRect().top < window.innerHeight * 1.05) seen.add(block);
+      });
       steps.forEach(step =>
         queue.push(() => {
+          if (seen.has(block)) return;
           active = block;
           try {
             step();
@@ -568,26 +592,26 @@ export function initPage(root: HTMLElement, kit: MotionKit, mode: PageMode): Pag
             active = null;
           }
         }),
-      ),
-    );
-    const inputs = ['wheel', 'touchstart', 'keydown'] as const;
+      );
+    });
     let lateTimer = 0;
     let lateFrame = 0;
     const next = () => {
       lateFrame = 0;
-      const start = performance.now();
-      context.add(() => {
-        do queue.shift()?.();
-        while (queue.length && performance.now() - start < 8);
-      });
+      if (!queue.length) return;
+      if (scrollIdle()) {
+        const start = performance.now();
+        context.add(() => {
+          do queue.shift()?.();
+          while (queue.length && performance.now() - start < 8 && scrollIdle());
+        });
+      }
       if (queue.length) lateFrame = requestAnimationFrame(next);
     };
     const startLate = () => {
       window.clearTimeout(lateTimer);
-      inputs.forEach(type => window.removeEventListener(type, startLate));
       if (!lateFrame && queue.length) lateFrame = requestAnimationFrame(next);
     };
-    if (queue.length) inputs.forEach(type => window.addEventListener(type, startLate, { passive: true }));
     const release = () => {
       shown = true;
       queued.splice(0).forEach(a => a.play());
@@ -613,7 +637,6 @@ export function initPage(root: HTMLElement, kit: MotionKit, mode: PageMode): Pag
       stop();
       window.clearTimeout(lateTimer);
       if (lateFrame) cancelAnimationFrame(lateFrame);
-      inputs.forEach(type => window.removeEventListener(type, startLate));
       queue.length = 0;
       undo.forEach(fn => fn());
       splits.forEach(s => s.revert());

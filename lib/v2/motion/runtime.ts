@@ -41,6 +41,32 @@ export function loadMotion(): Promise<MotionKit> {
   return kit;
 }
 
+// Time of the last scroll anywhere on the page (captured, so swipe rows count too). Setup work that makes GSAP read
+// computed styles waits until the page has been still for a moment; run mid-scroll it cost whole frames on phones.
+let lastScroll = 0;
+let watchingScroll = false;
+
+export function scrollIdle(quietMs = 180): boolean {
+  if (!watchingScroll) {
+    watchingScroll = true;
+    window.addEventListener('scroll', () => (lastScroll = performance.now()), { passive: true, capture: true });
+  }
+  return performance.now() - lastScroll >= quietMs;
+}
+
+/**
+ * Hands elements back to their CSS after an entrance: drops the inline transform, opacity and visibility GSAP left.
+ * Used instead of clearProps: 'transform', which re-parses each transform with three getComputedStyle calls as the
+ * tween ends; those calls landed in the middle of scroll frames and forced full style recalcs (production profile,
+ * 2026-10-29). GSAP's cached x/y stay at 0, which is what the element shows, so a later tween starts right.
+ */
+export function handBack(targets: Iterable<Element>): void {
+  for (const el of targets) {
+    const s = (el as HTMLElement).style;
+    for (const p of ['transform', 'translate', 'rotate', 'scale', 'opacity', 'visibility']) s.removeProperty(p);
+  }
+}
+
 // Whether the page under the curtain may play its entrance. Pages that mount while a curtain is down wait for
 // markRevealed(); pages that mount without one (back/forward, reduced motion) start at once.
 let revealed: boolean | null = null;
