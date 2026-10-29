@@ -172,3 +172,16 @@ html.iz-motion .iz-film-scene.is-swipe .iz-film__progress > span { display: bloc
   .iz-page :is(.iz-pcard, .iz-rcard, .iz-mfill)[data-glow] { background-image: radial-gradient(360px circle at var(--mx, 50%) var(--my, 50%), rgba(245, 158, 11, 0.12), rgba(245, 158, 11, 0) 65%); }
   .iz-page .iz-msheet__row[data-glow] { background-color: var(--c-pasir-muda); }
 }
+
+/* Orange buttons flood with asphalt from the point the pointer came in, like the shop pills (Sehan, 2026-10-29):
+   the label turns krem and the WhatsApp chip swaps to yellow. The letter bounce stays as the accent. */
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .iz-page .iz-btn--primary::before, .iz-page .iz-nav__cta::before { content: ""; position: absolute; inset: -2px; z-index: -1; border-radius: inherit; background: var(--c-aspal); clip-path: circle(0% at var(--fx, 50%) var(--fy, 50%)); transition: clip-path 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
+  .iz-page .iz-btn--primary:hover::before, .iz-page .iz-nav__cta:hover::before { clip-path: circle(150% at var(--fx, 50%) var(--fy, 50%)); }
+  .iz-page .iz-btn--primary:hover, .iz-page .iz-nav__cta:hover { color: var(--c-krem); filter: none; }
+  .iz-page .iz-nav__cta { position: relative; isolation: isolate; overflow: hidden; transition: color 0.35s ease; }
+  .iz-page .iz-btn--primary .iz-btn__icon, .iz-page .iz-nav__cta > span:first-child { transition: transform 0.55s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.35s ease, color 0.35s ease; }
+  .iz-page .iz-btn--primary:hover .iz-btn__icon, .iz-page .iz-nav__cta:hover > span:first-child { background: var(--c-kuning); color: var(--c-on-kuning); }
+  .iz-page .iz-dark .iz-btn--primary::before, .iz-page .iz-on-photo .iz-btn--primary::before { background: var(--c-krem); }
+  .iz-page .iz-dark .iz-btn--primary:hover, .iz-page .iz-on-photo .iz-btn--primary:hover { color: var(--c-tinta); }
+}
