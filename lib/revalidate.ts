@@ -35,7 +35,8 @@ export function revalidateArticlePaths(slug: string) {
 
 // Product cards in articles show price and stock (requirement 22.3); every v2 frame shows starting prices.
 export function revalidateProductPaths() {
-  revalidate(['/sitemap.xml', ...V2_FRAME_PAGES]);
+  // Order keeps the pre-F-016 paths first, so their tests read as an extension.
+  revalidate(['/', '/sitemap.xml', ARTICLE_PAGES, ...V2_FRAME_PAGES]);
 }
 
 // F-016 S0.3.4: the flash-sale switch changes the promo bar of every v2 page and the Beranda panel.

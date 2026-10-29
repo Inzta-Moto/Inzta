@@ -105,8 +105,8 @@ export async function PUT(
     // The document ID is the source of truth for the slug; a different body slug would break product links.
     const payload =
       data.productType === 'simple'
-        ? buildSimplePayload({ ...data, slug: params.slug })
-        : buildVariablePayload({ ...data, slug: params.slug });
+        ? buildSimplePayload({ ...data, slug: params.slug }, currentSnap.data())
+        : buildVariablePayload({ ...data, slug: params.slug }, currentSnap.data());
 
     // Full overwrite — bukan merge, supaya field lama dari tipe sebelumnya
     // (contoh: price/stock di variable product) benar-benar terhapus.

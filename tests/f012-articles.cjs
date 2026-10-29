@@ -112,7 +112,7 @@ const json = (r) => r.json();
 const as = (cookie) => { jar.clear(); if (cookie) jar.set('admin_session', cookie); };
 const quiet = async (fn) => { const w = console.warn, e = console.error; console.warn = console.error = () => {}; try { return await fn(); } finally { console.warn = w; console.error = e; } };
 const p = (slug) => ({ params: { slug } });
-const paths = (slug) => ['/', '/blog', `/blog/${slug}`, '/sitemap.xml', '/blog/[slug]'];  // F-013 C4 (K-10): every article page
+const paths = (slug) => ['/', '/blog', `/blog/${slug}`, '/sitemap.xml', '/blog/[slug]', '/tas-motor/[kategori]', '/tentang'];  // F-013 C4 (K-10): every article page; F-016: category pages and /tentang
 
 const CLD = 'https://res.cloudinary.com/dukddlp0b/image/upload/v1/inzta/foto.jpg';
 const ready = {
@@ -419,7 +419,7 @@ const ready = {
     docs.set('articles/kartu-ok', { ...ready, slug: 'kartu-ok', status: 'draft', contentFormat: 'markdown', content: CARDS('Penutup.') }); bump('articles/kartu-ok');
     const r = await publish.POST(req({}), p('kartu-ok'));
     assert.strictEqual(r.status, 200, JSON.stringify(await r.clone().json()));
-    assert.deepStrictEqual(revalidateTypes, ['/blog/[slug]:page']);
+    assert.deepStrictEqual(revalidateTypes, ['/blog/[slug]:page', '/tas-motor/[kategori]:page']);
   });
   for (const [name, marker] of [['inactive product', '[[produk:tas-nonaktif]]'], ['draft article', '[[artikel:artikel-draf]]'], ['missing product', '[[produk:tidak-ada]]'], ['the article itself', '[[artikel:kartu-buruk]]']]) {
     await check(`C4 publish: a card to a ${name} -> 400 with C-9, nothing written`, async () => {
