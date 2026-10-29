@@ -107,9 +107,10 @@ function createController(curtain: HTMLDivElement, push: (href: string) => void,
     // Panels that scroll on their own carry data-lenis-prevent instead (phone menu, catalogue filter sheet, TOC).
     const lenis = new Lenis({ lerp: 0.065, wheelMultiplier: 0.8, touchMultiplier: 1, smoothWheel: true, anchors: true, stopInertiaOnNavigate: true });
     lenis.on('scroll', ScrollTrigger.update);
-    // Reading progress along the top edge (v2-motion.css .iz-progress).
+    // Page progress along the top edge (v2-motion.css .iz-readline). Its own class: .iz-progress is the article's
+    // reading bar (S7.7), which the shared name hid by scaling its container to zero.
     const bar = document.createElement('div');
-    bar.className = 'iz-progress';
+    bar.className = 'iz-readline';
     bar.setAttribute('aria-hidden', 'true');
     document.body.appendChild(bar);
     const onProgress = (l: { progress: number }) => {

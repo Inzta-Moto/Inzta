@@ -263,4 +263,6 @@ html:has(.iz-page)::-webkit-scrollbar-button { display: none; height: 0; }
 @supports not selector(::-webkit-scrollbar) {
   html:has(.iz-page) { scrollbar-width: thin; scrollbar-color: #16140f #f6f4ef; }
 }
-.iz-progress { position: fixed; top: 0; left: 0; right: 0; z-index: 60; height: 3px; background: #f59e0b; transform: scaleX(0); transform-origin: left center; pointer-events: none; }
+.iz-readline { position: fixed; top: 0; left: 0; right: 0; z-index: 60; height: 3px; background: #f59e0b; transform: scaleX(0); transform-origin: left center; pointer-events: none; }
+/* Article pages already have their own reading bar over the body (S7.7, .iz-progress); one line at the top is enough. */
+html:has(.iz-page):has(.iz-progress) .iz-readline { display: none; }

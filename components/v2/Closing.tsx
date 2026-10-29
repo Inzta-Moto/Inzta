@@ -123,7 +123,7 @@ export default function Closing({
               <span className="iz-tag">Foto contoh</span>
             </div>
             <span className="iz-chat__text">
-              Tas apa yang pas untuk motor ini?
+              Tas mana yang dibuat untuk motor ini?
               <span className="iz-chat__meta">
                 10.12
                 <Ticks />
@@ -137,7 +137,7 @@ export default function Closing({
               <span></span>
             </span>
             <div className="iz-chat__in">
-              <span className="iz-chat__text">Ini XSR 155 ya, Kak. Coba yang ini:</span>
+              <span className="iz-chat__text">Ini XSR 155. Yang ini dibuat untuk motor Anda:</span>
               <span className="iz-chat__pick">
                 <img src={PICK.image} alt="" width={46} height={46} loading="lazy" decoding="async" />
                 <span className="iz-chat__pick-text">
