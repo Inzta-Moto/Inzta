@@ -56,7 +56,10 @@
   .iz-page .t-display { font-size: clamp(52px, min(6.1vw, 10.5vh), 88px); }
   .iz-page .t-h2-landing { font-size: clamp(34px, 3.35vw, 48px); }
   .iz-page .t-lead { font-size: clamp(18px, 1.46vw, 21px); }
-  .iz-page .iz-hero { min-height: clamp(540px, 100svh, 760px); }
+  /* Full heroes (Beranda, Tentang) always fill the screen; the old 760 px cap left a band of page under them when the
+     browser was zoomed out (Sehan, 2026-10-29). The short category hero keeps its cap. */
+  .iz-page .iz-hero { min-height: max(540px, 100svh); }
+  .iz-page .iz-hero.iz-hero--short { min-height: clamp(540px, 100svh, 760px); }
   .iz-page .iz-hero__body { padding-top: clamp(104px, 18vh, 160px); padding-bottom: clamp(40px, 9vh, 80px); gap: clamp(16px, 2.6vh, 24px); }
   .iz-page .iz-band { min-height: clamp(440px, 72svh, 600px); }
   .iz-page .iz-section { padding-block: clamp(48px, 5vw, 72px); }
