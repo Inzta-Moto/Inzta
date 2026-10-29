@@ -24,6 +24,7 @@ require.extensions['.ts'] = function (m, filename) {
 };
 
 const H = require(path.join(ROOT, 'lib/v2/home-data.ts'));
+const M = require(path.join(ROOT, 'lib/v2/motor-category.ts'));
 
 const results = [];
 function check(name, fn) {
@@ -163,6 +164,20 @@ check('buildHomeData: Tourmax price, Gasber flag, product images, flash active o
   assert.strictEqual(H.buildHomeData([], [], flash, before).tourmax, null);
   assert.deepStrictEqual(H.buildHomeData([], [], flash, Date.parse('2026-11-01T00:00:00Z')).flash, { isActive: false, endsAt: null });
   assert.deepStrictEqual(H.buildHomeData([], [], { isActive: true, endsAt: '2026-10-03T04:04:32.877Z' }, before).flash, { isActive: false, endsAt: null });
+});
+
+check('motor categories: placement only by the model in the product name, universal by name (P2-2)', () => {
+  assert.deepStrictEqual(M.categoriesOf({ name: 'Side bag Inzta XSR 155' }), ['retro']);
+  assert.deepStrictEqual(M.categoriesOf({ name: 'Side bag Inzta XSR Srcrambag' }), ['retro']);
+  assert.deepStrictEqual(M.categoriesOf({ name: 'Botol bag Inzta Xmax' }), ['matic']);
+  assert.deepStrictEqual(M.categoriesOf({ name: 'Tankbag Tunnelbag Matic' }), ['matic']);
+  assert.deepStrictEqual(M.categoriesOf({ name: 'Sidebag inzta Adventure 20L, tas touring motor' }), ['adventure']);
+  assert.deepStrictEqual(M.categoriesOf({ name: 'Tail bag Inzta Tourmax 30' }), []);
+  assert.deepStrictEqual(M.categoriesOf({ name: 'Tailbag GILiMax' }), []);
+  assert.strictEqual(M.isUniversalByName({ name: 'Side bag inzta universal motor' }), true);
+  assert.strictEqual(M.isMotorCategory('retro'), true);
+  assert.strictEqual(M.isMotorCategory('vespa'), false);
+  assert.strictEqual(M.categoryHref('trail'), '/tas-motor/trail');
 });
 
 let failed = 0;
