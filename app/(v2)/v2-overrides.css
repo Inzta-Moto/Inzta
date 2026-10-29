@@ -75,3 +75,11 @@ html:not(.js-nav) .iz-navdd:focus-within .iz-navdd__btn svg { transform: rotate(
 
 /* Footer brand column: a short description under the tagline so the column is not empty (Sehan, 2026-10-29). */
 .iz-footer__about { margin-top: 12px; max-width: 36ch; color: var(--c-pasir); font-size: 15px; line-height: 1.6; }
+
+/* Tablet footer: five columns left the Kontak column too narrow for the phone number and shop pills at 768 px, so the
+   brand takes its own row above four columns. */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .iz-footer__in { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .iz-footer__brand { grid-column: 1 / -1; }
+  .iz-footer__brand .iz-footer__about { max-width: 60ch; }
+}

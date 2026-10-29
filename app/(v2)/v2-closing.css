@@ -1,0 +1,148 @@
+/* Closing panel, story version (F-016 S0.8, Sehan 2026-10-29): a three-stop route under the line, and the chat mock as a
+   layered illustration (stitched back plate, chat card, "Foto motor Anda" label, round "Dibalas admin INZTA" patch).
+   Every rule outside the motion blocks is the final state, so the panel is complete without JavaScript and under
+   reduced motion. Start states exist only under .iz-closing--armed, which ClosingStage adds when motion is allowed.
+   Sizes go through --closing-u (the fit unit of v2-fit.css, 1px outside 1024-1439 px) because the fit generator reads a
+   fixed list of files that does not include this one. The engine clips .iz-closing and fades its .iz-wa and .iz-btn,
+   so nothing here transforms those. */
+
+.iz-closing {
+  --closing-u: var(--u, 1px);
+  --closing-ease: cubic-bezier(0.625, 0.05, 0, 1);
+  --closing-pop: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Route: three numbered stops joined by a dashed road line, across on wide screens, down on narrow ones. */
+.iz-closing .iz-closing__route {
+  --closing-n: max(28px, calc(32 * var(--closing-u)));
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-4);
+  width: 100%;
+  max-width: calc(580 * var(--closing-u));
+  margin-top: var(--space-2);
+}
+.iz-closing__route > li { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: calc(10 * var(--closing-u)); }
+.iz-closing__n { position: relative; isolation: isolate; flex: none; display: grid; place-items: center; width: var(--closing-n); height: var(--closing-n); border-radius: 50%; box-shadow: inset 0 0 0 1.5px var(--c-line-on-dark); color: var(--c-on-kuning); font-family: var(--font-display); font-size: max(13px, calc(15 * var(--closing-u))); font-weight: 800; line-height: 1; }
+.iz-closing__n::before { content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit; background: var(--c-kuning); }
+.iz-closing__stop { color: var(--c-krem); font-size: max(12.6px, calc(15 * var(--closing-u))); font-weight: 600; line-height: 1.4; text-wrap: pretty; }
+.iz-closing__route > li:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  top: calc(var(--closing-n) / 2 - 1px);
+  left: calc(var(--closing-n) + 8px);
+  right: calc(8px - var(--space-4));
+  height: 2px;
+  background: repeating-linear-gradient(90deg, color-mix(in srgb, var(--c-kuning) 70%, transparent) 0 6px, transparent 6px 12px);
+  transform-origin: 0 50%;
+}
+
+/* Chat illustration. The card face and the back plate are pseudo-elements, so the canvas children of .iz-chat stay
+   its direct children; the label and the patch hang off its edges. */
+.iz-closing .iz-chat { position: relative; isolation: isolate; width: min(100%, calc(372 * var(--closing-u))); justify-self: center; background: none; box-shadow: none; transform: none; rotate: -2deg; }
+.iz-closing .iz-chat::after { content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit; background: var(--c-arang-naik); box-shadow: 0 0 0 1px var(--c-line-on-dark), 0 24px 48px -12px rgba(0, 0, 0, 0.5); }
+.iz-closing .iz-chat::before {
+  content: "";
+  position: absolute;
+  inset: calc(18 * var(--closing-u)) calc(-18 * var(--closing-u)) calc(-22 * var(--closing-u)) calc(24 * var(--closing-u));
+  z-index: -2;
+  border-radius: var(--radius-tile-lg);
+  background: var(--c-kuning-tua);
+  outline: 1.5px dashed color-mix(in srgb, var(--c-kuning) 60%, transparent);
+  outline-offset: calc(-9 * var(--closing-u));
+  box-shadow: 0 28px 56px -24px rgba(0, 0, 0, 0.7);
+  rotate: 6deg;
+}
+/* S0.8.3: the dots rest static; the DS loop is replaced by a short pulse that only plays with the assembly. */
+.iz-closing .iz-chat__typing span { animation: none; opacity: 0.7; }
+
+.iz-closing .iz-chat__label {
+  position: absolute;
+  z-index: 2;
+  top: 27%;
+  left: calc(-30 * var(--closing-u));
+  padding: calc(7 * var(--closing-u)) calc(14 * var(--closing-u));
+  border-radius: calc(8 * var(--closing-u));
+  background: var(--c-krem);
+  color: var(--c-tinta);
+  font-size: max(11.8px, calc(14 * var(--closing-u)));
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+  outline: 1px dashed color-mix(in srgb, var(--c-tinta) 40%, transparent);
+  outline-offset: calc(-4 * var(--closing-u));
+  box-shadow: 0 12px 22px -10px rgba(0, 0, 0, 0.6);
+  rotate: -6deg;
+}
+.iz-closing .iz-chat__patch { position: absolute; z-index: 2; top: calc(-36 * var(--closing-u)); right: calc(-36 * var(--closing-u)); width: max(80px, calc(104 * var(--closing-u))); aspect-ratio: 1; rotate: 12deg; filter: drop-shadow(0 12px 14px rgba(0, 0, 0, 0.45)); }
+.iz-chat__patch svg { display: block; width: 100%; height: 100%; overflow: visible; color: var(--c-on-kuning); }
+.iz-chat__patch-disc { fill: var(--c-kuning); }
+.iz-chat__patch-stitch { fill: none; stroke: var(--c-on-kuning); stroke-opacity: 0.5; stroke-width: 1.2; stroke-dasharray: 3.2 2.6; }
+.iz-chat__patch-text { fill: var(--c-on-kuning); font-family: var(--font-display); font-size: 12.5px; font-weight: 800; letter-spacing: 0.02em; text-transform: uppercase; }
+
+@media (max-width: 1023px) {
+  .iz-closing .iz-closing__route { grid-template-columns: minmax(0, 1fr); gap: var(--space-3); }
+  .iz-closing__route > li { flex-direction: row; gap: var(--space-3); }
+  .iz-closing__stop { padding-top: calc((var(--closing-n) - 1.4em) / 2); }
+  .iz-closing__route > li:not(:last-child)::after {
+    top: calc(var(--closing-n) + 4px);
+    bottom: calc(4px - var(--space-3));
+    left: calc(var(--closing-n) / 2 - 1px);
+    right: auto;
+    width: 2px;
+    height: auto;
+    background: repeating-linear-gradient(180deg, color-mix(in srgb, var(--c-kuning) 70%, transparent) 0 6px, transparent 6px 12px);
+    transform-origin: 50% 0;
+  }
+  .iz-closing .iz-chat__label { left: calc(-18 * var(--closing-u)); }
+  .iz-closing .iz-chat__patch { top: -28px; right: -22px; width: 76px; }
+}
+
+/* Assembly: armed parts wait at their start keyframe (fill both, paused) until ClosingStage adds .iz-closing--play.
+   One custom property flips every part, pseudo-elements included, from paused to running. The story order is card,
+   stop 1 with the photo bubble, the label, stop 2 with the typing dots, the patch, then stop 3. */
+@media (prefers-reduced-motion: no-preference) {
+  .iz-closing--armed { --closing-run: paused; }
+  .iz-closing--armed.iz-closing--play { --closing-run: running; }
+  .iz-closing--armed .iz-chat { animation: iz-closing-card 0.95s var(--closing-ease) both; animation-play-state: var(--closing-run); }
+  .iz-closing--armed .iz-chat::before { animation: iz-closing-plate 1.15s var(--closing-ease) 0.12s both; animation-play-state: var(--closing-run); }
+  .iz-closing--armed .iz-chat__out { transform-origin: 100% 100%; animation: iz-closing-bubble 0.85s var(--closing-ease) 0.38s both; animation-play-state: var(--closing-run); }
+  .iz-closing--armed .iz-chat__out img { animation: iz-closing-zoom 1.4s var(--closing-ease) 0.38s both; animation-play-state: var(--closing-run); }
+  .iz-closing--armed .iz-chat__label { animation: iz-closing-pop 0.7s var(--closing-pop) 0.9s both; animation-play-state: var(--closing-run); }
+  .iz-closing--armed .iz-chat__typing { transform-origin: 0 100%; animation: iz-closing-typing 0.5s var(--closing-pop) 1.1s both; animation-play-state: var(--closing-run); }
+  .iz-closing--armed .iz-chat__typing span { animation: iz-closing-dot 0.9s ease-in-out 1.35s 3 both; animation-play-state: var(--closing-run); }
+  .iz-closing--armed .iz-chat__typing span:nth-child(2) { animation-delay: 1.49s; }
+  .iz-closing--armed .iz-chat__typing span:nth-child(3) { animation-delay: 1.63s; }
+  .iz-closing--armed .iz-chat__patch { animation: iz-closing-stamp 0.9s var(--closing-pop) 1.3s both; animation-play-state: var(--closing-run); }
+
+  .iz-closing--armed .iz-closing__route > li:nth-child(1) { --closing-at: 0.3s; --closing-road: 0.62s; }
+  .iz-closing--armed .iz-closing__route > li:nth-child(2) { --closing-at: 1.1s; --closing-road: 1.42s; }
+  .iz-closing--armed .iz-closing__route > li:nth-child(3) { --closing-at: 1.9s; }
+  .iz-closing--armed .iz-closing__n { animation: iz-closing-num 0.35s ease-out var(--closing-at) both; animation-play-state: var(--closing-run); }
+  .iz-closing--armed .iz-closing__n::before { animation: iz-closing-fill 0.55s var(--closing-pop) var(--closing-at) both; animation-play-state: var(--closing-run); }
+  .iz-closing--armed .iz-closing__stop { animation: iz-closing-stop 0.5s ease-out var(--closing-at) both; animation-play-state: var(--closing-run); }
+  .iz-closing--armed .iz-closing__route > li:not(:last-child)::after { animation: iz-closing-road-x 0.5s var(--closing-ease) var(--closing-road) both; animation-play-state: var(--closing-run); }
+
+  /* The chat leans toward a fine pointer; the plate drifts back and the stickers forward, for depth. */
+  .iz-closing--tilt .iz-chat { transform: perspective(1100px) rotateX(calc(var(--iz-py, 0) * -7deg)) rotateY(calc(var(--iz-px, 0) * 9deg)); transition: transform 0.9s cubic-bezier(0.16, 1, 0.3, 1); }
+  .iz-closing--tilt .iz-chat::before { translate: calc(var(--iz-px, 0) * -16px) calc(var(--iz-py, 0) * -12px); transition: translate 0.9s cubic-bezier(0.16, 1, 0.3, 1); }
+  .iz-closing--tilt .iz-chat__label { translate: calc(var(--iz-px, 0) * 14px) calc(var(--iz-py, 0) * 10px); transition: translate 0.9s cubic-bezier(0.16, 1, 0.3, 1); }
+  .iz-closing--tilt .iz-chat__patch { translate: calc(var(--iz-px, 0) * 22px) calc(var(--iz-py, 0) * 16px); transition: translate 0.9s cubic-bezier(0.16, 1, 0.3, 1); }
+}
+@media (prefers-reduced-motion: no-preference) and (max-width: 1023px) {
+  .iz-closing--armed .iz-closing__route > li:not(:last-child)::after { animation-name: iz-closing-road-y; }
+}
+
+@keyframes iz-closing-card { from { opacity: 0; translate: 0 calc(44 * var(--closing-u)); rotate: -9deg; } }
+@keyframes iz-closing-plate { from { opacity: 0; rotate: -2deg; scale: 0.9; } }
+@keyframes iz-closing-bubble { from { opacity: 0; translate: calc(60 * var(--closing-u)) 0; scale: 0.88; } }
+@keyframes iz-closing-zoom { from { scale: 1.22; } }
+@keyframes iz-closing-pop { from { opacity: 0; scale: 0.4; rotate: -26deg; } }
+@keyframes iz-closing-typing { from { opacity: 0; scale: 0.4; } }
+@keyframes iz-closing-dot { 0%, 100% { opacity: 0.7; translate: 0 0; } 40% { opacity: 1; translate: 0 -3px; } }
+@keyframes iz-closing-stamp { from { opacity: 0; scale: 0.25; rotate: -160deg; } }
+@keyframes iz-closing-fill { from { scale: 0; } }
+@keyframes iz-closing-num { from { color: var(--c-pasir); } }
+@keyframes iz-closing-stop { from { opacity: 0.4; } }
+@keyframes iz-closing-road-x { from { scale: 0 1; } }
+@keyframes iz-closing-road-y { from { scale: 1 0; } }
