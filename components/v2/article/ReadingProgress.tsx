@@ -1,11 +1,13 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { motionTier } from '@/lib/v2/motion/runtime';
 
 /**
  * Reading progress bar (F-016 S7.7.1): only after mount and only under prefers-reduced-motion: no-preference, so
- * it is absent without JavaScript and under reduced motion. transform: scaleX() only, written in a
- * requestAnimationFrame from a passive scroll listener, measured over the article body. No GSAP.
+ * it is absent without JavaScript, under reduced motion and in the minimal motion tier (Save-Data). transform:
+ * scaleX() only, written in a requestAnimationFrame from a passive scroll listener, measured over the article body.
+ * No GSAP.
  */
 export default function ReadingProgress() {
   const [on, setOn] = useState(false);
@@ -13,7 +15,7 @@ export default function ReadingProgress() {
 
   useEffect(() => {
     const mq = window.matchMedia('(prefers-reduced-motion: no-preference)');
-    const update = () => setOn(mq.matches);
+    const update = () => setOn(mq.matches && motionTier() !== 'minimal');
     update();
     mq.addEventListener('change', update);
     return () => mq.removeEventListener('change', update);

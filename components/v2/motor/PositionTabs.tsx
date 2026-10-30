@@ -2,6 +2,7 @@
 
 import { useRef, useState, type KeyboardEvent } from 'react';
 import type { CategoryTab } from '@/components/v2/motor/motor-page';
+import { motionOn } from '@/lib/v2/motion/runtime';
 
 const tabId = (key: string) => `iz-postab-${key}`;
 
@@ -22,8 +23,8 @@ export default function PositionTabs({ tabs, panelId, cardPositions }: { tabs: C
       const show = key === 'semua' || (cardPositions[i] ?? []).includes(key);
       (cell as HTMLElement).hidden = !show;
     });
-    // S5.2.1: 150 ms fade on change; instant under reduced motion.
-    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches && typeof panel.animate === 'function') {
+    // S5.2.1: 150 ms fade on change; instant under reduced motion and in the minimal motion tier (Save-Data).
+    if (motionOn() && typeof panel.animate === 'function') {
       panel.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 150, easing: 'ease-out' });
     }
   };

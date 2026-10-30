@@ -13,6 +13,7 @@
 @media (prefers-reduced-motion: reduce) {
   .iz-aphoto .iz-smartimg > img { transition: none; transform: none; }
 }
+html[data-iz-tier="minimal"] .iz-aphoto .iz-smartimg > img { transition: none; transform: none; }
 
 /* Cards outside the current page carry `hidden`; .iz-acard sets display, which would beat the UA rule (S6.5.2). */
 .iz-acard[hidden] { display: none; }
@@ -30,6 +31,7 @@
 @media (prefers-reduced-motion: no-preference) {
   .iz-alist--fade { animation: iz-alist-fade 150ms ease-out; }
 }
+html[data-iz-tier="minimal"] .iz-alist--fade { animation: none; }
 @keyframes iz-alist-fade { from { opacity: 0; } to { opacity: 1; } }
 
 /* Pager: disabled ends, ellipsis, and wrapping at 390 px without horizontal scroll (S6.5.3, S6.5 BP). */
@@ -75,3 +77,4 @@
 .iz-progress { position: fixed; top: 0; left: 0; right: 0; height: 3px; z-index: 70; pointer-events: none; }
 .iz-progress > span { display: block; height: 100%; background: var(--c-kuning-tua); transform: scaleX(0); transform-origin: 0 50%; }
 @media (prefers-reduced-motion: reduce) { .iz-progress { display: none; } }
+html[data-iz-tier="minimal"] .iz-progress { display: none; }

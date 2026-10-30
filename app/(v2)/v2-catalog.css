@@ -42,3 +42,4 @@
   .iz-catalog__grid[data-anim] > * { animation: none; }
   .iz-fsheet__panel { animation: none; }
 }
+html[data-iz-tier="minimal"] .iz-catalog__grid[data-anim] > *, html[data-iz-tier="minimal"] .iz-fsheet__panel { animation: none; }

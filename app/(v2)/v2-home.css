@@ -50,6 +50,12 @@
 @media (prefers-reduced-motion: reduce) and (min-width: 1024px) {
   .iz-film { flex-wrap: wrap; justify-content: center; overflow-x: visible; scroll-snap-type: none; }
 }
+/* The minimal motion tier (Save-Data, ?motion=minimal) takes the same static path: without the engine there is no pin,
+   progress or swipe hint, and the base strip hides its scrollbar, so a mouse could not reach the last photos. */
+html[data-iz-tier="minimal"] .iz-cat:hover > .iz-smartimg > img, html[data-iz-tier="minimal"] .iz-cat:hover > img { transform: none; }
+@media (min-width: 1024px) {
+  html[data-iz-tier="minimal"] .iz-film { flex-wrap: wrap; justify-content: center; overflow-x: visible; scroll-snap-type: none; }
+}
 
 /* Hero photo that failed to load: hidden, so the dark section background is the fallback without a broken-image icon
    (S1.1.4). */
@@ -82,6 +88,9 @@ img.iz-hero__img[data-failed="true"] { visibility: hidden; }
 .iz-band__photo img { object-fit: cover; object-position: 50% 62%; }
 .iz-band__photo::after { content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none; background: linear-gradient(90deg, var(--c-aspal) 0%, rgba(22, 20, 15, 0) 32%), linear-gradient(0deg, rgba(22, 20, 15, 0.55) 0%, rgba(22, 20, 15, 0) 40%); }
 .iz-band__callout { position: absolute; z-index: 2; left: var(--space-8); bottom: var(--space-8); display: grid; gap: 4px; margin: 0; padding: var(--space-4) var(--space-5); border-radius: 20px; border: 1px solid var(--c-line-on-dark); background: rgba(22, 20, 15, 0.72); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); color: var(--c-krem); }
+/* Lite motion tier: near solid instead of the blur, which recomputed on every frame of the photo's zoom and drift behind
+   the callout. */
+html[data-iz-tier="lite"] .iz-band__callout { background: rgba(22, 20, 15, 0.9); -webkit-backdrop-filter: none; backdrop-filter: none; }
 .iz-band__callout b { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--c-kuning); }
 .iz-band__callout > span { font-family: var(--font-display); font-size: 22px; font-weight: 800; letter-spacing: -0.01em; }
 @media (max-width: 1023px) {
@@ -121,9 +130,35 @@ img.iz-hero__img[data-failed="true"] { visibility: hidden; }
   html.iz-motion .iz-rcard[data-dup] { display: flex; }
   html.iz-motion .iz-rcol__track { animation: iz-marquee-up 30s linear infinite; will-change: transform; }
   html.iz-motion .iz-rcol--down .iz-rcol__track { animation-name: iz-marquee-down; animation-duration: 36s; }
+  /* Lite motion tier (engine reviews()): two runs in one 90 s animation (the -lite keyframes), counted only while the
+     wall is on screen (--wait pauses them before it arrives and whenever it leaves), then the columns hold. Both ends of a run show the same cards (the second half
+     is the duplicate set), so the stop is seamless. A held column drops the duplicates and the loop and scrolls on its
+     own with a thin scrollbar, so no card is left clipped; will-change is dropped with the loop. The lite keyframes are
+     copies under their own names, so a wall rebuilt in lite (re-attach after a probe downgrade) starts its two runs
+     from zero instead of ending at once because the endless loop had already run longer. */
+  html.iz-motion .iz-rcol--lite .iz-rcol__track { animation-name: iz-marquee-up-lite; animation-duration: 90s; animation-iteration-count: 1; animation-fill-mode: forwards; will-change: auto; }
+  html.iz-motion .iz-rcol--lite.iz-rcol--down .iz-rcol__track { animation-name: iz-marquee-down-lite; }
+  html.iz-motion .iz-rcol--lite.iz-rcol--wait .iz-rcol__track { animation-play-state: paused; }
+  html.iz-motion .iz-rcol--held { overflow-y: auto; scrollbar-width: thin; }
+  html.iz-motion .iz-rcol--lite.iz-rcol--held .iz-rcol__track { animation: none; }
+  html.iz-motion .iz-rcol--held .iz-rcard[data-dup] { display: none; }
 }
 @keyframes iz-marquee-up { from { transform: translateY(0); } to { transform: translateY(calc(-50% - var(--space-4) / 2)); } }
 @keyframes iz-marquee-down { from { transform: translateY(calc(-50% - var(--space-4) / 2)); } to { transform: translateY(0); } }
+/* Lite: one run at the full-tier speed, a seamless wrap (the second half is the duplicate set; steps() makes the jump
+   instant), then a second run whose ease-out starts at the same speed and slows to rest; both columns end at 90 s. */
+@keyframes iz-marquee-up-lite {
+  0% { transform: translateY(0); animation-timing-function: linear; }
+  33.333% { transform: translateY(calc(-50% - var(--space-4) / 2)); animation-timing-function: steps(1, start); }
+  33.334% { transform: translateY(0); animation-timing-function: cubic-bezier(0.333, 0.667, 0.667, 1); }
+  100% { transform: translateY(calc(-50% - var(--space-4) / 2)); }
+}
+@keyframes iz-marquee-down-lite {
+  0% { transform: translateY(calc(-50% - var(--space-4) / 2)); animation-timing-function: linear; }
+  40% { transform: translateY(0); animation-timing-function: steps(1, start); }
+  40.001% { transform: translateY(calc(-50% - var(--space-4) / 2)); animation-timing-function: cubic-bezier(0.3, 0.45, 0.6, 1); }
+  100% { transform: translateY(0); }
+}
 @media (max-width: 767px) {
   /* Each card keeps its own height in the swipe row; stretched to the longest review, the short ones ended in an empty
      block (Sehan, 2026-10-29: no blank space on phones; the desktop wall stays as it is). */

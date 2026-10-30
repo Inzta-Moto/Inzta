@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, type ReactNode } from 'react';
-import { HOVER, MOTION_OK, whenRevealed } from '@/lib/v2/motion/runtime';
+import { HOVER, motionOn, motionTier, onTierChange, whenRevealed } from '@/lib/v2/motion/runtime';
 
 // The assembly starts once the panel top passes 75% of the viewport, the point where the engine raises its actions.
 const IN_VIEW = '0px 0px -25% 0px';
@@ -55,6 +55,8 @@ function rider(section: HTMLElement, cleanups: (() => void)[]): () => void {
  * Fine pointers only: the chat leans toward the cursor (--iz-px/--iz-py on .iz-chat) and a headlight follows it over
  * the map (--iz-lx/--iz-ly on .iz-closing__lamp, in px from the drifting topo layer, eased toward the cursor each
  * frame). Layout is read and the variables written in the same frame, so a fast pointer never forces a sync layout.
+ * In the lite motion tier (.iz-closing--lite) the light jumps to the cursor and a CSS transition on translate gives
+ * the lag on the compositor, so there is one frame of work per pointer move instead of a chase loop of about half a second.
  */
 function pointer(section: HTMLElement, cleanups: (() => void)[]) {
   const chat = section.querySelector<HTMLElement>('.iz-chat');
@@ -84,7 +86,8 @@ function pointer(section: HTMLElement, cleanups: (() => void)[]) {
     const tx = px - t.left;
     const ty = py - t.top;
     // On entry the light appears under the cursor instead of sliding in from its last spot.
-    if (snap) {
+    const lite = section.classList.contains('iz-closing--lite');
+    if (snap || lite) {
       lx = tx;
       ly = ty;
       snap = false;
@@ -95,7 +98,7 @@ function pointer(section: HTMLElement, cleanups: (() => void)[]) {
     lamp.style.setProperty('--iz-lx', `${lx.toFixed(1)}px`);
     lamp.style.setProperty('--iz-ly', `${ly.toFixed(1)}px`);
     section.classList.add('iz-closing--lamp');
-    if (Math.abs(tx - lx) + Math.abs(ty - ly) > 0.6) frame = window.requestAnimationFrame(tick);
+    if (!lite && Math.abs(tx - lx) + Math.abs(ty - ly) > 0.6) frame = window.requestAnimationFrame(tick);
   };
   const schedule = () => {
     frame ||= window.requestAnimationFrame(tick);
@@ -143,20 +146,44 @@ function pointer(section: HTMLElement, cleanups: (() => void)[]) {
  * fine pointers adds the chat lean and the headlight. A panel already on screen and uncovered at mount is not
  * re-assembled, so the chat never blinks out in front of the visitor; it only gets the loops. Transforms stay off the
  * section itself (the engine clips it).
+ *
+ * Lite motion tier (lib/v2/motion/tier.ts) adds .iz-closing--lite: the idle loops and the rider run twice and then
+ * rest (the rider on stop 3), the route plots faster, and the headlight lags by a CSS transition. A downgrade from the
+ * frame probe while the panel is on screen waits until it leaves, so no running loop is cut short in view. The minimal
+ * tier counts as reduced motion.
  */
 export default function ClosingStage({ className, children }: { className: string; children: ReactNode }) {
   const ref = useRef<HTMLElement>(null);
 
   useEffect(() => {
     const section = ref.current;
-    if (!section || !window.matchMedia(MOTION_OK).matches) return;
+    if (!section || !motionOn()) return;
     const cleanups: (() => void)[] = [];
     section.classList.add('iz-closing--motion');
-    cleanups.push(() => section.classList.remove('iz-closing--motion'));
+    cleanups.push(() => section.classList.remove('iz-closing--motion', 'iz-closing--lite'));
+
+    let liteWaiting = false;
+    const goLite = () => {
+      liteWaiting = false;
+      section.classList.add('iz-closing--lite');
+    };
+    if (motionTier() === 'lite') goLite();
+    else {
+      cleanups.push(
+        onTierChange(next => {
+          if (next !== 'lite') return;
+          // Two runs instead of endless would end a loop already past its second run with a jump; off screen it is unseen.
+          if (section.classList.contains('iz-closing--live')) liteWaiting = true;
+          else goLite();
+        }),
+      );
+    }
 
     if (typeof IntersectionObserver === 'function') {
       const live = new IntersectionObserver(entries => {
-        section.classList.toggle('iz-closing--live', entries.some(e => e.isIntersecting));
+        const on = entries.some(e => e.isIntersecting);
+        section.classList.toggle('iz-closing--live', on);
+        if (!on && liteWaiting) goLite();
       });
       live.observe(section);
       cleanups.push(() => {

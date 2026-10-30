@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { MOTION_OK, whenRevealed } from '@/lib/v2/motion/runtime';
+import { motionOn, whenRevealed } from '@/lib/v2/motion/runtime';
 
 // The draw-in starts once the card top passes 75% of the viewport, the same point as the closing band.
 const IN_VIEW = '0px 0px -25% 0px';
@@ -55,14 +55,15 @@ const LEGS: Record<'community' | 'contact', Leg[]> = {
  * fine pointers a headlight that follows the cursor (lib/v2/motion/cursor.ts sets --mx/--my on the card). The map is
  * complete in the server HTML and aria-hidden; with motion allowed the route is drawn in once when the card scrolls
  * into view and the curtain is up (.iz-amap--armed, then .iz-amap--play). A card already on screen at mount keeps its
- * drawn route, so nothing blinks out in front of the visitor. No loops.
+ * drawn route, so nothing blinks out in front of the visitor. No loops. The lite motion tier shortens the draw-in to
+ * 1 s (v2-about.css, html[data-iz-tier]); the minimal tier counts as reduced motion.
  */
 export default function AboutMap({ variant }: { variant: 'community' | 'contact' }) {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const map = ref.current;
-    if (!map || !window.matchMedia(MOTION_OK).matches || typeof IntersectionObserver !== 'function') return;
+    if (!map || !motionOn() || typeof IntersectionObserver !== 'function') return;
     let revealed = false;
     let inView = false;
     let played = false;
