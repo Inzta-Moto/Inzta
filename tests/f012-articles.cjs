@@ -394,7 +394,7 @@ const ready = {
     const r = await preview.POST(req({ content: `## Judul\n\n<script>alert(1)</script>\n\n![Alt](${CLD})\n\n![Belum](../images/K-03/a.jpg)`, contentFormat: 'markdown' }));
     assert.strictEqual(r.status, 200);
     const body = await json(r);
-    assert.ok(body.html.includes('<h2>Judul</h2>') && body.html.includes('<figure>') && !body.html.includes('<script'));
+    assert.ok(body.html.includes('<h2 id="bagian-judul">Judul</h2>') && body.html.includes('<figure>') && !body.html.includes('<script'));
     assert.deepStrictEqual(body.warnings.map(w => w.kind).sort(), ['placeholder', 'raw-html']);
     assert.deepStrictEqual([counters.reads, counters.writes], [r0, w0]);
   });

@@ -138,9 +138,9 @@ export function parseArticleInput(body: unknown, opts: ArticleInputOptions = {})
 }
 
 /**
- * F-016 D3, S6.8.1–S6.8.3: `topik` is one of the four topics or ''/null (stored as ''); `kategoriMotor` counts
- * only for 'per-motor' (deduplicated D1 slugs, missing = []) and is [] for any other topic. Without a `topik` key
- * both fields are left out, so an old editor tab or another client cannot erase a stored topic.
+ * F-016 D3, S6.8.1–S6.8.3: `topik` is one of ARTICLE_TOPICS or ''/null (stored as ''); `kategoriMotor` is kept for
+ * any topic (F-017: deduplicated D1 slugs, missing = []) and is [] without a topic. Without a `topik` key both
+ * fields are left out, so an old editor tab or another client cannot erase a stored topic.
  */
 function parseTopic(data: Record<string, unknown>):
   | { value: { topik?: ArticleTopic | ''; kategoriMotor?: MotorCategory[] } }
@@ -150,7 +150,7 @@ function parseTopic(data: Record<string, unknown>):
   if (data.topik === null || data.topik === '') topik = '';
   else if (isArticleTopic(data.topik)) topik = data.topik;
   else return { error: 'topik: pilih salah satu topik yang tersedia' };
-  if (topik !== 'per-motor') return { value: { topik, kategoriMotor: [] } };
+  if (topik === '') return { value: { topik, kategoriMotor: [] } };
 
   const raw = data.kategoriMotor == null ? [] : data.kategoriMotor;
   if (!Array.isArray(raw) || !raw.every(isMotorCategory)) {

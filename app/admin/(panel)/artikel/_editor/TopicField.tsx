@@ -6,9 +6,10 @@ import { CATEGORY_SLUGS } from '@/lib/v2/motor-category';
 import { categoryLabel } from '@/lib/v2/home-content';
 
 /**
- * F-016 D3, S6.8.5: article topic for the /blog tabs and, only for "Per motor", the motor categories. Part of the
- * editor draft like showCover (dirty check, autosave, local copies, save, 409). Not a publish check (S6.8.6).
- * Leaving "Per motor" clears the categories, which the API stores as [] for any other topic anyway (S6.8.3).
+ * F-016 D3, S6.8.5: article topic for the /blog tabs, and the motor categories. Part of the editor draft like showCover
+ * (dirty check, autosave, local copies, save, 409). Not a publish check (S6.8.6); the checklist warns without a topic.
+ * F-017: the categories can be ticked for every topic (the "Untuk motor Anda" box on article pages); the category
+ * pages still list "Per motor" articles only. Clearing the topic clears the categories, as the API does.
  */
 export default function TopicField({
   topik,
@@ -34,7 +35,7 @@ export default function TopicField({
           aria-describedby="article-topik-help"
           onChange={e => {
             const next = e.target.value as ArticleTopic | '';
-            onChange(next, next === 'per-motor' ? kategoriMotor : []);
+            onChange(next, next ? kategoriMotor : []);
           }}
         >
           <option value="">Tanpa topik</option>
@@ -42,16 +43,23 @@ export default function TopicField({
             <option key={t} value={t}>{topicLabel(t)}</option>
           ))}
         </select>
-        <p className="article-editor-help" id="article-topik-help">Artikel tanpa topik hanya tampil di tab Semua.</p>
+        <p className="article-editor-help" id="article-topik-help">
+          Artikel baru memakai Adventure, Touring, atau Motocamp. Artikel tanpa topik hanya tampil di tab Semua.
+        </p>
       </div>
-      {topik === 'per-motor' && (
-        <fieldset className="form-group" style={{ border: 0, padding: 0, margin: 0 }}>
-          <legend className="form-label">Kategori motor</legend>
+      {topik && (
+        <fieldset className="form-group" style={{ border: 0, padding: 0, margin: 0 }} aria-describedby="article-kategori-help">
+          <legend className="form-label">Kategori motor{topik === 'per-motor' ? '' : ' (opsional)'}</legend>
           {CATEGORY_SLUGS.map(c => (
             <label key={c} className="article-editor-check">
               <input type="checkbox" checked={kategoriMotor.includes(c)} onChange={e => toggle(c, e.target.checked)} /> {categoryLabel(c)}
             </label>
           ))}
+          <p className="article-editor-help" id="article-kategori-help">
+            {topik === 'per-motor'
+              ? 'Artikel tampil di halaman kategori motor yang dicentang.'
+              : 'Artikel disarankan di kotak "Untuk motor Anda" bagi pengunjung yang memilih kategori ini.'}
+          </p>
         </fieldset>
       )}
     </section>
