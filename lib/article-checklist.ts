@@ -1,16 +1,20 @@
 import type { Article, ChecklistItem, ChecklistResult, RenderWarning } from '@/types';
 import { RESERVED_ARTICLE_SLUGS } from '@/lib/constants';
 import { SLUG_PATTERN } from '@/lib/slug';
-import { MAX_EMBEDS, extractBodyImages, extractEmbeds, formatOf, hasH1, isAllowedImageUrl, siteLinks } from '@/lib/article-format';
+import { MAX_EMBEDS, countH2, extractBodyImages, extractEmbeds, formatOf, hasH1, isAllowedImageUrl, siteLinks } from '@/lib/article-format';
 
 // Pre-publish checks (F-012 requirement 10), pure so the editor, PUT on a published article, and the
 // publish route all apply the same rules. Meta lengths follow ADR-0014: a guideline, never a block.
 export const META_TITLE_GUIDE = 60;
 export const META_DESCRIPTION_GUIDE = 155;
-export const COVER_MIN_WIDTH = 1200;
+// F-017: the cover shows 680 px wide in the reading column, so 1360 px keeps it sharp on 2x screens (and above the
+// 1200 px link previews need).
+export const COVER_MIN_WIDTH = 1360;
+// F-017: the "Daftar isi" shows from two h2 sections.
+export const TOC_MIN_SECTIONS = 2;
 
 export type ChecklistInput = Pick<Article, 'title' | 'slug' | 'excerpt' | 'content'> &
-  Partial<Pick<Article, 'contentFormat' | 'coverImage' | 'coverAlt' | 'showCover' | 'metaTitle' | 'metaDescription'>>;
+  Partial<Pick<Article, 'contentFormat' | 'coverImage' | 'coverAlt' | 'showCover' | 'metaTitle' | 'metaDescription' | 'topik'>>;
 
 export interface ChecklistOptions {
   // Measured in the editor from the loaded image; unknown on the server, so W-4 is editor only.
@@ -105,7 +109,16 @@ export function runChecklist(article: ChecklistInput, opts: ChecklistOptions = {
     item('W-3', 'Deskripsi SEO diisi', metaDescription.length > 0, 'Kosong: ringkasan (excerpt) dipakai sebagai deskripsi.'),
   ];
   if (markdown && typeof opts.coverWidth === 'number') {
-    warnings.push(item('W-4', `Gambar sampul minimal ${COVER_MIN_WIDTH} px lebarnya`, opts.coverWidth >= COVER_MIN_WIDTH, `Lebar ${opts.coverWidth} px; pratinjau tautan bisa buram.`));
+    warnings.push(item('W-4', `Gambar sampul minimal ${COVER_MIN_WIDTH} px lebarnya`, opts.coverWidth >= COVER_MIN_WIDTH, `Lebar ${opts.coverWidth} px; sampul dan pratinjau tautan bisa buram.`));
+  }
+  // F-017: the topic sets the chip, the breadcrumb, and "Artikel lain". Only when the caller sends the field (the
+  // editor draft always does), so an old document without it is not flagged at publish.
+  if ('topik' in article) {
+    warnings.push(item('W-7', 'Topik dipilih', Boolean(article.topik), 'Tanpa topik: tidak ada chip topik, dan artikel hanya tampil di tab Semua.'));
+  }
+  if (markdown && content.trim()) {
+    const sections = countH2(content);
+    warnings.push(item('W-8', `Minimal ${TOC_MIN_SECTIONS} subjudul "##" untuk Daftar isi`, sections >= TOC_MIN_SECTIONS, `${sections} subjudul "##"; Daftar isi tidak tampil.`));
   }
   // F-013 phase A2 (15.4, H-5): "Jadikan juga gambar sampul" copies the URL as is, so equality is enough.
   if (markdown && article.showCover !== false && isAllowedImageUrl(article.coverImage)) {

@@ -49,6 +49,27 @@ function safeHref(href: string): { href: string; external: boolean } | null {
   }
 }
 
+// F-017: h2 anchors are "bagian-" plus the heading text as a slug, so the TOC (components/v2/article/Toc.tsx) can
+// list them without changing the HTML. Exported for tests.
+export const SECTION_ID_RE = /^bagian-[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+export function sectionId(text: string, used: Set<string>): string {
+  const slug = text
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/&[a-z0-9#]+;/gi, ' ')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 60)
+    .replace(/-+$/, '');
+  const base = `bagian-${slug || 'isi'}`;
+  let id = base;
+  for (let n = 2; used.has(id); n++) id = `${base}-${n}`;
+  used.add(id);
+  return id;
+}
+
 const SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
   // Tables: spec amendment 2026-10-27 (Sehan), tags only. marked's align attributes are not on the
   // allowlist, so they are dropped like any other attribute.
@@ -62,6 +83,16 @@ const SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
     // F-013 (requirement 4.10): the column heading of a body cell, shown as a label when a table becomes cards
     // on phones. Plain text written by the table renderer below; no other data-* attribute is allowed.
     td: ['data-label'],
+    // F-017: the section anchor the "Daftar isi" links to, written by the heading renderer below; any other id is
+    // dropped by transformTags.
+    h2: ['id'],
+  },
+  transformTags: {
+    h2: (tagName, attribs) => {
+      const kept: sanitizeHtml.Attributes = {};
+      if (SECTION_ID_RE.test(attribs.id || '')) kept.id = attribs.id;
+      return { tagName, attribs: kept };
+    },
   },
   // F-013 requirement 3.5: the five image-layout classes, on <figure> only. `class` is deliberately not in
   // allowedAttributes, so any other class, and a class on any other tag, is removed.
@@ -100,6 +131,7 @@ const isBlank = (t: Token) => (t.type === 'text' || t.type === 'space') && !t.ra
 
 function renderMarkdown(content: string): RenderResult {
   const warnings: RenderWarning[] = [];
+  const sectionIds = new Set<string>();
   let rawHtmlWarned = false;
   const noteRawHtml = () => {
     if (!rawHtmlWarned) warnings.push({ kind: 'raw-html' });
@@ -131,7 +163,11 @@ function renderMarkdown(content: string): RenderResult {
       heading({ tokens, depth }: Tokens.Heading) {
         // The article title is the page's only h1, so "#" becomes h2 and "####" and deeper become h3.
         const tag = depth <= 2 ? 'h2' : 'h3';
-        return `<${tag}>${this.parser.parseInline(tokens)}</${tag}>\n`;
+        const html = this.parser.parseInline(tokens);
+        if (tag === 'h3') return `<h3>${html}</h3>\n`;
+        // F-017: every h2 gets a unique anchor for the "Daftar isi".
+        const id = sectionId(this.parser.parseInline(tokens, this.parser.textRenderer), sectionIds);
+        return `<h2 id="${id}">${html}</h2>\n`;
       },
       paragraph({ tokens }: Tokens.Paragraph) {
         const meaningful = tokens.filter(t => !isBlank(t));

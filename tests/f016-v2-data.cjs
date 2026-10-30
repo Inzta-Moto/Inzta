@@ -195,8 +195,8 @@ const sideProduct = (extra = {}, kiri = {}, kanan = {}) => ({
   // Articles (D3, S6.7.2, S7.2, S7.6)
   const art = (slug, extra = {}) => ({ slug, title: slug, excerpt: ' Ringkasan ', content: 'satu dua tiga', images: [], createdAt: 1, updatedAt: 1, publishedAt: null, ...extra });
   await check('D3/S6.2: topicLabel maps the four topics; empty, unknown, or missing -> null (S6.8.4)', () => {
-    assert.deepStrictEqual(A.ARTICLE_TOPICS, ['memilih-tas', 'per-motor', 'touring', 'komunitas']);
-    assert.deepStrictEqual(A.ARTICLE_TOPICS.map(A.topicLabel), ['Memilih tas', 'Per motor', 'Touring', 'Komunitas']);
+    assert.deepStrictEqual(A.ARTICLE_TOPICS, ['memilih-tas', 'per-motor', 'touring', 'adventure', 'motocamp', 'komunitas']);
+    assert.deepStrictEqual(A.ARTICLE_TOPICS.map(A.topicLabel), ['Memilih tas', 'Per motor', 'Touring', 'Adventure', 'Motocamp', 'Komunitas']);
     for (const v of ['', undefined, null, 'Touring', 'review', 3]) assert.strictEqual(A.topicLabel(v), null, String(v));
     assert.strictEqual(A.normalizeTopik('per-motor'), 'per-motor');
     assert.strictEqual(A.normalizeTopik('x'), null);
@@ -205,6 +205,24 @@ const sideProduct = (extra = {}, kiri = {}, kanan = {}) => ({
     assert.deepStrictEqual(A.articleCategories({ topik: 'per-motor', kategoriMotor: ['retro', 'retro', 'vespa'] }), ['retro']);
     assert.deepStrictEqual(A.articleCategories({ topik: 'touring', kategoriMotor: ['retro'] }), []);
     assert.deepStrictEqual(A.articleCategories({}), []);
+  });
+  await check('F-017: motorArticles lists tagged published others, newest first, capped', () => {
+    const all = [
+      art('cur', { topik: 'touring', kategoriMotor: ['retro'], publishedAt: 50 }),
+      art('old', { topik: 'per-motor', kategoriMotor: ['retro'], publishedAt: 10 }),
+      art('new', { topik: 'motocamp', kategoriMotor: ['matic', 'retro'], publishedAt: 90 }),
+      art('untagged', { topik: 'touring', publishedAt: 99 }),
+      art('draft', { topik: 'touring', kategoriMotor: ['retro'], publishedAt: 98, status: 'draft' }),
+    ];
+    const out = A.motorArticles({ slug: 'cur' }, all);
+    assert.deepStrictEqual(out.map(x => [x.card.slug, x.tags]), [['new', ['matic', 'retro']], ['old', ['retro']]]);
+    assert.ok(!('content' in out[0].card));
+    assert.strictEqual(A.motorArticles({ slug: 'cur' }, all, 1).length, 1);
+  });
+  await check('F-017: articleMotorTags for any topic, none without a topic', () => {
+    assert.deepStrictEqual(A.articleMotorTags({ topik: 'touring', kategoriMotor: ['retro', 'vespa', 'matic'] }), ['matic', 'retro']);
+    assert.deepStrictEqual(A.articleMotorTags({ topik: 'komunitas', kategoriMotor: 'retro' }), []);
+    assert.deepStrictEqual(A.articleMotorTags({ topik: '', kategoriMotor: ['retro'] }), []);
   });
   await check('S6.7.2: articleCardV2 has exactly the card fields (no content); photo, author, date, topic fallbacks', () => {
     const c = A.articleCardV2(art('a', { coverImage: 'https://c/cover.jpg', images: ['https://c/g.jpg'], coverCaption: '  Dok. Gasber 16 ', author: ' Om Fahrul ', publishedAt: 5, topik: 'komunitas', showCover: false }));
@@ -489,7 +507,7 @@ const sideProduct = (extra = {}, kiri = {}, kanan = {}) => ({
   const stored = (slug) => docs.get('articles/' + slug);
   await check('S6.8.7: each valid topik is stored and returned', async () => {
     asAdmin(); docs.clear();
-    for (const topik of ['memilih-tas', 'per-motor', 'touring', 'komunitas']) {
+    for (const topik of ['memilih-tas', 'per-motor', 'touring', 'adventure', 'motocamp', 'komunitas']) {
       const r = await articles.POST(req(draft(`t-${topik}`, { topik })));
       assert.strictEqual(r.status, 201, topik);
       assert.strictEqual(stored(`t-${topik}`).topik, topik);
@@ -538,11 +556,15 @@ const sideProduct = (extra = {}, kiri = {}, kanan = {}) => ({
       assert.strictEqual(counters.writes, w);
     }
   });
-  await check('S6.8.3/S6.8.7: topic changed away from per-motor -> kategoriMotor stored as []', async () => {
+  await check('F-017: kategoriMotor kept for any topic; no topic -> stored as []', async () => {
     asAdmin(); docs.clear();
     await articles.POST(req(draft('away', { topik: 'per-motor', kategoriMotor: ['trail'] })));
-    assert.strictEqual((await article.PUT(req({ title: 'Judul', topik: 'touring', kategoriMotor: ['trail'] }, 'PUT'), p('away'))).status, 200);
-    assert.deepStrictEqual([stored('away').topik, stored('away').kategoriMotor], ['touring', []]);
+    assert.strictEqual((await article.PUT(req({ title: 'Judul', topik: 'touring', kategoriMotor: ['trail', 'adventure'] }, 'PUT'), p('away'))).status, 200);
+    assert.deepStrictEqual([stored('away').topik, stored('away').kategoriMotor], ['touring', ['adventure', 'trail']]);
+    assert.strictEqual((await article.PUT(req({ title: 'Judul', topik: '', kategoriMotor: ['trail'] }, 'PUT'), p('away'))).status, 200);
+    assert.deepStrictEqual([stored('away').topik, stored('away').kategoriMotor], ['', []]);
+    await articles.POST(req(draft('mc', { topik: 'motocamp', kategoriMotor: ['matic'] })));
+    assert.deepStrictEqual([stored('mc').topik, stored('mc').kategoriMotor], ['motocamp', ['matic']]);
   });
   await check('S6.8.7: unknown fields are still dropped alongside topik', async () => {
     asAdmin(); docs.clear();

@@ -1,5 +1,6 @@
 import { getAdminDb } from '@/lib/firebaseAdmin';
 import { readPublic } from '@/lib/public-content';
+import { fixtureArticles, fixtureProducts } from '@/lib/v2/dev-fixture';
 import { normalizeProduct } from '@/lib/product-utils';
 import { publicDate, statusOf, toPublicArticle } from '@/lib/article-format';
 import type { ArticleEmbed, ArticleEmbeds, ProductEmbed, RenderBlock } from '@/types';
@@ -50,6 +51,16 @@ export async function resolveEmbeds(blocks: RenderBlock[], opts: { exclude?: str
   const products = Array.from(new Set(blocks.flatMap(b => (b.type === 'product' ? [b.slug] : []))));
   const articles = Array.from(new Set(blocks.flatMap(b => (b.type === 'article' && b.slug !== opts.exclude ? [b.slug] : []))));
   if (!products.length && !articles.length) return EMPTY;
+  // F-017: the local fixture (development only, F016_FIXTURE) answers the cards too, so the article rails can be
+  // reviewed without Firebase credentials.
+  const fxProducts = fixtureProducts();
+  const fxArticles = fixtureArticles();
+  if (fxProducts && fxArticles) {
+    const out: ArticleEmbeds = { products: {}, articles: {} };
+    for (const p of fxProducts) if (products.includes(p.slug)) out.products[p.slug] = toProductEmbed(p as unknown as Record<string, any>);
+    for (const a of fxArticles) if (articles.includes(a.slug)) out.articles[a.slug] = toArticleEmbed(a.slug, a as unknown as Record<string, any>);
+    return out;
+  }
   return readPublic('embeds', async () => {
     const db = getAdminDb();
     const refs = [...products.map(s => db.collection('products').doc(s)), ...articles.map(s => db.collection('articles').doc(s))];

@@ -8,12 +8,16 @@ import { normalizeKategoriMotor } from '@/lib/v2/motor-category';
 export type { ArticleCardV2 };
 
 // F-016 D3: allowed values in tab order (S6.2). lib/article-input.ts validates against this list.
-export const ARTICLE_TOPICS: readonly ArticleTopic[] = ['memilih-tas', 'per-motor', 'touring', 'komunitas'];
+// Adventure and Motocamp follow inzta-hq ADR-0017 (new articles use adventure, touring, or motocamp); the older
+// topics stay so published articles keep their tab and chip.
+export const ARTICLE_TOPICS: readonly ArticleTopic[] = ['memilih-tas', 'per-motor', 'touring', 'adventure', 'motocamp', 'komunitas'];
 
 const TOPIC_LABEL: Record<ArticleTopic, string> = {
   'memilih-tas': 'Memilih tas',
   'per-motor': 'Per motor',
   touring: 'Touring',
+  adventure: 'Adventure',
+  motocamp: 'Motocamp',
   komunitas: 'Komunitas',
 };
 
@@ -35,6 +39,12 @@ export function topicLabel(v: unknown): string | null {
 // F-016 S6.8.3/S6.8.4: categories count only for 'per-motor' articles.
 export function articleCategories(a: Pick<PublicArticle, 'topik' | 'kategoriMotor'>): MotorCategory[] {
   return normalizeTopik(a.topik) === 'per-motor' ? normalizeKategoriMotor(a.kategoriMotor) : [];
+}
+
+// F-017: the motor categories an article is tagged with, for any topic (the "Untuk motor Anda" box and the editor).
+// The category pages keep articleCategories(), which lists "Per motor" articles only.
+export function articleMotorTags(a: Pick<PublicArticle, 'topik' | 'kategoriMotor'>): MotorCategory[] {
+  return normalizeTopik(a.topik) ? normalizeKategoriMotor(a.kategoriMotor) : [];
 }
 
 // F-016 S7.2: the F-012 helpers, so the page and the editor footer ("±n menit baca") agree.
@@ -83,4 +93,23 @@ export function otherArticles(
   const same = topic ? pool.filter(a => normalizeTopik(a.topik) === topic) : [];
   const rest = pool.filter(a => !same.includes(a));
   return [...same, ...rest].slice(0, max).map(articleCardV2);
+}
+
+// F-017: candidates for the "Untuk motor Anda" box. The visitor's motor is only known in the browser, so the server
+// sends published articles (not this one) that are tagged with a motor category, newest first; the island picks.
+export const MOTOR_ARTICLES_MAX = 12;
+export interface MotorArticleV2 {
+  card: ArticleCardV2;
+  tags: MotorCategory[];
+}
+
+export function motorArticles(
+  current: Pick<PublicArticle, 'slug'>,
+  all: PublicArticle[],
+  max = MOTOR_ARTICLES_MAX,
+): MotorArticleV2[] {
+  return newestFirst(all.filter(a => a.slug !== current.slug && statusOf(a) === 'published'))
+    .map(a => ({ card: articleCardV2(a), tags: articleMotorTags(a) }))
+    .filter(x => x.tags.length > 0)
+    .slice(0, max);
 }

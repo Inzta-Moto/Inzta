@@ -10,7 +10,7 @@ import { renderArticle } from '@/lib/markdown';
 import { resolveEmbeds } from '@/lib/article-embeds';
 import { statusOf } from '@/lib/article-format';
 import { getArticles } from '@/lib/public-content';
-import { articleReadingMinutes, otherArticles } from '@/lib/v2/article-v2';
+import { articleReadingMinutes, motorArticles, otherArticles } from '@/lib/v2/article-v2';
 
 // Stored article (draft or published) in the public layout, for admins only. Never cached and never
 // indexed: a draft must not reach a CDN or a search engine through this page.
@@ -35,7 +35,8 @@ export default async function AdminArticlePreviewPage({ params }: { params: { sl
   const { content, ...rest } = article;
   // F-016 S7.8: same v2 frame and ArticlePage as /blog/{slug}, all blocks with the missing-card notes, no share row,
   // and "Artikel lain" from published articles only (S7.8.4).
-  const others = otherArticles(article, await getArticles());
+  const published = await getArticles();
+  const others = otherArticles(article, published);
   return (
     <V2Layout current="artikel">
       <ArticlePage
@@ -44,6 +45,7 @@ export default async function AdminArticlePreviewPage({ params }: { params: { sl
         embeds={embeds}
         minutes={articleReadingMinutes(content)}
         others={others}
+        motorPicks={motorArticles(article, published)}
         shareUrl={null}
         adminPreview
         previewBanner={statusOf(article) !== 'published'}

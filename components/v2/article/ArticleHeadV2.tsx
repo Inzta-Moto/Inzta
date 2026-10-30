@@ -11,8 +11,8 @@ type HeadFields = Pick<
   'title' | 'excerpt' | 'author' | 'coverImage' | 'coverAlt' | 'coverCaption' | 'showCover' | 'publishedAt' | 'createdAt' | 'topik' | 'contentFormat' | 'images' | 'imageUrl'
 >;
 
-// S7.2.2: the figure is at most 1120 px inside the page padding, so `sizes` follows the rendered width at every BP.
-const COVER_SIZES = '(max-width: 767px) calc(100vw - 40px), (max-width: 1167px) calc(100vw - 48px), 1120px';
+// F-017: the cover is as wide as the reading column (at most 680 px; full width minus the page padding on phones).
+const COVER_SIZES = '(max-width: 767px) calc(100vw - 40px), 680px';
 
 /**
  * Article head of v2 pages (F-016 S7.1, S7.2; artikel.dc.html:28-34): breadcrumb, topic chip, H1, meta row, lead.
@@ -23,7 +23,7 @@ export function ArticleHeadV2({ article: a, minutes }: { article: HeadFields; mi
   const date = publicDate(a);
   const lead = a.excerpt?.trim();
   return (
-    <header style={{ maxWidth: 920, marginInline: 'auto', display: 'flex', flexDirection: 'column', gap: 20 }}>
+    <header style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       {/* S7.1.1: the topic is plain text and the article title is not repeated here. */}
       <nav className="iz-crumb" aria-label="Breadcrumb">
         <Link href="/">Beranda</Link>
@@ -68,7 +68,7 @@ export function ArticleCover({ article: a }: { article: HeadFields }) {
     return (
       <figure className="iz-figure iz-figure--cover iz-figure--legacy">
         <div className="iz-photo iz-aphoto">
-          <SmartImage src={images[0]} alt={`${a.title} - Cover`} priority sizes={COVER_SIZES} widths={[480, 800, 1200, 1600]} width={1200} />
+          <SmartImage src={images[0]} alt={`${a.title} - Cover`} priority sizes={COVER_SIZES} widths={[480, 680, 1024, 1360]} width={1360} />
         </div>
         {images.length > 1 && (
           <ul className="iz-athumbs">
@@ -89,7 +89,7 @@ export function ArticleCover({ article: a }: { article: HeadFields }) {
   return (
     <figure className="iz-figure iz-figure--cover">
       <div className="iz-photo iz-aphoto">
-        <SmartImage src={a.coverImage} alt={a.coverAlt || ''} priority sizes={COVER_SIZES} widths={[480, 800, 1200, 1600]} width={1200} />
+        <SmartImage src={a.coverImage} alt={a.coverAlt || ''} priority sizes={COVER_SIZES} widths={[480, 680, 1024, 1360]} width={1360} />
       </div>
       {caption && <figcaption>{caption}</figcaption>}
     </figure>

@@ -37,25 +37,61 @@
 .iz-alist .iz-pager button:disabled { opacity: .45; cursor: default; }
 .iz-pager__gap { min-width: 24px; text-align: center; color: var(--c-batu); }
 
-/* Article page (S7). The canvas sets these inside main.iz-wrap; V2Layout's main is not .iz-wrap, so the figure and the
-   body grid carry the same side padding themselves and stay page-level blocks like the canvas (design.md §19). */
-.iz-figure--cover { width: calc(100% - 2 * var(--space-6)); max-width: 1120px; margin: 40px auto 56px; }
-.iz-article--page { max-width: var(--size-content); margin: 40px auto 0; padding-inline: var(--space-6); }
-.iz-figure--cover + .iz-article--page { margin-top: 0; }
+/* Article page (S7, F-017). V2Layout's main is not .iz-wrap, so the grid carries its own side padding and top room for
+   the navbar. Three columns from 1200 px: rails 240 / 280 px around the 680 px reading column; the head and cover sit
+   over the reading column only (design canvas "Redesain Halaman Artikel INZTA", F-017). */
+.iz-article.iz-article--page { max-width: 1392px; margin: 0 auto; padding: 128px var(--space-6) 0; grid-template-columns: minmax(180px, 240px) minmax(0, var(--size-reading)) minmax(220px, 280px); grid-template-areas: ". head ." "left body right"; column-gap: var(--space-10); row-gap: var(--space-12); }
+.iz-article__head { grid-area: head; display: flex; flex-direction: column; gap: var(--space-10); min-width: 0; }
+.iz-article__left { grid-area: left; position: sticky; top: 104px; display: flex; flex-direction: column; gap: var(--space-6); min-width: 0; }
+.iz-article__col { grid-area: body; display: flex; flex-direction: column; gap: var(--space-12); min-width: 0; }
+/* The right rail is taller than a screen, so it scrolls with the page and only its last card, "Chat admin", stays in
+   view (the rail stretches over the whole body row to give it room). */
+.iz-article__right { grid-area: right; align-self: stretch; display: flex; flex-direction: column; gap: var(--space-6); min-width: 0; }
+.iz-article__right > .iz-railhelp { position: sticky; top: 104px; }
+.iz-article__head .iz-figure--cover { width: 100%; max-width: var(--size-reading); margin: 0; }
+.iz-article__left .iz-toc { position: static; max-height: calc(100vh - 240px); overflow-y: auto; }
+.iz-toc__list { display: flex; flex-direction: column; gap: 4px; }
+.iz-toc__toggle { display: none; }
+.iz-readleft { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 15px; color: var(--c-batu); }
+.iz-readleft svg { flex: none; }
+.iz-share--icons { gap: 8px; }
+.iz-share--icons > span:first-child { margin-right: 4px; }
+.iz-share--icons .iz-iconbtn { background: var(--c-kertas-terang); box-shadow: inset 0 0 0 1px var(--c-garis); color: var(--c-tinta); }
+.iz-share--icons .iz-iconbtn:hover { background: var(--c-pasir-muda); }
+.iz-rail-products .iz-iprod img, .iz-iprod__blank { width: 72px; height: 72px; border-radius: var(--radius-thumb); background: var(--c-pasir-muda); flex: none; }
+.iz-rail-products .iz-iprod h4 { line-height: 1.3; }
+.iz-railpick { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 12px; align-items: center; color: var(--c-tinta); }
+.iz-railpick .iz-photo { aspect-ratio: 1 / 1; border-radius: 14px; }
+.iz-railpick .iz-for { display: none; }
+.iz-railpick b { display: block; font-size: 16px; line-height: 1.35; font-weight: 600; }
+.iz-railpick:hover b { color: var(--c-kuning-tua); }
+.iz-railhelp { border-radius: var(--radius-tile-lg); padding: var(--space-6); display: flex; flex-direction: column; align-items: flex-start; gap: 12px; }
+.iz-railhelp h3 { font-size: 20px; line-height: 1.3; font-weight: 700; }
+.iz-railhelp p { font-size: 15px; line-height: 1.5; }
+.iz-railhelp .iz-motorchip { background: var(--c-arang-naik); color: var(--c-krem); border: 1px solid var(--c-line-on-dark); }
+.iz-railhelp .iz-btn { width: 100%; }
+/* The rail lists the body's products on wide screens, so the body's own product cards step aside there. */
+@media (min-width: 1200px) {
+  .iz-page .iz-article--rail-products .article-embed--produk { display: none; }
+}
+@media (max-width: 1199.98px) {
+  .iz-article.iz-article--page { max-width: calc(var(--size-reading) + 220px + var(--space-10) + 2 * var(--space-6)); grid-template-columns: minmax(180px, 220px) minmax(0, var(--size-reading)); grid-template-areas: ". head" "left body" ". right"; }
+  .iz-article__right { align-self: start; }
+  .iz-article__right > .iz-railhelp { position: static; }
+  .iz-rail-products { display: none; }
+}
 @media (max-width: 767px) {
-  .iz-figure--cover { width: calc(100% - 2 * var(--space-5)); }
-  .iz-article--page { padding-inline: var(--space-5); }
+  .iz-article.iz-article--page { max-width: none; padding-inline: var(--space-5); grid-template-columns: minmax(0, 1fr); grid-template-areas: "head" "left" "body" "right"; row-gap: var(--space-8); }
+  .iz-article__left { position: static; }
+  .iz-article__left .iz-toc { max-height: none; padding-block: 4px; }
+  .iz-toc h2 { margin: 0; }
+  .iz-toc__title { display: none; }
+  .iz-toc__toggle { display: flex; width: 100%; min-height: 48px; align-items: center; justify-content: space-between; gap: 12px; font: inherit; font-weight: 700; color: var(--c-tinta); }
+  .iz-toc[data-open] .iz-toc__toggle svg { transform: rotate(180deg); }
+  html.iz-js .iz-toc:not([data-open]) .iz-toc__list { display: none; }
+  .iz-toc__list { padding-bottom: 12px; }
+  .iz-article__left .iz-share--icons, .iz-readleft { display: none; }
 }
-/* S7.3.4: without a TOC the body column is centred alone at the reading width, no empty 280 px column. */
-.iz-article.iz-article--solo { grid-template-columns: minmax(0, var(--size-reading)); }
-.iz-article__col { display: flex; flex-direction: column; gap: var(--space-12); min-width: 0; }
-/* S7.3.5: the sticky TOC needs 1024 px; below that it is a static panel above the body. Its list scrolls inside. */
-.iz-article--page .iz-toc { max-height: calc(100vh - 128px); overflow-y: auto; }
-@media (max-width: 1023px) {
-  .iz-article--page:not(.iz-article--solo) { grid-template-columns: minmax(0, var(--size-reading)); }
-  .iz-article--page .iz-toc { position: static; max-height: none; }
-}
-
 /* S7.2.5: legacy gallery, whole photo visible on the sand panel; other images as a thumbnail row. */
 .iz-figure--legacy > .iz-aphoto { background: var(--c-pasir-muda); }
 .iz-figure--legacy > .iz-aphoto .iz-smartimg > img { object-fit: contain; }
@@ -71,7 +107,13 @@
 /* S7.8.3: preview banner above the head (admin only). */
 .iz-preview-banner { max-width: 920px; margin: 0 auto 24px; padding: 10px 16px; border-radius: var(--radius-thumb); background: var(--c-pasir-muda); font-size: 15px; font-weight: 600; }
 
-/* S7.7.1: progress bar, transform only; never under reduced motion (the component also skips rendering). */
-.iz-progress { position: fixed; top: 0; left: 0; right: 0; height: 3px; z-index: 70; pointer-events: none; }
-.iz-progress > span { display: block; height: 100%; background: var(--c-kuning-tua); transform: scaleX(0); transform-origin: 0 50%; }
-@media (prefers-reduced-motion: reduce) { .iz-progress { display: none; } }
+/* S7.7.1, F-017: reading line, transform only; never under reduced motion (the component also skips rendering). It
+   sits on the navbar's bottom edge; the top-edge line shows only while the navbar is hidden (scrolling down). */
+.iz-progress { position: fixed; top: 0; left: 0; right: 0; height: 3px; z-index: 70; pointer-events: none; margin: 0; opacity: 0; transition: opacity .2s ease; }
+.iz-progress > span, .iz-progress-nav > span { display: block; height: 100%; background: var(--c-kuning); transform: scaleX(0); transform-origin: 0 50%; }
+.iz-navwrap[data-hidden="true"] ~ main .iz-progress { opacity: 1; }
+.iz-navwrap .iz-nav { position: relative; }
+.iz-progress-nav { position: absolute; left: 28px; right: 28px; bottom: -1px; height: 3px; border-radius: 999px; overflow: hidden; background: var(--c-garis); pointer-events: none; }
+@media (max-width: 767px) { .iz-progress-nav { left: 20px; right: 20px; } }
+html.iz-v2.iz-has-progress .iz-readline { display: none; }
+@media (prefers-reduced-motion: reduce) { .iz-progress, .iz-progress-nav { display: none; } }

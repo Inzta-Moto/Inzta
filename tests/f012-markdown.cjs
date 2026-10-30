@@ -26,7 +26,7 @@ require.extensions['.ts'] = function (m, filename) {
   m._compile(out.outputText, filename);
 };
 
-const { renderArticle } = require(path.join(ROOT, 'lib/markdown.ts'));
+const { renderArticle, sanitizeArticleHtml, sectionId } = require(path.join(ROOT, 'lib/markdown.ts'));
 const fmt = require(path.join(ROOT, 'lib/article-format.ts'));
 const { runChecklist, canPublish } = require(path.join(ROOT, 'lib/article-checklist.ts'));
 
@@ -39,7 +39,7 @@ const CLD = 'https://res.cloudinary.com/dukddlp0b/image/upload/v1/inzta/foto.jpg
 const count = (html, re) => (html.match(re) || []).length;
 // Every tag and attribute in the output must be on the allowlist of requirement 4.3 / 4.10, amended by
 // F-013 3.5 / 8.3: `class` on <figure> only, and only with the five image-layout classes.
-const ALLOWED = { h2: [], h3: [], p: [], ul: [], ol: [], li: [], strong: [], em: [], br: [], figure: ['class'], figcaption: [], table: [], thead: [], tbody: [], tr: [], th: [], td: ['data-label'], a: ['href', 'rel', 'target'], img: ['src', 'srcset', 'sizes', 'alt', 'loading', 'decoding'] };
+const ALLOWED = { h2: ['id'], h3: [], p: [], ul: [], ol: [], li: [], strong: [], em: [], br: [], figure: ['class'], figcaption: [], table: [], thead: [], tbody: [], tr: [], th: [], td: ['data-label'], a: ['href', 'rel', 'target'], img: ['src', 'srcset', 'sizes', 'alt', 'loading', 'decoding'] };
 const FIGURE_CLASS_SET = ['article-figure--kiri', 'article-figure--kanan', 'article-figure--kecil', 'article-figure--sedang', 'article-figure--besar'];
 function assertAllowlisted(html) {
   for (const m of html.matchAll(/<([a-zA-Z0-9]+)([^>]*)>/g)) {
@@ -60,8 +60,17 @@ function assertAllowlisted(html) {
 check('headings: # -> h2, ## -> h2, ### -> h3, #### to ###### -> h3, never h1', () => {
   const { html } = md('# A\n\n## B\n\n### C\n\n#### D\n\n###### E');
   assert.strictEqual(count(html, /<h1/g), 0);
-  assert.deepStrictEqual([...html.matchAll(/<(h\d)>/g)].map(m => m[1]), ['h2', 'h2', 'h3', 'h3', 'h3']);
-  assert.ok(!/ id=/.test(html));
+  assert.deepStrictEqual([...html.matchAll(/<(h\d)[ >]/g)].map(m => m[1]), ['h2', 'h2', 'h3', 'h3', 'h3']);
+  // F-017: only h2 carry an id, the "Daftar isi" anchor.
+  assert.deepStrictEqual([...html.matchAll(/<(h\d)( id="[^"]*")?>/g)].map(m => m[1] + (m[2] || '')), ['h2 id="bagian-a"', 'h2 id="bagian-b"', 'h3', 'h3', 'h3']);
+});
+check('F-017: h2 anchors are unique slugs of the heading text; foreign ids never survive the sanitizer', () => {
+  const { html } = md('## Semua *Motor* Bisa!\n\n## Semua motor bisa\n\n## Çaféé & "Kopi"\n\n## ***\n\n## 123');
+  assert.deepStrictEqual([...html.matchAll(/<h2 id="([^"]+)">/g)].map(m => m[1]),
+    ['bagian-semua-motor-bisa', 'bagian-semua-motor-bisa-2', 'bagian-cafee-kopi', 'bagian-isi', 'bagian-123']);
+  assert.strictEqual(sanitizeArticleHtml('<h2 id="x" onclick="a()">A</h2><h2 id="bagian-ok">B</h2><p id="bagian-p">C</p>'),
+    '<h2>A</h2><h2 id="bagian-ok">B</h2><p>C</p>');
+  assert.strictEqual(sectionId('', new Set()), 'bagian-isi');
 });
 check('lists, bold, italic, paragraphs', () => {
   const { html } = md('Teks **tebal** dan *miring*.\n\n- satu\n- dua\n\n1. a\n2. b');
@@ -138,7 +147,7 @@ check('text after an inline raw tag is escaped: no <figure>/<h2> from an unclose
   }
 });
 check('sanitizer layer alone: foreign src or srcset candidate, javascript: href, attributes outside the allowlist', () => {
-  const { sanitizeArticleHtml } = require(path.join(ROOT, 'lib/markdown.ts'));
+  // sanitizeArticleHtml is required at the top.
   const okSet = `${CLD.replace('upload/', 'upload/f_auto,q_auto,w_480/')} 480w, ${CLD.replace('upload/', 'upload/f_auto,q_auto,w_800/')} 800w`;
   assert.ok(/<img/.test(sanitizeArticleHtml(`<img src="${CLD}" srcset="${okSet}" alt="a">`)));
   for (const img of [
@@ -246,7 +255,7 @@ check('a 50,000-character body renders in under a second', () => {
   const t = Date.now();
   const { html } = md(body);
   assert.ok(Date.now() - t < 1000, `${Date.now() - t} ms`);
-  assert.ok(count(html, /<h2>/g) > 50);
+  assert.ok(count(html, /<h2[ >]/g) > 50);
 });
 
 check('deep nesting that overflows marked returns a render-error warning instead of throwing, and blocks publishing', () => {
@@ -269,7 +278,7 @@ check('K-06 "Naskah": 4 figures, no h1, no raw Markdown, /produk link kept, no w
   assert.deepStrictEqual(warnings, []);
   assert.strictEqual(count(html, /<figure>/g), 4);
   assert.strictEqual(count(html, /<h1/g), 0);
-  assert.ok(count(html, /<h2>/g) >= 7);
+  assert.ok(count(html, /<h2[ >]/g) >= 7);
   assert.ok(html.includes('<a href="/produk">'));
   assert.ok(!/(^|\s)##\s|\*\*|!\[/.test(html.replace(/<[^>]+>/g, ' ')), 'raw Markdown left in text');
   assertAllowlisted(html);
@@ -279,7 +288,7 @@ check('K-02 "Naskah": h2 and h3, 4 figures, product links, lists, no h1, no raw 
   assert.deepStrictEqual(warnings, []);
   assert.strictEqual(count(html, /<figure>/g), 4);
   assert.strictEqual(count(html, /<h1/g), 0);
-  assert.ok(count(html, /<h2>/g) >= 6 && count(html, /<h3>/g) >= 2);
+  assert.ok(count(html, /<h2[ >]/g) >= 6 && count(html, /<h3>/g) >= 2);
   assert.ok(html.includes('<a href="/produk/side-bag-inzta-xsr-155">'));
   assert.ok(/<ol>/.test(html));
   // Both K-02 comparison tables render as tables, not as run-together text (amendment 2026-10-27).
@@ -515,13 +524,13 @@ check('F-013 helpers: placeholder upload keeps alt, caption, and layout, written
 // Checklist (requirement 10). The cover differs from the body image so W-6 (F-013 A2) stays quiet.
 const COVER = CLD.replace(/\.jpg$/, '-sampul.jpg');
 const ok = {
-  title: 'Tas samping XSR 155', slug: 'tas-samping-xsr-155', excerpt: 'Ringkasan', content: `## A\n\n![Alt](${CLD})`,
+  title: 'Tas samping XSR 155', slug: 'tas-samping-xsr-155', excerpt: 'Ringkasan', content: `## A\n\n![Alt](${CLD})\n\n## B\n\nTeks.`,
   contentFormat: 'markdown', coverImage: COVER, coverAlt: 'Sampul', metaTitle: 'x'.repeat(60), metaDescription: 'y'.repeat(155),
 };
 const failed = (r) => r.blocking.filter(c => !c.ok).map(c => c.id);
 const warned = (r) => r.warnings.filter(c => !c.ok).map(c => c.id);
 check('checklist: a complete markdown article passes every check', () => {
-  const r = runChecklist(ok, { coverWidth: 1200 });
+  const r = runChecklist(ok, { coverWidth: 1360 });
   assert.deepStrictEqual(failed(r), []);
   assert.deepStrictEqual(warned(r), []);
   assert.strictEqual(canPublish(r), true);
@@ -546,12 +555,21 @@ check('checklist: renderer warnings block even when the regex finds nothing', ()
   assert.ok(failed(runChecklist(ok, { renderWarnings: [{ kind: 'placeholder', src: 'GAMBAR-1', alt: 'a' }] })).includes('C-7'));
   assert.deepStrictEqual(failed(runChecklist(ok, { renderWarnings: [{ kind: 'raw-html' }] })), []);
 });
-check('checklist: W-1 to W-4 are warnings at 61/156 characters and under 1200 px, never blocking (ADR-0014)', () => {
+check('checklist: W-1 to W-4 are warnings at 61/156 characters and under 1360 px (F-017), never blocking (ADR-0014)', () => {
   const r = runChecklist({ ...ok, metaTitle: 'x'.repeat(61), metaDescription: 'y'.repeat(156) }, { coverWidth: 800 });
   assert.deepStrictEqual(warned(r), ['W-1', 'W-2', 'W-4']);
   assert.strictEqual(canPublish(r), true);
   assert.deepStrictEqual(warned(runChecklist({ ...ok, metaDescription: '' })), ['W-3']);
   assert.ok(!runChecklist(ok).warnings.some(w => w.id === 'W-4'), 'W-4 only when the editor knows the width');
+});
+check('checklist W-7/W-8 (F-017): no topic and fewer than two "##" sections warn, never block', () => {
+  assert.deepStrictEqual(warned(runChecklist({ ...ok, topik: '' }, { coverWidth: 1360 })), ['W-7']);
+  assert.deepStrictEqual(warned(runChecklist({ ...ok, topik: 'touring' }, { coverWidth: 1360 })), []);
+  assert.ok(!runChecklist(ok).warnings.some(w => w.id === 'W-7'), 'W-7 only when the caller sends topik');
+  const one = runChecklist({ ...ok, content: '## A\n\nTeks.\n\n### Sub\n\n```\n## bukan\n```' }, { coverWidth: 1360 });
+  assert.deepStrictEqual(warned(one), ['W-8']);
+  assert.strictEqual(one.warnings.find(w => w.id === 'W-8').detail, '1 subjudul "##"; Daftar isi tidak tampil.');
+  assert.ok(canPublish(one));
 });
 check('checklist W-6 (F-013 A2): cover also in the body warns while showCover is on or missing, never blocks', () => {
   const twice = { ...ok, coverImage: CLD };
@@ -703,8 +721,8 @@ check('F-013 allowlist check: accepts class on <figure> only, with the five clas
 });
 check('F-013 checklist: a recognised attribute block triggers no check (7.4)', () => {
   for (const block of ['{posisi=kanan ukuran=sedang}', '{posisi=kiri}', '{ukuran=kecil}', '{}', ' {posisi=tengah ukuran=besar}']) {
-    const content = `## A\n\nTeks.\n\n![Alt](${CLD})${block}\n\nLanjut.`;
-    const r = runChecklist({ ...ok, content }, { coverWidth: 1200, renderWarnings: md(content).warnings });
+    const content = `## A\n\n## B\n\nTeks.\n\n![Alt](${CLD})${block}\n\nLanjut.`;
+    const r = runChecklist({ ...ok, content }, { coverWidth: 1360, renderWarnings: md(content).warnings });
     assert.deepStrictEqual(failed(r), [], block);
     assert.deepStrictEqual(warned(r), [], block);
   }
@@ -844,15 +862,15 @@ check('F-013 C4: siteLinks finds /blog and /produk links outside code, with titl
   assert.deepStrictEqual(fmt.siteLinks(content).map(l => `${l.kind}:${l.slug}`), ['artikel:satu', 'produk:dua', 'artikel:tiga']);
 });
 check('F-013 C4: W-5 lists links to pages that are not public; absent without the editor list or without links', () => {
-  const content = '## A\n\nLihat [tas](/produk/tas-aktif), [lama](/produk/tas-nonaktif), dan [draf](/blog/draf-x). Lagi [draf](/blog/draf-x).';
+  const content = '## A\n\n## B\n\nLihat [tas](/produk/tas-aktif), [lama](/produk/tas-nonaktif), dan [draf](/blog/draf-x). Lagi [draf](/blog/draf-x).';
   const targets = { produk: ['tas-aktif'], artikel: ['terbit'] };
-  const r = runChecklist({ ...ok, content }, { coverWidth: 1200, publicTargets: targets });
+  const r = runChecklist({ ...ok, content }, { coverWidth: 1360, publicTargets: targets });
   assert.deepStrictEqual(warned(r), ['W-5']);
   assert.strictEqual(r.warnings.find(c => c.id === 'W-5').detail, 'Belum tayang atau tidak ada: /produk/tas-nonaktif, /blog/draf-x');
   assert.ok(canPublish(r), 'W-5 is a warning only');
-  assert.ok(!runChecklist({ ...ok, content }, { coverWidth: 1200 }).warnings.some(c => c.id === 'W-5'));
-  assert.ok(!runChecklist({ ...ok, content: '## A\n\nTanpa link.' }, { coverWidth: 1200, publicTargets: targets }).warnings.some(c => c.id === 'W-5'));
-  assert.deepStrictEqual(warned(runChecklist({ ...ok, content: '## A\n\n[tas](/produk/tas-aktif)' }, { coverWidth: 1200, publicTargets: targets })), []);
+  assert.ok(!runChecklist({ ...ok, content }, { coverWidth: 1360 }).warnings.some(c => c.id === 'W-5'));
+  assert.ok(!runChecklist({ ...ok, content: '## A\n\n## B\n\nTanpa link.' }, { coverWidth: 1360, publicTargets: targets }).warnings.some(c => c.id === 'W-5'));
+  assert.deepStrictEqual(warned(runChecklist({ ...ok, content: '## A\n\n## B\n\n[tas](/produk/tas-aktif)' }, { coverWidth: 1360, publicTargets: targets })), []);
 });
 
 // F-013 phase C: extractEmbeds() (no parser) must find exactly the cards renderArticle() makes.

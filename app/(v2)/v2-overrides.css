@@ -112,7 +112,7 @@ html:not(.js-nav) .iz-navdd:focus-within .iz-navdd__btn svg { transform: rotate(
    tabs over their grid continue the block above at --space-section-tight. Parts of a page head (article cover and
    body, the product under its breadcrumb, the catalog filters and results) keep their own margins, and the fixed
    reading bar of an article does not count as a block. */
-.iz-page main > * + *:not(.iz-figure--cover, .iz-article--page, .iz-pdp, .iz-catalog__filters, .iz-catalog__results) { margin-top: var(--space-section); }
+.iz-page main > * + *:not(.iz-progress, .iz-figure--cover, .iz-article--page, .iz-pdp, .iz-catalog__filters, .iz-catalog__results) { margin-top: var(--space-section); }
 .iz-page main > .iz-progress + * { margin-top: 0; }
 .iz-page main > * + .iz-section--tight, .iz-page main > .iz-motor-tabs + .iz-motor-produk { margin-top: var(--space-section-tight); }
 .iz-page main > :is(.iz-section, .iz-section--tight) { padding-block: 0; }

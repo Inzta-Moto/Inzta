@@ -9,7 +9,7 @@ import { renderArticle } from '@/lib/markdown';
 import { resolveEmbeds, visibleBlocks } from '@/lib/article-embeds';
 import { firstLineSummary } from '@/lib/article-format';
 import { optimizeCloudinaryUrl } from '@/lib/utils';
-import { articleReadingMinutes, otherArticles } from '@/lib/v2/article-v2';
+import { articleReadingMinutes, motorArticles, otherArticles } from '@/lib/v2/article-v2';
 import { articleJsonLd, breadcrumbJsonLd, canonicalUrl, jsonLdGraph, openGraph } from '@/lib/seo';
 import JsonLd from '@/components/JsonLd';
 import type { PublicArticle } from '@/types';
@@ -91,7 +91,8 @@ export default async function BlogDetailPage({ params }: { params: { slug: strin
   );
   const { content, ...rest } = article;
   // F-016 S7.9.1: only the JSX changes, to the v2 frame. S7.6.3: "Artikel lain" from the published list, card fields only.
-  const others = otherArticles(article, await getArticles());
+  const published = await getArticles();
+  const others = otherArticles(article, published);
   return (
     <V2Layout current="artikel">
       <JsonLd data={jsonLd} />
@@ -101,6 +102,7 @@ export default async function BlogDetailPage({ params }: { params: { slug: strin
         embeds={embeds}
         minutes={articleReadingMinutes(content)}
         others={others}
+        motorPicks={motorArticles(article, published)}
         shareUrl={url}
       />
     </V2Layout>
