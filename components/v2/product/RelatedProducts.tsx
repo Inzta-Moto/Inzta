@@ -9,9 +9,7 @@ export default function RelatedProducts({ products }: { products: Product[] }) {
   if (products.length === 0) return null;
   return (
     <section className="iz-wrap iz-pdp-block">
-      <h2 className="t-h2-shop" style={{ marginBottom: 24 }}>
-        Lengkapi perjalanan Anda
-      </h2>
+      <h2 className="t-h2-shop iz-pdp-h2">Lengkapi perjalanan Anda</h2>
       <div className="iz-grid-4">
         {products.map(p => (
           <ProductCardV2 key={p.slug} card={toCard(p)} headingLevel={3} sizes={GRID_SIZES} />
