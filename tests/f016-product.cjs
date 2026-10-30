@@ -391,7 +391,7 @@ function mockFetch(table) {
     assert.ok(html.includes('Dibalas admin INZTA') && html.includes('Garansi: PLACEHOLDER') && html.includes('Pengiriman: PLACEHOLDER'));
     assert.match(html, /<details open=""><summary>Apakah bisa dipasang di motor saya\?/);
     assert.strictEqual((html.match(/<details/g) || []).length, 3);
-    assert.match(html, /<h2 class="t-h2-shop" style="margin-bottom:24px">Lengkapi perjalanan Anda<\/h2>/);
+    assert.match(html, /<h2 class="t-h2-shop iz-pdp-h2">Lengkapi perjalanan Anda<\/h2>/);
     assert.match(html, /<h3 class="iz-pcard__name">Tankbag TK 5<\/h3>/);
     assert.match(html, /Belum yakin tas mana yang pas untuk motor Anda\?/);
   });
@@ -415,6 +415,26 @@ function mockFetch(table) {
     assert.ok(b.includes('Spesifikasi') && !b.includes('Deskripsi'));
     assert.match(b, /<dl class="iz-spec"><div><dt>Bahan luar<\/dt><dd>Cordura D600<\/dd><\/div><div><dt><\/dt><dd>XSR<\/dd><\/div><\/dl>/);
     assert.match(b, /Bahan luarnya Cordura D600\./);
+  });
+  await check('Detail layout: Spesifikasi then Deskripsi in the first column, questions in the second; questions alone without either text', () => {
+    const a = render({ ...BUILTIN[0], features: ['Bahan luar: Cordura D600'], description: 'Satu' });
+    assert.match(a, /<section class="iz-pdp-details iz-wrap iz-pdp-block" id="spesifikasi"><div class="iz-pdp-info"><div><h2 class="t-h2-shop iz-pdp-h2">Spesifikasi<\/h2>.*<div class="iz-pdp-desc"><h2 class="t-h2-shop iz-pdp-h2">Deskripsi<\/h2>.*<\/div><\/div><div><h2 class="t-h2-shop iz-pdp-h2">Pertanyaan sebelum memesan<\/h2>/);
+    assert.ok(!/style="margin/.test(a.slice(a.indexOf('iz-pdp-details'))), 'no inline heading margins left');
+    const b = render({ ...BUILTIN[0], features: [], description: '' });
+    assert.match(b, /<section class="iz-pdp-details iz-wrap iz-pdp-block" id="spesifikasi"><div><h2 class="t-h2-shop iz-pdp-h2">Pertanyaan sebelum memesan<\/h2>/);
+    assert.ok(!b.includes('iz-pdp-info'));
+  });
+  await check('"Lihat selengkapnya": a long description starts folded with the full text in the HTML; a short one has no button', () => {
+    const long = Array.from({ length: 8 }, (_, i) => `Paragraf ${i + 1}: ${'kata '.repeat(30).trim()}`).join('\n\n');
+    const a = render({ ...BUILTIN[0], description: long });
+    assert.match(a, /<div id="deskripsi-produk" class="iz-more__body iz-more__body--folded" style="--iz-more-fold:264px">/);
+    assert.match(a, /<button type="button" class="iz-more__btn" aria-expanded="false" aria-controls="deskripsi-produk">Lihat selengkapnya/);
+    assert.ok(a.includes('Paragraf 8:'), 'the folded text is still server-rendered');
+    assert.match(a, /<noscript><style>\.iz-more__body \{ max-height: none !important;/);
+    const b = render({ ...BUILTIN[0], description: 'Satu\nDua\n\nTiga' });
+    assert.ok(b.includes('class="iz-more__body"') && !b.includes('class="iz-more__btn"'));
+    assert.strictEqual(V.descriptionFolds([['x'.repeat(55)]]), false);
+    assert.strictEqual(V.descriptionFolds(Array.from({ length: 9 }, () => ['x'.repeat(100)])), true);
   });
   await check('S3.3.9: generic picker = one fieldset per attribute, native radios, unavailable values disabled, no SKU line', () => {
     const html = render(BUILTIN[2]);

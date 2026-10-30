@@ -63,6 +63,19 @@ export function descriptionParagraphs(description: unknown): string[][] {
     .filter(lines => lines.length > 0);
 }
 
+// Server guess for the "Lihat selengkapnya" fold (DescriptionMore), so a long description is folded in the first HTML
+// and the page does not jump on load: about 55 characters per line between the phone and desktop column widths, and
+// a paragraph gap of half a line. More than 12 such lines (the fold plus its slack) starts folded; the browser then
+// measures the real height.
+export function descriptionFolds(paragraphs: string[][]): boolean {
+  let lines = 0;
+  for (const block of paragraphs) {
+    for (const line of block) lines += Math.max(1, Math.ceil(line.length / 55));
+    lines += 0.5;
+  }
+  return lines > 12;
+}
+
 // S3.7 copy: canvas text for tail bags, the design.md §11 string for everything else.
 export function faqItems(p: Pick<Product, 'slug' | 'name'>, rows: SpecRow[]): FaqItem[] {
   const fitAnswer = positionOf(p) === 'tail'
