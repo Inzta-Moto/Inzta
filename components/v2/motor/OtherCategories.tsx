@@ -5,7 +5,8 @@ import SmartImage from '@/components/v2/ui/SmartImage';
 import { ArrowRight } from '@/components/v2/icons';
 
 // "Kategori lain" (S5.7): the other three categories in D1 order, whatever their index state (S5.7.2). Each tile is
-// a real link that also stores the category (S0.6); the photo is decorative because the name labels the link.
+// a real link that also stores the category (S0.6); the photo is decorative because the name labels the link. The
+// photos are INZTA's own category photos, so they carry no "Foto contoh" tag.
 export default function OtherCategories({ current }: { current: MotorCategory }) {
   return (
     <section className="iz-section iz-wrap" id="motor-lain">
@@ -15,8 +16,7 @@ export default function OtherCategories({ current }: { current: MotorCategory })
       <div className="iz-grid-3">
         {MOTOR_CATEGORIES.filter(c => c.value !== current).map(c => (
           <CategoryLink key={c.value} value={c.value} className="iz-mtile">
-            <SmartImage src={c.image} alt="" sizes="(max-width: 767px) 100vw, 400px" fallbackLabel="Foto contoh" />
-            <span className="iz-tag" aria-hidden="true">Foto contoh</span>
+            <SmartImage src={c.image} alt="" sizes="(max-width: 767px) 100vw, 400px" />
             <div className="iz-mtile__body">
               <b>{c.label}</b>
               <span className="iz-arrow">

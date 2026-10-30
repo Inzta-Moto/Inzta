@@ -10,7 +10,8 @@ import { PHOTO_QUALITY } from '@/lib/v2/image';
 
 // F-016 S1.2. The server render is "not chosen" (S0.6.2); the stored choice arrives through useMotorCategory after
 // mount and updates the navbar chip and the "Motor saya" marks through the same provider (S1.2.1). Tile photos get
-// alt="" because the label already names the button (S0.12.6). Choosing never navigates or scrolls (S1.2.2).
+// alt="" because the label already names the button (S0.12.6); they are INZTA's own photos, so no "Foto contoh" tag.
+// Choosing never navigates or scrolls (S1.2.2).
 export default function Garasi() {
   const { category, setCategory } = useMotorCategory();
   const chosen = category ? categoryLabel(category) : null;
@@ -40,9 +41,6 @@ export default function Garasi() {
                     <Check />
                   </span>
                 )}
-                <span className="iz-tag" aria-hidden="true">
-                  Foto contoh
-                </span>
               </button>
             );
           })}

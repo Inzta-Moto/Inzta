@@ -263,6 +263,28 @@ check('motor categories: placement only by the model in the product name, univer
   assert.strictEqual(M.categoryHref('trail'), '/tas-motor/trail');
 });
 
+check('static photos: every local photo of the Beranda, category and Tentang content exists, chat photos differ from tiles (S0.12, S5, S8.2)', () => {
+  const C = require(path.join(ROOT, 'lib/v2/home-content.ts'));
+  const A = require(path.join(ROOT, 'components/v2/about/about-content.ts'));
+  const local = [
+    ...Object.values(C.HIRES),
+    C.CLOSING_CHAT_PHOTO,
+    ...A.PROCESS_STEPS.map(s => s.image),
+    ...C.MOTOR_CATEGORIES.map(c => c.image),
+    ...Object.values(C.CHAT_PHOTOS).filter(Boolean),
+    ...C.POSITION_ITEMS.map(p => p.image),
+    ...C.FILMSTRIP.map(f => f.src),
+  ].filter(src => src.startsWith('/'));
+  assert.ok(local.length >= 20, `only ${local.length} local photos found`);
+  for (const src of local) assert.ok(fs.existsSync(path.join(ROOT, 'public', src)), `missing public${src}`);
+  for (const c of C.MOTOR_CATEGORIES) {
+    assert.ok(!c.image.includes('/contoh/'), `${c.value} still uses an example photo`);
+    assert.ok(c.alt.length > 0, `${c.value} has no alt`);
+    assert.notStrictEqual(C.CHAT_PHOTOS[c.value], c.image, `${c.value} chat photo repeats the tile`);
+  }
+  assert.strictEqual(C.CHAT_PHOTOS.trail, null);
+});
+
 Promise.all(pending).then(() => {
   let failed = 0;
   for (const [s, n] of results) {

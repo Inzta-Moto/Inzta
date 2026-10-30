@@ -2,7 +2,7 @@ import Link from 'next/link';
 import type { HomeProductCard, MotorCategory } from '@/types';
 import { ArrowRight, WhatsApp } from '@/components/v2/icons';
 import SmartImage from '@/components/v2/ui/SmartImage';
-import { MOTOR_CATEGORIES } from '@/lib/v2/home-content';
+import { CHAT_PHOTOS, categoryLabel } from '@/lib/v2/home-content';
 
 // .iz-grid-4 has four columns from 768 px and two below (v2-components.css).
 const COLS = 4;
@@ -44,7 +44,8 @@ export function fanThumbs(products: readonly HomeProductCard[], max = FAN_MAX): 
 
 // Helper cards in the free slots of the first row of "Tas yang ditandai untuk motor X" (Sehan, 2026-10-29: one card
 // in a four-column row looked unfinished, and the flat panels looked empty). Copy is reused from Closing and MoreCard,
-// and the visuals reuse the category example photo and the product photos of this page, so the cards add no claim.
+// and the visuals use the category's chat photo (CHAT_PHOTOS) and the product photos of this page, so the cards add
+// no claim. A category without a chat photo keeps the frame as a placeholder.
 // The wrapper is the grid item because the motion engine leaves an inline transform on grid items, which would cancel
 // a hover lift on them. PositionTabs gives these items no position, so they show under "Semua" only.
 export default function GridFill({
@@ -58,7 +59,8 @@ export default function GridFill({
   category?: MotorCategory;
   products?: readonly HomeProductCard[];
 }) {
-  const photo = MOTOR_CATEGORIES.find(c => c.value === category)?.image ?? null;
+  const photo = category ? CHAT_PHOTOS[category] : null;
+  const placeholder = category ? `Foto motor ${categoryLabel(category).toLowerCase()}: PLACEHOLDER` : undefined;
   const thumbs = fanThumbs(products);
   return (
     <>
@@ -76,7 +78,7 @@ export default function GridFill({
                 <span className="iz-mfill__icon">
                   <WhatsApp />
                 </span>
-                {photo && (
+                {category && (
                   <>
                     <svg className="iz-mfill__route" viewBox="0 0 100 40" preserveAspectRatio="none">
                       <path d="M0 8 C 30 8, 45 34, 100 30" vectorEffect="non-scaling-stroke" />
@@ -86,8 +88,7 @@ export default function GridFill({
                     <span className="iz-mfill__photo">
                       <span className="iz-mfill__plate" />
                       <span className="iz-mfill__frame">
-                        <SmartImage src={photo} alt="" tone="dark" sizes="200px" fallbackLabel="Foto contoh" />
-                        <span className="iz-tag">Foto contoh</span>
+                        <SmartImage src={photo} alt="" tone="dark" sizes="200px" fallbackLabel={photo ? undefined : placeholder} />
                       </span>
                     </span>
                   </>

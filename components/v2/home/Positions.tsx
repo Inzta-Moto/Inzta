@@ -10,8 +10,8 @@ import { PHOTO_QUALITY } from '@/lib/v2/image';
 // Tiles are 4:5 and about 280 px wide on desktop (a quarter of the content) and 72% wide in the phone swipe row.
 const TILE_SIZES = '(max-width: 767px) 72vw, 25vw';
 
-// alt="" because the tile's h3 already names the link (S0.12.6). Local photos go through next/image (tk-highway-3.jpg
-// alone is 650 KB); Cloudinary photos go through SmartImage for the shimmer and the fallback tile (ST-PART). The tile
+// alt="" because the tile's h3 already names the link (S0.12.6). Local photos (576 x 720 WebP) go through next/image;
+// Cloudinary photos go through SmartImage for the shimmer and the fallback tile (ST-PART). The tile
 // background is --c-aspal, so the dark tone keeps the white text readable when a photo fails.
 function TileImage({ src }: { src: string }) {
   if (!src.includes('res.cloudinary.com')) {

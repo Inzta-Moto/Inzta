@@ -3,6 +3,7 @@ import { WhatsApp } from '@/components/v2/icons';
 import Bounce from '@/components/v2/motion/Bounce';
 import ClosingStage from '@/components/v2/ClosingStage';
 import { PHOTO_QUALITY } from '@/lib/v2/image';
+import { CLOSING_CHAT_PHOTO } from '@/lib/v2/home-content';
 import '@/app/(v2)/v2-closing.css';
 
 // The way to the right bag in three stops, worded only from existing copy: the panel's own line and the order-flow step
@@ -34,7 +35,8 @@ function Ticks() {
 
 // Closing panel (F-016 S0.8). Behind the copy lies a route map: topographic contours with a kuning route that runs
 // into the chat, lit by a warm glow and, on fine pointers, by a headlight that follows the cursor (v2-closing.css).
-// The chat is a decorative illustration: aria-hidden, nothing focusable, the photo keeps its "Foto contoh" tag, and
+// The chat is a decorative illustration: aria-hidden, nothing focusable, the photo is a real Yamaha XSR 155 with the
+// Sidebag RD Depan Daily Ride (photo catalog row 129, not the product thumbnail of the reply), and
 // every label reuses words already on the site ("Dibalas admin INZTA" from the product page pill, the fit chip of the
 // recommended product). Only the visitor's message carries a time, so no reply time is implied (rules: no new
 // claims). Motion and the pointer effects come from ClosingStage. S5 sets its own button label and places
@@ -113,14 +115,13 @@ export default function Closing({
           <div className="iz-chat__out">
             <div className="iz-photo">
               <Image
-                src="/images/v2/contoh/contoh-motor-xsr-155.jpg"
+                src={CLOSING_CHAT_PHOTO}
                 alt=""
-                width={382}
-                height={512}
+                width={500}
+                height={375}
                 sizes="(max-width: 767px) 220px, 250px"
                 quality={PHOTO_QUALITY}
               />
-              <span className="iz-tag">Foto contoh</span>
             </div>
             <span className="iz-chat__text">
               Tas mana yang dibuat untuk motor ini?
