@@ -7,10 +7,10 @@ import ArticlePage from '@/components/v2/article/ArticlePage';
 import { requireAdmin } from '@/lib/auth';
 import { getArticleForAdmin } from '@/lib/admin-articles';
 import { renderArticle } from '@/lib/markdown';
-import { resolveEmbeds } from '@/lib/article-embeds';
+import { resolveEmbeds, shownArticleSlugs } from '@/lib/article-embeds';
 import { statusOf } from '@/lib/article-format';
 import { getArticles } from '@/lib/public-content';
-import { articleReadingMinutes, motorArticles, otherArticles } from '@/lib/v2/article-v2';
+import { OTHER_ARTICLES_MAX, articleReadingMinutes, motorArticles, otherArticles } from '@/lib/v2/article-v2';
 
 // Stored article (draft or published) in the public layout, for admins only. Never cached and never
 // indexed: a draft must not reach a CDN or a search engine through this page.
@@ -36,7 +36,7 @@ export default async function AdminArticlePreviewPage({ params }: { params: { sl
   // F-016 S7.8: same v2 frame and ArticlePage as /blog/{slug}, all blocks with the missing-card notes, no share row,
   // and "Artikel lain" from published articles only (S7.8.4).
   const published = await getArticles();
-  const others = otherArticles(article, published);
+  const others = otherArticles(article, published, OTHER_ARTICLES_MAX, shownArticleSlugs(blocks, embeds));
   return (
     <V2Layout current="artikel">
       <ArticlePage

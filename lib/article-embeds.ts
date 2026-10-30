@@ -80,5 +80,9 @@ export async function resolveEmbeds(blocks: RenderBlock[], opts: { exclude?: str
 }
 
 /** Blocks for the public page: cards without public data are left out, so their slugs never reach the browser. */
+/** F-017: slugs of the "Baca juga" cards that will show, so "Artikel lain" can pass over them. */
+export const shownArticleSlugs = (blocks: RenderBlock[], embeds: ArticleEmbeds): string[] =>
+  Array.from(new Set(blocks.flatMap(b => (b.type === 'article' && embeds.articles[b.slug] ? [b.slug] : []))));
+
 export const visibleBlocks = (blocks: RenderBlock[], embeds: ArticleEmbeds): RenderBlock[] =>
   blocks.filter(b => b.type === 'html' || Boolean(b.type === 'product' ? embeds.products[b.slug] : embeds.articles[b.slug]));

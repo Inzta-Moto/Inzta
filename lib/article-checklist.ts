@@ -12,6 +12,8 @@ export const META_DESCRIPTION_GUIDE = 155;
 export const COVER_MIN_WIDTH = 1360;
 // F-017: the "Daftar isi" shows from two h2 sections.
 export const TOC_MIN_SECTIONS = 2;
+// F-017: "Baca juga" cards are an editorial pick inside the text; "Artikel lain" already closes the page.
+export const READ_ALSO_MAX = 2;
 
 export type ChecklistInput = Pick<Article, 'title' | 'slug' | 'excerpt' | 'content'> &
   Partial<Pick<Article, 'contentFormat' | 'coverImage' | 'coverAlt' | 'showCover' | 'metaTitle' | 'metaDescription' | 'topik'>>;
@@ -119,6 +121,22 @@ export function runChecklist(article: ChecklistInput, opts: ChecklistOptions = {
   if (markdown && content.trim()) {
     const sections = countH2(content);
     warnings.push(item('W-8', `Minimal ${TOC_MIN_SECTIONS} subjudul "##" untuk Daftar isi`, sections >= TOC_MIN_SECTIONS, `${sections} subjudul "##"; Daftar isi tidak tampil.`));
+    // F-017: listed only when the body has a "Baca juga" card. A card counts as "at the end" when no text follows
+    // it, only other cards or blank lines, which is where "Artikel lain" already sits.
+    const embeds = extractEmbeds(content);
+    const readAlso = embeds.filter(e => e.kind === 'artikel');
+    if (readAlso.length) {
+      const markerLines = new Set(embeds.map(e => e.line));
+      const lines = content.split('\n');
+      let lastText = 0;
+      lines.forEach((l, i) => { if (l.trim() && !markerLines.has(i + 1)) lastText = i + 1; });
+      const atEnd = readAlso.filter(e => e.line > lastText).map(e => e.marker);
+      const problems = [
+        readAlso.length > READ_ALSO_MAX ? `${readAlso.length} kartu; cukup ${READ_ALSO_MAX} yang paling relevan` : '',
+        atEnd.length ? `di akhir artikel, tepat di atas "Artikel lain": ${listNames(atEnd)}. Pindahkan ke tengah isi, di bagian yang relevan` : '',
+      ].filter(Boolean);
+      warnings.push(item('W-9', `Kartu "Baca juga" maksimal ${READ_ALSO_MAX} dan ada di tengah isi`, problems.length === 0, problems.join('; ')));
+    }
   }
   // F-013 phase A2 (15.4, H-5): "Jadikan juga gambar sampul" copies the URL as is, so equality is enough.
   if (markdown && article.showCover !== false && isAllowedImageUrl(article.coverImage)) {

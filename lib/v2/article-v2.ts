@@ -82,13 +82,16 @@ export const OTHER_ARTICLES_MAX = 2;
 /**
  * F-016 S7.6.1: published articles except the current one; same topic first (newest first), then the newest
  * others; at most two. An article without a topic gets only "newest others". Works for a draft preview too.
+ * F-017: `skip` holds the slugs already shown as "Baca juga" cards in the body; they are passed over and the next
+ * article takes their place, so one article never shows twice on the page.
  */
 export function otherArticles(
   current: Pick<PublicArticle, 'slug' | 'topik'>,
   all: PublicArticle[],
   max = OTHER_ARTICLES_MAX,
+  skip: readonly string[] = [],
 ): ArticleCardV2[] {
-  const pool = newestFirst(all.filter(a => a.slug !== current.slug && statusOf(a) === 'published'));
+  const pool = newestFirst(all.filter(a => a.slug !== current.slug && !skip.includes(a.slug) && statusOf(a) === 'published'));
   const topic = normalizeTopik(current.topik);
   const same = topic ? pool.filter(a => normalizeTopik(a.topik) === topic) : [];
   const rest = pool.filter(a => !same.includes(a));

@@ -6,10 +6,10 @@ import V2Layout from '@/components/v2/V2Layout';
 import ArticlePage from '@/components/v2/article/ArticlePage';
 import { getArticle, getArticles } from '@/lib/public-content';
 import { renderArticle } from '@/lib/markdown';
-import { resolveEmbeds, visibleBlocks } from '@/lib/article-embeds';
+import { resolveEmbeds, shownArticleSlugs, visibleBlocks } from '@/lib/article-embeds';
 import { firstLineSummary } from '@/lib/article-format';
 import { optimizeCloudinaryUrl } from '@/lib/utils';
-import { articleReadingMinutes, motorArticles, otherArticles } from '@/lib/v2/article-v2';
+import { OTHER_ARTICLES_MAX, articleReadingMinutes, motorArticles, otherArticles } from '@/lib/v2/article-v2';
 import { articleJsonLd, breadcrumbJsonLd, canonicalUrl, jsonLdGraph, openGraph } from '@/lib/seo';
 import JsonLd from '@/components/JsonLd';
 import type { PublicArticle } from '@/types';
@@ -92,7 +92,7 @@ export default async function BlogDetailPage({ params }: { params: { slug: strin
   const { content, ...rest } = article;
   // F-016 S7.9.1: only the JSX changes, to the v2 frame. S7.6.3: "Artikel lain" from the published list, card fields only.
   const published = await getArticles();
-  const others = otherArticles(article, published);
+  const others = otherArticles(article, published, OTHER_ARTICLES_MAX, shownArticleSlugs(blocks, embeds));
   return (
     <V2Layout current="artikel">
       <JsonLd data={jsonLd} />

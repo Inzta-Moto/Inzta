@@ -571,6 +571,18 @@ check('checklist W-7/W-8 (F-017): no topic and fewer than two "##" sections warn
   assert.strictEqual(one.warnings.find(w => w.id === 'W-8').detail, '1 subjudul "##"; Daftar isi tidak tampil.');
   assert.ok(canPublish(one));
 });
+check('checklist W-9 (F-017): "Baca juga" at the end or more than two warns, never blocks; absent without cards', () => {
+  const base = '## A\n\nTeks.\n\n## B\n\nTeks.';
+  const w9 = content => runChecklist({ ...ok, content }, { coverWidth: 1360 }).warnings.find(w => w.id === 'W-9');
+  assert.strictEqual(w9(base), undefined);
+  assert.strictEqual(w9(`## A\n\nTeks.\n\n[[artikel:a]]\n\n## B\n\nTeks.`).ok, true);
+  const end = w9(`${base}\n\n[[artikel:a]]\n\n[[produk:p]]\n`);
+  assert.strictEqual(end.ok, false);
+  assert.ok(end.detail.includes('[[artikel:a]]') && end.detail.startsWith('di akhir artikel'), end.detail);
+  const many = w9(`## A\n\n[[artikel:a]]\n\n[[artikel:b]]\n\n[[artikel:c]]\n\n## B\n\nTeks.`);
+  assert.strictEqual(many.detail, '3 kartu; cukup 2 yang paling relevan');
+  assert.ok(canPublish(runChecklist({ ...ok, content: `${base}\n\n[[artikel:a]]` }, { coverWidth: 1360 })));
+});
 check('checklist W-6 (F-013 A2): cover also in the body warns while showCover is on or missing, never blocks', () => {
   const twice = { ...ok, coverImage: CLD };
   assert.deepStrictEqual(warned(runChecklist(twice)), ['W-6']);

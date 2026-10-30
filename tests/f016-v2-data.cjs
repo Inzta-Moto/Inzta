@@ -254,6 +254,7 @@ const sideProduct = (extra = {}, kiri = {}, kanan = {}) => ({
     assert.deepStrictEqual(A.otherArticles({ slug: 'x', topik: '' }, all).map(c => c.slug), ['m-new', 'none'], 'no topic: newest others');
     assert.deepStrictEqual(A.otherArticles({ slug: 'cur', topik: 'touring' }, [all[0]]), [], 'none remain -> section hidden');
     assert.ok(A.otherArticles(all[0], all).every(c => !('content' in c)), 'cards carry no content (S7.6.3)');
+    assert.deepStrictEqual(A.otherArticles(all[0], all, 2, ['t-new']).map(c => c.slug), ['t-old', 'm-new'], 'F-017: a "Baca juga" article is passed over');
   });
 
   // Reviews (D4, S1.9)
