@@ -23,13 +23,14 @@ export interface ProcessStep {
   source: string;
 }
 
-// S8.2: alts are empty because the h3 and the sentence carry the information (S8.2.4). The Cek photo is INZTA's
-// package photo used as a stand-in; it prints "free raincover", so it is cropped to its top half (S8.2.3, G-C4).
+// S8.2: alts are empty because the h3 and the sentence carry the information (S8.2.4). The Cek photo is a stand-in
+// until INZTA sends a real quality-check photo (P-3): a detail of the patch, stitching and buckle of the Sidebag RD
+// Daily Ride, without printed text, so it needs no crop class (S8.2.3, G-C4).
 export const PROCESS_STEPS: readonly ProcessStep[] = [
   { title: 'Desain', text: 'Pola tas dirancang tim INZTA.', image: '/images/v2/contoh/desain-pola-unsplash-oTvBFTB0wow.webp', crop: null, source: 'Erwin Bosman, https://unsplash.com/photos/oTvBFTB0wow, Unsplash License (CONTENT.md)' },
   { title: 'Potong', text: 'Bahan dipotong sesuai pola.', image: '/images/v2/contoh/potong-kain-unsplash-SgLpZDf4P_c.webp', crop: null, source: 'atelierbyvineeth, https://unsplash.com/photos/SgLpZDf4P_c, Unsplash License (CONTENT.md)' },
   { title: 'Jahit', text: 'Dijahit oleh tim produksi INZTA.', image: '/images/v2/contoh/workshop-unsplash-5zg-ZDesJAk.webp', crop: null, source: 'alex jhonson, https://unsplash.com/photos/5zg-ZDesJAk, Unsplash License, checked 2026-10-27 (CONTENT.md)' },
-  { title: 'Cek', text: 'PLACEHOLDER: langkah pengecekan dari INZTA.', image: '/images/v2/contoh/tail-bag-inzta-tourmax-30-3.jpg', crop: 'iz-crop-half', source: 'INZTA product photo (assets/photos/products/tail-bag-inzta-tourmax-30-3.jpg)' },
+  { title: 'Cek', text: 'PLACEHOLDER: langkah pengecekan dari INZTA.', image: '/images/v2/foto/proses-cek.webp', crop: null, source: 'INZTA product photo (photo catalog row 113, Sidebag RD Daily Ride detail)' },
   { title: 'Kirim', text: 'Dikemas dan dikirim dari gudang INZTA.', image: '/images/v2/contoh/kirim-paket-unsplash-MGaFENpDCsw.webp', crop: null, source: 'Bench Accounting, https://unsplash.com/photos/MGaFENpDCsw, Unsplash License (CONTENT.md)' },
 ];
 

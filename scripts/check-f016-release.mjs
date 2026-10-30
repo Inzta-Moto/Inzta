@@ -3,7 +3,9 @@
 // F016_RELEASE=1 it exits non-zero while any marker or unapproved item remains, so neither can reach main unnoticed.
 // Usage: node scripts/check-f016-release.mjs [baseUrl]   (default http://localhost:3000)
 const base = (process.argv[2] || 'http://localhost:3000').replace(/\/$/, '');
-const pages = ['/', '/produk', '/tas-motor/retro', '/blog', '/tentang'];
+// Every category page is scanned: Trail is the one without an INZTA hero or chat photo, so its placeholders show
+// only there.
+const pages = ['/', '/produk', '/tas-motor/matic', '/tas-motor/adventure', '/tas-motor/retro', '/tas-motor/trail', '/blog', '/tentang'];
 const markers = [
   ['PLACEHOLDER', /PLACEHOLDER/g],
   ['Foto contoh', /Foto contoh/g],

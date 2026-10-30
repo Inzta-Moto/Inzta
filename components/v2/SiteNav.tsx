@@ -1,9 +1,10 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { BagPosition, MotorCategory } from '@/types';
-import { cldWebp } from '@/lib/v2/image';
+import { PHOTO_QUALITY, cldWebp } from '@/lib/v2/image';
 import { formatRupiah } from '@/lib/v2/home-data';
 import { MOTOR_CATEGORIES, POSITION_ITEMS, categoryLabel } from '@/lib/v2/home-content';
 import { useMotorCategory } from '@/components/v2/MotorCategory';
@@ -17,6 +18,14 @@ export type NavTab = 'produk' | 'motor' | 'artikel' | 'tentang';
 
 function thumb(src: string): string {
   return src.includes('res.cloudinary.com') ? cldWebp(src, 96, 96) : src;
+}
+
+// Decorative menu icon next to a text label. Local photos go through next/image at the icon size, so a 40 px icon loads
+// a small resize (1x and 2x) instead of the 600-800 px tile file; Cloudinary photos keep their 96 px crop URL.
+function MenuThumb({ src, size }: { src: string | undefined; size: number }) {
+  if (!src) return null;
+  if (src.startsWith('/')) return <Image src={src} alt="" width={size} height={size} quality={PHOTO_QUALITY} />;
+  return <img src={thumb(src)} alt="" width={size} height={size} loading="lazy" />;
 }
 
 // Capsule navbar (F-016 4): dropdowns open on hover for fine pointers (CSS) and by click or keyboard (state),
@@ -230,7 +239,7 @@ export default function SiteNav({
               {POSITION_ITEMS.map(item => (
                 <Link key={item.value} className="iz-navdd__item" href={`/produk?posisi=${item.value}`} onClick={() => setOpen(null)}>
                   <span className="iz-navdd__ico">
-                    <img src={thumb(item.image)} alt="" width={40} height={40} loading="lazy" />
+                    <MenuThumb src={item.image} size={40} />
                   </span>
                   <span>
                     {item.menuLabel}
@@ -261,7 +270,7 @@ export default function SiteNav({
               {MOTOR_CATEGORIES.map(c => (
                 <CategoryLink key={c.value} value={c.value} className="iz-navdd__item" current={currentCategory === c.value} onChosen={() => setOpen(null)}>
                   <span className="iz-navdd__ico">
-                    <img src={c.image} alt="" width={40} height={40} loading="lazy" />
+                    <MenuThumb src={c.image} size={40} />
                   </span>
                   <span>{c.label}</span>
                   {category === c.value && <span className="iz-navdd__mine">Motor saya</span>}
@@ -287,7 +296,7 @@ export default function SiteNav({
               <>
                 {/* The chosen category as a photo badge, a two-line label and a "Ganti" action (Sehan, 2026-10-29). */}
                 <span className="iz-motorchip__thumb" aria-hidden="true">
-                  <img src={MOTOR_CATEGORIES.find(c => c.value === category)?.image} alt="" width={28} height={28} />
+                  <MenuThumb src={MOTOR_CATEGORIES.find(c => c.value === category)?.image} size={28} />
                 </span>
                 <span className="iz-motorchip__text iz-only-desk">
                   <small>Motor saya</small>
@@ -336,7 +345,7 @@ export default function SiteNav({
             {POSITION_ITEMS.map((item, i) => (
               <Link key={item.value} className="iz-msheet__row" href={`/produk?posisi=${item.value}`} onClick={() => setSheetOpen(false)} style={{ '--i': i + 1 } as React.CSSProperties}>
                 <span className="iz-msheet__ico">
-                  <img src={thumb(item.image)} alt="" width={36} height={36} loading="lazy" />
+                  <MenuThumb src={item.image} size={36} />
                 </span>
                 <span className="iz-msheet__label">{item.menuLabel}</span>
                 {minPrices[item.value] !== null && <small>Mulai {formatRupiah(minPrices[item.value] as number)}</small>}
@@ -351,7 +360,7 @@ export default function SiteNav({
             {MOTOR_CATEGORIES.map(c => (
               <CategoryLink key={c.value} value={c.value} className="iz-msheet__row" current={currentCategory === c.value} onChosen={() => setSheetOpen(false)}>
                 <span className="iz-msheet__ico">
-                  <img src={c.image} alt="" width={36} height={36} loading="lazy" />
+                  <MenuThumb src={c.image} size={36} />
                 </span>
                 <span className="iz-msheet__label">{c.label}</span>
                 {category === c.value && <span className="iz-navdd__mine">Motor saya</span>}

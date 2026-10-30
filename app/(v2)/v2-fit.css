@@ -102,7 +102,6 @@
   html .iz-page .iz-ordersteps p { font-size: max(13.4px, calc(16 * var(--u))); }
   html .iz-page .iz-chat__who b { font-size: max(13.4px, calc(16 * var(--u))); }
   html .iz-page .iz-chat__who span { font-size: max(11.8px, calc(14 * var(--u))); }
-  html .iz-page .iz-chat__out .iz-photo > .iz-tag { font-size: max(10.9px, calc(13 * var(--u))); }
   html .iz-page .iz-closing .iz-chat__out p { font-size: max(13.4px, calc(16 * var(--u))); }
   html .iz-page .iz-navdd__item { font-size: max(13.4px, calc(16 * var(--u))); }
   html .iz-page .iz-navdd__item small { font-size: max(11.8px, calc(14 * var(--u))); }
