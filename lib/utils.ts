@@ -48,8 +48,10 @@ export function buildWaLink(
     voucherCode: string | null;
     finalPrice: number;
   },
+  // F-016 S4.3.4: optional line right after the order ID (the Sepasang choice); existing callers pass nothing.
+  extraLine?: string,
 ): string {
-  let msg = `PESANAN PRODUK\nOrder ID: #${orderId}\n\n`;
+  let msg = `PESANAN PRODUK\nOrder ID: #${orderId}\n${extraLine ? `${extraLine}\n` : ''}\n`;
 
   for (const item of items) {
     msg += `${item.productName}`;

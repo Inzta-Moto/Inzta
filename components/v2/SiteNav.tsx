@@ -1,0 +1,393 @@
+'use client';
+
+import Image from 'next/image';
+import Link from 'next/link';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import type { BagPosition, MotorCategory } from '@/types';
+import { PHOTO_QUALITY, cldWebp } from '@/lib/v2/image';
+import { formatRupiah } from '@/lib/v2/home-data';
+import { MOTOR_CATEGORIES, POSITION_ITEMS, categoryLabel } from '@/lib/v2/home-content';
+import { useMotorCategory } from '@/components/v2/MotorCategory';
+import CategoryLink from '@/components/v2/CategoryLink';
+import { ArrowRight, ChevronDown, Motorcycle, WhatsApp } from '@/components/v2/icons';
+import Bounce from '@/components/v2/motion/Bounce';
+import { motionOn, motionTier } from '@/lib/v2/motion/runtime';
+
+type OpenMenu = 'produk' | 'motor' | null;
+export type NavTab = 'produk' | 'motor' | 'artikel' | 'tentang';
+
+function thumb(src: string): string {
+  return src.includes('res.cloudinary.com') ? cldWebp(src, 96, 96) : src;
+}
+
+// Decorative menu icon next to a text label. Local photos go through next/image at the icon size, so a 40 px icon loads
+// a small resize (1x and 2x) instead of the 600-800 px tile file; Cloudinary photos keep their 96 px crop URL.
+function MenuThumb({ src, size }: { src: string | undefined; size: number }) {
+  if (!src) return null;
+  if (src.startsWith('/')) return <Image src={src} alt="" width={size} height={size} quality={PHOTO_QUALITY} />;
+  return <img src={thumb(src)} alt="" width={size} height={size} loading="lazy" />;
+}
+
+// Capsule navbar (F-016 4): dropdowns open on hover for fine pointers (CSS) and by click or keyboard (state),
+// phone menu below 768 px. Dark over the hero, light once the hero has scrolled away (4.2).
+export default function SiteNav({
+  minPrices,
+  waHref,
+  current,
+  dark: darkHero = true,
+  currentCategory,
+  chipHref = '/#garasi',
+}: {
+  minPrices: Record<BagPosition, number | null>;
+  waHref: string;
+  current?: NavTab;
+  dark?: boolean;
+  currentCategory?: MotorCategory;
+  chipHref?: string;
+}) {
+  const page = (tab: NavTab) => (current === tab ? ({ 'aria-current': 'page' } as const) : {});
+  const { category } = useMotorCategory();
+  const [open, setOpen] = useState<OpenMenu>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  // Keeps the phone menu mounted while its closing animation plays (v2-motion.css).
+  const [sheetShown, setSheetShown] = useState(false);
+  const [overHero, setOverHero] = useState(darkHero);
+  const [scrolledAway, setScrolledAway] = useState(false);
+  const focusInside = useRef(false);
+  const navRef = useRef<HTMLElement>(null);
+  const sheetRef = useRef<HTMLDivElement>(null);
+  const menuBtnRef = useRef<HTMLButtonElement>(null);
+  const triggerRefs = { produk: useRef<HTMLButtonElement>(null), motor: useRef<HTMLButtonElement>(null) };
+
+  // Turns off the CSS :focus-within fallback; from here on data-open drives the panels (S0.4.1, VF-01).
+  useEffect(() => {
+    document.documentElement.classList.add('js-nav');
+  }, []);
+
+  useEffect(() => {
+    const end = document.querySelector('[data-hero-end]');
+    if (!end) {
+      setOverHero(false);
+      return;
+    }
+    const io = new IntersectionObserver(([e]) => setOverHero(e.isIntersecting || e.boundingClientRect.top > 0), {
+      rootMargin: '-96px 0px 0px 0px',
+    });
+    io.observe(end);
+    return () => io.disconnect();
+  }, []);
+
+  // Hides while scrolling down and returns on the way up, so the capsule never sits over what is being read (Sehan,
+  // 2026-10-29). It stays under reduced motion and in the minimal motion tier, while a menu is open, and while it holds
+  // keyboard focus.
+  useEffect(() => {
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const still = () => reduce.matches || motionTier() === 'minimal';
+    let last = window.scrollY;
+    let ticking = false;
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        ticking = false;
+        const y = window.scrollY;
+        const delta = y - last;
+        if (Math.abs(delta) < 8 && y > 120) return;
+        last = y;
+        setScrolledAway(!still() && !focusInside.current && y > 160 && delta > 0);
+      });
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  const closeMenu = useCallback((focusTrigger: boolean) => {
+    setOpen(prev => {
+      if (focusTrigger && prev) triggerRefs[prev].current?.focus();
+      return null;
+    });
+    // triggerRefs hold stable ref objects, so the callback never needs to change.
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => {
+      if (navRef.current && !navRef.current.contains(e.target as Node)) setOpen(null);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeMenu(true);
+    };
+    document.addEventListener('mousedown', onDown);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDown);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open, closeMenu]);
+
+  // A phone menu left open while the window grows past the phone layout would keep the page locked (review REV-04).
+  useEffect(() => {
+    if (!sheetOpen) return;
+    const mq = window.matchMedia('(min-width: 768px)');
+    const onChange = () => {
+      if (mq.matches) setSheetOpen(false);
+    };
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, [sheetOpen]);
+
+  useEffect(() => {
+    if (sheetOpen) {
+      setSheetShown(true);
+      return;
+    }
+    if (!sheetShown) return;
+    // The sheet's closing animation only runs with motion on (v2-motion.css); otherwise it unmounts at once.
+    const ms = motionOn() ? 320 : 0;
+    const t = window.setTimeout(() => setSheetShown(false), ms);
+    return () => window.clearTimeout(t);
+  }, [sheetOpen, sheetShown]);
+
+  const closeSheet = useCallback(() => {
+    setSheetOpen(false);
+    menuBtnRef.current?.focus();
+  }, []);
+
+  useEffect(() => {
+    if (!sheetOpen) return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    sheetRef.current?.querySelector<HTMLElement>('a, button')?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        closeSheet();
+        return;
+      }
+      if (e.key !== 'Tab' || !sheetRef.current || !menuBtnRef.current) return;
+      // Focus stays inside the menu button and the sheet while the phone menu is open (4.6).
+      const items = [menuBtnRef.current, ...sheetRef.current.querySelectorAll<HTMLElement>('a, button')];
+      const first = items[0];
+      const last = items[items.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [sheetOpen, closeSheet]);
+
+  const onTriggerKey = (which: 'produk' | 'motor') => (e: React.KeyboardEvent) => {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setOpen(which);
+      // After React has rendered the open menu; setTimeout also runs in background tabs, unlike requestAnimationFrame.
+      setTimeout(() => {
+        document.getElementById(`iz-menu-${which}`)?.querySelector<HTMLElement>('a')?.focus();
+      }, 0);
+    }
+  };
+
+  // Tabbing out of an open dropdown closes it (review REV-06).
+  const onMenuBlur = (e: React.FocusEvent<HTMLDivElement>) => {
+    if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setOpen(null);
+  };
+
+  const dark = overHero && !sheetOpen;
+  const navHidden = scrolledAway && !open && !sheetOpen;
+  const chosen = category ? categoryLabel(category) : null;
+
+  return (
+    <div
+      className="iz-navwrap"
+      data-hidden={navHidden ? 'true' : undefined}
+      onFocus={() => {
+        focusInside.current = true;
+        setScrolledAway(false);
+      }}
+      onBlur={e => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) focusInside.current = false;
+      }}
+    >
+      <nav ref={navRef} className={`iz-nav${dark ? ' iz-nav--dark' : ''}`} aria-label="Utama">
+        <Link className="iz-brand" href="/">
+          <img src="/logo-inzta.png" alt="" width={32} height={32} />
+          <span>INZTA</span>
+        </Link>
+
+        <div className="iz-nav__links">
+          <div className="iz-navdd" data-open={open === 'produk' ? '' : undefined} onBlur={onMenuBlur}>
+            <button
+              ref={triggerRefs.produk}
+              className="iz-navdd__btn"
+              type="button"
+              aria-expanded={open === 'produk'}
+              aria-controls="iz-menu-produk"
+              {...page('produk')}
+              onClick={() => setOpen(o => (o === 'produk' ? null : 'produk'))}
+              onKeyDown={onTriggerKey('produk')}
+            >
+              <span className="iz-roll"><span>Produk</span></span> <ChevronDown />
+            </button>
+            <div className="iz-navdd__menu" id="iz-menu-produk">
+              {POSITION_ITEMS.map(item => (
+                <Link key={item.value} className="iz-navdd__item" href={`/produk?posisi=${item.value}`} onClick={() => setOpen(null)}>
+                  <span className="iz-navdd__ico">
+                    <MenuThumb src={item.image} size={40} />
+                  </span>
+                  <span>
+                    {item.menuLabel}
+                    {minPrices[item.value] !== null && <small>Mulai {formatRupiah(minPrices[item.value] as number)}</small>}
+                  </span>
+                </Link>
+              ))}
+              <Link className="iz-navdd__foot" href="/produk" onClick={() => setOpen(null)}>
+                Semua produk <ArrowRight />
+              </Link>
+            </div>
+          </div>
+
+          <div className="iz-navdd" data-open={open === 'motor' ? '' : undefined} onBlur={onMenuBlur}>
+            <button
+              ref={triggerRefs.motor}
+              className="iz-navdd__btn"
+              type="button"
+              aria-expanded={open === 'motor'}
+              aria-controls="iz-menu-motor"
+              {...page('motor')}
+              onClick={() => setOpen(o => (o === 'motor' ? null : 'motor'))}
+              onKeyDown={onTriggerKey('motor')}
+            >
+              <span className="iz-roll"><span>Pilih motor</span></span> <ChevronDown />
+            </button>
+            <div className="iz-navdd__menu" id="iz-menu-motor">
+              {MOTOR_CATEGORIES.map(c => (
+                <CategoryLink key={c.value} value={c.value} className="iz-navdd__item" current={currentCategory === c.value} onChosen={() => setOpen(null)}>
+                  <span className="iz-navdd__ico">
+                    <MenuThumb src={c.image} size={40} />
+                  </span>
+                  <span>{c.label}</span>
+                  {category === c.value && <span className="iz-navdd__mine">Motor saya</span>}
+                </CategoryLink>
+              ))}
+              <a className="iz-navdd__foot" href={waHref} target="_blank" rel="noopener noreferrer">
+                Tidak yakin kategorinya? Tanya admin <ArrowRight />
+              </a>
+            </div>
+          </div>
+
+          <Link href="/blog" {...page('artikel')}>
+            <span className="iz-roll"><span>Artikel</span></span>
+          </Link>
+          <Link href="/tentang" {...page('tentang')}>
+            <span className="iz-roll"><span>Tentang</span></span>
+          </Link>
+        </div>
+
+        <div className="iz-nav__actions">
+          <Link className={`iz-motorchip${chosen ? ' iz-motorchip--set' : ''}`} href={chipHref}>
+            {chosen ? (
+              <>
+                {/* The chosen category as a photo badge, a two-line label and a "Ganti" action (Sehan, 2026-10-29). */}
+                <span className="iz-motorchip__thumb" aria-hidden="true">
+                  <MenuThumb src={MOTOR_CATEGORIES.find(c => c.value === category)?.image} size={28} />
+                </span>
+                <span className="iz-motorchip__text iz-only-desk">
+                  <small>Motor saya</small>
+                  <b>{chosen}</b>
+                </span>
+                <span className="iz-only-mob">{chosen}</span>
+                <span className="iz-motorchip__swap iz-only-desk">Ganti</span>
+              </>
+            ) : (
+              <>
+                <Motorcycle width={18} height={18} />
+                <span className="iz-only-desk">Pilih motor Anda</span>
+                <span className="iz-only-mob iz-sr">Pilih motor Anda</span>
+              </>
+            )}
+          </Link>
+          <a className="iz-nav__cta iz-only-desk" href={waHref} target="_blank" rel="noopener noreferrer">
+            <span>
+              <WhatsApp />
+            </span>
+            <Bounce text="Chat admin" />
+          </a>
+          <button
+            ref={menuBtnRef}
+            className="iz-nav__menu iz-only-mob"
+            type="button"
+            aria-label={sheetOpen ? 'Tutup menu' : 'Menu'}
+            aria-expanded={sheetOpen}
+            aria-controls="iz-msheet"
+            onClick={() => (sheetOpen ? closeSheet() : setSheetOpen(true))}
+          >
+            <span className="iz-burger" aria-hidden="true">
+              <span />
+              <span />
+              <span />
+            </span>
+          </button>
+        </div>
+      </nav>
+
+      {sheetShown && <div className="iz-mbackdrop iz-only-mob" data-state={sheetOpen ? 'open' : 'closing'} onClick={closeSheet} aria-hidden="true" />}
+      {sheetShown && (
+        <div className="iz-msheet iz-only-mob" id="iz-msheet" ref={sheetRef} data-lenis-prevent data-state={sheetOpen ? 'open' : 'closing'}>
+          <div className="iz-msheet__group">
+            <h2>Produk</h2>
+            {POSITION_ITEMS.map((item, i) => (
+              <Link key={item.value} className="iz-msheet__row" href={`/produk?posisi=${item.value}`} onClick={() => setSheetOpen(false)} style={{ '--i': i + 1 } as React.CSSProperties}>
+                <span className="iz-msheet__ico">
+                  <MenuThumb src={item.image} size={36} />
+                </span>
+                <span className="iz-msheet__label">{item.menuLabel}</span>
+                {minPrices[item.value] !== null && <small>Mulai {formatRupiah(minPrices[item.value] as number)}</small>}
+              </Link>
+            ))}
+            <Link className="iz-link" href="/produk" style={{ paddingInline: 8, '--i': POSITION_ITEMS.length + 1 } as React.CSSProperties} onClick={() => setSheetOpen(false)}>
+              Semua produk <ArrowRight width={18} height={18} />
+            </Link>
+          </div>
+          <div className="iz-msheet__group">
+            <h2>Pilih motor</h2>
+            {MOTOR_CATEGORIES.map(c => (
+              <CategoryLink key={c.value} value={c.value} className="iz-msheet__row" current={currentCategory === c.value} onChosen={() => setSheetOpen(false)}>
+                <span className="iz-msheet__ico">
+                  <MenuThumb src={c.image} size={36} />
+                </span>
+                <span className="iz-msheet__label">{c.label}</span>
+                {category === c.value && <span className="iz-navdd__mine">Motor saya</span>}
+              </CategoryLink>
+            ))}
+          </div>
+          <div className="iz-msheet__links">
+            <Link href="/blog" onClick={() => setSheetOpen(false)} {...page('artikel')}>
+              <span>Artikel</span>
+              <ArrowRight width={18} height={18} />
+            </Link>
+            <Link href="/tentang" onClick={() => setSheetOpen(false)} {...page('tentang')}>
+              <span>Tentang</span>
+              <ArrowRight width={18} height={18} />
+            </Link>
+          </div>
+          <div className="iz-wa" style={{ width: '100%' }}>
+            <a className="iz-btn iz-btn--primary iz-btn--wa" href={waHref} target="_blank" rel="noopener noreferrer">
+              <span className="iz-btn__icon">
+                <WhatsApp />
+              </span>
+              <span>Chat admin</span>
+            </a>
+            <span className="iz-wa__note">Anda akan diarahkan ke WhatsApp</span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

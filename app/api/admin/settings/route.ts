@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { revalidateV2Paths } from '@/lib/revalidate';
 import { getAdminDb } from '@/lib/firebaseAdmin';
 import { verifyAdminSession } from '@/lib/auth';
 
@@ -37,6 +38,9 @@ export async function POST(request: Request) {
         endsAt: null,
       }, { merge: true });
     }
+
+    // F-016 S0.3.4: every v2 page reads the flash sale in its ISR render, so purge them right after the write.
+    revalidateV2Paths('flash');
 
     return NextResponse.json({ success: true });
   } catch (error: any) {

@@ -1,25 +1,38 @@
-import { Metadata } from 'next';
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import DetailClient from './DetailClient';
-import { getCachedProduct } from './get-product';
-import { getAdminDb } from '@/lib/firebaseAdmin';
-import { normalizeProduct } from '@/lib/product-utils';
+import { getActiveProducts } from '@/lib/public-content';
+import { getProduct } from '@/lib/v2/product-read';
+import V2Layout from '@/components/v2/V2Layout';
+import ProductDetail from '@/components/v2/product/ProductDetail';
+import { selectRelated } from '@/components/v2/product/product-view';
 import JsonLd from '@/components/JsonLd';
+import TrackView from '@/components/v2/product/TrackView';
 import { canonicalUrl, breadcrumbJsonLd, jsonLdGraph, openGraph, PAGE_TEXT, plainTextSummary, productJsonLd } from '@/lib/seo';
+import { isValidSlug } from '@/lib/slug';
+import '@/app/(v2)/v2-product.css';
 
-export const dynamic = 'force-dynamic';
+// F-016 E1, S3.10.1: ISR per slug instead of force-dynamic. Product writes and stock changes purge the page through
+// revalidateProductPaths(); nothing is prebuilt, so a build without credentials stays green.
+export const revalidate = 3600;
 
+export function generateStaticParams() {
+  return [];
+}
+
+// F-005 phase 2 metadata (title through the layout template, plain-text description, og:url = canonical). The product
+// read is shared with the layout and the page through cache().
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const slug = params.slug;
+  if (!isValidSlug(slug)) notFound();
 
   // A failed read: no canonical and no og:url.
   const defaultMeta: Metadata = { title: 'Produk', description: PAGE_TEXT.produk.description };
 
   let data: any;
   try {
-    data = await getCachedProduct(slug);
+    data = await getProduct(slug);
   } catch (e: any) {
-    console.error("❌ [Meta Error] Gagal total:", e.message);
+    console.error('❌ [Meta Error] Gagal total:', e.message);
     return defaultMeta;
   }
   // F-005 6.6: layout.tsx already answered 404 for an unknown slug; this keeps the metadata honest.
@@ -30,12 +43,12 @@ export async function generateMetadata({ params }: { params: { slug: string } })
     const description = data.description || '';
     const images = data.images || [];
     const imageUrl = data.imageUrl || '';
-    
+
     const ogImageRaw = images.length > 0 ? images[0] : (imageUrl || '/logo.png');
-    
+
     let ogImage = ogImageRaw;
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://inzta.id';
-    
+
     // Pastikan ini adalah absolute URL
     if (!ogImage.startsWith('http')) {
       ogImage = `${siteUrl}${ogImage.startsWith('/') ? '' : '/'}${ogImage}`;
@@ -53,7 +66,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
       if (ogImage.endsWith('.png')) imageType = 'image/png';
       else if (ogImage.endsWith('.webp')) imageType = 'image/webp';
     }
-    
+
     // F-005 6.4: plain text, no Markdown markers or line breaks.
     const ogDescription = plainTextSummary(description) || `${name} dari INZTA Moto. Pesan langsung lewat WhatsApp.`;
     const url = canonicalUrl('produk', slug);
@@ -76,80 +89,37 @@ export async function generateMetadata({ params }: { params: { slug: string } })
       },
     };
   } catch (e: any) {
-    console.error("❌ [Meta Error] Gagal total:", e.message);
+    console.error('❌ [Meta Error] Gagal total:', e.message);
     return defaultMeta;
   }
 }
 
 export default async function DetailPage({ params }: { params: { slug: string } }) {
-  let jsonLd = null;
-  let missing = false;
-  let product = null;
-  let related: any[] = [];
-  try {
-    const db = getAdminDb();
-    
-    // Ambil data produk utama dan related secara paralel
-    const [data, relSnapshot] = await Promise.all([
-      getCachedProduct(params.slug),
-      db.collection('products').where('isActive', '==', true).limit(5).get()
-    ]);
-    
-    missing = !data;
-    if (data) {
-      const dataObj = data as any;
+  // A read failure throws (S3.10.3): the last good ISR page stays, or error.tsx renders; never a cached 404.
+  // REV-01: an impossible slug answers 404 without a read, and the active list (related cards, navbar prices) is
+  // read only once the product exists, so random URLs cost one document read instead of the whole collection.
+  // F-005 6.6: layout.tsx answers 404 first; this check covers a render without it.
+  if (!isValidSlug(params.slug)) notFound();
+  const product = await getProduct(params.slug);
+  if (!product) notFound();
+  const active = await getActiveProducts();
 
-      // Normalisasi data Firestore dulu (set productType='simple' untuk legacy
-      // docs, alias compareAtPrice dari originalPrice, dll.) BARU serialize.
-      // Tanpa normalisasi, legacy products tanpa field `productType` akan bikin
-      // downstream `product.productType === 'simple'` di DetailClient gagal →
-      // harga & stok tampil 0.
-      const normalized = normalizeProduct(params.slug, dataObj) as any;
-
-      // Serialize produk agar aman di-pass ke Client Component
-      product = {
-        ...normalized,
-        slug: params.slug,
-        createdAt: dataObj.createdAt ? (dataObj.createdAt.toMillis ? dataObj.createdAt.toMillis() : dataObj.createdAt) : null,
-        updatedAt: dataObj.updatedAt ? (dataObj.updatedAt.toMillis ? dataObj.updatedAt.toMillis() : dataObj.updatedAt) : null,
-      };
-
-      // F-005 phase 2: Product from the normalized product (no price 0, plain description) + BreadcrumbList.
-      jsonLd = jsonLdGraph(
-        productJsonLd(product),
-        breadcrumbJsonLd([
-          { name: 'Home', url: canonicalUrl() },
-          { name: 'Produk', url: canonicalUrl('produk') },
-          { name: product.name, url: canonicalUrl('produk', params.slug) },
-        ]),
-      );
-        
-      related = relSnapshot.docs
-        .map(d => {
-          const dData = d.data();
-          // Normalisasi juga untuk related products — agar ProductCard konsisten
-          // dengan harga yang benar (sebelumnya harga di kartu juga 0 untuk legacy).
-          const normalizedRel = normalizeProduct(d.id, dData) as any;
-          return {
-            ...normalizedRel,
-            slug: d.id,
-            createdAt: dData.createdAt ? (dData.createdAt.toMillis ? dData.createdAt.toMillis() : dData.createdAt) : null,
-            updatedAt: dData.updatedAt ? (dData.updatedAt.toMillis ? dData.updatedAt.toMillis() : dData.updatedAt) : null,
-          };
-        })
-        .filter(p => p.slug !== params.slug)
-        .slice(0, 4);
-    }
-  } catch (error) {
-    console.error('Error fetching product data:', error);
-  }
-  // F-005 6.6: see layout.tsx. A failed read still renders and lets DetailClient retry.
-  if (missing) notFound();
-
+  // F-005 phase 2: Product + Offer from the normalized product (no price 0, plain description) and a BreadcrumbList
+  // with the labels of the v2 breadcrumb (Beranda / Produk / name); the position step links to a filtered
+  // /produk?posisi= URL, which is not a canonical page, so it is left out.
+  const jsonLd = jsonLdGraph(
+    productJsonLd(product),
+    breadcrumbJsonLd([
+      { name: 'Beranda', url: canonicalUrl() },
+      { name: 'Produk', url: canonicalUrl('produk') },
+      { name: product.name, url: canonicalUrl('produk', product.slug) },
+    ]),
+  );
   return (
-    <>
-      {jsonLd && <JsonLd data={jsonLd} />}
-      <DetailClient slug={params.slug} initialProduct={product} initialRelated={related} />
-    </>
+    <V2Layout current="produk" products={active}>
+      <JsonLd data={jsonLd} />
+      <TrackView slug={product.slug} name={product.name} price={(product.productType === 'simple' ? product.price : product.priceFrom) ?? 0} />
+      <ProductDetail product={product} related={selectRelated(product, active)} />
+    </V2Layout>
   );
 }

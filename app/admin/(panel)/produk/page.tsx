@@ -8,6 +8,8 @@ import ImageUpload from '@/components/ImageUpload';
 import { toSlug } from '@/lib/slug';
 import { readAdminError } from '@/lib/admin-messages';
 import { Edit2, Trash2, Package, ChevronDown, Tag, Layers, DollarSign, Archive, ArrowLeft, Save, Plus, X } from 'lucide-react';
+// F-016 S4.6: side preset ("Cara produk dijual") and motor categories live in ./_v2.
+import ProductFormV2, { useProductFormV2 } from './_v2/ProductFormV2';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -75,6 +77,9 @@ export default function ProductsPage() {
   // is derived on each change for downstream logic and is only re-joined into
   // the draft on blur (see commitAttrValuesDraft below).
   const [attrDrafts, setAttrDrafts] = useState<Record<string, string>>({});
+
+  // F-016 S4.6: loads itself when the form opens; merged into the save body in handleSubmit.
+  const v2 = useProductFormV2({ formView, editSlug, products, setProductType: setFProductType, simplePrice: fPrice, simpleCompareAt: fCompareAtPrice, formVariants: fVariants });
 
   useEffect(() => { loadProducts(); }, []);
 
@@ -250,8 +255,10 @@ export default function ProductsPage() {
     setSaving(true);
 
     if (!fSlug) { setFormError('Slug kosong, pastikan nama produk diisi.'); setSaving(false); return; }
+    const v2Error = v2.validate();
+    if (v2Error) { setFormError(v2Error); setSaving(false); return; }
 
-    if (fProductType === 'variable') {
+    if (fProductType === 'variable' && v2.mode !== 'side') {
       if (fAttributes.length === 0) {
         setFormError('Produk variasi wajib memiliki minimal 1 atribut (contoh: Warna, Ukuran). Tambahkan atribut terlebih dahulu.'); setSaving(false); return;
       }
@@ -282,6 +289,7 @@ export default function ProductsPage() {
     } else {
       data = { ...data, attributes: fAttributes, variants: fVariants };
     }
+    data = v2.apply(data);
 
     try {
       let url = '/api/products';
@@ -353,28 +361,6 @@ export default function ProductsPage() {
                   {fSlug && <small className="prod-slug-preview">URL: <strong>/produk/{fSlug}</strong></small>}
                 </div>
 
-                {/* productType toggle */}
-                <div className="form-group">
-                  <label className="form-label">Tipe Produk *</label>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    {(['simple', 'variable'] as const).map(pt => (
-                      <button
-                        key={pt} type="button"
-                        onClick={() => setFProductType(pt)}
-                        style={{
-                          padding: '8px 20px', borderRadius: 8, border: '1px solid',
-                          borderColor: fProductType === pt ? '#1a1a1a' : '#E5E7EB',
-                          background: fProductType === pt ? '#1a1a1a' : '#fff',
-                          color: fProductType === pt ? '#fff' : '#374151',
-                          fontSize: 13, fontWeight: 600, cursor: 'pointer',
-                        }}
-                      >
-                        {pt === 'simple' ? 'Simple' : 'Variable (Variasi)'}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
                 <div className="form-row">
                   <div className="form-group">
                     <label className="form-label">Kategori *</label>
@@ -401,6 +387,8 @@ export default function ProductsPage() {
                 </div>
               </div>
             </div>
+
+            <ProductFormV2 v2={v2} name={fName} slug={fSlug} />
 
             {/* ── Deskripsi ──────────────────────────────────────────── */}
             <div className="prod-form-card prod-desc-card">
@@ -435,7 +423,7 @@ export default function ProductsPage() {
             )}
 
             {/* ── Attribute Builder (variable only) ─────────────────── */}
-            {fProductType === 'variable' && (
+            {fProductType === 'variable' && v2.mode !== 'side' && (
               <div className="prod-form-card">
                 <div className="prod-form-card-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span>Atribut Variasi</span>
@@ -494,7 +482,7 @@ export default function ProductsPage() {
             )}
 
             {/* ── Variant Table (variable only) ─────────────────────── */}
-            {fProductType === 'variable' && fVariants.length > 0 && (
+            {fProductType === 'variable' && v2.mode !== 'side' && fVariants.length > 0 && (
               <div className="prod-form-card">
                 <div className="prod-form-card-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span>Tabel Variasi ({activeVariants.length} aktif)</span>

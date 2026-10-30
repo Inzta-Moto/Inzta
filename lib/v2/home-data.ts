@@ -1,0 +1,252 @@
+import type { BagPosition, FitLabel, FlashSaleState, HomeData, HomeGuideCard, HomeProductCard, Product, ProductPosition, PublicArticle } from '@/types';
+import { DEFAULT_AUTHOR } from '@/lib/constants';
+import {
+  BANNED_LABEL_WORDS,
+  CROP_HALF_SLUGS,
+  CROP_TOP_SLUGS,
+  FOR_LINE_BY_SLUG,
+  POSITION_BY_SLUG,
+  POSITION_LABEL_BY_SLUG,
+  SECOND_POSITION_BY_SLUG,
+  UNIVERSAL_SLUGS,
+} from '@/lib/v2/product-copy';
+import { isFlashActive } from '@/lib/v2/flash-time';
+import { publicDate, statusOf } from '@/lib/article-format';
+import { topicLabel } from '@/lib/v2/article-v2';
+import { GASBER_SLUG, POSITION_CHIP, TOURMAX_SLUG } from '@/lib/v2/home-content';
+
+// Pure helpers for the v2 Beranda (F-016). No Firebase or React imports, so tests/f016-home.cjs can load them.
+
+export const POSITIONS: readonly BagPosition[] = ['tank', 'side', 'tail', 'aksesori'];
+export const BEST_SELLER_MAX = 8;
+export const GUIDES_MAX = 3;
+
+// Mirrors components/ProductCard.tsx (simple: price + compareAtPrice or legacy originalPrice; variable: priceFrom +
+// the highest variant compareAtPrice above it). Copied because that file is a client component that loads Firebase.
+export function effectivePrice(p: Product): { price: number; compareAt: number | null } {
+  const any = p as any;
+  const legacyCompare = any.compareAtPrice ?? any.originalPrice ?? null;
+  if (p.productType === 'variable') {
+    const price = any.priceFrom ?? 0;
+    const variants: any[] = any.variants || [];
+    const compares = variants.map(v => v.compareAtPrice || 0).filter((v: number) => v > 0);
+    const maxCompare = compares.length ? Math.max(...compares) : 0;
+    const compareAt = maxCompare > price ? maxCompare : legacyCompare;
+    return { price, compareAt: compareAt && compareAt > price ? compareAt : null };
+  }
+  const price = any.price ?? 0;
+  return { price, compareAt: legacyCompare && legacyCompare > price ? legacyCompare : null };
+}
+
+// design.md §4 (F-016 A3): extend and harian added for the Katalog filter (S2.2) and the card chip (S0.9).
+// The order matters: "Side bag Daily Ride" is a side bag, not a daily bag.
+// This is the only reader of a product's position (Katalog, cards, motor and product pages), so a future explicit
+// admin field changes one function. Order: slug override, then the name, then the slug; the last one catches a
+// product renamed in plain Indonesian ("Tas Tangki X") whose slug still says "tankbag-x".
+export function positionOf(p: Pick<Product, 'slug' | 'name'>): ProductPosition | null {
+  if (p.slug in POSITION_BY_SLUG) return POSITION_BY_SLUG[p.slug];
+  return positionFromText((p.name ?? '').toLowerCase(), true) ?? positionFromText((p.slug ?? '').toLowerCase().replace(/-/g, ' '), false);
+}
+
+// `words`: the single-word rules (botol, acc, toolkit, daily) apply to the name only; in a slug they are too loose
+// ("daily" alone is not a product type), so the slug only counts the "… bag" compounds.
+function positionFromText(text: string, words: boolean): ProductPosition | null {
+  if (/tank\s?bag/.test(text)) return 'tank';
+  if (/side\s?bag/.test(text)) return 'side';
+  if (/tail\s?bag/.test(text)) return 'tail';
+  if (/extend\s?bag/.test(text)) return 'extend';
+  if (words && /\bbotol\b|\bacc\s|toolkit|medikit|rollkit/.test(text)) return 'aksesori';
+  if (/chest\s?bag|waist\s?bag|sling\s?bag|hand\s?bag/.test(text) || (words && /\bdaily\b/.test(text))) return 'harian';
+  return null;
+}
+
+// Narrows to the four navbar/Beranda positions (S0.4.3); extend and harian have no tile or menu price.
+export function isBagPosition(v: ProductPosition | null): v is BagPosition {
+  return v !== null && (POSITIONS as readonly string[]).includes(v);
+}
+
+function bagPositionOf(p: Pick<Product, 'slug' | 'name'>): BagPosition | null {
+  const pos = positionOf(p);
+  return isBagPosition(pos) ? pos : null;
+}
+
+const MODEL_RULES: readonly [RegExp, string][] = [
+  [/xsr\s*-?\s*155/i, 'Yamaha XSR 155'],
+  [/\bx\s*-?\s*max\b/i, 'Yamaha XMAX'],
+  [/\bn\s*-?\s*max\b/i, 'Yamaha NMAX'],
+];
+
+export function fitLabel(p: Pick<Product, 'slug' | 'name'>): FitLabel {
+  for (const [re, model] of MODEL_RULES) if (re.test(p.name)) return { kind: 'model', text: `Dibuat untuk ${model}` };
+  if (UNIVERSAL_SLUGS.includes(p.slug)) return { kind: 'universal', text: 'Universal, pakai strap' };
+  const line = FOR_LINE_BY_SLUG[p.slug];
+  return line ? { kind: 'for', text: line } : null;
+}
+
+export function hasBannedWord(text: string): boolean {
+  const t = text.toLowerCase();
+  return BANNED_LABEL_WORDS.some(w => new RegExp(`(^|[^a-z])${w.replace(/[.*+?^${}()|[\]\\%]/g, '\\$&')}([^a-z]|$)`).test(t));
+}
+
+function cropClassOf(slug: string): HomeProductCard['cropClass'] {
+  if (CROP_TOP_SLUGS.includes(slug)) return 'iz-crop-top';
+  if (CROP_HALF_SLUGS.includes(slug)) return 'iz-crop-half';
+  return null;
+}
+
+function firstImage(p: Product): string | null {
+  return p.images?.[0] || p.imageUrl || null;
+}
+
+// F-016 S0.9.3: a badge with "best" wins over "new"/"baru".
+export function badgeOf(badge: string | null | undefined): HomeProductCard['badge'] {
+  const b = (badge ?? '').toLowerCase();
+  if (b.includes('best')) return 'best';
+  if (/\b(new|baru)\b/.test(b)) return 'baru';
+  return null;
+}
+
+// Every position a product is listed under: the main one and, for a few slugs, a second (S2.2, S5.2 tabs).
+export function positionsOf(p: Pick<Product, 'slug' | 'name'>): ProductPosition[] {
+  const main = positionOf(p);
+  const second = SECOND_POSITION_BY_SLUG[p.slug];
+  return [main, second].filter((x, i, all): x is ProductPosition => !!x && all.indexOf(x) === i);
+}
+
+function positionLabelOf(p: Pick<Product, 'slug' | 'name'>): string | null {
+  const pos = positionOf(p);
+  return POSITION_LABEL_BY_SLUG[p.slug] ?? (pos ? POSITION_CHIP[pos] : null);
+}
+
+export function toCard(p: Product): HomeProductCard {
+  const { price, compareAt } = effectivePrice(p);
+  return {
+    slug: p.slug,
+    name: p.name,
+    image: firstImage(p),
+    position: positionOf(p),
+    positionLabel: positionLabelOf(p),
+    badge: badgeOf(p.badge),
+    fit: fitLabel(p),
+    price,
+    compareAt,
+    cropClass: cropClassOf(p.slug),
+  };
+}
+
+export function minPriceByPosition(products: Product[]): Record<BagPosition, number | null> {
+  const out: Record<BagPosition, number | null> = { tank: null, side: null, tail: null, aksesori: null };
+  for (const p of products) {
+    const pos = bagPositionOf(p);
+    if (!pos) continue;
+    const { price } = effectivePrice(p);
+    if (price > 0 && (out[pos] === null || price < (out[pos] as number))) out[pos] = price;
+  }
+  return out;
+}
+
+// Same rule as /produk's "Best seller" tab (app/produk/ProdukClient.tsx). Input is already active and newest first.
+export function selectBestSellers(products: Product[], max = BEST_SELLER_MAX): HomeProductCard[] {
+  return products.filter(p => (p.badge || '').toLowerCase().includes('best')).slice(0, max).map(toCard);
+}
+
+function validDate(v: unknown): number | null {
+  return typeof v === 'number' && Number.isFinite(v) ? v : null;
+}
+
+// F-016 S1.8: published articles, newest first by publishedAt ?? createdAt (undated last, ties keep the input order),
+// at most three. Chip from `topik` (D3) through the shared label map; no topic, no chip. An invalid date reads as null
+// so the meta shows the author only (S1.8.3).
+export function selectGuides(articles: PublicArticle[], max = GUIDES_MAX): HomeGuideCard[] {
+  return articles
+    .filter(a => statusOf(a) === 'published')
+    .map((a, i) => ({ a, i, d: validDate(publicDate(a)) }))
+    .sort((x, y) => (y.d ?? -Infinity) - (x.d ?? -Infinity) || x.i - y.i)
+    .slice(0, max)
+    .map(({ a, d }) => ({
+      slug: a.slug,
+      title: a.title,
+      image: a.coverImage || a.images?.[0] || a.imageUrl || null,
+      imageAlt: a.coverAlt || '',
+      author: a.author?.trim() || DEFAULT_AUTHOR,
+      date: d,
+      chip: topicLabel(a.topik),
+      // One line (S1.8): a multi-line caption keeps its first line only.
+      credit: a.coverCaption?.trim().split(/\r?\n/)[0].trim() || null,
+    }));
+}
+
+// F-016 S1.8.1: the featured card says "Baca catatan" for a Komunitas article and "Baca panduan" otherwise; the chip
+// is topicLabel(topik), so comparing with the same label keeps one source for the topic.
+export function guideAction(card: Pick<HomeGuideCard, 'chip'>): 'Baca catatan' | 'Baca panduan' {
+  return card.chip !== null && card.chip === topicLabel('komunitas') ? 'Baca catatan' : 'Baca panduan';
+}
+
+// "Rp520.000" as in the design; lib/utils formatPrice writes "Rp 520.000" (D-10).
+export function formatRupiah(n: number): string {
+  return 'Rp' + Math.round(n).toLocaleString('id-ID');
+}
+
+// "6289513482410" → "+62 895-1348-2410", so the footer text always matches the WA_NUMBER link (16.3).
+export function formatWaDisplay(n: string): string {
+  const d = n.replace(/\D/g, '');
+  if (!d.startsWith('62') || d.length < 10) return '+' + d;
+  const rest = d.slice(2);
+  return `+62 ${rest.slice(0, 3)}-${rest.slice(3, 7)}-${rest.slice(7)}`;
+}
+
+// "26 Okt 2026" in Jakarta time, identical on server and client.
+export function formatShortDate(ms: number | null): string {
+  if (ms === null) return '';
+  return new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Jakarta' })
+    .format(new Date(ms))
+    .replace('.', '');
+}
+
+// A sale that has already ended at render time is passed on as inactive, so a regenerated page never ships the
+// promo bar only to remove it after hydration (24.7). The client still hides it at zero for stale ISR copies.
+export function buildHomeData(products: Product[], articles: PublicArticle[], flash: FlashSaleState, now = Date.now()): HomeData {
+  const productImages: Record<string, string> = {};
+  for (const p of products) {
+    const img = firstImage(p);
+    if (img) productImages[p.slug] = img;
+  }
+  // S1.6.1: missing, inactive, or priced 0 means no band; the component also guards price 0.
+  const tourmaxProduct = products.find(p => p.slug === TOURMAX_SLUG && p.isActive !== false);
+  const tourmax = tourmaxProduct ? effectivePrice(tourmaxProduct) : null;
+  return {
+    bestSellers: selectBestSellers(products),
+    minPrices: minPriceByPosition(products),
+    tourmax: tourmax && tourmax.price > 0 ? tourmax : null,
+    guides: selectGuides(articles),
+    gasberPublished: articles.some(a => a.slug === GASBER_SLUG),
+    productImages,
+    flash: isFlashActive(flash, now) ? flash : { isActive: false, endsAt: null },
+  };
+}
+
+const NO_SALE: FlashSaleState = { isActive: false, endsAt: null };
+
+/**
+ * F-016 S1.11, S1.8.4, S0.3.6: the Beranda's three reads. Products are the page itself, so their failure throws
+ * (ISR keeps the last good page; the first render shows error.tsx). Articles and the flash-sale setting are optional
+ * sections: a failure is logged and the page renders without the article section and without a sale.
+ */
+export async function readHomeSources(read: {
+  products: () => Promise<Product[]>;
+  articles: () => Promise<PublicArticle[]>;
+  flash: () => Promise<FlashSaleState>;
+}): Promise<{ products: Product[]; articles: PublicArticle[]; flash: FlashSaleState }> {
+  const [products, articles, flash] = await Promise.all([
+    read.products(),
+    read.articles().catch(err => {
+      console.error('[beranda] articles read failed, rendering without the article section', err);
+      return [] as PublicArticle[];
+    }),
+    read.flash().catch(err => {
+      console.error('[beranda] flash-sale read failed, rendering without a sale', err);
+      return NO_SALE;
+    }),
+  ]);
+  return { products, articles, flash };
+}
