@@ -1,11 +1,15 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import BlogDetailClient from './BlogDetailClient';
-import { getArticle } from '@/lib/public-content';
+import '@/app/(v2)/v2-article.css';
+import '@/app/(v2)/v2-article-body.css';
+import V2Layout from '@/components/v2/V2Layout';
+import ArticlePage from '@/components/v2/article/ArticlePage';
+import { getArticle, getArticles } from '@/lib/public-content';
 import { renderArticle } from '@/lib/markdown';
 import { resolveEmbeds, visibleBlocks } from '@/lib/article-embeds';
 import { firstLineSummary } from '@/lib/article-format';
 import { optimizeCloudinaryUrl } from '@/lib/utils';
+import { articleReadingMinutes, otherArticles } from '@/lib/v2/article-v2';
 import { articleJsonLd, breadcrumbJsonLd, canonicalUrl, jsonLdGraph, openGraph } from '@/lib/seo';
 import JsonLd from '@/components/JsonLd';
 import type { PublicArticle } from '@/types';
@@ -75,20 +79,30 @@ export default async function BlogDetailPage({ params }: { params: { slug: strin
   const { blocks } = renderArticle(article);
   const embeds = await resolveEmbeds(blocks, { exclude: article.slug });
   const url = canonicalUrl('blog', article.slug);
-  // One block: Article (needs content for the body-image fallback) + BreadcrumbList with the visible labels (7.1).
+  // One block: Article (needs content for the body-image fallback) + BreadcrumbList (7.1) with the labels of the v2
+  // breadcrumb (ArticleHeadV2: Beranda / Artikel); the last item is the article, as in F-005.
   const jsonLd = jsonLdGraph(
     articleJsonLd(article),
     breadcrumbJsonLd([
-      { name: 'Home', url: canonicalUrl() },
-      { name: 'Blog', url: canonicalUrl('blog') },
+      { name: 'Beranda', url: canonicalUrl() },
+      { name: 'Artikel', url: canonicalUrl('blog') },
       { name: article.title, url },
     ]),
   );
   const { content, ...rest } = article;
+  // F-016 S7.9.1: only the JSX changes, to the v2 frame. S7.6.3: "Artikel lain" from the published list, card fields only.
+  const others = otherArticles(article, await getArticles());
   return (
-    <>
+    <V2Layout current="artikel">
       <JsonLd data={jsonLd} />
-      <BlogDetailClient article={rest} blocks={visibleBlocks(blocks, embeds)} embeds={embeds} articleUrl={url} />
-    </>
+      <ArticlePage
+        article={rest}
+        blocks={visibleBlocks(blocks, embeds)}
+        embeds={embeds}
+        minutes={articleReadingMinutes(content)}
+        others={others}
+        shareUrl={url}
+      />
+    </V2Layout>
   );
 }

@@ -1,0 +1,260 @@
+/* "Pesan dalam tiga langkah" as a journey (F-016 S1.10, Sehan 2026-10-29): three large outlined numerals joined by a
+   road, cards with depth, and a scene per step that shows the real order flow: the product card of a real INZTA bag
+   (quantity to 2), the WhatsApp text the product page pre-fills, and the admin's reply. Every rule outside the motion
+   blocks is the final state, so the section reads as complete without JavaScript and under reduced motion. HowToStage
+   (howto-motion.ts) adds .iz-howto--live while it runs the journey, the step classes --on / --done, and plays the
+   scenes from their first frame with GSAP. Elements GSAP moves keep their resting offset in `transform`, never in the
+   individual translate/rotate properties, which would add up with GSAP's inline transform. Sizes go through --hu (the
+   fit unit of v2-fit.css, 1px outside 1024-1439 px) because the fit generator reads a fixed list of files that does
+   not include this one. The old .iz-howto panel rules in v2-components.css are overridden here, not edited. */
+
+.iz-howto.iz-howto--journey {
+  --hu: var(--u, 1px);
+  /* Scene unit: a design pixel of the scenes, floored so the small UI text stays legible on 1024-1279 px screens. */
+  --hw-vu: max(0.8px, calc(var(--hu) * 1.06));
+  --hw-gap: calc(24 * var(--hu));
+  --hw-ease: cubic-bezier(0.625, 0.05, 0, 1);
+  --hw-pop: cubic-bezier(0.34, 1.56, 0.64, 1);
+  /* WhatsApp's own send green and read-tick blue, only inside the chat scenes. */
+  --hw-wa: #25d366;
+  --hw-read: #53bdeb;
+  display: block;
+  padding: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+}
+
+.iz-howto--journey .iz-howto__intro { flex-direction: row; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: var(--space-6); margin-bottom: calc(52 * var(--hu)); }
+.iz-howto__title { display: flex; flex-direction: column; gap: var(--space-4); }
+.iz-howto__title h2 { text-wrap: balance; }
+.iz-howto--journey .iz-howto__intro .iz-infopills { flex-direction: row; flex-wrap: wrap; justify-content: flex-start; margin: 0; }
+.iz-howto--journey .iz-howto__intro .iz-infopill { background: var(--c-kertas-terang); }
+
+/* Track: numeral, node and the road to the next step sit in one head row above each card. */
+.iz-journey { position: relative; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--hw-gap); }
+.iz-journey__step { position: relative; display: flex; flex-direction: column; gap: calc(20 * var(--hu)); min-width: 0; }
+.iz-journey__head { display: flex; align-items: center; gap: calc(14 * var(--hu)); padding-left: calc(6 * var(--hu)); }
+.iz-journey__n {
+  position: relative;
+  flex: none;
+  font-family: var(--font-display);
+  font-size: max(56px, calc(88 * var(--hu)));
+  font-weight: 800;
+  line-height: 0.8;
+  letter-spacing: -0.045em;
+  font-variation-settings: 'opsz' 96;
+  color: transparent;
+  -webkit-text-stroke: 1.5px var(--c-batu-muda);
+}
+/* Yellow copy of the numeral that fills up from the bottom while its step is active (clip-path only). The negative
+   insets reach past the box: the glyphs overflow it (tight line-height, negative letter-spacing), and a clip at the box
+   edge cut the last digit and showed the outline under it. */
+.iz-journey__nfill { position: absolute; inset: 0; color: var(--c-kuning); -webkit-text-stroke-color: var(--c-kuning-tua); clip-path: inset(125% -25% -25% -25%); pointer-events: none; }
+.iz-journey__node { position: relative; isolation: isolate; flex: none; display: grid; place-items: center; width: max(40px, calc(48 * var(--hu))); aspect-ratio: 1; border-radius: 50%; background: var(--c-kertas-terang); color: var(--c-tinta); box-shadow: 0 0 0 1px var(--c-garis), var(--shadow-lift); }
+.iz-journey__node svg { width: 44%; height: 44%; }
+/* Discs that grow under the icon: kuning while active, ink once passed. */
+.iz-journey__node::before,
+.iz-journey__node::after { content: ""; position: absolute; inset: 0; z-index: -1; border-radius: 50%; transform: scale(0); }
+.iz-journey__node::before { background: var(--c-kuning); box-shadow: 0 0 0 calc(7 * var(--hu)) rgba(245, 158, 11, 0.2); }
+.iz-journey__node::after { background: var(--c-tinta); }
+/* The road reaches into the gap and stops just short of the next numeral. --hw-draw draws it in, --hw-fill paints the
+   travelled part yellow; at rest both are 1, so the static section shows the whole route done. */
+.iz-journey__road { position: relative; flex: 1; height: 2px; margin-right: calc(12 * var(--hu) - var(--hw-gap)); border-radius: 2px; background: repeating-linear-gradient(90deg, var(--c-pasir) 0 6px, transparent 6px 12px); transform-origin: 0 50%; transform: scaleX(var(--hw-draw, 1)); }
+.iz-journey__fill { position: absolute; inset: 0; border-radius: inherit; background: var(--c-kuning); transform-origin: 0 50%; transform: scaleX(var(--hw-fill, 1)); }
+
+.iz-journey__card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  padding: calc(10 * var(--hu)) calc(10 * var(--hu)) calc(26 * var(--hu));
+  border-radius: calc(26 * var(--hu));
+  background: var(--c-kertas-terang);
+  box-shadow: 0 0 0 1px var(--c-garis), inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 24px 48px -28px rgba(22, 20, 15, 0.32);
+}
+/* The active outline and deeper shadow are painted once on a layer whose opacity changes. */
+.iz-journey__card::after { content: ""; position: absolute; inset: 0; border-radius: inherit; box-shadow: 0 0 0 1.5px var(--c-kuning), 0 32px 56px -26px rgba(22, 20, 15, 0.4); opacity: 0; pointer-events: none; }
+.iz-journey__stage {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  place-items: center;
+  height: max(152px, calc(189 * var(--hw-vu)));
+  overflow: hidden;
+  border-radius: calc(18 * var(--hu));
+  background-color: var(--c-pasir-muda);
+  background-image: radial-gradient(circle, rgba(26, 24, 19, 0.1) 1px, transparent 1.4px);
+  background-size: calc(14 * var(--hu)) calc(14 * var(--hu));
+}
+.iz-journey__stage::before { content: ""; position: absolute; inset: 0; z-index: -1; background: radial-gradient(70% 65% at 50% 45%, rgba(253, 252, 249, 0.85), rgba(253, 252, 249, 0) 72%); }
+.iz-journey__body { display: flex; flex-direction: column; gap: calc(8 * var(--hu)); padding: calc(22 * var(--hu)) calc(14 * var(--hu)) 0; }
+.iz-journey__body h3 { font-family: var(--font-display); font-size: max(18px, calc(22 * var(--hu))); line-height: 1.2; font-weight: 700; letter-spacing: -0.01em; text-wrap: balance; }
+.iz-journey__body p { font-size: max(13.4px, calc(16 * var(--hu))); line-height: 1.55; color: var(--c-batu); text-wrap: pretty; }
+
+/* Journey states (set by HowToStage only). The active step lifts with a yellow outline, a filled numeral and a kuning
+   node; passed steps keep an ink numeral and node; steps not active are dimmed: the scene strongly, the text only to
+   88%, which keeps the batu body text at about 5:1 on the card (at 80% axe measured 4.3:1, under AA). */
+.iz-journey__step--on .iz-journey__nfill { clip-path: inset(-25% -25% -25% -25%); }
+.iz-journey__step--on .iz-journey__node { color: var(--c-on-kuning); }
+.iz-journey__step--on .iz-journey__node::before { transform: scale(1); }
+.iz-journey__step--on .iz-journey__card { translate: 0 calc(-8 * var(--hu)); }
+.iz-journey__step--on .iz-journey__card::after { opacity: 1; }
+.iz-journey__step--done .iz-journey__n { -webkit-text-stroke-color: var(--c-tinta); }
+.iz-journey__step--done .iz-journey__node { color: var(--c-krem); }
+.iz-journey__step--done .iz-journey__node::after { transform: scale(1); }
+.iz-howto--live .iz-journey__step:not(.iz-journey__step--on) .iz-journey__stage { opacity: 0.5; }
+.iz-howto--live .iz-journey__step--done .iz-journey__stage { opacity: 0.74; }
+.iz-howto--live .iz-journey__step:not(.iz-journey__step--on) .iz-journey__body { opacity: 0.88; }
+/* At the last stop every step reads as reached: cards 1 and 2 take the look of card 3, undimmed, with a filled
+   numeral, a kuning node and the yellow outline (Sehan, 2026-10-29). Scrolling back clears it. */
+.iz-howto--live.iz-howto--complete .iz-journey__step .iz-journey__nfill { clip-path: inset(-25% -25% -25% -25%); }
+.iz-howto--live.iz-howto--complete .iz-journey__step .iz-journey__node { color: var(--c-on-kuning); }
+.iz-howto--live.iz-howto--complete .iz-journey__step .iz-journey__node::before { transform: scale(1); }
+.iz-howto--live.iz-howto--complete .iz-journey__step .iz-journey__node::after { transform: scale(0); }
+.iz-howto--live.iz-howto--complete .iz-journey__step .iz-journey__card { translate: 0 calc(-8 * var(--hu)); }
+.iz-howto--live.iz-howto--complete .iz-journey__step .iz-journey__card::after { opacity: 1; }
+.iz-howto--live.iz-howto--complete .iz-journey__step .iz-journey__stage,
+.iz-howto--live.iz-howto--complete .iz-journey__step .iz-journey__body { opacity: 1; }
+
+/* Step scenes. Decorative (aria-hidden), nothing focusable; every size goes through --v, the scene unit. Boxes keep a
+   transparent border so forced-colors mode draws their edges. */
+.iz-vig { --v: var(--hw-vu); position: relative; color: var(--c-tinta); font-family: var(--font-sans); font-size: calc(10 * var(--v)); line-height: 1.25; }
+.iz-vig svg { display: block; }
+.iz-vig-cursor { position: absolute; z-index: 3; width: calc(15 * var(--v)); height: calc(21 * var(--v)); opacity: 0; pointer-events: none; }
+.iz-vig-cursor svg { width: 100%; height: 100%; overflow: visible; fill: var(--c-tinta); stroke: var(--c-kertas-terang); stroke-width: 1.4px; stroke-linejoin: round; filter: drop-shadow(0 2px 2px rgba(22, 20, 15, 0.3)); }
+.iz-vig-cursor__ring { position: absolute; left: calc(-11 * var(--v)); top: calc(-11 * var(--v)); width: calc(24 * var(--v)); aspect-ratio: 1; border-radius: 50%; box-shadow: 0 0 0 calc(2 * var(--v)) var(--c-kuning); opacity: 0; }
+.iz-vig-avatar { flex: none; display: grid; place-items: center; width: calc(22 * var(--v)); aspect-ratio: 1; border-radius: 50%; background: var(--c-aspal); }
+.iz-vig-avatar img { width: 56%; height: auto; }
+.iz-vig-head { display: flex; align-items: center; gap: calc(7 * var(--v)); padding: calc(7 * var(--v)) calc(10 * var(--v)); border-bottom: 1px solid var(--c-garis); }
+.iz-vig-head__who { display: flex; flex-direction: column; line-height: 1.15; }
+.iz-vig-head__who b { font-size: calc(10.5 * var(--v)); font-weight: 700; }
+.iz-vig-head__who span { font-size: calc(8.4 * var(--v)); color: var(--c-batu); }
+
+/* 1 Pilih tas: the product card with its photo, the fit chip and the quantity stepper going from 1 to 2 (a pair). */
+.iz-vig-pick { display: grid; grid-template-columns: calc(92 * var(--v)) minmax(0, 1fr); align-items: center; gap: calc(14 * var(--v)); width: calc(282 * var(--v)); padding: calc(10 * var(--v)) calc(12 * var(--v)) calc(10 * var(--v)) calc(10 * var(--v)); border: 1px solid transparent; border-radius: calc(18 * var(--v)); background: var(--c-kertas-terang); box-shadow: 0 0 0 1px var(--c-garis), 0 18px 30px -18px rgba(22, 20, 15, 0.38); }
+.iz-vig-pick__photos { position: relative; aspect-ratio: 1; }
+.iz-vig-pick__photo { position: absolute; inset: 0; overflow: hidden; border-radius: calc(12 * var(--v)); background: #e9e6df; box-shadow: 0 0 0 1px rgba(22, 20, 15, 0.08); }
+.iz-vig-pick__photo img { display: block; width: 100%; height: 100%; object-fit: cover; }
+/* The second piece of the pair fans out behind the first. */
+.iz-vig-pick__photo--back { transform-origin: 20% 100%; transform: rotate(-10deg); box-shadow: 0 0 0 1px rgba(22, 20, 15, 0.08), 0 8px 16px -10px rgba(22, 20, 15, 0.55); }
+.iz-vig-pick__info { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; }
+.iz-vig-pick__name { max-width: 100%; overflow: hidden; font-size: calc(12.4 * var(--v)); font-weight: 700; letter-spacing: -0.005em; white-space: nowrap; text-overflow: ellipsis; }
+.iz-vig-pick__fit { display: inline-flex; align-items: center; gap: calc(4 * var(--v)); margin-top: calc(6 * var(--v)); padding: calc(3 * var(--v)) calc(8 * var(--v)) calc(3 * var(--v)) calc(6 * var(--v)); border: 1px solid transparent; border-radius: var(--radius-pill); background: var(--c-fit-bg); color: var(--c-fit); font-size: calc(9.2 * var(--v)); font-weight: 700; white-space: nowrap; }
+.iz-vig-pick__fit svg { width: calc(9 * var(--v)); height: calc(9 * var(--v)); }
+.iz-vig-pick__label { margin-top: calc(10 * var(--v)); font-size: calc(9 * var(--v)); font-weight: 600; color: var(--c-batu); }
+.iz-vig-pick__row { position: relative; display: flex; align-items: center; gap: calc(8 * var(--v)); margin-top: calc(4 * var(--v)); }
+.iz-vig-pick__qty { display: inline-flex; align-items: center; gap: calc(2 * var(--v)); padding: calc(3 * var(--v)); border: 1px solid transparent; border-radius: var(--radius-pill); background: var(--c-kertas-terang); box-shadow: inset 0 0 0 1px var(--c-garis); }
+.iz-vig-pick__btn { display: grid; place-items: center; width: calc(22 * var(--v)); aspect-ratio: 1; border-radius: 50%; background: var(--c-pasir-muda); color: var(--c-batu); }
+.iz-vig-pick__btn--plus { background: var(--c-tinta); color: var(--c-krem); }
+.iz-vig-pick__btn svg { width: 54%; height: 54%; fill: none; stroke: currentColor; stroke-width: 1.8px; stroke-linecap: round; }
+.iz-vig-pick__num { position: relative; display: block; width: calc(22 * var(--v)); height: calc(18 * var(--v)); overflow: hidden; font-size: calc(12 * var(--v)); font-weight: 800; line-height: calc(18 * var(--v)); text-align: center; font-variant-numeric: tabular-nums; }
+.iz-vig-pick__num > span { position: absolute; inset: 0; }
+.iz-vig-pick__num > span:first-child { transform: translateY(-110%); }
+.iz-vig-pick__pair { padding: calc(3 * var(--v)) calc(8 * var(--v)); border: 1px solid transparent; border-radius: var(--radius-pill); background: var(--c-kuning); color: var(--c-on-kuning); font-size: calc(9 * var(--v)); font-weight: 800; transform-origin: 0 50%; }
+/* The pointer's tip rests on the + button: 3 padding + two 22 buttons and gaps + half a button, in scene units. */
+.iz-vig-pick .iz-vig-cursor { left: calc(62 * var(--v)); top: 50%; }
+
+/* 2 Klik Pesan via WhatsApp: the order button, then WhatsApp opens with the text the product page fills in. */
+.iz-vig-send { width: calc(282 * var(--v)); height: calc(172 * var(--v)); }
+.iz-vig-send__wa { position: absolute; top: 0; right: 0; display: flex; flex-direction: column; width: calc(236 * var(--v)); overflow: hidden; border: 1px solid transparent; border-radius: calc(16 * var(--v)); background: var(--c-kertas-terang); box-shadow: 0 0 0 1px var(--c-garis), 0 18px 30px -18px rgba(22, 20, 15, 0.38); transform-origin: 12% 100%; }
+.iz-vig-send__compose { display: flex; align-items: flex-end; gap: calc(6 * var(--v)); padding: calc(8 * var(--v)); background: rgba(237, 232, 222, 0.6); }
+.iz-vig-send__field { flex: 1; min-width: 0; display: flex; flex-direction: column; padding: calc(7 * var(--v)) calc(9 * var(--v)); border: 1px solid transparent; border-radius: calc(12 * var(--v)); background: #fff; box-shadow: 0 1px 0 rgba(22, 20, 15, 0.08); font-size: calc(8.8 * var(--v)); line-height: 1.38; }
+.iz-vig-send__line { display: block; overflow: hidden; white-space: nowrap; }
+.iz-vig-send__line--gap { height: calc(4 * var(--v)); }
+.iz-vig-send__go { flex: none; display: grid; place-items: center; width: calc(26 * var(--v)); aspect-ratio: 1; border-radius: 50%; background: var(--hw-wa); color: #fff; }
+.iz-vig-send__go svg { width: 50%; height: 50%; fill: currentColor; }
+.iz-vig-send__cta { position: absolute; left: 0; bottom: 0; transform: rotate(-3deg); }
+/* The product page's line above its order button; it shows only before the press. */
+.iz-vig-send__note { position: absolute; left: 50%; bottom: calc(100% + 7 * var(--v)); font-size: calc(8.6 * var(--v)); font-weight: 500; color: var(--c-batu); white-space: nowrap; opacity: 0; transform: translateX(-50%); }
+.iz-vig-send__btn { display: inline-flex; align-items: center; gap: calc(7 * var(--v)); height: calc(32 * var(--v)); padding: 0 calc(13 * var(--v)) 0 calc(4 * var(--v)); border: 1px solid transparent; border-radius: var(--radius-pill); background: var(--c-kuning); color: var(--c-on-kuning); font-size: calc(10.4 * var(--v)); font-weight: 700; white-space: nowrap; box-shadow: 0 10px 18px -10px rgba(22, 20, 15, 0.5); }
+.iz-vig-send__icon { display: grid; place-items: center; width: calc(24 * var(--v)); aspect-ratio: 1; border-radius: 50%; background: var(--c-on-kuning); color: var(--c-krem); }
+.iz-vig-send__icon svg { width: 56%; height: 56%; }
+.iz-vig-send .iz-vig-cursor { left: 72%; top: 58%; }
+
+/* 3 Admin membalas: the sent order turns read, the admin types, and the reply confirms shipping cost and payment. */
+.iz-vig-reply { display: flex; flex-direction: column; width: calc(282 * var(--v)); overflow: hidden; border: 1px solid transparent; border-radius: calc(16 * var(--v)); background: var(--c-kertas-terang); box-shadow: 0 0 0 1px var(--c-garis), 0 18px 30px -18px rgba(22, 20, 15, 0.38); }
+.iz-vig-reply__chat { position: relative; display: flex; flex-direction: column; gap: calc(6 * var(--v)); padding: calc(8 * var(--v)) calc(10 * var(--v)) calc(10 * var(--v)); background: rgba(237, 232, 222, 0.55); }
+.iz-vig-reply__out { align-self: flex-end; display: flex; align-items: flex-end; gap: calc(6 * var(--v)); max-width: 80%; padding: calc(6 * var(--v)) calc(7 * var(--v)) calc(5 * var(--v)) calc(9 * var(--v)); border: 1px solid transparent; border-radius: calc(12 * var(--v)) calc(12 * var(--v)) calc(3 * var(--v)) calc(12 * var(--v)); background: var(--c-fit-bg); font-size: calc(8.6 * var(--v)); line-height: 1.32; }
+.iz-vig-reply__lines { display: flex; flex-direction: column; min-width: 0; -webkit-mask-image: linear-gradient(#000 62%, transparent); mask-image: linear-gradient(#000 62%, transparent); }
+.iz-vig-reply__line { display: block; overflow: hidden; white-space: nowrap; }
+.iz-vig-reply__line--gap { height: calc(3 * var(--v)); }
+.iz-vig-ticks { position: relative; flex: none; width: calc(14 * var(--v)); height: calc(9 * var(--v)); color: #8b9a88; }
+.iz-vig-ticks svg { position: absolute; inset: 0; width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 1.7px; stroke-linecap: round; stroke-linejoin: round; }
+.iz-vig-ticks__read { color: var(--hw-read); }
+.iz-vig-reply__typing { position: absolute; left: calc(10 * var(--v)); bottom: calc(10 * var(--v)); display: flex; gap: calc(3 * var(--v)); padding: calc(8 * var(--v)) calc(10 * var(--v)); border-radius: calc(12 * var(--v)) calc(12 * var(--v)) calc(12 * var(--v)) calc(3 * var(--v)); background: #fff; opacity: 0; transform-origin: 0 100%; }
+.iz-vig-reply__typing i { display: block; width: calc(5 * var(--v)); aspect-ratio: 1; border-radius: 50%; background: var(--c-batu-muda); }
+.iz-vig-reply__in { align-self: flex-start; max-width: 90%; padding: calc(7 * var(--v)) calc(9 * var(--v)) calc(8 * var(--v)); border: 1px solid transparent; border-radius: calc(12 * var(--v)) calc(12 * var(--v)) calc(12 * var(--v)) calc(3 * var(--v)); background: #fff; box-shadow: 0 1px 0 rgba(22, 20, 15, 0.08); transform-origin: 0 100%; }
+.iz-vig-reply__text { display: block; font-size: calc(8.9 * var(--v)); line-height: 1.38; }
+.iz-vig-reply__chips { display: flex; gap: calc(5 * var(--v)); margin-top: calc(6 * var(--v)); }
+.iz-vig-reply__chip { display: inline-flex; align-items: center; gap: calc(4 * var(--v)); padding: calc(3 * var(--v)) calc(7 * var(--v)) calc(3 * var(--v)) calc(5 * var(--v)); border: 1px solid transparent; border-radius: var(--radius-pill); background: var(--c-fit-bg); color: var(--c-fit); font-size: calc(8.6 * var(--v)); font-weight: 700; white-space: nowrap; }
+.iz-vig-reply__chip svg { width: calc(9 * var(--v)); height: calc(9 * var(--v)); }
+
+/* Motion: only the state changes ease; the scenes themselves are played by GSAP. */
+@media (prefers-reduced-motion: no-preference) {
+  .iz-journey__nfill { transition: clip-path 0.7s var(--hw-ease); }
+  .iz-journey__node::before,
+  .iz-journey__node::after { transition: transform 0.5s var(--hw-pop); }
+  .iz-journey__card { transition: translate 0.6s var(--hw-ease); }
+  .iz-journey__card::after { transition: opacity 0.45s ease; }
+  .iz-howto--live .iz-journey__stage,
+  .iz-howto--live .iz-journey__body { transition: opacity 0.5s ease; }
+}
+
+/* Forced colours drop shadows and backgrounds: the active card keeps a system outline, the boxes their borders. */
+@media (forced-colors: active) {
+  .iz-journey__card { outline: 1px solid CanvasText; }
+  .iz-journey__step--on .iz-journey__card,
+  .iz-howto--complete .iz-journey__card { outline: 2px solid Highlight; outline-offset: 2px; }
+  .iz-vig-pick,
+  .iz-vig-send__wa,
+  .iz-vig-send__btn,
+  .iz-vig-reply,
+  .iz-vig-reply__out,
+  .iz-vig-reply__in,
+  .iz-vig-reply__chip,
+  .iz-vig-pick__fit,
+  .iz-vig-pick__pair { border-color: CanvasText; }
+}
+
+/* From 1440 px the cards keep widening (content column up to 1440 px), so the scenes grow with them, up to a cap. */
+@media (min-width: 1440px) {
+  .iz-howto.iz-howto--journey { --hw-vu: clamp(1.06px, calc(100vw / 1358), 1.32px); }
+}
+
+/* Below 1024 px the route turns vertical: numeral and node in a narrow rail, the road runs down to the next step. */
+@media (max-width: 1023.98px) {
+  .iz-howto.iz-howto--journey { --hw-vu: 0.95px; }
+  .iz-journey { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .iz-journey__step { display: grid; grid-template-columns: 56px minmax(0, 1fr); column-gap: var(--space-4); padding-bottom: var(--space-5); }
+  .iz-journey__step:last-child { padding-bottom: 0; }
+  .iz-journey__head { flex-direction: column; align-self: stretch; gap: var(--space-3); padding: var(--space-2) 0 0; }
+  .iz-journey__n { font-size: 40px; }
+  .iz-journey__road { flex: 1; width: 2px; height: auto; min-height: 24px; margin: 0 0 calc(-1 * var(--space-5) + 6px); background: repeating-linear-gradient(180deg, var(--c-pasir) 0 6px, transparent 6px 12px); transform-origin: 50% 0; transform: scaleY(var(--hw-draw, 1)); }
+  .iz-journey__fill { transform-origin: 50% 0; transform: scaleY(var(--hw-fill, 1)); }
+  .iz-journey__step--on .iz-journey__card,
+  .iz-howto--live.iz-howto--complete .iz-journey__step .iz-journey__card { translate: 0 -4px; }
+}
+@media (min-width: 768px) and (max-width: 1023.98px) {
+  .iz-journey__card { display: grid; grid-template-columns: minmax(0, 300px) minmax(0, 1fr); align-items: center; padding-bottom: 10px; }
+  .iz-journey__stage { height: 184px; }
+  .iz-journey__body { padding: var(--space-2) var(--space-5) var(--space-2) var(--space-6); }
+}
+@media (max-width: 767.98px) {
+  .iz-howto.iz-howto--journey { --hw-vu: 0.86px; }
+  .iz-howto--journey .iz-howto__intro { margin-bottom: var(--space-8); }
+  .iz-journey__step { grid-template-columns: 44px minmax(0, 1fr); column-gap: var(--space-3); }
+  .iz-journey__n { font-size: 34px; }
+  .iz-journey__node { width: 40px; }
+  .iz-journey__card { padding: 8px 8px var(--space-5); border-radius: 22px; }
+  .iz-journey__stage { height: 166px; border-radius: 16px; }
+  .iz-journey__body { padding: var(--space-4) var(--space-3) 0; }
+  .iz-journey__body h3 { font-size: 19px; }
+  .iz-journey__body p { font-size: 15px; }
+}
+
+/* Phosphor duotone icons: the secondary layer turns kuning on the light node and back to ink on the active (kuning) one. */
+.iz-journey__node .iz-duo { color: var(--c-kuning); opacity: 1; }
+.iz-journey__step--on .iz-journey__node .iz-duo { color: inherit; opacity: 0.45; }
+.iz-journey__step--done .iz-journey__node .iz-duo { color: var(--c-kuning); opacity: 1; }
+.iz-howto--live.iz-howto--complete .iz-journey__node .iz-duo { color: inherit; opacity: 0.45; }

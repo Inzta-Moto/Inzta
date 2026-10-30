@@ -233,7 +233,9 @@ function seed() {
   const validArticle = { title: 'Tas samping XSR 155', slug: 'tas-samping-xsr-155', excerpt: 'Ringkas', content: 'Isi' };
   const simpleProduct = { slug: 'tas-uji', name: 'Tas uji', productType: 'simple', price: 100000, stock: 5, isActive: true };
   const asAdmin = () => { jar.clear(); jar.set('admin_session', 'cookie-admin'); };
-  const articlePaths = (slug) => ['/', '/blog', `/blog/${slug}`, '/sitemap.xml', '/blog/[slug]'];  // F-013 C4 (K-10): every article page
+  const articlePaths = (slug) => ['/', '/blog', `/blog/${slug}`, '/sitemap.xml', '/blog/[slug]', '/tas-motor/[kategori]', '/tentang'];  // F-013 C4 (K-10): every article page; F-016: category pages and /tentang
+  // F-016 design.md §2: every v2 page shows navbar starting prices, so product and stock writes purge them all.
+  const productPaths = ['/', '/sitemap.xml', '/blog/[slug]', '/produk', '/produk/[slug]', '/tas-motor/[kategori]', '/blog', '/tentang'];
 
   // F-012: creating or editing a draft changes no public page, so only public changes revalidate.
   await check('revalidate: editing a published (legacy) article revalidates its paths', async () => {
@@ -254,18 +256,18 @@ function seed() {
   await check('revalidate: product create, edit, delete revalidate home and sitemap; updatedAt written', async () => {
     asAdmin();
     revalidated.length = 0; assert.strictEqual((await products.POST(req(simpleProduct))).status, 201);
-    assert.deepStrictEqual(revalidated, ['/', '/sitemap.xml', '/blog/[slug]']);
+    assert.deepStrictEqual(revalidated, productPaths);
     assert.ok(content.toMillis(docs.get('products/tas-uji').updatedAt));
     revalidated.length = 0; assert.strictEqual((await product.PUT(req(simpleProduct), { params: { slug: 'tas-uji' } })).status, 200);
-    assert.deepStrictEqual(revalidated, ['/', '/sitemap.xml', '/blog/[slug]']);
+    assert.deepStrictEqual(revalidated, productPaths);
     revalidated.length = 0; assert.strictEqual((await product.DELETE(req({}), { params: { slug: 'tas-uji' } })).status, 200);
-    assert.deepStrictEqual(revalidated, ['/', '/sitemap.xml', '/blog/[slug]']);
+    assert.deepStrictEqual(revalidated, productPaths);
   });
   await check('revalidate: order status change revalidates home and sitemap (stock); failed change does not', async () => {
     asAdmin();
     docs.set('orders/o-1', { status: 'pending', items: [] });
     revalidated.length = 0; assert.strictEqual((await order.PATCH(req({ status: 'cancelled' }), { params: { orderId: 'o-1' } })).status, 200);
-    assert.deepStrictEqual(revalidated, ['/', '/sitemap.xml', '/blog/[slug]']);
+    assert.deepStrictEqual(revalidated, productPaths);
     assert.strictEqual(docs.get('orders/o-1').status, 'cancelled');
     revalidated.length = 0;
     assert.strictEqual((await quiet(() => order.PATCH(req({ status: 'cancelled' }), { params: { orderId: 'tidak-ada' } }))).status, 500);

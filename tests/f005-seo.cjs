@@ -299,7 +299,7 @@ const CONTROL = /[<>&\u2028\u2029]/;
   await check('Phase 2 wiring: metaTitle absolute, product 404, affiliate noindex, layout template', () => {
     assert.ok(/absolute:\s*metaTitle/.test(read(path.join(ROOT, 'app/blog/[slug]/page.tsx'))));
     const produk = read(path.join(ROOT, 'app/produk/[slug]/page.tsx'));
-    assert.ok(/if \(!data\) notFound\(\)/.test(produk) && /if \(missing\) notFound\(\)/.test(produk) && fs.existsSync(path.join(ROOT, 'app/produk/not-found.tsx')) && /if \(!data\) notFound\(\)/.test(read(path.join(ROOT, 'app/produk/[slug]/layout.tsx'))));
+    assert.ok(/if \(!data\) notFound\(\)/.test(produk) && /if \(!product\) notFound\(\)/.test(produk) /* F-016 page: the read is not caught, null -> notFound() */ && fs.existsSync(path.join(ROOT, 'app/produk/not-found.tsx')) && /if \(!data\) notFound\(\)/.test(read(path.join(ROOT, 'app/produk/[slug]/layout.tsx'))));
     assert.ok(/robots:\s*\{\s*index:\s*false,\s*follow:\s*true\s*\}/.test(read(path.join(ROOT, 'app/affiliate/layout.tsx'))));
     assert.ok(/template:\s*`%s \| \$\{SITE_NAME\}`/.test(read(path.join(ROOT, 'app/layout.tsx'))));
   });
@@ -313,7 +313,7 @@ const CONTROL = /[<>&\u2028\u2029]/;
     docs.set('products/tas-aktif', { name: 'Tas', isActive: true, price: 1, stock: 1 });
     const sitemap = require(path.join(ROOT, 'app/sitemap.ts')).default;
     const urls = (await sitemap()).map(e => e.url);
-    const expected = [seo.canonicalUrl(), seo.canonicalUrl('produk'), seo.canonicalUrl('blog'), seo.canonicalUrl('produk', 'tas-aktif'), seo.canonicalUrl('blog', 'gasber-16')];
+    const expected = [seo.canonicalUrl(), seo.canonicalUrl('produk'), seo.canonicalUrl('blog'), seo.canonicalUrl('tentang') /* F-016 S8.7.3 */, seo.canonicalUrl('produk', 'tas-aktif'), seo.canonicalUrl('blog', 'gasber-16')];
     const strip = (u) => u.replace(/\/$/, '');
     assert.deepStrictEqual(urls.map(strip), expected.map(strip));
   });

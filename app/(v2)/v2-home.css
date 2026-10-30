@@ -1,0 +1,140 @@
+/* F-016 S1 Beranda: states and fixes the canvas does not draw. Imported only by components/v2/HomeV2.tsx; every
+   selector is an iz- class or inside :where(.iz-page) (S0.1.1). */
+
+/* SmartImage in the canvas photo slots: the ported rules place a direct <img>, so the wrapper takes that place and
+   the <img> inside fills it (S0.12.2, S0.12.5). */
+.iz-why__photo > .iz-smartimg, .iz-gfeature > .iz-smartimg { position: absolute; inset: 0; z-index: -2; }
+.iz-band > .iz-smartimg, .iz-cat > .iz-smartimg, .iz-photo > .iz-smartimg { position: absolute; inset: 0; }
+.iz-cat > .iz-smartimg > img { transition: transform .4s ease; }
+.iz-cat:hover > .iz-smartimg > img { transform: scale(1.04); }
+.iz-gfeature > .iz-smartimg > img, .iz-grow .iz-photo > .iz-smartimg > img { transition: transform 500ms cubic-bezier(0.23, 1, 0.32, 1); }
+.iz-photo--empty .iz-placeholder { color: inherit; }
+
+/* Garasi: choice ring and background in 150 ms (S1.2.4, MOTION.md §1); photo zoom on fine pointers only (§2). */
+.iz-gtile { transition: background-color .15s ease, box-shadow .15s ease; }
+.iz-gtile img { transition: transform .15s ease; }
+
+/* The Garasi button keeps one width for every category label, so a choice after mount moves nothing (S1.2.3). */
+@media (min-width: 768px) {
+  .iz-garasi__cta { min-width: 20em; }
+}
+
+/* Article titles clamp at three lines and keep the full text in the DOM (S1.8.5). The underline lives on an inline
+   span so it follows every line of a wrapped title. */
+.iz-gfeature h3, .iz-grow h3 { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; overflow: hidden; }
+.iz-uline { background-image: linear-gradient(currentColor, currentColor); background-repeat: no-repeat; background-position: 0 100%; background-size: 0% 2px; transition: background-size 200ms ease; }
+
+/* Hover effects only on fine pointers and only without reduced motion (S1.2.4, S1.8.5). */
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .iz-gtile:hover img { transform: scale(1.03); }
+  .iz-gfeature:hover > .iz-smartimg > img, .iz-grow:hover .iz-photo > .iz-smartimg > img { transform: scale(1.03); }
+  .iz-gfeature:hover .iz-uline, .iz-grow:hover .iz-uline, .iz-gfeature:focus-visible .iz-uline, .iz-grow:focus-visible .iz-uline { background-size: 100% 2px; }
+}
+
+/* Scroller arrows (S1.3.5): aria-disabled at either end, hidden while the cards fit. */
+.iz-arrows[hidden] { display: none; }
+.iz-iconbtn[aria-disabled="true"] { opacity: .4; cursor: default; }
+.iz-iconbtn[aria-disabled="true"]:hover { background: var(--c-pasir-muda); }
+
+/* Without JavaScript mouse users get a thin scrollbar to reach every card and photo (S1.3.6, S1.7.4). SiteNav sets
+   .js-nav on mount, which marks "JavaScript has run". */
+@media (hover: hover) and (pointer: fine) {
+  html:not(.js-nav) .iz-scroller, html:not(.js-nav) .iz-film { scrollbar-width: thin; }
+}
+
+/* Reduced motion: the ported tile zoom is switched off as well; at 1024 px and wider the filmstrip becomes a static
+   wrapped grid with no horizontal scroll (S1.7.4, MOTION.md §6). */
+@media (prefers-reduced-motion: reduce) {
+  .iz-cat:hover > .iz-smartimg > img, .iz-cat:hover > img { transform: none; }
+}
+@media (prefers-reduced-motion: reduce) and (min-width: 1024px) {
+  .iz-film { flex-wrap: wrap; justify-content: center; overflow-x: visible; scroll-snap-type: none; }
+}
+
+/* Hero photo that failed to load: hidden, so the dark section background is the fallback without a broken-image icon
+   (S1.1.4). */
+img.iz-hero__img[data-failed="true"] { visibility: hidden; }
+
+/* Phones and tablets crop the 4:3 Beranda photo to a tall strip. The rider sits at about 74% of its width and the bike
+   spans 44-87%, so the strip is pulled right to keep the whole rider, the INZTAMOTO tank and the headlight in frame
+   (Sehan, 2026-10-29: at 62% the rider was cut at the right edge). Other heroes keep the shared 62% 30%. */
+@media (max-width: 1023.98px) {
+  .iz-hero__img.iz-hero__img--home { object-position: 77% 40%; }
+}
+
+/* Tourmax band (Sehan, 2026-10-29): copy left, the photo as a full-height panel bleeding to the band's right edge
+   and fading into the asphalt, numbered spec rows and a floating size callout, so the band has no empty areas. The
+   section is the grid, so the canvas classes stay within two levels of the block (check-f016-structure). */
+.iz-page .iz-band--split { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr); align-items: stretch; min-height: clamp(520px, 76svh, 680px); padding: 0 0 0 max(var(--space-6), calc((100% - var(--size-content)) / 2 + var(--space-6))); isolation: isolate; }
+.iz-band--split::after { content: none; }
+.iz-band__num { position: absolute; left: 34%; top: -10%; z-index: -1; font-family: var(--font-display); font-weight: 800; font-size: clamp(220px, 30vw, 460px); line-height: 0.8; letter-spacing: -0.05em; color: transparent; -webkit-text-stroke: 2px rgba(243, 239, 230, 0.12); pointer-events: none; user-select: none; }
+.iz-band--split .iz-band__body { align-self: center; max-width: none; margin: 0; padding: var(--space-18) var(--space-12) var(--space-18) 0; gap: var(--space-5); }
+.iz-band__price { font-size: 32px; }
+.iz-specs { display: grid; gap: 0; margin: var(--space-2) 0; }
+.iz-band--split .iz-note.iz-spec { --line: 1; position: relative; display: grid; grid-template-columns: 44px minmax(0, 1fr); align-items: center; min-height: 0; padding: var(--space-4) 0; border: 0; border-radius: 0; background: none; font-size: 18px; font-weight: 500; }
+.iz-spec::before, .iz-spec:last-child::after { content: ""; position: absolute; left: 0; right: 0; height: 1px; background: var(--c-line-on-dark); transform: scaleX(var(--line)); transform-origin: left center; }
+.iz-spec::before { top: 0; }
+.iz-spec:last-child::after { bottom: 0; }
+.iz-spec__n { font-family: var(--font-display); font-size: 15px; font-weight: 800; letter-spacing: 0.04em; color: var(--c-kuning); }
+.iz-band__media { position: relative; min-height: 320px; }
+.iz-band__photo { position: absolute; inset: 0; overflow: hidden; background: var(--c-arang-naik); }
+.iz-band__photo > .iz-smartimg { position: absolute; inset: 0; }
+.iz-band__photo img { object-fit: cover; object-position: 50% 62%; }
+.iz-band__photo::after { content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none; background: linear-gradient(90deg, var(--c-aspal) 0%, rgba(22, 20, 15, 0) 32%), linear-gradient(0deg, rgba(22, 20, 15, 0.55) 0%, rgba(22, 20, 15, 0) 40%); }
+.iz-band__callout { position: absolute; z-index: 2; left: var(--space-8); bottom: var(--space-8); display: grid; gap: 4px; margin: 0; padding: var(--space-4) var(--space-5); border-radius: 20px; border: 1px solid var(--c-line-on-dark); background: rgba(22, 20, 15, 0.72); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); color: var(--c-krem); }
+.iz-band__callout b { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--c-kuning); }
+.iz-band__callout > span { font-family: var(--font-display); font-size: 22px; font-weight: 800; letter-spacing: -0.01em; }
+@media (max-width: 1023px) {
+  .iz-page .iz-band--split { grid-template-columns: minmax(0, 1fr); min-height: 0; padding: 0; }
+  .iz-band__media { order: -1; min-height: 0; aspect-ratio: 4 / 3; }
+  .iz-band__photo::after { background: linear-gradient(0deg, var(--c-aspal) 0%, rgba(22, 20, 15, 0) 45%); }
+  .iz-band--split .iz-band__body { padding: var(--space-6) var(--space-5) var(--space-10); }
+  .iz-band__callout { left: var(--space-5); bottom: var(--space-5); }
+  .iz-band__num { left: auto; right: -6%; top: 32%; }
+}
+@media (max-width: 767px) {
+  .iz-band__media { aspect-ratio: 1 / 1; }
+  .iz-band__price { font-size: 26px; }
+  .iz-band--split .iz-note.iz-spec { font-size: 16px; padding: var(--space-3) 0; }
+  .iz-band__callout > span { font-size: 18px; }
+}
+
+/* Reviews: two wall columns. Desktop with motion: the columns hang beside the featured card and loop as slow
+   opposite marquees that never pause, even while the page scrolls or the pointer rests on them (Sehan, 2026-10-29); the wall adds no height of its own, so the row is exactly as tall as the featured card. */
+.iz-reviews { align-items: start; }
+.iz-rfeature__foot { display: flex; flex-direction: column; gap: var(--space-4); margin-top: auto; }
+.iz-rfeature .iz-rfeature__foot .iz-rmeta { margin-top: 0; }
+.iz-reviews__wall { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-4); columns: auto; }
+.iz-rcol__track { display: flex; flex-direction: column; gap: var(--space-4); }
+.iz-rcol__track > .iz-rcard { margin: 0; }
+.iz-rcard[data-dup] { display: none; }
+@media (min-width: 1024px) {
+  html.iz-motion .iz-reviews { align-items: stretch; }
+  html.iz-motion .iz-rfeature { min-height: 580px; }
+  html.iz-motion .iz-reviews__wall { position: relative; display: block; }
+  /* Fades as two static overlays: a mask over the moving columns made the browser repaint the wall every frame. */
+  html.iz-motion .iz-reviews__wall::before, html.iz-motion .iz-reviews__wall::after { content: ""; position: absolute; left: 0; right: 0; z-index: 1; height: 12%; pointer-events: none; }
+  html.iz-motion .iz-reviews__wall::before { top: 0; background: linear-gradient(to bottom, var(--c-kertas), rgba(246, 244, 239, 0)); }
+  html.iz-motion .iz-reviews__wall::after { bottom: 0; background: linear-gradient(to top, var(--c-kertas), rgba(246, 244, 239, 0)); }
+  html.iz-motion .iz-rcol { position: absolute; top: 0; bottom: 0; width: calc(50% - var(--space-2)); overflow: hidden; }
+  html.iz-motion .iz-rcol--down { right: 0; }
+  html.iz-motion .iz-rcard[data-dup] { display: flex; }
+  html.iz-motion .iz-rcol__track { animation: iz-marquee-up 30s linear infinite; will-change: transform; }
+  html.iz-motion .iz-rcol--down .iz-rcol__track { animation-name: iz-marquee-down; animation-duration: 36s; }
+}
+@keyframes iz-marquee-up { from { transform: translateY(0); } to { transform: translateY(calc(-50% - var(--space-4) / 2)); } }
+@keyframes iz-marquee-down { from { transform: translateY(calc(-50% - var(--space-4) / 2)); } to { transform: translateY(0); } }
+@media (max-width: 767px) {
+  /* Each card keeps its own height in the swipe row; stretched to the longest review, the short ones ended in an empty
+     block (Sehan, 2026-10-29: no blank space on phones; the desktop wall stays as it is). */
+  .iz-reviews__wall { display: flex; align-items: flex-start; }
+  .iz-rcol, .iz-rcol__track { display: contents; }
+}
+
+/* Filmstrip progress, shown only while the strip is pinned (desktop with motion). */
+.iz-film__progress { display: none; }
+html.iz-motion .iz-film-scene.is-pinned .iz-film__progress { display: block; width: min(320px, 40vw); height: 3px; margin: var(--space-8) auto 0; border-radius: var(--radius-pill); background: var(--c-garis); overflow: hidden; }
+html.iz-motion .iz-film-scene.is-pinned .iz-film__progress > span { display: block; height: 100%; background: var(--c-kuning); transform: scaleX(0); transform-origin: left center; }
+html.iz-motion .iz-film-scene.is-pinned .iz-film > .iz-photo { height: clamp(320px, 52vh, 480px); }
+html.iz-motion .iz-film-scene.is-pinned .iz-film > .iz-photo--wide { width: auto; aspect-ratio: 13 / 9; }
+html.iz-motion .iz-film-scene.is-pinned .iz-film > .iz-photo--tall { width: auto; aspect-ratio: 7 / 9; }

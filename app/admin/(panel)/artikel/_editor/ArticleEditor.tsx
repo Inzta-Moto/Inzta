@@ -23,7 +23,9 @@ import {
   statusOf,
   type BodyImage,
 } from '@/lib/article-format';
-import type { ArticleEmbeds, ArticleStatus, ChecklistItem, ContentFormat, RenderBlock, RenderWarning } from '@/types';
+import type { ArticleEmbeds, ArticleStatus, ArticleTopic, ChecklistItem, ContentFormat, MotorCategory, RenderBlock, RenderWarning } from '@/types';
+import { articleCategories, normalizeTopik } from '@/lib/v2/article-v2';
+import TopicField from './TopicField';
 import ArticleBody from '@/components/ArticleBody';
 import type { Editor } from '@tiptap/react';
 import MarkdownToolbar from './MarkdownToolbar';
@@ -55,6 +57,9 @@ interface Draft {
   metaTitle: string;
   metaDescription: string;
   images: string[];
+  // F-016 D3, S6.8.5: '' = no topic; categories only for 'per-motor'.
+  topik: ArticleTopic | '';
+  kategoriMotor: MotorCategory[];
 }
 
 // GET/PUT/publish responses: stored fields with dates as epoch milliseconds (lib/admin-articles.ts).
@@ -81,7 +86,7 @@ type Message = { kind: 'error' | 'ok'; text: string; checks?: ChecklistItem[] };
 const EMPTY: Draft = {
   title: '', slug: '', excerpt: '', content: '', contentFormat: 'markdown',
   coverImage: '', coverAlt: '', coverCaption: '', showCover: true, author: DEFAULT_AUTHOR,
-  metaTitle: '', metaDescription: '', images: [],
+  metaTitle: '', metaDescription: '', images: [], topik: '', kategoriMotor: [],
 };
 
 function toDraft(a: Partial<ServerArticle>): Draft {
@@ -101,6 +106,9 @@ function toDraft(a: Partial<ServerArticle>): Draft {
     metaTitle: a.metaTitle || '',
     metaDescription: a.metaDescription || '',
     images: images.filter((u): u is string => typeof u === 'string'),
+    // F-016 S6.8.4/S6.8.5: documents and local copies without these fields get '' and [].
+    topik: normalizeTopik(a.topik) ?? '',
+    kategoriMotor: articleCategories(a),
   };
 }
 
@@ -854,6 +862,8 @@ export default function ArticleEditor({ slug: routeSlug }: { slug?: string }) {
               <p className="article-editor-help">Tampil di kartu blog, dan jadi deskripsi Google bila Deskripsi SEO kosong.</p>
             </div>
           </section>
+
+          <TopicField topik={draft.topik} kategoriMotor={draft.kategoriMotor} onChange={(topik, kategoriMotor) => setDraft(d => ({ ...d, topik, kategoriMotor }))} />
 
           <section className="article-panel" aria-labelledby="panel-seo">
             <h2 className="article-panel-title" id="panel-seo">SEO</h2>

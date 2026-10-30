@@ -3,6 +3,7 @@ import { getAdminDb, hasAdminCredentials } from '@/lib/firebaseAdmin';
 import { normalizeProduct } from '@/lib/product-utils';
 import { publicDate, statusOf, toMillis, toPublicArticle } from '@/lib/article-format';
 import { Article, ArticleCard, Product, PublicArticle } from '@/types';
+import { fixtureArticle, fixtureArticles, fixtureProducts } from '@/lib/v2/dev-fixture';
 
 export { toMillis, toPublicArticle };
 
@@ -45,6 +46,9 @@ const byNewest =(a: { createdAt: number | null }, b: { createdAt: number | null 
   (b.createdAt ?? 0) - (a.createdAt ?? 0);
 
 export async function getActiveProducts(): Promise<Product[]> {
+  // F-016 A5: local fixture data in development only (lib/v2/dev-fixture.ts).
+  const fixture = fixtureProducts();
+  if (fixture) return fixture;
   return readPublic('products', async () => {
     const snap = await getAdminDb().collection('products').where('isActive', '==', true).get();
     return snap.docs
@@ -64,6 +68,8 @@ export async function getActiveProducts(): Promise<Product[]> {
 // Drafts are filtered in memory after the same collection read: legacy documents have no status field,
 // and a Firestore where('status', '==', 'published') would skip them.
 export async function getArticles(): Promise<PublicArticle[]> {
+  const fixture = fixtureArticles();
+  if (fixture) return fixture;
   return readPublic('articles', async () => {
     const snap = await getAdminDb().collection('articles').get();
     return snap.docs
@@ -76,6 +82,8 @@ export async function getArticles(): Promise<PublicArticle[]> {
 // cache() lets generateMetadata and the page share one read per render. A draft is null, so
 // /blog/{slug} is a 404 for everyone; admins preview drafts on /admin/pratinjau/{slug}.
 export const getArticle = cache(async (slug: string): Promise<PublicArticle | null> => {
+  const fixture = fixtureArticle(slug);
+  if (fixture !== undefined) return fixture;
   return readPublic('article', async () => {
     const doc = await getAdminDb().collection('articles').doc(slug).get();
     if (!doc.exists) return null;
