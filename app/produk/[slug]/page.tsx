@@ -4,10 +4,10 @@ import { getActiveProducts } from '@/lib/public-content';
 import { getProduct } from '@/lib/v2/product-read';
 import V2Layout from '@/components/v2/V2Layout';
 import ProductDetail from '@/components/v2/product/ProductDetail';
-import { productJsonLd, selectRelated } from '@/components/v2/product/product-view';
+import { selectRelated } from '@/components/v2/product/product-view';
 import JsonLd from '@/components/JsonLd';
 import TrackView from '@/components/v2/product/TrackView';
-import { canonicalUrl } from '@/lib/seo';
+import { canonicalUrl, breadcrumbJsonLd, jsonLdGraph, openGraph, PAGE_TEXT, plainTextSummary, productJsonLd } from '@/lib/seo';
 import { isValidSlug } from '@/lib/slug';
 import '@/app/(v2)/v2-product.css';
 
@@ -19,29 +19,26 @@ export function generateStaticParams() {
   return [];
 }
 
-// Kept from the previous page (S3.10.1): same title, description, Open Graph and Twitter fields. The product read
-// is shared with the page through cache().
+// F-005 phase 2 metadata (title through the layout template, plain-text description, og:url = canonical). The product
+// read is shared with the layout and the page through cache().
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const slug = params.slug;
-  if (!isValidSlug(slug)) return { title: 'Produk — INZTA MOTO', robots: { index: false } };
+  if (!isValidSlug(slug)) notFound();
 
-  const defaultMeta: Metadata = {
-    title: 'Produk — INZTA MOTO',
-    description: 'Tas motor premium INZTA',
-    openGraph: {
-      url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://inzta.id'}/produk/${slug}`,
-      title: 'INZTA MOTO',
-      description: 'Tas motor premium INZTA',
-      images: ['/logo.png'],
-    },
-  };
+  // A failed read: no canonical and no og:url.
+  const defaultMeta: Metadata = { title: 'Produk', description: PAGE_TEXT.produk.description };
+
+  let data: any;
+  try {
+    data = await getProduct(slug);
+  } catch (e: any) {
+    console.error('❌ [Meta Error] Gagal total:', e.message);
+    return defaultMeta;
+  }
+  // F-005 6.6: layout.tsx already answered 404 for an unknown slug; this keeps the metadata honest.
+  if (!data) notFound();
 
   try {
-    const data = (await getProduct(slug)) as any;
-    if (!data) {
-      return defaultMeta;
-    }
-
     const name = data.name || 'Produk';
     const description = data.description || '';
     const images = data.images || [];
@@ -70,20 +67,20 @@ export async function generateMetadata({ params }: { params: { slug: string } })
       else if (ogImage.endsWith('.webp')) imageType = 'image/webp';
     }
 
-    const ogDescription = description ? description.split('\n')[0] : 'Tas motor premium INZTA';
+    // F-005 6.4: plain text, no Markdown markers or line breaks.
+    const ogDescription = plainTextSummary(description) || `${name} dari INZTA Moto. Pesan langsung lewat WhatsApp.`;
+    const url = canonicalUrl('produk', slug);
 
     return {
-      title: `${name} — INZTA MOTO`,
+      title: name,
       description: ogDescription,
-      alternates: { canonical: canonicalUrl('produk', slug) },
-      openGraph: {
-        url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://inzta.id'}/produk/${slug}`,
+      alternates: { canonical: url },
+      openGraph: openGraph({
+        url,
         title: name,
         description: ogDescription,
         images: [{ url: ogImage, width: 800, height: 800, alt: name, type: imageType }],
-        type: 'website',
-        siteName: 'INZTA MOTO',
-      },
+      }),
       twitter: {
         card: 'summary_large_image',
         title: name,
@@ -101,15 +98,26 @@ export default async function DetailPage({ params }: { params: { slug: string } 
   // A read failure throws (S3.10.3): the last good ISR page stays, or error.tsx renders; never a cached 404.
   // REV-01: an impossible slug answers 404 without a read, and the active list (related cards, navbar prices) is
   // read only once the product exists, so random URLs cost one document read instead of the whole collection.
+  // F-005 6.6: layout.tsx answers 404 first; this check covers a render without it.
   if (!isValidSlug(params.slug)) notFound();
   const product = await getProduct(params.slug);
   if (!product) notFound();
   const active = await getActiveProducts();
 
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://inzta.id';
+  // F-005 phase 2: Product + Offer from the normalized product (no price 0, plain description) and a BreadcrumbList
+  // with the labels of the v2 breadcrumb (Beranda / Produk / name); the position step links to a filtered
+  // /produk?posisi= URL, which is not a canonical page, so it is left out.
+  const jsonLd = jsonLdGraph(
+    productJsonLd(product),
+    breadcrumbJsonLd([
+      { name: 'Beranda', url: canonicalUrl() },
+      { name: 'Produk', url: canonicalUrl('produk') },
+      { name: product.name, url: canonicalUrl('produk', product.slug) },
+    ]),
+  );
   return (
     <V2Layout current="produk" products={active}>
-      <JsonLd data={productJsonLd(product, baseUrl)} />
+      <JsonLd data={jsonLd} />
       <TrackView slug={product.slug} name={product.name} price={(product.productType === 'simple' ? product.price : product.priceFrom) ?? 0} />
       <ProductDetail product={product} related={selectRelated(product, active)} />
     </V2Layout>

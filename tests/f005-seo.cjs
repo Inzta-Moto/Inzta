@@ -178,6 +178,100 @@ const CONTROL = /[<>&\u2028\u2029]/;
     assert.strictEqual(JSON.parse(out).headline, a.title);
   });
 
+  // --- Phase 2: titles and descriptions (6.1–6.5) ---
+  const FORBIDDEN = /100\s*%|dijamin|terbaik|pasti|waterproof|anti[\s-]?air/i;
+  const sections = ['home', 'produk', 'blog'].map(p => [p, seo.sectionMetadata(p)]);
+  const titleOf = (m) => (typeof m.title === 'string' ? m.title : m.title.absolute);
+  await check('/, /produk, /blog: unique titles and descriptions, none with a forbidden claim (6.1, 6.3)', () => {
+    const titles = sections.map(([, m]) => titleOf(m));
+    const descs = sections.map(([, m]) => m.description);
+    assert.strictEqual(new Set(titles).size, 3);
+    assert.strictEqual(new Set(descs).size, 3);
+    for (const t of [...titles, ...descs, ...sections.map(([, m]) => m.openGraph.title)]) assert.ok(!FORBIDDEN.test(t), t);
+  });
+  await check('Section metadata: canonical = og:url, one og:site_name, home title absolute (6.2, 6.5)', () => {
+    for (const [p, m] of sections) {
+      const url = p === 'home' ? seo.canonicalUrl() : seo.canonicalUrl(p);
+      assert.strictEqual(m.alternates.canonical, url);
+      assert.strictEqual(m.openGraph.url, url);
+      assert.strictEqual(m.openGraph.siteName, 'INZTA Moto');
+      assert.strictEqual(m.openGraph.title, p === 'home' ? m.title.absolute : `${m.title} | INZTA Moto`);
+    }
+    assert.ok(typeof sections[0][1].title === 'object' && sections[0][1].title.absolute);
+  });
+  await check('openGraph(): defaults and site name', () => {
+    const og = seo.openGraph({ url: 'https://inzta.id/x', title: 'T', description: 'D' });
+    assert.deepStrictEqual(og, { type: 'website', locale: 'id_ID', siteName: 'INZTA Moto', url: 'https://inzta.id/x', title: 'T', description: 'D', images: [seo.DEFAULT_OG_IMAGE] });
+    assert.strictEqual(seo.openGraph({ url: 'u', title: 't', description: 'd', type: 'article' }).type, 'article');
+  });
+  await check('plainTextSummary: no *, #, line break; word boundary; Unicode bold folded (6.4)', () => {
+    const md = '# 𝗜𝗡𝗭𝗧𝗔 TANKBAG TK5 TAS TANGKI MOTOR*\n\n**Volume 10L**\n- cocok untuk topbox 40-55 L\n- [lihat panduan](https://x.y/z) dan ![foto](https://a/b.jpg)\n' + 'kata '.repeat(60);
+    const s = seo.plainTextSummary(md);
+    assert.ok(!/[*#\n\r]/.test(s), s);
+    assert.ok(s.length <= 155, String(s.length));
+    assert.ok(s.startsWith('INZTA TANKBAG TK5 TAS TANGKI MOTOR Volume 10L cocok untuk topbox 40-55 L lihat panduan dan'), s);
+    assert.ok(s.endsWith('kata…'), s);
+    assert.strictEqual(seo.plainTextSummary('Model: sidebag tank'), 'Model: sidebag tank');
+    assert.strictEqual(seo.plainText('Isi 10~15 L, ukuran 10*20 cm, kode TK#5, tank_bag, **tebal**. _ringan_'), 'Isi 10~15 L, ukuran 10*20 cm, kode TK#5, tank_bag, tebal. ringan');
+    assert.strictEqual(seo.plainText('| Ukuran | S | M |\n|---|---|---|'), 'Ukuran S M');
+    assert.strictEqual(seo.plainTextSummary(''), '');
+  });
+
+  // --- Phase 2: JSON-LD (7.1, 8.1–8.6, 9.1, 9.2) ---
+  await check('breadcrumbJsonLd: positions, names, canonical URLs', () => {
+    const b = seo.breadcrumbJsonLd([{ name: 'Home', url: seo.canonicalUrl() }, { name: 'Blog', url: seo.canonicalUrl('blog') }, { name: 'Judul', url: seo.canonicalUrl('blog', 'x') }]);
+    assert.deepStrictEqual(b, {
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://inzta.id/' },
+        { '@type': 'ListItem', position: 2, name: 'Blog', item: 'https://inzta.id/blog' },
+        { '@type': 'ListItem', position: 3, name: 'Judul', item: 'https://inzta.id/blog/x' },
+      ],
+    });
+  });
+  await check('jsonLdGraph: one @context, one Article item, items keep no @context', () => {
+    const g = seo.jsonLdGraph(seo.articleJsonLd(md()), seo.breadcrumbJsonLd([]));
+    assert.strictEqual(g['@context'], 'https://schema.org');
+    assert.strictEqual(g['@graph'].filter(i => i['@type'] === 'Article').length, 1);
+    assert.ok(g['@graph'].every(i => !('@context' in i)));
+  });
+  const simple = { slug: 'tas-a', name: 'Tas A', productType: 'simple', price: 250000, stock: 3, sku: ' SKU-1 ', description: '**Tas** samping\n- 10L', images: ['https://res.cloudinary.com/x/a.jpg', '/lokal.png'] };
+  await check('Product simple: Offer with the shown price, plain description, absolute images, sku, no rating', () => {
+    const j = seo.productJsonLd(simple);
+    assert.deepStrictEqual(j.offers, { '@type': 'Offer', url: 'https://inzta.id/produk/tas-a', priceCurrency: 'IDR', price: 250000, availability: 'https://schema.org/InStock', itemCondition: 'https://schema.org/NewCondition' });
+    assert.strictEqual(j.name, 'Tas A');
+    assert.strictEqual(j.description, 'Tas samping 10L');
+    assert.deepStrictEqual(j.image, ['https://res.cloudinary.com/x/a.jpg', 'https://inzta.id/lokal.png']);
+    assert.strictEqual(j.sku, 'SKU-1');
+    assert.ok(!/aggregateRating|review/i.test(seo.serializeJsonLd(j)));
+  });
+  await check('Product simple: stock 0 -> OutOfStock; price 0 or missing -> no offers (8.4)', () => {
+    assert.strictEqual(seo.productJsonLd({ ...simple, stock: 0 }).offers.availability, 'https://schema.org/OutOfStock');
+    assert.ok(!('offers' in seo.productJsonLd({ ...simple, price: 0 })));
+    assert.ok(!('offers' in seo.productJsonLd({ ...simple, price: undefined })));
+    assert.ok(!('sku' in seo.productJsonLd({ ...simple, sku: '' })));
+  });
+  const variable = {
+    slug: 'tas-v', name: 'Tas V', productType: 'variable', description: 'Varian', images: [], priceFrom: 300000, priceTo: 450000, totalStock: 0,
+    variants: [{ isActive: true, price: 300000, stock: 0 }, { isActive: true, price: 450000, stock: 0 }, { isActive: false, price: 1, stock: 9 }],
+  };
+  await check('Product variable: AggregateOffer over active variants, no price 0, no sku (8.3, 8.4)', () => {
+    const j = seo.productJsonLd(variable);
+    assert.deepStrictEqual(j.offers, { '@type': 'AggregateOffer', url: 'https://inzta.id/produk/tas-v', priceCurrency: 'IDR', lowPrice: 300000, highPrice: 450000, offerCount: 2, availability: 'https://schema.org/OutOfStock' });
+    assert.ok(!('sku' in j) && !('image' in j));
+    assert.ok(!('offers' in seo.productJsonLd({ ...variable, priceFrom: null, priceTo: null })));
+    assert.strictEqual(seo.productJsonLd({ ...variable, totalStock: 2 }).offers.availability, 'https://schema.org/InStock');
+  });
+  await check('Home: Organization (same as publisher + sameAs) and WebSite, no SearchAction (9.1, 9.2)', () => {
+    const g = seo.homeJsonLd();
+    const [org, site] = g['@graph'];
+    const { sameAs, ...orgRest } = org;
+    assert.deepStrictEqual(orgRest, seo.ORGANIZATION);
+    assert.deepStrictEqual(sameAs, ['https://www.instagram.com/inztamoto_bag', 'https://www.tiktok.com/@inztamoto']);
+    assert.deepStrictEqual(site, { '@type': 'WebSite', '@id': 'https://inzta.id/#website', url: 'https://inzta.id/', name: 'INZTA Moto', publisher: { '@id': 'https://inzta.id/#organization' } });
+    assert.ok(!/SearchAction|potentialAction|aggregateRating/i.test(seo.serializeJsonLd(g)));
+  });
+
   // --- Source guards (1.5, 1.6, 2.10, 3.1) ---
   const appFiles = [];
   const walk = (dir) => fs.readdirSync(dir, { withFileTypes: true }).forEach(e => {
@@ -200,6 +294,14 @@ const CONTROL = /[<>&\u2028\u2029]/;
   await check('Every canonical under app/ comes from canonicalUrl()', () => {
     const bad = appFiles.filter(f => /alternates\s*:|rel=["']canonical/.test(read(f)) && !read(f).includes('canonicalUrl(')).map(f => path.relative(ROOT, f));
     assert.deepStrictEqual(bad, []);
+  });
+
+  await check('Phase 2 wiring: metaTitle absolute, product 404, affiliate noindex, layout template', () => {
+    assert.ok(/absolute:\s*metaTitle/.test(read(path.join(ROOT, 'app/blog/[slug]/page.tsx'))));
+    const produk = read(path.join(ROOT, 'app/produk/[slug]/page.tsx'));
+    assert.ok(/if \(!data\) notFound\(\)/.test(produk) && /if \(!product\) notFound\(\)/.test(produk) /* F-016 page: the read is not caught, null -> notFound() */ && fs.existsSync(path.join(ROOT, 'app/produk/not-found.tsx')) && /if \(!data\) notFound\(\)/.test(read(path.join(ROOT, 'app/produk/[slug]/layout.tsx'))));
+    assert.ok(/robots:\s*\{\s*index:\s*false,\s*follow:\s*true\s*\}/.test(read(path.join(ROOT, 'app/affiliate/layout.tsx'))));
+    assert.ok(/template:\s*`%s \| \$\{SITE_NAME\}`/.test(read(path.join(ROOT, 'app/layout.tsx'))));
   });
 
   // --- Sitemap <loc> = canonical (1.7) ---
