@@ -1,4 +1,4 @@
-import type { ArticleCardV2, ArticleEmbeds, PublicArticle, RenderBlock } from '@/types';
+import type { ArticleCardV2, ArticleEmbeds, MotorCategory, ProductEmbed, PublicArticle, RenderBlock } from '@/types';
 import type { MotorArticleV2 } from '@/lib/v2/article-v2';
 import ArticleBody from '@/components/ArticleBody';
 import { formatOf } from '@/lib/article-format';
@@ -53,6 +53,7 @@ export default function ArticlePage({
   minutes,
   others,
   motorPicks = [],
+  motorProducts = {},
   shareUrl,
   adminPreview = false,
   previewBanner = false,
@@ -62,8 +63,9 @@ export default function ArticlePage({
   embeds: ArticleEmbeds;
   minutes: number;
   others: ArticleCardV2[];
-  // F-017: tagged articles for the "Untuk motor Anda" box (motorArticles()).
+  // F-017: tagged articles and bags per motor category for the "Untuk motor <kategori>" box.
   motorPicks?: MotorArticleV2[];
+  motorProducts?: Partial<Record<MotorCategory, ProductEmbed[]>>;
   // null on the preview: the row would share an admin URL or a draft that answers 404 (S7.5.4).
   shareUrl: string | null;
   adminPreview?: boolean;
@@ -103,7 +105,7 @@ export default function ArticlePage({
         </div>
         <aside className="iz-article__right" aria-label="Rekomendasi">
           <RailProducts products={products} />
-          <MotorArticles items={motorPicks} />
+          <MotorArticles items={motorPicks} products={motorProducts} />
           <RailHelp waHref={waHref} />
         </aside>
       </div>

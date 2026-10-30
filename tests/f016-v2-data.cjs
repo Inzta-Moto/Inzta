@@ -219,6 +219,23 @@ const sideProduct = (extra = {}, kiri = {}, kanan = {}) => ({
     assert.ok(!('content' in out[0].card));
     assert.strictEqual(A.motorArticles({ slug: 'cur' }, all, 1).length, 1);
   });
+  await check('F-017: motorRailProducts per category: own bags (best seller, then newest), else universal; max 3', () => {
+    const E = require(path.join(ROOT, 'lib/article-embeds.ts'));
+    const p = (slug, kategoriMotor, extra = {}) => ({ slug, name: slug.toUpperCase(), price: 100000, images: ['https://res.cloudinary.com/x/a.jpg'], kategoriMotor, createdAt: 1, ...extra });
+    const all = [
+      p('retro-old', ['retro'], { createdAt: 1 }),
+      p('retro-new', ['retro'], { createdAt: 5 }),
+      p('retro-best', ['retro', 'matic'], { badge: 'BEST SELLER', createdAt: 0 }),
+      p('retro-4', ['retro'], { createdAt: 3 }),
+      p('strap', ['matic', 'adventure', 'retro', 'trail']),
+    ];
+    const out = E.motorRailProducts(all);
+    assert.deepStrictEqual(out.retro.map(x => x.slug), ['retro-best', 'retro-new', 'retro-4']);
+    assert.deepStrictEqual(out.matic.map(x => x.slug), ['retro-best']);
+    assert.deepStrictEqual(out.trail.map(x => x.slug), ['strap'], 'no own bag -> universal');
+    assert.deepStrictEqual(Object.keys(out.retro[0]).sort(), ['compareAtPrice', 'image', 'inStock', 'name', 'price', 'priceTo', 'slug']);
+    assert.deepStrictEqual(E.motorRailProducts([]), {});
+  });
   await check('F-017: articleMotorTags for any topic, none without a topic', () => {
     assert.deepStrictEqual(A.articleMotorTags({ topik: 'touring', kategoriMotor: ['retro', 'vespa', 'matic'] }), ['matic', 'retro']);
     assert.deepStrictEqual(A.articleMotorTags({ topik: 'komunitas', kategoriMotor: 'retro' }), []);

@@ -3,7 +3,9 @@ import { readPublic } from '@/lib/public-content';
 import { fixtureArticles, fixtureProducts } from '@/lib/v2/dev-fixture';
 import { normalizeProduct } from '@/lib/product-utils';
 import { publicDate, statusOf, toPublicArticle } from '@/lib/article-format';
-import type { ArticleEmbed, ArticleEmbeds, ProductEmbed, RenderBlock } from '@/types';
+import type { ArticleEmbed, ArticleEmbeds, MotorCategory, Product, ProductEmbed, RenderBlock } from '@/types';
+import { CATEGORY_SLUGS, productsForCategory, universalProducts } from '@/lib/v2/motor-category';
+import { sortForCategory } from '@/components/v2/motor/motor-page';
 
 // Server only (F-013 phase C, requirement 19): card data for the [[produk:…]] and [[artikel:…]] markers of
 // one article. Inactive products, unpublished articles, missing documents, and the article itself are left
@@ -86,3 +88,19 @@ export const shownArticleSlugs = (blocks: RenderBlock[], embeds: ArticleEmbeds):
 
 export const visibleBlocks = (blocks: RenderBlock[], embeds: ArticleEmbeds): RenderBlock[] =>
   blocks.filter(b => b.type === 'html' || Boolean(b.type === 'product' ? embeds.products[b.slug] : embeds.articles[b.slug]));
+
+// F-017: bags for each motor category, for the "Untuk motor <kategori>" box of article pages. Same set and order as
+// the category page (F-016 S5.3: tagged with the category but not universal, best sellers first, then newest); card
+// fields only. A category without bags of its own gets the universal ones (tagged with all four, the category page's
+// "Bisa juga"), so a chosen motor always finds a bag. The visitor's category is only known in the browser, so every
+// category is sent, at most three each.
+export const MOTOR_PRODUCTS_MAX = 3;
+export function motorRailProducts(products: readonly Product[], max = MOTOR_PRODUCTS_MAX): Partial<Record<MotorCategory, ProductEmbed[]>> {
+  const out: Partial<Record<MotorCategory, ProductEmbed[]>> = {};
+  for (const c of CATEGORY_SLUGS) {
+    const own = sortForCategory(productsForCategory(products, c));
+    const list = (own.length ? own : sortForCategory(universalProducts(products))).slice(0, max);
+    if (list.length) out[c] = list.map(p => toProductEmbed(p as unknown as Record<string, any>));
+  }
+  return out;
+}
