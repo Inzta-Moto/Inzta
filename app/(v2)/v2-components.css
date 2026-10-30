@@ -375,7 +375,11 @@ html[data-iz-tier="lite"] .iz-mbar { background: rgba(253, 252, 249, 0.95); -web
   .t-body { font-size: 17px; }
   .iz-head { margin-bottom: var(--space-6); }
   .iz-head--split { flex-direction: column; align-items: flex-start; }
-  .iz-btn { min-height: 60px; padding: 0 var(--space-6); }
+  /* A full-width button on a 360 px phone is narrower than a long label ("Tanya admin soal motor Anda" next to the
+     WhatsApp icon); nowrap pushed the centred content out on both sides, the icon past the left edge and the text
+     against the right (Sehan, 2026-10-30, phone screenshots). The label wraps instead, balanced over two lines. */
+  .iz-btn { min-height: 60px; padding: 8px var(--space-6); white-space: normal; text-align: center; }
+  .iz-btn > span:not(.iz-btn__icon) { min-width: 0; text-wrap: balance; }
   .iz-btn--wa { padding-left: 10px; }
   .iz-btn--block { width: 100%; }
   .iz-navwrap { top: 12px; padding-inline: 12px; }

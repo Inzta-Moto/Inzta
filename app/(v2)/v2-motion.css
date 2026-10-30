@@ -96,7 +96,8 @@ html.iz-motion .iz-drawline.iz-drawline--wait::before { transition: none; }
 .iz-roll > span { display: block; text-shadow: 0 1.3em currentColor; transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
 
 /* Bounce labels (components/v2/motion/Bounce.tsx). */
-.iz-bounce { display: inline-flex; }
+/* Words may wrap: a long label on a phone-width button ("Tanya admin soal motor Anda") ran past its right edge. */
+.iz-bounce { display: inline-flex; flex-wrap: wrap; justify-content: center; max-width: 100%; }
 .iz-bounce__w { display: inline-flex; white-space: nowrap; }
 .iz-bounce__w:not(:last-child) { margin-right: 0.27em; }
 .iz-bounce__c { display: inline-block; transform-origin: 50% 75%; }
