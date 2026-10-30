@@ -60,7 +60,7 @@ export default function GridFill({
   products?: readonly HomeProductCard[];
 }) {
   const photo = category ? CHAT_PHOTOS[category] : null;
-  const placeholder = category ? `Foto motor ${categoryLabel(category).toLowerCase()}: PLACEHOLDER` : undefined;
+  const placeholder = category ? `Foto motor ${categoryLabel(category).toLowerCase()} belum tersedia` : undefined;
   const thumbs = fanThumbs(products);
   return (
     <>

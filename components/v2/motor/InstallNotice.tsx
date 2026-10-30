@@ -10,20 +10,20 @@ export default function InstallNotice() {
       </div>
       <div className="iz-notice">
         <div className="iz-notice__text">
-          <span className="iz-cat-chip">PLACEHOLDER</span>
+          <span className="iz-cat-chip">Sebelum memesan</span>
           <ul className="iz-notice__list">
-            <li>Versi tali atau baut</li>
-            <li>Titik pasang</li>
-            <li>Ruang kaki dan knalpot</li>
+            <li>Bawah jok: Daily Ride Belakang (4,4 liter) diikat tali velcro, 2 di atas dan 1 di bawah.</li>
+            <li>Bawah tangki: Scrambag (sekitar 4 liter) dikunci dengan baut bodi motor, part PNP khusus XSR 155.</li>
+            <li>Sebelum berkendara, pastikan tali dan buckle terpasang kuat, dan tas tidak menyentuh knalpot atau roda belakang.</li>
           </ul>
-          <p>Menunggu foto pemasangan dari tim INZTA.</p>
+          <p>Ragu memilih versi tali atau baut? Tanyakan ke admin lewat WhatsApp sebelum memesan.</p>
         </div>
         <div className="iz-notice__photo">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3z" />
             <circle cx="12" cy="13" r="3" />
           </svg>
-          <span>Foto pemasangan: PLACEHOLDER</span>
+          <span>Foto pemasangan belum tersedia</span>
         </div>
       </div>
     </section>

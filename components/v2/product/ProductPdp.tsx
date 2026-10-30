@@ -62,10 +62,10 @@ export default function ProductPdp({ product, images, positionLabel, badge, fit,
       for (const s of ['kiri', 'kanan'] as const) {
         const photo = firstPhotoOf(side.variants[s]);
         const text = s === 'kiri' ? 'Foto kiri' : 'Foto kanan';
-        list.push(photo ? { kind: 'photo', src: photo, label: text } : { kind: 'placeholder', text, label: `${text}: PLACEHOLDER` });
+        list.push(photo ? { kind: 'photo', src: photo, label: text } : { kind: 'placeholder', text, label: `${text} belum tersedia` });
       }
       // S4.4.2: no data field for a pair photo yet (P-16).
-      list.push({ kind: 'placeholder', text: 'Foto sepasang', label: 'Foto sepasang: PLACEHOLDER' });
+      list.push({ kind: 'placeholder', text: 'Foto sepasang', label: 'Foto sepasang belum tersedia' });
     }
     return list;
   }, [images, cropClass, side]);

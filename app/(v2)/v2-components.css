@@ -195,7 +195,7 @@ img.iz-crop-half { height: 200% !important; object-position: 35% 0% !important; 
 .iz-footer__shops { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; margin-top: 12px; }
 .iz-footer__shops a { display: inline-flex; align-items: center; min-height: 40px; padding: 4px 14px; border-radius: var(--radius-pill); border: 1px solid var(--c-line-on-dark); color: var(--c-krem); font-size: 15px; }
 .iz-footer__bottom { grid-column: 1 / -1; border-top: 1px solid var(--c-line-on-dark); padding-top: var(--space-6); font-size: 15px; color: var(--c-pasir); }
-.iz-filters { position: sticky; top: 96px; z-index: 20; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding-block: var(--space-4); background: var(--c-kertas); }
+.iz-filters { position: relative; z-index: 20; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding-block: var(--space-4); background: var(--c-kertas); }
 .iz-fchip { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 var(--space-4); border-radius: var(--radius-pill); border: 1px solid var(--c-garis); background: var(--c-kertas-terang); font-size: 15px; font-weight: 600; white-space: nowrap; }
 .iz-fchip svg { width: 16px; height: 16px; }
 .iz-fchip--active { background: var(--c-tinta); color: var(--c-kertas); border-color: var(--c-tinta); }
@@ -557,10 +557,12 @@ html[data-iz-tier="lite"] .iz-mbar { background: rgba(253, 252, 249, 0.95); -web
 .iz-navdd__item { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 10px 12px 10px 10px; border-radius: 14px; font-size: 16px; font-weight: 600; line-height: 1.3; }
 .iz-navdd__item:hover { background: var(--c-pasir-muda); color: var(--c-tinta); }
 .iz-nav--dark .iz-nav__links .iz-navdd__item:hover { color: var(--c-tinta); }
-.iz-navdd__ico { width: 40px; height: 40px; border-radius: 12px; background: var(--c-pasir-muda); display: grid; place-items: center; color: var(--c-tinta); }
+.iz-navdd__ico { width: 40px; height: 40px; overflow: hidden; border-radius: 12px; background: var(--c-pasir-muda); display: grid; place-items: center; color: var(--c-tinta); }
 .iz-navdd__item:hover .iz-navdd__ico { background: var(--c-kertas-terang); }
 .iz-navdd__ico svg { width: 20px; height: 20px; }
-.iz-navdd__ico img { width: 100%; height: 100%; object-fit: cover; border-radius: 12px; }
+/* A fixed size, not 100%: in the auto grid row a percentage height fell back to the 4:5 photo's own ratio and the
+   thumb spilled to 40 x 50 under the label (Tank bag, Tail bag); overflow on the box guards the radius. */
+.iz-navdd__ico img { display: block; width: 40px; height: 40px; object-fit: cover; border-radius: 12px; }
 .iz-navdd__item small { display: block; font-size: 14px; font-weight: 500; color: var(--c-batu); }
 .iz-navdd__mine { font-size: 13px; font-weight: 700; padding: 2px 8px; border-radius: var(--radius-pill); background: var(--c-kuning); color: var(--c-on-kuning); }
 .iz-navdd__foot { display: flex; align-items: center; justify-content: space-between; margin-top: 6px; padding: 12px 12px 6px; border-top: 1px solid var(--c-garis); font-size: 15px; font-weight: 600; color: var(--c-kuning-tua); }

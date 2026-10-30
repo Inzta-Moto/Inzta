@@ -180,8 +180,8 @@ export default function BuyBox({
 
       <div className="iz-buybox__info">
         <span className="iz-infopill">Dibalas admin INZTA</span>
-        <span className="iz-infopill">Garansi: PLACEHOLDER</span>
-        <span className="iz-infopill">Pengiriman: PLACEHOLDER</span>
+        <span className="iz-infopill">Garansi: tanya admin</span>
+        <span className="iz-infopill">Ongkir dikonfirmasi admin</span>
       </div>
     </div>
   );

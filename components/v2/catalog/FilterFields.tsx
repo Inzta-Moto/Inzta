@@ -2,150 +2,157 @@
 
 import type { MotorCategory } from '@/types';
 import {
-  HARGA_OPTIONS,
-  LABEL_OPTIONS,
-  POSISI_OPTIONS,
   URUT_OPTIONS,
-  optionCount,
-  toggleList,
-  type CatalogItem,
+  countOf,
+  isOptionVisible,
+  isSelected,
+  optionsOf,
+  type FacetCounts,
+  type FilterChange,
   type FilterState,
+  type KeptSelection,
 } from '@/components/v2/catalog/filter';
 
 export type FieldGroup = 'posisi' | 'harga' | 'label' | 'urut';
 
-// The .iz-check rows of one group, shared by the desktop popover and the phone sheet (S2.2). Counts are taken
-// against the pending state of the other groups; an option with no result is disabled and shows "(0)" unless it is
-// already selected, so it can always be turned off (S2.2.5).
+// One .iz-check row with its live count. A count of 0 is muted but never disabled: every change can be undone the
+// same way it was made, and a disabled control drops out of the Tab order without saying why. Choosing it shows the
+// empty state, which names the cause and offers a way back.
+function CheckRow({
+  id,
+  type,
+  name,
+  checked,
+  label,
+  count,
+  onChange,
+}: {
+  id: string;
+  type: 'checkbox' | 'radio';
+  name?: string;
+  checked: boolean;
+  label: string;
+  count?: number;
+  onChange: () => void;
+}) {
+  const zero = count === 0 && !checked;
+  return (
+    <label className={`iz-check${zero ? ' iz-check--zero' : ''}`} htmlFor={id}>
+      <input id={id} type={type} name={name} checked={checked} onChange={onChange} />
+      {label}
+      {count !== undefined && <span className="iz-check__count">({count})</span>}
+    </label>
+  );
+}
+
+// The rows of one group, shared by the desktop popover and the phone sheet (S2.2). Counts come from facetCounts()
+// of the state the rows belong to (the applied state on desktop, the draft in the sheet). Options no product has are
+// left out unless they are or were selected (isOptionVisible with the kept selection), so unticking one never
+// unmounts the row that has focus.
 export default function FilterFields({
   group,
-  draft,
-  items,
+  state,
+  counts,
+  avail,
+  kept,
   idPrefix,
   onChange,
 }: {
   group: FieldGroup;
-  draft: FilterState;
-  items: readonly CatalogItem[];
+  state: FilterState;
+  counts: FacetCounts;
+  avail: FacetCounts;
+  kept: KeptSelection;
   idPrefix: string;
-  onChange: (next: FilterState) => void;
+  onChange: (change: FilterChange) => void;
 }) {
-  if (group === 'posisi') {
+  if (group === 'urut') {
     return (
       <>
-        {POSISI_OPTIONS.map(o => {
-          const checked = draft.posisi.includes(o.value);
-          const zero = !checked && optionCount(items, draft, 'posisi', o.value) === 0;
-          const id = `${idPrefix}-pos-${o.value}`;
-          return (
-            <label key={o.value} className="iz-check" htmlFor={id}>
-              <input
-                id={id}
-                type="checkbox"
-                checked={checked}
-                disabled={zero}
-                onChange={() => onChange({ ...draft, posisi: toggleList(draft.posisi, o.value, POSISI_OPTIONS) })}
-              />
-              {o.label}
-              {zero && ' (0)'}
-            </label>
-          );
-        })}
+        {URUT_OPTIONS.map(o => (
+          <CheckRow
+            key={o.value}
+            id={`${idPrefix}-urut-${o.value}`}
+            type="radio"
+            name={`${idPrefix}-urut`}
+            checked={state.urut === o.value}
+            label={o.label}
+            onChange={() => onChange({ type: 'urut', value: o.value })}
+          />
+        ))}
       </>
     );
   }
-  if (group === 'label') {
-    return (
-      <>
-        {LABEL_OPTIONS.map(o => {
-          const checked = draft.label.includes(o.value);
-          const zero = !checked && optionCount(items, draft, 'label', o.value) === 0;
-          const id = `${idPrefix}-label-${o.value}`;
-          return (
-            <label key={o.value} className="iz-check" htmlFor={id}>
-              <input
-                id={id}
-                type="checkbox"
-                checked={checked}
-                disabled={zero}
-                onChange={() => onChange({ ...draft, label: toggleList(draft.label, o.value, LABEL_OPTIONS) })}
-              />
-              {o.label}
-              {zero && ' (0)'}
-            </label>
-          );
-        })}
-      </>
-    );
-  }
+  const options = optionsOf(group).filter(o => isOptionVisible(group, o.value, avail, kept));
   if (group === 'harga') {
     return (
       <>
-        {HARGA_OPTIONS.map(o => {
-          const checked = draft.harga === o.value;
-          const zero = !checked && optionCount(items, draft, 'harga', o.value) === 0;
-          const id = `${idPrefix}-harga-${o.value}`;
-          return (
-            <label key={o.value} className="iz-check" htmlFor={id}>
-              <input
-                id={id}
-                type="radio"
-                name={`${idPrefix}-harga`}
-                checked={checked}
-                disabled={zero}
-                onChange={() => onChange({ ...draft, harga: o.value })}
-                // The group has no "all prices" option in the canvas: activating the chosen band again clears it.
-                onClick={() => {
-                  if (checked) onChange({ ...draft, harga: null });
-                }}
-              />
-              {o.label}
-              {zero && ' (0)'}
-            </label>
-          );
-        })}
+        {/* A plain way back to every price, instead of clicking the chosen radio again. */}
+        <CheckRow
+          id={`${idPrefix}-harga-semua`}
+          type="radio"
+          name={`${idPrefix}-harga`}
+          checked={state.harga === null}
+          label="Semua harga"
+          count={counts.hargaAll}
+          onChange={() => onChange({ type: 'set', group: 'harga', value: null })}
+        />
+        {options.map(o => (
+          <CheckRow
+            key={o.value}
+            id={`${idPrefix}-harga-${o.value}`}
+            type="radio"
+            name={`${idPrefix}-harga`}
+            checked={state.harga === o.value}
+            label={o.label}
+            count={countOf(counts, 'harga', o.value)}
+            onChange={() => onChange({ type: 'set', group: 'harga', value: o.value })}
+          />
+        ))}
       </>
     );
   }
   return (
     <>
-      {URUT_OPTIONS.map(o => {
-        const id = `${idPrefix}-urut-${o.value}`;
-        return (
-          <label key={o.value} className="iz-check" htmlFor={id}>
-            <input id={id} type="radio" name={`${idPrefix}-urut`} checked={draft.urut === o.value} onChange={() => onChange({ ...draft, urut: o.value })} />
-            {o.label}
-          </label>
-        );
-      })}
+      {options.map(o => (
+        <CheckRow
+          key={o.value}
+          id={`${idPrefix}-${group === 'posisi' ? 'pos' : 'label'}-${o.value}`}
+          type="checkbox"
+          checked={isSelected(state, group, o.value)}
+          label={o.label}
+          count={countOf(counts, group, o.value)}
+          onChange={() => onChange({ type: 'toggle', group, value: o.value })}
+        />
+      ))}
     </>
   );
 }
 
-// The "Motor saya" row of the phone sheet (S2.2.7): one checkbox for the stored category.
+// The "Motor saya" row of the phone sheet (S2.2.7): one checkbox for the stored category, with its count.
 export function MotorField({
   category,
   label,
-  draft,
-  items,
+  state,
+  counts,
   idPrefix,
   onChange,
 }: {
   category: MotorCategory;
   label: string;
-  draft: FilterState;
-  items: readonly CatalogItem[];
+  state: FilterState;
+  counts: FacetCounts;
   idPrefix: string;
-  onChange: (next: FilterState) => void;
+  onChange: (change: FilterChange) => void;
 }) {
-  const checked = draft.motor === category;
-  const zero = !checked && optionCount(items, draft, 'motor', category) === 0;
-  const id = `${idPrefix}-motor`;
   return (
-    <label className="iz-check" htmlFor={id}>
-      <input id={id} type="checkbox" checked={checked} disabled={zero} onChange={() => onChange({ ...draft, motor: checked ? null : category })} />
-      {label}
-      {zero && ' (0)'}
-    </label>
+    <CheckRow
+      id={`${idPrefix}-motor`}
+      type="checkbox"
+      checked={state.motor === category}
+      label={label}
+      count={countOf(counts, 'motor', category)}
+      onChange={() => onChange({ type: 'toggle', group: 'motor', value: category })}
+    />
   );
 }

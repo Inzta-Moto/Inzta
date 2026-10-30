@@ -5,6 +5,11 @@ import { PROCESS_STEPS } from '@/components/v2/about/about-content';
 // "Cara kami membuat tas" (F-016 S8.2). Step photos are decorative (S8.2.4) and lazy in 4:5 boxes (S8.2.5); one note
 // below the row covers every example photo instead of per-photo tags (S8.2.2). data-reveal-stagger is the phase C
 // motion hook only; nothing is hidden by it.
+// Boxes are about 273 x 341 on phones, 280 x 350 on tablets and 211 x 264 at 1440. A 3:2 landscape file covers them
+// about 1.9 times wider than the box (about 520 px on phones), so the old 300px hint served a soft 640 variant.
+const STEP_SIZES = '(max-width: 1023px) 300px, 230px';
+const STEP_SIZES_LANDSCAPE = '(max-width: 1023px) 530px, 400px';
+
 export default function ProcessSteps() {
   return (
     <section className="iz-section">
@@ -23,7 +28,7 @@ export default function ProcessSteps() {
             {PROCESS_STEPS.map((s, i) => (
               <li className="iz-step" key={s.title}>
                 <div className="iz-photo">
-                  <SmartImage src={s.image} alt="" imgClassName={s.crop ?? undefined} sizes="(max-width: 1023px) 300px, 230px" />
+                  <SmartImage src={s.image} alt="" imgClassName={s.crop ?? undefined} sizes={s.landscape ? STEP_SIZES_LANDSCAPE : STEP_SIZES} />
                   <span className="iz-step__badge">Langkah {i + 1}</span>
                 </div>
                 <h3 className="t-h3-landing">{s.title}</h3>
@@ -32,7 +37,7 @@ export default function ProcessSteps() {
             ))}
           </ol>
         </StepsRegion>
-        <p className="iz-muted" style={{ fontSize: 15, marginTop: 16 }}>Foto contoh, akan diganti foto produksi INZTA.</p>
+        <p className="iz-muted" style={{ fontSize: 15, marginTop: 16 }}>Foto langkah Desain, Potong, Jahit, dan Kirim adalah foto contoh, bukan foto produksi INZTA.</p>
       </div>
     </section>
   );

@@ -274,6 +274,9 @@ check('static photos: every local photo of the Beranda, category and Tentang con
     ...Object.values(C.CHAT_PHOTOS).filter(Boolean),
     ...C.POSITION_ITEMS.map(p => p.image),
     ...C.FILMSTRIP.map(f => f.src),
+    A.HERO_PHOTO.src,
+    A.VALUES_PHOTO.src,
+    ...Object.values(A.COMMUNITY_PHOTOS).map(p => p.src),
   ].filter(src => src.startsWith('/'));
   assert.ok(local.length >= 20, `only ${local.length} local photos found`);
   for (const src of local) assert.ok(fs.existsSync(path.join(ROOT, 'public', src)), `missing public${src}`);

@@ -74,7 +74,7 @@ check('S5.1.3: Retro lead needs side, tank, XSR 155, and a 20L side bag among S5
 
 check('S5.1.1: categories without an approved line show P-17 and the meta fallback', () => {
   for (const c of ['matic', 'adventure', 'trail']) assert.strictEqual(P.approvedLead(c, [xsr, tk5, adv20], []), null);
-  assert.strictEqual(P.LEAD_PLACEHOLDER, 'Kalimat kategori: PLACEHOLDER');
+  assert.strictEqual(P.fallbackLead('Trail'), 'Tas INZTA untuk motor Trail. Ragu soal ukuran? Tanyakan ke admin lewat WhatsApp.');
   assert.strictEqual(P.categoryDescription('matic', null), 'Tas INZTA untuk motor Matic.');
   assert.strictEqual(P.categoryTitle('retro'), 'Tas untuk motor Retro'); // F-005 6.2: the layout template adds the brand
 });

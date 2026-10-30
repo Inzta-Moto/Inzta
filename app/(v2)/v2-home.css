@@ -67,6 +67,8 @@ img.iz-hero__img[data-failed="true"] { visibility: hidden; }
 /* Phones and tablets crop the 4:3 Beranda photo to a tall strip. The rider sits at about 74% of its width and the bike
    spans 44-87%, so the strip is pulled right to keep the whole rider, the INZTAMOTO tank and the headlight in frame
    (Sehan, 2026-10-29: at 62% the rider was cut at the right edge). Other heroes keep the shared 62% 30%. */
+/* hero-99 on wide screens: keep the rider's helmet clear of the navbar (the centre crop put it under it). */
+.iz-hero__img.iz-hero__img--home { object-position: 50% 40%; }
 @media (max-width: 1023.98px) {
   .iz-hero__img.iz-hero__img--home { object-position: 77% 40%; }
 }
