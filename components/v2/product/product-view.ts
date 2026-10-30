@@ -39,8 +39,8 @@ export function galleryImages(p: Product, withVariants = true): string[] {
   return out;
 }
 
-// S3.5: "Label: nilai" splits on the first colon; other entries keep an empty label column. Nothing is invented.
-export function specRows(features: unknown): SpecRow[] {
+// S3.5: "Label: nilai" splits on the first colon; entries without a label and a value come back with an empty label.
+function parseFeatures(features: unknown): SpecRow[] {
   if (!Array.isArray(features)) return [];
   return features
     .filter((f): f is string => typeof f === 'string' && f.trim() !== '')
@@ -51,6 +51,25 @@ export function specRows(features: unknown): SpecRow[] {
       const value = f.slice(i + 1).trim();
       return value ? { label, value } : { label: '', value: f.trim() };
     });
+}
+
+// S3.5: only "Label: nilai" entries are specification rows. The admin "Features" field is mostly filled with short
+// keywords ("XSR", "TOURING", "SIDE BAG"), which made a table of empty label cells; those go to featureTags.
+export function specRows(features: unknown): SpecRow[] {
+  return parseFeatures(features).filter(r => r.label !== '');
+}
+
+// S3.5: the entries without a label, shown as keyword chips after the description. Duplicates (case-insensitive) once.
+export function featureTags(features: unknown): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const r of parseFeatures(features)) {
+    const key = r.value.toLowerCase();
+    if (r.label !== '' || seen.has(key)) continue;
+    seen.add(key);
+    out.push(r.value);
+  }
+  return out;
 }
 
 // S3.6: plain text; blank lines start a paragraph, single line breaks stay inside it. No HTML is interpreted.

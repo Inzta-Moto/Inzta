@@ -19,9 +19,16 @@ html .iz-page main > .iz-pdp-block { margin-top: max(var(--space-12), var(--spac
 .iz-pdp-info { display: flex; flex-direction: column; gap: var(--space-12); min-width: 0; }
 .iz-pdp-h2 { margin-bottom: var(--space-5); }
 .iz-pdp-desc { scroll-margin-top: calc(var(--size-nav) + var(--space-4) + var(--space-6)); }
+/* Keywords (S3.5, the unlabelled `features` entries): a chip row that closes the description at a heading gap
+   instead of a block gap, so it reads as part of "what the product is" and not as its own section. */
+.iz-pdp-tags { display: flex; flex-direction: column; gap: var(--space-3); }
+.iz-pdp-info > * + .iz-pdp-tags { margin-top: calc(var(--space-6) - var(--space-12)); }
+.iz-pdp-tags__title { margin: 0; font-size: 15px; font-weight: 600; color: var(--c-batu); }
+.iz-pdp-tags__list { display: flex; flex-wrap: wrap; gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
 @media (max-width: 767px) {
   .iz-pdp-details { grid-template-columns: minmax(0, 1fr); gap: var(--space-10); }
   .iz-pdp-info { gap: var(--space-10); }
+  .iz-pdp-info > * + .iz-pdp-tags { margin-top: calc(var(--space-6) - var(--space-10)); }
 }
 
 /* "Lihat selengkapnya" (DescriptionMore.tsx): a long description is clipped with a fade, the text stays in the HTML. */

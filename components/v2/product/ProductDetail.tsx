@@ -14,6 +14,7 @@ import {
   descriptionFolds,
   descriptionParagraphs,
   faqItems,
+  featureTags,
   galleryImages,
   plainOrderHref,
   soldOutAtRender,
@@ -40,6 +41,20 @@ function Description({ paragraphs }: { paragraphs: string[][] }) {
   );
 }
 
+// Keyword entries of `features` (S3.5): a quiet chip row closing "what the product is", not a table with empty labels.
+function FeatureTags({ tags }: { tags: string[] }) {
+  return (
+    <div className="iz-pdp-tags">
+      <p className="iz-pdp-tags__title" id="kata-kunci-produk">Kata kunci</p>
+      <ul className="iz-pdp-tags__list" aria-labelledby="kata-kunci-produk">
+        {tags.map(t => (
+          <li className="iz-cat-chip" key={t}>{t}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 /**
  * Product page body (F-016 S3, S4), server-rendered from produk-detail.dc.html: breadcrumb, the client island with
  * gallery and buy box, specification, description, questions, related products, and the closing panel. Each block
@@ -49,6 +64,7 @@ export default function ProductDetail({ product, related }: { product: Product; 
   const card = toCard(product);
   const crumb = crumbPosition(product);
   const rows = specRows(product.features);
+  const tags = featureTags(product.features);
   const paragraphs = descriptionParagraphs(product.description);
   const faq = faqItems(product, rows);
   const side = isSideProduct(product);
@@ -84,11 +100,11 @@ export default function ProductDetail({ product, related }: { product: Product; 
         soldOut={soldOutAtRender(product)}
       />
 
-      {/* The details follow the gallery and buy box columns: what the product is (Spesifikasi, then Deskripsi) under the
-          gallery, the questions before ordering under the buy box. Without either text the questions take the first
-          column (S3.5). */}
+      {/* The details follow the gallery and buy box columns: what the product is (Spesifikasi, Deskripsi, then the
+          keywords) under the gallery, the questions before ordering under the buy box. Spesifikasi shows only
+          "Label: nilai" rows; with no text at all the questions take the first column (S3.5). */}
       <section className="iz-pdp-details iz-wrap iz-pdp-block" id="spesifikasi">
-        {(rows.length > 0 || paragraphs.length > 0) && (
+        {(rows.length > 0 || paragraphs.length > 0 || tags.length > 0) && (
           <div className="iz-pdp-info">
             {rows.length > 0 && (
               <div>
@@ -97,6 +113,7 @@ export default function ProductDetail({ product, related }: { product: Product; 
               </div>
             )}
             {paragraphs.length > 0 && <Description paragraphs={paragraphs} />}
+            {tags.length > 0 && <FeatureTags tags={tags} />}
           </div>
         )}
         <div>

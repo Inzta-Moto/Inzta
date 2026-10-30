@@ -231,11 +231,14 @@ function mockFetch(table) {
     assert.deepStrictEqual(V.galleryImages({ productType: 'simple', images: [], imageUrl: 'only.png' }), ['only.png']);
     assert.deepStrictEqual(V.galleryImages(sideProduct(), false), ['p1.jpg']);
   });
-  await check('S3.5: "Label: nilai" splits on the first colon; other entries keep an empty label; blanks dropped', () => {
-    assert.deepStrictEqual(V.specRows(['Kapasitas: 30 liter', 'Ukuran: 37 x 28: 23', 'XSR', ' ', 'Kosong:']), [
-      { label: 'Kapasitas', value: '30 liter' }, { label: 'Ukuran', value: '37 x 28: 23' }, { label: '', value: 'XSR' }, { label: '', value: 'Kosong:' },
+  await check('S3.5: "Label: nilai" rows split on the first colon; unlabelled entries become keyword tags; blanks dropped', () => {
+    const features = ['Kapasitas: 30 liter', 'Ukuran: 37 x 28: 23', 'XSR', ' ', 'Kosong:', 'TOURING', 'touring'];
+    assert.deepStrictEqual(V.specRows(features), [
+      { label: 'Kapasitas', value: '30 liter' }, { label: 'Ukuran', value: '37 x 28: 23' },
     ]);
+    assert.deepStrictEqual(V.featureTags(features), ['XSR', 'Kosong:', 'TOURING']);
     assert.deepStrictEqual(V.specRows(undefined), []);
+    assert.deepStrictEqual(V.featureTags(undefined), []);
   });
   await check('S3.6: description as plain text paragraphs; single line breaks stay in the paragraph; no HTML parsing', () => {
     assert.deepStrictEqual(V.descriptionParagraphs('A\nB\n\n<b>C</b>\r\n\r\n\n'), [['A', 'B'], ['<b>C</b>']]);
@@ -413,8 +416,15 @@ function mockFetch(table) {
     assert.match(a, /<p class="t-body iz-muted iz-pdp-para"><span>Satu<\/span><span><br\/>Dua<\/span><\/p><p class="t-body iz-muted iz-pdp-para"><span>Tiga<\/span><\/p>/);
     const b = render({ ...BUILTIN[0], features: ['Bahan luar: Cordura D600', 'XSR'], description: '' });
     assert.ok(b.includes('Spesifikasi') && !b.includes('Deskripsi'));
-    assert.match(b, /<dl class="iz-spec"><div><dt>Bahan luar<\/dt><dd>Cordura D600<\/dd><\/div><div><dt><\/dt><dd>XSR<\/dd><\/div><\/dl>/);
+    assert.match(b, /<dl class="iz-spec"><div><dt>Bahan luar<\/dt><dd>Cordura D600<\/dd><\/div><\/dl>/);
     assert.match(b, /Bahan luarnya Cordura D600\./);
+  });
+  await check('S3.5: keyword-only features (no "Label:") -> no Spesifikasi table; chips after Deskripsi in the first column', () => {
+    const a = render({ ...BUILTIN[0], features: ['XSR', 'TOURING', 'SIDE BAG'], description: 'Satu' });
+    assert.ok(!a.includes('Spesifikasi') && !a.includes('iz-spec'), 'no table of empty label cells');
+    assert.match(a, /<div class="iz-pdp-info"><div class="iz-pdp-desc"><h2 class="t-h2-shop iz-pdp-h2">Deskripsi<\/h2>.*<\/div><div class="iz-pdp-tags"><p class="iz-pdp-tags__title" id="kata-kunci-produk">Kata kunci<\/p><ul class="iz-pdp-tags__list" aria-labelledby="kata-kunci-produk"><li class="iz-cat-chip">XSR<\/li><li class="iz-cat-chip">TOURING<\/li><li class="iz-cat-chip">SIDE BAG<\/li><\/ul><\/div><\/div><div><h2 class="t-h2-shop iz-pdp-h2">Pertanyaan sebelum memesan/);
+    const b = render({ ...BUILTIN[0], features: ['XSR'], description: '' });
+    assert.match(b, /<div class="iz-pdp-info"><div class="iz-pdp-tags">/);
   });
   await check('Detail layout: Spesifikasi then Deskripsi in the first column, questions in the second; questions alone without either text', () => {
     const a = render({ ...BUILTIN[0], features: ['Bahan luar: Cordura D600'], description: 'Satu' });
