@@ -127,7 +127,6 @@
 .iz-closing .iz-chat__out { align-self: flex-end; width: 70%; gap: calc(4 * var(--cu)); padding: calc(4 * var(--cu)); border-radius: var(--radius-thumb) calc(4 * var(--cu)) var(--radius-thumb) var(--radius-thumb); background: color-mix(in srgb, var(--c-kuning) 24%, var(--c-kertas-terang)); color: var(--c-tinta); box-shadow: 0 1px 0 rgba(26, 24, 19, 0.06); }
 .iz-closing .iz-chat__out .iz-photo { aspect-ratio: 4 / 3; border-radius: calc(var(--radius-thumb) - 4px); }
 .iz-closing .iz-chat__out .iz-photo img { object-position: 50% 72%; }
-.iz-closing .iz-chat .iz-chat__out .iz-photo > .iz-tag { left: calc(8 * var(--cu)); bottom: calc(8 * var(--cu)); min-height: calc(20 * var(--cu)); padding: 0 calc(8 * var(--cu)); font-size: max(9.5px, calc(11 * var(--cu))); }
 /* The time sits on the last line of the caption, or on its own line when the caption fills it (a spacer reserves it). */
 .iz-closing .iz-chat__out .iz-chat__text { text-wrap: balance; }
 .iz-closing .iz-chat__out .iz-chat__text::after { content: ""; display: inline-block; width: calc(54 * var(--cu)); }

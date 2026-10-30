@@ -21,40 +21,59 @@ export const PHOTOS = {
   gasber1: `${CLD}/v1793176536/ysnx5dscgd87b46l9936.png`,
   gasber2: `${CLD}/v1792996227/gasber-16-foto-2_wfa6nv.png`,
   gasber4: `${CLD}/v1792996253/gasber-16-foto-4_ag7ggp.png`,
-  // Tourmax 30 on two big scooters, the 1440 x 1920 original of public/images/v2/tail-bag-inzta-tourmax-30-2.jpg (1000 px).
+  // Tourmax 30 on two big scooters, 1440 x 1920.
   tourmax: `${CLD}/v1780979155/enfur6qamy877ftcltaz.jpg`,
 } as const;
 
 // Large photos as local WebP made from the biggest originals (inzta-web-design/assets/photos, Cloudinary for Tourmax),
 // enlarged with Lanczos and lightly sharpened where they are shown wider than their source (Sehan, 2026-10-29: sharper
-// images). Thumbnails and tiles keep the Cloudinary URLs above.
+// images). Tiles that still come from Cloudinary keep the URLs above.
 export const HIRES = {
   road01: '/images/v2/foto/road-01.webp',
   road04: '/images/v2/foto/road-04.webp',
   gasber1: '/images/v2/foto/gasber-1.webp',
   gasber4: '/images/v2/foto/gasber-4.webp',
   tourmax: '/images/v2/foto/tourmax-30-motor.webp',
+  // Photo catalog row 159 at its own 1200 px (not enlarged), plate blurred; Retro hero and the "Mengapa" panel. The
+  // original high-resolution file is requested from INZTA's social media team through RND.
+  foldpackZ10: '/images/v2/foto/touring-foldpack-z10.webp',
 } as const;
 
 export const GASBER_CREDIT = 'Dok. Gasber 16 / Indonesia Ride Adventure';
 
-// Example photos (Stitch and Unsplash), always tagged "Foto contoh" where the design tags them (P-1).
+// INZTA product photos (photo catalog rows 136, 170, 206, 33), each a bike of that category with an INZTA bag
+// fitted, cropped square for the Garasi tiles, the menus, MoreCard, OtherCategories and CategoryPanel.
 export const MOTOR_CATEGORIES: readonly CategoryItem[] = [
-  { value: 'matic', label: 'Matic', image: '/images/v2/contoh/contoh-motor-nmax.jpg', alt: 'Motor matic' },
-  { value: 'adventure', label: 'Adventure', image: '/images/v2/contoh/contoh-rider-gunung.jpg', alt: 'Motor adventure di jalan pegunungan' },
-  { value: 'retro', label: 'Retro', image: '/images/v2/contoh/contoh-motor-xsr-155.jpg', alt: 'Motor retro di jalan perkebunan teh' },
-  { value: 'trail', label: 'Trail', image: '/images/v2/contoh/contoh-rider-hutan.jpg', alt: 'Motor trail di jalur hutan' },
+  { value: 'matic', label: 'Matic', image: '/images/v2/foto/kategori-matic.webp', alt: 'Rider berjaket INZTAMOTO berdiri di samping Yamaha XMAX dengan tail bag Tourmax 30 di jok belakang' },
+  { value: 'adventure', label: 'Adventure', image: '/images/v2/foto/kategori-adventure.webp', alt: 'Tankbag TK11 terpasang di tangki motor adventure Honda saat touring berkemah' },
+  { value: 'retro', label: 'Retro', image: '/images/v2/foto/kategori-retro.webp', alt: 'Sidebag RD Depan Daily Ride terpasang di bawah tangki motor retro Yamaha hitam' },
+  { value: 'trail', label: 'Trail', image: '/images/v2/foto/kategori-trail.webp', alt: 'Sidebag Florez 15 terpasang di sisi kiri Honda CRF250 Rally tampak belakang samping' },
 ];
+
+// Photo in the "Kirim foto motor Anda" card of the category page (GridFill), styled like a buyer's phone photo. It is
+// a different photo from the category tile because MoreCard shows the tiles on the same page. Trail has no second
+// usable photo yet, so its frame stays a placeholder (rows 107, 169, 200).
+export const CHAT_PHOTOS: Record<MotorCategory, string | null> = {
+  matic: '/images/v2/foto/chat-matic.webp',
+  adventure: '/images/v2/foto/chat-adventure.webp',
+  retro: '/images/v2/foto/chat-retro.webp',
+  trail: null,
+};
+
+// The visitor's photo in the Closing chat: a Yamaha XSR 155 with the Sidebag RD Depan Daily Ride (photo catalog row
+// 129). Exported so the static photo test covers it.
+export const CLOSING_CHAT_PHOTO = '/images/v2/foto/chat-xsr-155.webp';
 
 export function categoryLabel(value: MotorCategory): string {
   return MOTOR_CATEGORIES.find(c => c.value === value)?.label ?? value;
 }
 
+// Local tiles are INZTA product photos (photo catalog rows 149, 67, 192) cropped 4:5; Samping keeps INZTA's road-01.
 export const POSITION_ITEMS: readonly PositionItem[] = [
-  { value: 'tank', menuLabel: 'Tank bag', tileTitle: 'Tangki', tileText: 'Ponsel, dompet, dan air minum tetap terjangkau.', image: '/images/v2/tk-highway-3.jpg', alt: 'Tank bag di tangki motor' },
+  { value: 'tank', menuLabel: 'Tank bag', tileTitle: 'Tangki', tileText: 'Ponsel, dompet, dan air minum tetap terjangkau.', image: '/images/v2/foto/posisi-tangki.webp', alt: 'Tankbag TK5 terpasang di atas tangki motor' },
   { value: 'side', menuLabel: 'Side bag', tileTitle: 'Samping', tileText: 'Muatan besar dibagi dua sisi.', image: PHOTOS.road01, alt: 'Side bag di motor touring' },
-  { value: 'tail', menuLabel: 'Tail bag', tileTitle: 'Belakang', tileText: 'Untuk bawaan perjalanan beberapa hari.', image: '/images/v2/tail-bag-inzta-tourmax-30-2.jpg', alt: 'Tail bag di jok belakang' },
-  { value: 'aksesori', menuLabel: 'Aksesori touring', tileTitle: 'Aksesori', tileText: 'Perkakas, P3K, dan botol di perjalanan.', image: '/images/v2/acc-toolkit-rollkit.jpg', alt: 'Aksesori touring' },
+  { value: 'tail', menuLabel: 'Tail bag', tileTitle: 'Belakang', tileText: 'Untuk bawaan perjalanan beberapa hari.', image: '/images/v2/foto/posisi-belakang.webp', alt: 'Tailbag Boba terpasang di jok belakang motor sport dengan tetesan air di permukaannya' },
+  { value: 'aksesori', menuLabel: 'Aksesori touring', tileTitle: 'Aksesori', tileText: 'Perkakas, P3K, dan botol di perjalanan.', image: '/images/v2/foto/posisi-aksesori.webp', alt: 'Tool wallet INZTA tergulung di bagasi bawah jok skuter' },
 ];
 
 // F-016 S0.9 chip labels, keyed like the catalog filter (S2.2).
