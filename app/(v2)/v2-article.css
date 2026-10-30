@@ -70,10 +70,6 @@
 .iz-railhelp p { font-size: 15px; line-height: 1.5; }
 .iz-railhelp .iz-motorchip { background: var(--c-arang-naik); color: var(--c-krem); border: 1px solid var(--c-line-on-dark); }
 .iz-railhelp .iz-btn { width: 100%; }
-/* The rail lists the body's products on wide screens, so the body's own product cards step aside there. */
-@media (min-width: 1200px) {
-  .iz-page .iz-article--rail-products .article-embed--produk { display: none; }
-}
 @media (max-width: 1199.98px) {
   .iz-article.iz-article--page { max-width: calc(var(--size-reading) + 220px + var(--space-10) + 2 * var(--space-6)); grid-template-columns: minmax(180px, 220px) minmax(0, var(--size-reading)); grid-template-areas: ". head" "left body" ". right"; }
   .iz-article__right { align-self: start; }

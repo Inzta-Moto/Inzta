@@ -77,7 +77,7 @@ export default function ArticlePage({
   return (
     <>
       <ReadingProgress />
-      <div className={`iz-article iz-article--page${products.length ? ' iz-article--rail-products' : ''}`}>
+      <div className="iz-article iz-article--page">
         <div className="iz-article__head">
           {previewBanner && (
             <p className="iz-preview-banner" role="status">Pratinjau, belum tayang. Halaman ini hanya terlihat oleh admin.</p>

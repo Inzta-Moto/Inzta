@@ -18,8 +18,9 @@ export function railProducts(blocks: RenderBlock[], embeds: ArticleEmbeds): Prod
 
 const rp = (n: number) => formatPrice(n).replace(' ', ' ');
 
-// F-017 right rail, wide screens only (v2-article.css): the canvas iz-inline-products / iz-iprod box. Below 1200 px
-// the body's own product cards are shown instead, so a product never appears twice on one screen.
+// F-017 right rail, wide screens only (v2-article.css): the canvas iz-inline-products / iz-iprod box, a summary of
+// the products the body names. The body's own product cards always stay where the writer put them (Sehan,
+// 30 Oct); below 1200 px the rail sits under the body, so the summary is hidden there.
 export default function RailProducts({ products }: { products: ProductEmbed[] }) {
   if (products.length === 0) return null;
   return (
