@@ -4,11 +4,11 @@ import { formatShortDate, guideAction } from '@/lib/v2/home-data';
 import SmartImage from '@/components/v2/ui/SmartImage';
 import { ArrowRight } from '@/components/v2/icons';
 
-// Article without a cover: the "Foto artikel: PLACEHOLDER" tile (S1.8.3, P-2/P-14). Real covers never get "Foto contoh".
+// Article without a cover: the "Foto belum tersedia" tile (S1.8.3, P-2/P-14). Real covers never get "Foto contoh".
 function EmptyPhoto() {
   return (
     <div className="iz-photo iz-photo--empty">
-      <span className="iz-for iz-placeholder">Foto artikel: PLACEHOLDER</span>
+      <span className="iz-for iz-placeholder">Foto belum tersedia</span>
     </div>
   );
 }

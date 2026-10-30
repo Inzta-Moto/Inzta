@@ -10,7 +10,7 @@ const STEPS: readonly { icon: ComponentType; title: string; text: string; scene:
   { icon: BadgeCheck, title: 'Admin membalas', text: 'Admin INZTA mengonfirmasi ongkir dan pembayaran di WhatsApp.', scene: 'reply' },
 ];
 
-// "Pesan dalam tiga langkah." (F-016 S1.10). Warranty and shipping time stay PLACEHOLDER until INZTA writes them
+// "Pesan dalam tiga langkah." (F-016 S1.10). Warranty and shipping time point to the admin until INZTA writes them
 // (A-023, P-5, P-6; listed by check:f016-release, S1.10.3). S1.10.2: the v2 reset removes the list markers, so each
 // number is announced once, from its visible numeral (the leading zero and the yellow fill copy are visual only); the
 // road, node icons and scenes are aria-hidden. Motion: HowToStage (desktop: the section pins and scrolling walks the
@@ -29,11 +29,11 @@ export default function HowToOrder({ flush = true }: { flush?: boolean }) {
             <div className="iz-infopills">
               <span className="iz-infopill">
                 <Shield />
-                Garansi: PLACEHOLDER
+                Garansi: tanya admin
               </span>
               <span className="iz-infopill">
                 <Truck />
-                Waktu kirim: PLACEHOLDER
+                Waktu kirim: tanya admin
               </span>
             </div>
           </div>

@@ -22,7 +22,7 @@ export default function ArticlePhoto({
   if (!photo) {
     return (
       <div className="iz-photo iz-photo--empty iz-aphoto">
-        <span className="iz-for iz-placeholder">Foto artikel: PLACEHOLDER</span>
+        <span className="iz-for iz-placeholder">Foto belum tersedia</span>
       </div>
     );
   }

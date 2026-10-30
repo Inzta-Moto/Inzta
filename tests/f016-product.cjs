@@ -249,7 +249,7 @@ function mockFetch(table) {
     assert.strictEqual(side[1].a, 'Bahan luarnya Cordura D600. Untuk perjalanan hujan, tanyakan ke admin cara menyimpan barang elektronik.');
     assert.strictEqual(tail[1].a, 'Untuk perjalanan hujan, tanyakan ke admin cara menyimpan barang elektronik.');
     assert.deepStrictEqual(tail.map(f => f.q), ['Apakah bisa dipasang di motor saya?', 'Apakah tahan hujan?', 'Berapa lama pengiriman?']);
-    assert.strictEqual(tail[2].a, 'PLACEHOLDER: waktu kirim');
+    assert.strictEqual(tail[2].a, 'Tanyakan perkiraan waktu kirim ke admin INZTA di WhatsApp. Admin juga mengonfirmasi ongkir ke kota Anda.');
   });
   await check('S3.8: related = other positions (no position counts as different), best sellers first, newest next, max 4, never itself', () => {
     const mk = (slug, name, badge, createdAt) => ({ slug, name, badge, createdAt, productType: 'simple', isActive: true, images: [] });
@@ -388,7 +388,7 @@ function mockFetch(table) {
     assert.match(html, /<noscript><style>\.iz-js-only \{ display: none !important; \}<\/style><\/noscript>/);
     assert.ok(/class="iz-qty iz-js-only"/.test(html) && /class="iz-voucher iz-js-only"/.test(html) && /class="iz-link iz-js-only"/.test(html));
     assert.match(html, /Rp520\.000<\/b><s>Rp590\.000<\/s><span class="iz-save">Hemat Rp70\.000<\/span>/);
-    assert.ok(html.includes('Dibalas admin INZTA') && html.includes('Garansi: PLACEHOLDER') && html.includes('Pengiriman: PLACEHOLDER'));
+    assert.ok(html.includes('Dibalas admin INZTA') && html.includes('Garansi: tanya admin') && html.includes('Ongkir dikonfirmasi admin'));
     assert.match(html, /<details open=""><summary>Apakah bisa dipasang di motor saya\?/);
     assert.strictEqual((html.match(/<details/g) || []).length, 3);
     assert.match(html, /<h2 class="t-h2-shop" style="margin-bottom:24px">Lengkapi perjalanan Anda<\/h2>/);
@@ -404,7 +404,7 @@ function mockFetch(table) {
   await check('S3.3.8: sold out at render shows "Stok Habis" as a disabled link without href, even without JavaScript', () => {
     const html = render(BUILTIN[1]);
     assert.match(html, /<a class="iz-btn iz-btn--primary iz-btn--wa" role="link" aria-disabled="true">.*<span>Stok Habis<\/span><\/a>/);
-    assert.match(html, /Foto produk: PLACEHOLDER/);
+    assert.match(html, /Foto belum tersedia/);
     assert.ok(!html.includes('class="iz-thumbs"'), '0 photos -> no thumbnail row');
   });
   await check('S3.5/S3.6: no features -> no Spesifikasi; description paragraphs; no description -> no Deskripsi', () => {
@@ -431,8 +431,8 @@ function mockFetch(table) {
     assert.ok(!/name="main"[^>]*checked/.test(html));
     assert.match(html, /<span class="iz-sideopt__tag">2 tas<\/span>/);
     assert.match(html, /aria-label="Foto kiri" tabindex="-1"/);
-    assert.match(html, /role="img" aria-label="Foto kanan: PLACEHOLDER"/);
-    assert.match(html, /role="img" aria-label="Foto sepasang: PLACEHOLDER"/);
+    assert.match(html, /role="img" aria-label="Foto kanan belum tersedia"/);
+    assert.match(html, /role="img" aria-label="Foto sepasang belum tersedia"/);
     assert.match(html, /<b>Rp150\.000<\/b><span class="iz-per">\/ sisi<\/span><s>Rp175\.000<\/s><span class="iz-save">Hemat Rp25\.000<\/span>/);
     assert.match(html, /<span class="iz-fit">Dibuat untuk Yamaha XSR 155<\/span>/);
     // ST-NOJS: ordering through the plain link, side told in chat.

@@ -19,7 +19,7 @@ export default function ArticleFeature({ article }: { article: CategoryArticle }
             <SmartImage src={cover} alt={coverAlt} sizes="(max-width: 767px) 100vw, 680px" widths={[400, 700, 1000, 1400]} width={1000} fallbackLabel="Foto artikel" />
           ) : (
             <span className="iz-fallback">
-              <span className="iz-placeholder">Foto artikel: PLACEHOLDER</span>
+              <span className="iz-placeholder">Foto belum tersedia</span>
             </span>
           )}
         </div>

@@ -8,8 +8,11 @@ import { COMMUNITY_PHOTOS, EVENT_FACTS, INSTAGRAM, SHOW_VALUES_COPY } from '@/co
 // "Bersama komunitas." (F-016 S8.4). Facts from K-06 as a definition list (S8.4.1); only the Gasber photo carries
 // the organiser credit, hidden by CSS together with a failed photo (S8.4.2, S8.4.3). The lead line is part of P-8.
 // The route map behind the panel is decorative and positioned out of the grid flow (AboutMap, v2-about.css).
+// Small photos: one column on phones, two columns of the stacked card from 768 to 1023 px, about 280 px on desktop.
+const SMALL_SIZES = '(max-width: 767px) 100vw, (max-width: 1023px) 45vw, 280px';
+
 export default function CommunityPanel({ gasberHref }: { gasberHref: string }) {
-  const { gasber, road02, hero99 } = COMMUNITY_PHOTOS;
+  const { gasber, road02, xsr155 } = COMMUNITY_PHOTOS;
   return (
     <section className="iz-wrap">
       <div className="iz-dark iz-grid-2 iz-about-community">
@@ -51,10 +54,11 @@ export default function CommunityPanel({ gasberHref }: { gasberHref: string }) {
             <span className="iz-tag">{gasber.credit}</span>
           </div>
           <div className="iz-photo iz-about-photo">
-            <SmartImage src={road02.src} alt={road02.alt} tone="dark" sizes="(max-width: 767px) 100vw, 280px" widths={[300, 600]} width={600} />
+            {/* The Cloudinary original is 1200 x 630; the old 600 cap made it soft on phones (100vw at DPR 2-3). */}
+            <SmartImage src={road02.src} alt={road02.alt} tone="dark" sizes={SMALL_SIZES} widths={[300, 600, 900, 1200]} width={600} />
           </div>
           <div className="iz-photo iz-about-photo">
-            <SmartImage src={hero99.src} alt={hero99.alt} tone="dark" sizes="(max-width: 767px) 100vw, 280px" widths={[300, 600]} width={600} />
+            <SmartImage src={xsr155.src} alt={xsr155.alt} tone="dark" sizes={SMALL_SIZES} widths={[300, 600, 900]} width={600} />
           </div>
         </div>
       </div>

@@ -117,6 +117,10 @@ html:not(.js-nav) .iz-navdd:focus-within .iz-navdd__btn svg { transform: rotate(
    reading bar of an article does not count as a block. */
 .iz-page main > * + *:not(.iz-figure--cover, .iz-article--page, .iz-pdp, .iz-catalog__filters, .iz-catalog__results) { margin-top: var(--space-section); }
 .iz-page main > .iz-progress + * { margin-top: 0; }
+/* Leading inline scripts and noscript styles render nothing, so the block after them is still the page's first block
+   (the catalogue's pre-paint motor script gave its head an extra section gap, Sehan 2026-10-30). */
+.iz-page main > :is(script, noscript, style):first-child + :not(script, noscript, style),
+.iz-page main > :is(script, noscript, style):first-child + :is(script, noscript, style) + * { margin-top: 0; }
 .iz-page main > * + .iz-section--tight, .iz-page main > .iz-motor-tabs + .iz-motor-produk { margin-top: var(--space-section-tight); }
 .iz-page main > :is(.iz-section, .iz-section--tight) { padding-block: 0; }
 .iz-page .iz-footer { margin-top: var(--space-section); }

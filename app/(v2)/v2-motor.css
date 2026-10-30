@@ -10,10 +10,25 @@
 /* Placeholder tag of a hero without a photo (Trail), below the floating navbar. */
 .iz-hero__tag { position: absolute; z-index: 2; top: 112px; right: var(--space-6); }
 
-/* Per-photo framing of the category heroes (S5.1): Retro keeps the bags and the tank in the 1428 x 760 band and the
-   side bag in the phone portrait; Adventure keeps the bike in the lower half of its tall photo. */
-.iz-hero__img.iz-hero__img--retro { object-position: 50% 62%; }
+/* Per-photo framing of the category heroes (S5.1): Retro (hero-99) keeps the rider, the XSR and its yellow bags in
+   the 1428 x 760 band, on the right clear of the headline, and pulls the phone portrait right onto them; Adventure
+   keeps the bike in the lower half of its tall photo; Matic (road-04, 3:4) drops to the bottom so the whole XMAX,
+   its INZTAMOTO decal and the tail bag show instead of sky. */
+.iz-hero__img.iz-hero__img--retro { object-position: 50% 40%; } /* 80% cut the helmet under the navbar on wide screens */
 .iz-hero__img.iz-hero__img--adventure { object-position: 50% 55%; }
+.iz-hero__img.iz-hero__img--matic { object-position: 50% 92%; }
+/* Trail (road-09): the bike stands on the left of the photo, so from 1024 px the copy takes the right half over the
+   sea and the side scrim comes from the right; phones keep the copy at the bottom with the bike centred above it. */
+.iz-hero__img.iz-hero__img--trail { object-position: 30% 60%; }
+@media (max-width: 1023.98px) {
+  /* The tall phone band would put the copy over the bike: the photo fills the upper part and the copy sits below. */
+  .iz-hero.iz-hero--flip > .iz-smartimg.iz-hero__img { bottom: 40%; height: auto; -webkit-mask-image: linear-gradient(to bottom, #000 65%, transparent); mask-image: linear-gradient(to bottom, #000 65%, transparent); }
+  .iz-hero.iz-hero--flip .iz-hero__img--trail { object-position: 32% 70%; }
+}
+@media (min-width: 1024px) {
+  .iz-hero.iz-hero--flip::after { background: linear-gradient(to top, var(--c-aspal) 0%, var(--c-scrim-soft) 45%, var(--c-scrim-clear) 75%), linear-gradient(to left, var(--c-scrim-strong) 0%, var(--c-scrim-clear) 65%); }
+  .iz-hero.iz-hero--flip .iz-hero__body { padding-left: calc(50% + var(--space-6)); }
+}
 
 /* S5.6 long title: three lines, full title stays in the DOM. */
 .iz-afeature__title { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; overflow: hidden; }
@@ -163,7 +178,8 @@
 
 @media (max-width: 767px) {
   .iz-hero__tag { top: 96px; right: var(--space-5); }
-  .iz-hero__img.iz-hero__img--retro { object-position: 45% 50%; }
+  .iz-hero__img.iz-hero__img--retro { object-position: 86% 50%; }
+  .iz-hero__img.iz-hero__img--matic { object-position: 50% 100%; }
   .iz-motor-tabs { padding-block: 2px; }
   .iz-motor-closing { width: calc(100% - 2 * var(--space-5)); }
   .iz-grid-4 > .iz-pcard:nth-child(3) ~ .iz-morecard { grid-column: 1 / -1; }

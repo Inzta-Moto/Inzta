@@ -12,7 +12,7 @@ export default function ValuesList({ gasberHref }: { gasberHref: string }) {
     <section className="iz-section" style={{ paddingTop: 0 }}>
       <div className="iz-wrap iz-why">
         <div className="iz-why__photo" data-reveal-clip="">
-          <SmartImage src={VALUES_PHOTO.src} alt={VALUES_PHOTO.alt} tone="dark" sizes="(max-width: 767px) 100vw, 480px" widths={[480, 800, 1200]} width={800} />
+          <SmartImage src={VALUES_PHOTO.src} alt={VALUES_PHOTO.alt} tone="dark" imgClassName="iz-why__img--values" sizes="(max-width: 767px) 100vw, 480px" widths={[480, 800, 1200]} width={800} />
           <h2 className="t-h2-landing" data-reveal-lines="">Yang kami pegang.</h2>
         </div>
         <ul className="iz-why__list iz-why__list--tiles" data-reveal-stagger="">

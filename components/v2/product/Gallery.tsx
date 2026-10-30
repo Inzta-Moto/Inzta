@@ -68,7 +68,7 @@ export default function Gallery({
           />
         ) : (
           <span className="iz-gallery__noimg">
-            <span className="iz-for iz-placeholder">Foto produk: PLACEHOLDER</span>
+            <span className="iz-for iz-placeholder">Foto belum tersedia</span>
           </span>
         )}
         {positionLabel && <span className="iz-pcard__pos">{positionLabel}</span>}

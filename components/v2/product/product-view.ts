@@ -73,7 +73,7 @@ export function faqItems(p: Pick<Product, 'slug' | 'name'>, rows: SpecRow[]): Fa
   return [
     { q: 'Apakah bisa dipasang di motor saya?', a: fitAnswer },
     { q: 'Apakah tahan hujan?', a: material ? `Bahan luarnya ${material}. ${rain}` : rain },
-    { q: 'Berapa lama pengiriman?', a: 'PLACEHOLDER: waktu kirim' },
+    { q: 'Berapa lama pengiriman?', a: 'Tanyakan perkiraan waktu kirim ke admin INZTA di WhatsApp. Admin juga mengonfirmasi ongkir ke kota Anda.' },
   ];
 }
 

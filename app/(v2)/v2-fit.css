@@ -171,6 +171,7 @@
   html .iz-page .iz-article .article-embed-title { font-size: max(14.3px, calc(17 * var(--u))); }
   html .iz-page .iz-article .article-embed-price { font-size: max(14.3px, calc(17 * var(--u))); }
   html .iz-page .iz-article .article-embed-cta { font-size: max(13.4px, calc(16 * var(--u))); }
+  html .iz-page .iz-catalog__near-title { font-size: max(18.5px, calc(22 * var(--u))); }
   html .iz-page .iz-fsheet__close { font-size: max(13.4px, calc(16 * var(--u))); }
   html .iz-page .iz-fsheet__legend { font-size: max(11.8px, calc(14 * var(--u))); }
   html .iz-page .iz-thumb__ph { font-size: max(11.8px, calc(14 * var(--u))); }

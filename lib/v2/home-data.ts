@@ -40,15 +40,23 @@ export function effectivePrice(p: Product): { price: number; compareAt: number |
 
 // design.md §4 (F-016 A3): extend and harian added for the Katalog filter (S2.2) and the card chip (S0.9).
 // The order matters: "Side bag Daily Ride" is a side bag, not a daily bag.
+// This is the only reader of a product's position (Katalog, cards, motor and product pages), so a future explicit
+// admin field changes one function. Order: slug override, then the name, then the slug; the last one catches a
+// product renamed in plain Indonesian ("Tas Tangki X") whose slug still says "tankbag-x".
 export function positionOf(p: Pick<Product, 'slug' | 'name'>): ProductPosition | null {
   if (p.slug in POSITION_BY_SLUG) return POSITION_BY_SLUG[p.slug];
-  const name = p.name.toLowerCase();
-  if (/tank\s?bag/.test(name)) return 'tank';
-  if (/side\s?bag/.test(name)) return 'side';
-  if (/tail\s?bag/.test(name)) return 'tail';
-  if (/extend\s?bag/.test(name)) return 'extend';
-  if (/\bbotol\b|\bacc\s|toolkit|medikit|rollkit/.test(name)) return 'aksesori';
-  if (/chest\s?bag|waist\s?bag|sling\s?bag|hand\s?bag|\bdaily\b/.test(name)) return 'harian';
+  return positionFromText((p.name ?? '').toLowerCase(), true) ?? positionFromText((p.slug ?? '').toLowerCase().replace(/-/g, ' '), false);
+}
+
+// `words`: the single-word rules (botol, acc, toolkit, daily) apply to the name only; in a slug they are too loose
+// ("daily" alone is not a product type), so the slug only counts the "… bag" compounds.
+function positionFromText(text: string, words: boolean): ProductPosition | null {
+  if (/tank\s?bag/.test(text)) return 'tank';
+  if (/side\s?bag/.test(text)) return 'side';
+  if (/tail\s?bag/.test(text)) return 'tail';
+  if (/extend\s?bag/.test(text)) return 'extend';
+  if (words && /\bbotol\b|\bacc\s|toolkit|medikit|rollkit/.test(text)) return 'aksesori';
+  if (/chest\s?bag|waist\s?bag|sling\s?bag|hand\s?bag/.test(text) || (words && /\bdaily\b/.test(text))) return 'harian';
   return null;
 }
 
