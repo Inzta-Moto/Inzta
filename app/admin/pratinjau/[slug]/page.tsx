@@ -7,10 +7,10 @@ import ArticlePage from '@/components/v2/article/ArticlePage';
 import { requireAdmin } from '@/lib/auth';
 import { getArticleForAdmin } from '@/lib/admin-articles';
 import { renderArticle } from '@/lib/markdown';
-import { resolveEmbeds } from '@/lib/article-embeds';
+import { motorRailProducts, resolveEmbeds, shownArticleSlugs } from '@/lib/article-embeds';
 import { statusOf } from '@/lib/article-format';
-import { getArticles } from '@/lib/public-content';
-import { articleReadingMinutes, otherArticles } from '@/lib/v2/article-v2';
+import { getActiveProducts, getArticles } from '@/lib/public-content';
+import { OTHER_ARTICLES_MAX, articleReadingMinutes, motorArticles, otherArticles } from '@/lib/v2/article-v2';
 
 // Stored article (draft or published) in the public layout, for admins only. Never cached and never
 // indexed: a draft must not reach a CDN or a search engine through this page.
@@ -35,15 +35,19 @@ export default async function AdminArticlePreviewPage({ params }: { params: { sl
   const { content, ...rest } = article;
   // F-016 S7.8: same v2 frame and ArticlePage as /blog/{slug}, all blocks with the missing-card notes, no share row,
   // and "Artikel lain" from published articles only (S7.8.4).
-  const others = otherArticles(article, await getArticles());
+  // F-017: the products also feed the navbar prices (V2Layout), so they are read once.
+  const [published, products] = await Promise.all([getArticles(), getActiveProducts()]);
+  const others = otherArticles(article, published, OTHER_ARTICLES_MAX, shownArticleSlugs(blocks, embeds));
   return (
-    <V2Layout current="artikel">
+    <V2Layout current="artikel" products={products}>
       <ArticlePage
         article={rest}
         blocks={blocks}
         embeds={embeds}
         minutes={articleReadingMinutes(content)}
         others={others}
+        motorPicks={motorArticles(article, published)}
+        motorProducts={motorRailProducts(products)}
         shareUrl={null}
         adminPreview
         previewBanner={statusOf(article) !== 'published'}

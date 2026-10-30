@@ -3,7 +3,7 @@ import Link from 'next/link';
 import V2StaticFrame from '@/components/v2/V2StaticFrame';
 
 export const metadata: Metadata = {
-  title: 'Halaman tidak ditemukan · INZTA',
+  title: 'Halaman tidak ditemukan', // F-005 6.2: the root layout template adds " | INZTA Moto"
   robots: { index: false },
 };
 

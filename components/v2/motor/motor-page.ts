@@ -74,8 +74,9 @@ export function categoryDescription(c: MotorCategory, lead: string | null): stri
   return lead ?? `Tas INZTA untuk motor ${categoryLabel(c)}.`;
 }
 
+// F-005 6.2: the root layout template adds " | INZTA Moto", so the title carries no brand of its own.
 export function categoryTitle(c: MotorCategory): string {
-  return `Tas untuk motor ${categoryLabel(c)} · INZTA`;
+  return `Tas untuk motor ${categoryLabel(c)}`;
 }
 
 // S5.9.3: prefilled text (new string), URL-encoded once here.

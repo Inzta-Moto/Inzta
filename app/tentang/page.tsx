@@ -14,8 +14,8 @@ const TITLE = 'Tentang INZTA';
 const DESCRIPTION =
   'INZTA adalah brand lokal tas dan perlengkapan motor dari PT Inzta Gear Indonesia. Kami membuat tank bag, side bag, tail bag, dan aksesori touring untuk rider Indonesia.';
 
-// S8.7.3: the canvas <title> (recorded exception to E5); own Open Graph and Twitter text so the root copy is never
-// inherited; no JSON-LD (F-005). A page-level openGraph replaces the root object whole, so the root image, site name,
+// S8.7.3: the canvas <title> (recorded exception to E5; the F-005 layout template adds " | INZTA Moto"); own Open
+// Graph and Twitter text so the root copy is never inherited; no JSON-LD (F-005). A page-level openGraph replaces the root object whole, so the root image, site name,
 // and locale are repeated here.
 const SHARE_IMAGE = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://inzta.id'}/logo-mtg.png`;
 export const metadata: Metadata = {
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
     siteName: 'INZTA Moto',
     title: TITLE,
     description: DESCRIPTION,
-    url: '/tentang',
+    url: canonicalUrl('tentang'), // F-005 6.5: og:url = canonical on every deployment, not metadataBase + path
     images: [{ url: SHARE_IMAGE, width: 1200, height: 630, alt: 'INZTA Moto' }],
   },
   twitter: { card: 'summary_large_image', title: TITLE, description: DESCRIPTION, images: [SHARE_IMAGE] },

@@ -388,7 +388,7 @@ export interface FlashCountdown {
 }
 
 // F-016 phase A3 (D2, D3, S4, S1.9). Article topics as stored in articles/{slug}.topik (S6.8.1).
-export type ArticleTopic = 'memilih-tas' | 'per-motor' | 'touring' | 'komunitas';
+export type ArticleTopic = 'memilih-tas' | 'per-motor' | 'touring' | 'adventure' | 'motocamp' | 'komunitas';
 
 // Every position key of design.md §4; BagPosition stays the four navbar/Beranda tiles (S0.4.3).
 export type ProductPosition = BagPosition | 'extend' | 'harian';

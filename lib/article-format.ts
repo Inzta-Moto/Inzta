@@ -247,6 +247,19 @@ export function hasH1(content: string): boolean {
   return false;
 }
 
+/** F-017: non-empty ATX "##" headings outside fenced code; each becomes an h2 and an entry of the "Daftar isi". */
+export function countH2(content: string): number {
+  const text = content || '';
+  const fenced = fencedRanges(text);
+  const re = /^ {0,3}##[ \t]+\S/gm;
+  let n = 0;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text))) {
+    if (!inRanges(m.index, fenced)) n++;
+  }
+  return n;
+}
+
 const oneLine = (s: string) => s.replace(/[\r\n]+/g, ' ').trim();
 
 // The editor writes alt and caption into Markdown; escaping keeps "]" and '"' from ending the syntax early.

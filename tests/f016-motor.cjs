@@ -76,7 +76,7 @@ check('S5.1.1: categories without an approved line show P-17 and the meta fallba
   for (const c of ['matic', 'adventure', 'trail']) assert.strictEqual(P.approvedLead(c, [xsr, tk5, adv20], []), null);
   assert.strictEqual(P.fallbackLead('Trail'), 'Tas INZTA untuk motor Trail. Ragu soal ukuran? Tanyakan ke admin lewat WhatsApp.');
   assert.strictEqual(P.categoryDescription('matic', null), 'Tas INZTA untuk motor Matic.');
-  assert.strictEqual(P.categoryTitle('retro'), 'Tas untuk motor Retro · INZTA');
+  assert.strictEqual(P.categoryTitle('retro'), 'Tas untuk motor Retro'); // F-005 6.2: the layout template adds the brand
 });
 
 check('S5.2.2: tablist only with two or more of Side/Tank/Tail; "Semua" first', () => {

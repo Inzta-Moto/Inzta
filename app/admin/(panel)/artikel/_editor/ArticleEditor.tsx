@@ -24,7 +24,7 @@ import {
   type BodyImage,
 } from '@/lib/article-format';
 import type { ArticleEmbeds, ArticleStatus, ArticleTopic, ChecklistItem, ContentFormat, MotorCategory, RenderBlock, RenderWarning } from '@/types';
-import { articleCategories, normalizeTopik } from '@/lib/v2/article-v2';
+import { articleMotorTags, normalizeTopik } from '@/lib/v2/article-v2';
 import TopicField from './TopicField';
 import ArticleBody from '@/components/ArticleBody';
 import type { Editor } from '@tiptap/react';
@@ -108,7 +108,7 @@ function toDraft(a: Partial<ServerArticle>): Draft {
     images: images.filter((u): u is string => typeof u === 'string'),
     // F-016 S6.8.4/S6.8.5: documents and local copies without these fields get '' and [].
     topik: normalizeTopik(a.topik) ?? '',
-    kategoriMotor: articleCategories(a),
+    kategoriMotor: articleMotorTags(a),
   };
 }
 

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { ChevronDown } from '@/components/v2/icons';
 
 export interface TocHeading {
   id: string;
@@ -15,6 +16,7 @@ export interface TocHeading {
  */
 export default function Toc({ headings }: { headings: TocHeading[] }) {
   const [current, setCurrent] = useState<string | null>(null);
+  const [open, setOpen] = useState(false);
 
   useEffect(() => {
     if (headings.length < 2) return;
@@ -37,14 +39,24 @@ export default function Toc({ headings }: { headings: TocHeading[] }) {
   }, [headings]);
 
   if (headings.length < 2) return null;
+  // F-017: on phones the list folds under a "Daftar isi · n bagian" button (closed after JavaScript loads, so without it
+  // the list stays open); from 768 px the button is hidden and the list always shows (v2-article.css).
   return (
-    <aside className="iz-toc" data-lenis-prevent>
-      <h2>Daftar isi</h2>
-      {headings.map(h => (
-        <a key={h.id} href={`#${h.id}`} aria-current={current === h.id ? 'true' : undefined}>
-          {h.text}
-        </a>
-      ))}
-    </aside>
+    <nav className="iz-toc" aria-labelledby="iz-toc-title" data-lenis-prevent data-open={open ? '' : undefined}>
+      <h2>
+        <span className="iz-toc__title" id="iz-toc-title">Daftar isi</span>
+        <button className="iz-toc__toggle" type="button" aria-expanded={open} aria-controls="iz-toc-list" onClick={() => setOpen(o => !o)}>
+          Daftar isi · {headings.length} bagian
+          <ChevronDown size={18} />
+        </button>
+      </h2>
+      <div className="iz-toc__list" id="iz-toc-list">
+        {headings.map(h => (
+          <a key={h.id} href={`#${h.id}`} aria-current={current === h.id ? 'true' : undefined} onClick={() => setOpen(false)}>
+            {h.text}
+          </a>
+        ))}
+      </div>
+    </nav>
   );
 }

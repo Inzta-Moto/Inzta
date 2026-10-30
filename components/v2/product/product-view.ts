@@ -39,8 +39,8 @@ export function galleryImages(p: Product, withVariants = true): string[] {
   return out;
 }
 
-// S3.5: "Label: nilai" splits on the first colon; other entries keep an empty label column. Nothing is invented.
-export function specRows(features: unknown): SpecRow[] {
+// S3.5: "Label: nilai" splits on the first colon; entries without a label and a value come back with an empty label.
+function parseFeatures(features: unknown): SpecRow[] {
   if (!Array.isArray(features)) return [];
   return features
     .filter((f): f is string => typeof f === 'string' && f.trim() !== '')
@@ -53,6 +53,25 @@ export function specRows(features: unknown): SpecRow[] {
     });
 }
 
+// S3.5: only "Label: nilai" entries are specification rows. The admin "Features" field is mostly filled with short
+// keywords ("XSR", "TOURING", "SIDE BAG"), which made a table of empty label cells; those go to featureTags.
+export function specRows(features: unknown): SpecRow[] {
+  return parseFeatures(features).filter(r => r.label !== '');
+}
+
+// S3.5: the entries without a label, shown as keyword chips after the description. Duplicates (case-insensitive) once.
+export function featureTags(features: unknown): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const r of parseFeatures(features)) {
+    const key = r.value.toLowerCase();
+    if (r.label !== '' || seen.has(key)) continue;
+    seen.add(key);
+    out.push(r.value);
+  }
+  return out;
+}
+
 // S3.6: plain text; blank lines start a paragraph, single line breaks stay inside it. No HTML is interpreted.
 export function descriptionParagraphs(description: unknown): string[][] {
   if (typeof description !== 'string') return [];
@@ -61,6 +80,19 @@ export function descriptionParagraphs(description: unknown): string[][] {
     .split(/\n\s*\n/)
     .map(block => block.split('\n').map(l => l.trimEnd()).filter(l => l.trim() !== ''))
     .filter(lines => lines.length > 0);
+}
+
+// Server guess for the "Lihat selengkapnya" fold (DescriptionMore), so a long description is folded in the first HTML
+// and the page does not jump on load: about 55 characters per line between the phone and desktop column widths, and
+// a paragraph gap of half a line. More than 12 such lines (the fold plus its slack) starts folded; the browser then
+// measures the real height.
+export function descriptionFolds(paragraphs: string[][]): boolean {
+  let lines = 0;
+  for (const block of paragraphs) {
+    for (const line of block) lines += Math.max(1, Math.ceil(line.length / 55));
+    lines += 0.5;
+  }
+  return lines > 12;
 }
 
 // S3.7 copy: canvas text for tail bags, the design.md §11 string for everything else.

@@ -231,11 +231,14 @@ function mockFetch(table) {
     assert.deepStrictEqual(V.galleryImages({ productType: 'simple', images: [], imageUrl: 'only.png' }), ['only.png']);
     assert.deepStrictEqual(V.galleryImages(sideProduct(), false), ['p1.jpg']);
   });
-  await check('S3.5: "Label: nilai" splits on the first colon; other entries keep an empty label; blanks dropped', () => {
-    assert.deepStrictEqual(V.specRows(['Kapasitas: 30 liter', 'Ukuran: 37 x 28: 23', 'XSR', ' ', 'Kosong:']), [
-      { label: 'Kapasitas', value: '30 liter' }, { label: 'Ukuran', value: '37 x 28: 23' }, { label: '', value: 'XSR' }, { label: '', value: 'Kosong:' },
+  await check('S3.5: "Label: nilai" rows split on the first colon; unlabelled entries become keyword tags; blanks dropped', () => {
+    const features = ['Kapasitas: 30 liter', 'Ukuran: 37 x 28: 23', 'XSR', ' ', 'Kosong:', 'TOURING', 'touring'];
+    assert.deepStrictEqual(V.specRows(features), [
+      { label: 'Kapasitas', value: '30 liter' }, { label: 'Ukuran', value: '37 x 28: 23' },
     ]);
+    assert.deepStrictEqual(V.featureTags(features), ['XSR', 'Kosong:', 'TOURING']);
     assert.deepStrictEqual(V.specRows(undefined), []);
+    assert.deepStrictEqual(V.featureTags(undefined), []);
   });
   await check('S3.6: description as plain text paragraphs; single line breaks stay in the paragraph; no HTML parsing', () => {
     assert.deepStrictEqual(V.descriptionParagraphs('A\nB\n\n<b>C</b>\r\n\r\n\n'), [['A', 'B'], ['<b>C</b>']]);
@@ -391,7 +394,7 @@ function mockFetch(table) {
     assert.ok(html.includes('Dibalas admin INZTA') && html.includes('Garansi: tanya admin') && html.includes('Ongkir dikonfirmasi admin'));
     assert.match(html, /<details open=""><summary>Apakah bisa dipasang di motor saya\?/);
     assert.strictEqual((html.match(/<details/g) || []).length, 3);
-    assert.match(html, /<h2 class="t-h2-shop" style="margin-bottom:24px">Lengkapi perjalanan Anda<\/h2>/);
+    assert.match(html, /<h2 class="t-h2-shop iz-pdp-h2">Lengkapi perjalanan Anda<\/h2>/);
     assert.match(html, /<h3 class="iz-pcard__name">Tankbag TK 5<\/h3>/);
     assert.match(html, /Belum yakin tas mana yang pas untuk motor Anda\?/);
   });
@@ -413,8 +416,35 @@ function mockFetch(table) {
     assert.match(a, /<p class="t-body iz-muted iz-pdp-para"><span>Satu<\/span><span><br\/>Dua<\/span><\/p><p class="t-body iz-muted iz-pdp-para"><span>Tiga<\/span><\/p>/);
     const b = render({ ...BUILTIN[0], features: ['Bahan luar: Cordura D600', 'XSR'], description: '' });
     assert.ok(b.includes('Spesifikasi') && !b.includes('Deskripsi'));
-    assert.match(b, /<dl class="iz-spec"><div><dt>Bahan luar<\/dt><dd>Cordura D600<\/dd><\/div><div><dt><\/dt><dd>XSR<\/dd><\/div><\/dl>/);
+    assert.match(b, /<dl class="iz-spec"><div><dt>Bahan luar<\/dt><dd>Cordura D600<\/dd><\/div><\/dl>/);
     assert.match(b, /Bahan luarnya Cordura D600\./);
+  });
+  await check('S3.5: keyword-only features (no "Label:") -> no Spesifikasi table; chips after Deskripsi in the first column', () => {
+    const a = render({ ...BUILTIN[0], features: ['XSR', 'TOURING', 'SIDE BAG'], description: 'Satu' });
+    assert.ok(!a.includes('Spesifikasi') && !a.includes('iz-spec'), 'no table of empty label cells');
+    assert.match(a, /<div class="iz-pdp-info"><div class="iz-pdp-desc"><h2 class="t-h2-shop iz-pdp-h2">Deskripsi<\/h2>.*<\/div><div class="iz-pdp-tags"><p class="iz-pdp-tags__title" id="kata-kunci-produk">Kata kunci<\/p><ul class="iz-pdp-tags__list" aria-labelledby="kata-kunci-produk"><li class="iz-cat-chip">XSR<\/li><li class="iz-cat-chip">TOURING<\/li><li class="iz-cat-chip">SIDE BAG<\/li><\/ul><\/div><\/div><div><h2 class="t-h2-shop iz-pdp-h2">Pertanyaan sebelum memesan/);
+    const b = render({ ...BUILTIN[0], features: ['XSR'], description: '' });
+    assert.match(b, /<div class="iz-pdp-info"><div class="iz-pdp-tags">/);
+  });
+  await check('Detail layout: Spesifikasi then Deskripsi in the first column, questions in the second; questions alone without either text', () => {
+    const a = render({ ...BUILTIN[0], features: ['Bahan luar: Cordura D600'], description: 'Satu' });
+    assert.match(a, /<section class="iz-pdp-details iz-wrap iz-pdp-block" id="spesifikasi"><div class="iz-pdp-info"><div><h2 class="t-h2-shop iz-pdp-h2">Spesifikasi<\/h2>.*<div class="iz-pdp-desc"><h2 class="t-h2-shop iz-pdp-h2">Deskripsi<\/h2>.*<\/div><\/div><div><h2 class="t-h2-shop iz-pdp-h2">Pertanyaan sebelum memesan<\/h2>/);
+    assert.ok(!/style="margin/.test(a.slice(a.indexOf('iz-pdp-details'))), 'no inline heading margins left');
+    const b = render({ ...BUILTIN[0], features: [], description: '' });
+    assert.match(b, /<section class="iz-pdp-details iz-wrap iz-pdp-block" id="spesifikasi"><div><h2 class="t-h2-shop iz-pdp-h2">Pertanyaan sebelum memesan<\/h2>/);
+    assert.ok(!b.includes('iz-pdp-info'));
+  });
+  await check('"Lihat selengkapnya": a long description starts folded with the full text in the HTML; a short one has no button', () => {
+    const long = Array.from({ length: 8 }, (_, i) => `Paragraf ${i + 1}: ${'kata '.repeat(30).trim()}`).join('\n\n');
+    const a = render({ ...BUILTIN[0], description: long });
+    assert.match(a, /<div id="deskripsi-produk" class="iz-more__body iz-more__body--folded" style="--iz-more-fold:264px">/);
+    assert.match(a, /<button type="button" class="iz-more__btn" aria-expanded="false" aria-controls="deskripsi-produk">Lihat selengkapnya/);
+    assert.ok(a.includes('Paragraf 8:'), 'the folded text is still server-rendered');
+    assert.match(a, /<noscript><style>\.iz-more__body \{ max-height: none !important;/);
+    const b = render({ ...BUILTIN[0], description: 'Satu\nDua\n\nTiga' });
+    assert.ok(b.includes('class="iz-more__body"') && !b.includes('class="iz-more__btn"'));
+    assert.strictEqual(V.descriptionFolds([['x'.repeat(55)]]), false);
+    assert.strictEqual(V.descriptionFolds(Array.from({ length: 9 }, () => ['x'.repeat(100)])), true);
   });
   await check('S3.3.9: generic picker = one fieldset per attribute, native radios, unavailable values disabled, no SKU line', () => {
     const html = render(BUILTIN[2]);

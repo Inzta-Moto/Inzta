@@ -8,7 +8,7 @@ import V2Layout from '@/components/v2/V2Layout';
 import CategoryPage from '@/components/v2/motor/CategoryPage';
 import { buildCategoryPage, categoryDescription, categoryIndexable, categoryTitle } from '@/components/v2/motor/motor-page';
 import '@/app/(v2)/v2-motor.css';
-import { canonicalUrl } from '@/lib/seo';
+import { canonicalUrl, DEFAULT_OG_IMAGE, openGraph, SITE_NAME } from '@/lib/seo';
 
 // F-016 S5.8.1: ISR; the four D1 slugs are prebuilt and every other slug, including case variants, is a 404.
 export const revalidate = 3600;
@@ -29,11 +29,18 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const c = params.kategori;
   const products = await readProducts();
   const { lead } = buildCategoryPage(c, products, []);
+  const title = categoryTitle(c);
+  const description = categoryDescription(c, lead);
+  const url = canonicalUrl('tas-motor', c);
+  const fullTitle = `${title} | ${SITE_NAME}`;
   // S5.8.3, S5.8.5: no JSON-LD; noindex, follow while the shared helper says the page is not indexable.
+  // F-005 6.5: own og:url = canonical and the shared og:site_name, instead of the Beranda text from the root layout.
   return {
-    title: categoryTitle(c),
-    description: categoryDescription(c, lead),
-    alternates: { canonical: canonicalUrl('tas-motor', c) },
+    title,
+    description,
+    alternates: { canonical: url },
+    openGraph: openGraph({ url, title: fullTitle, description }),
+    twitter: { card: 'summary_large_image', title: fullTitle, description, images: [DEFAULT_OG_IMAGE.url], creator: '@inztamoto' },
     ...(categoryIndexable(c, products) ? {} : { robots: { index: false, follow: true } }),
   };
 }

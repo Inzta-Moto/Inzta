@@ -327,5 +327,12 @@
     "value": "Pilihan sisi dalam tiga keadaan",
     "reason": "The \"Keadaan lain\" state board is a design artefact and is not rendered on the site.",
     "requirement": "S4.5.2"
+  },
+  {
+    "artboard": "artikel",
+    "kind": "block",
+    "value": "iz-figure",
+    "reason": "F-017 redesign: the cover is part of the article grid's head area (as wide as the 680 px reading column) instead of a page-level 1120 px figure. Canvas: \"Redesain Halaman Artikel INZTA\" (https://claude.ai/artifact/ATpPo5YaiGDFLCJtnhYFxZ).",
+    "requirement": "F-017"
   }
 ]

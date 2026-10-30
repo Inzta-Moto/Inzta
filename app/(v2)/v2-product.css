@@ -6,6 +6,39 @@
 .iz-pdp-crumb { padding-top: 128px; margin-bottom: 24px; }
 .iz-pdp-para + .iz-pdp-para { margin-top: 12px; }
 
+/* Page rhythm (Angkasa, 2026-10-30: "jarak, padding, spacing ... terlihat jauh sekali"). The breadcrumb is the page
+   head, but the JSON-LD <script> in front of it made it a "next block" of main and added a full section gap above the
+   128 px head padding, so the product started 120 px lower than every other page. A product page reads as one
+   product, so its blocks (details, related products, closing panel) follow each other at the tight section gap with a
+   48 px floor instead of the full landing-page gap; the footer keeps the site rhythm. */
+html .iz-page main > .iz-pdp-crumb { margin-top: 0; }
+html .iz-page main > .iz-pdp-block { margin-top: max(var(--space-12), var(--space-section-tight)); }
+
+/* Details on the gallery and buy box columns, with one heading gap and one block gap (the inline 20/24/48 px before). */
+.iz-pdp-details { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: var(--space-12); align-items: start; }
+.iz-pdp-info { display: flex; flex-direction: column; gap: var(--space-12); min-width: 0; }
+.iz-pdp-h2 { margin-bottom: var(--space-5); }
+.iz-pdp-desc { scroll-margin-top: calc(var(--size-nav) + var(--space-4) + var(--space-6)); }
+/* Keywords (S3.5, the unlabelled `features` entries): a chip row that closes the description at a heading gap
+   instead of a block gap, so it reads as part of "what the product is" and not as its own section. */
+.iz-pdp-tags { display: flex; flex-direction: column; gap: var(--space-3); }
+.iz-pdp-info > * + .iz-pdp-tags { margin-top: calc(var(--space-6) - var(--space-12)); }
+.iz-pdp-tags__title { margin: 0; font-size: 15px; font-weight: 600; color: var(--c-batu); }
+.iz-pdp-tags__list { display: flex; flex-wrap: wrap; gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
+@media (max-width: 767px) {
+  .iz-pdp-details { grid-template-columns: minmax(0, 1fr); gap: var(--space-10); }
+  .iz-pdp-info { gap: var(--space-10); }
+  .iz-pdp-info > * + .iz-pdp-tags { margin-top: calc(var(--space-6) - var(--space-10)); }
+}
+
+/* "Lihat selengkapnya" (DescriptionMore.tsx): a long description is clipped with a fade, the text stays in the HTML. */
+.iz-more__body--folded { max-height: var(--iz-more-fold); overflow: hidden; -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 96px), transparent); mask-image: linear-gradient(to bottom, #000 calc(100% - 96px), transparent); }
+.iz-more__btn { margin-top: var(--space-2); padding: 0; border: 0; background: none; font: inherit; font-size: 17px; font-weight: 600; color: var(--c-kuning-tua); display: inline-flex; align-items: center; gap: 6px; min-height: var(--size-tap); cursor: pointer; }
+.iz-more__btn:hover { text-decoration: underline; text-underline-offset: 3px; }
+.iz-more__btn:focus-visible { outline: 3px solid var(--c-focus); outline-offset: 2px; border-radius: 4px; }
+.iz-more__btn svg { width: 16px; height: 16px; transition: transform .2s ease; }
+.iz-more__btn[aria-expanded="true"] svg { transform: rotate(180deg); }
+
 /* Gallery (S3.2): SmartImage fills the ported boxes, so the canvas inset and radius still apply. */
 .iz-gallery__main > .iz-smartimg { position: absolute; inset: var(--space-6); border-radius: 20px; background: transparent; }
 .iz-gallery__main > .iz-smartimg > img { position: static; inset: auto; width: 100%; height: 100%; border-radius: 0; }
@@ -76,6 +109,7 @@
   .iz-mbar--fixed, .iz-mbar--fixed[data-shown="true"] { transition: none; }
   .iz-acc__plus { transition: none; }
   .iz-vpick__opt { transition: none; }
+  .iz-more__btn svg { transition: none; }
 }
 html[data-iz-tier="minimal"] .iz-gallery__main--switched > .iz-smartimg > img { animation: none; }
 html[data-iz-tier="minimal"] .iz-mbar--fixed, html[data-iz-tier="minimal"] .iz-mbar--fixed[data-shown="true"], html[data-iz-tier="minimal"] .iz-acc__plus, html[data-iz-tier="minimal"] .iz-vpick__opt { transition: none; }
