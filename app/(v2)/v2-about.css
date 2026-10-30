@@ -167,6 +167,10 @@
   .iz-amap--armed::before, .iz-amap--armed .iz-amap__glow { animation: iz-amap-fade 1.4s ease-out both; animation-play-state: var(--amap-run); }
   .iz-amap--armed .iz-amap__reveal { animation: iz-amap-plot 1.8s cubic-bezier(0.65, 0, 0.35, 1) 0.15s both; animation-play-state: var(--amap-run); }
   .iz-amap--contact.iz-amap--armed .iz-amap__reveal { animation-duration: 1.3s; }
+  /* Lite motion tier: the same draw-in in 1 s (the reveal mask repaints on every frame it runs). */
+  html[data-iz-tier="lite"] .iz-amap--armed::before,
+  html[data-iz-tier="lite"] .iz-amap--armed .iz-amap__glow { animation-duration: 1s; }
+  html[data-iz-tier="lite"] .iz-amap--armed .iz-amap__reveal { animation-duration: 1s; animation-delay: 0.1s; }
 }
 @keyframes iz-amap-fade { from { opacity: 0; } }
 @keyframes iz-amap-plot { from { stroke-dashoffset: 1; } }

@@ -6,7 +6,9 @@ import path from 'node:path';
 const dir = process.argv[2] || path.join('app', '(v2)');
 // html.iz-v2 is the v2-page class the boot script sets on <html> (it replaced html:has(.iz-page), which cost style
 // time on every frame).
-const ALLOWED = [/^\.iz-/, /^\.t-/, /^img\.iz-/, /^:where\(\.iz-/, /^html:has\(\.iz-page\)/, /^html\.iz-v2(\b|::|$)/, /^html:not\(\.js-nav\) \.iz-/, /^html\.js-motion \.iz-/, /^html\.iz-js(\[[^\]]+\])?( \.iz-|$)/, /^html\.iz-motion \.iz-/, /^html \.iz-page\b/];
+// html[data-iz-tier="full|lite|minimal"] is the motion tier the same boot script writes on public v2 routes only
+// (lib/v2/motion/tier.ts), so it scopes like html.iz-v2; it may be followed by .iz-js or .iz-motion, then an .iz- class.
+const ALLOWED = [/^\.iz-/, /^\.t-/, /^img\.iz-/, /^:where\(\.iz-/, /^html:has\(\.iz-page\)/, /^html\.iz-v2(\b|::|$)/, /^html:not\(\.js-nav\) \.iz-/, /^html\.js-motion \.iz-/, /^html\.iz-js(\[[^\]]+\])?( \.iz-|$)/, /^html\.iz-motion \.iz-/, /^html \.iz-page\b/, /^html\[data-iz-tier="(full|lite|minimal)"\](\.iz-(js|motion))? \.iz-/];
 
 // Splits a selector list on top-level commas only; :where(a, b) stays one selector.
 function splitTop(head) {
@@ -44,7 +46,10 @@ function selectors(css) {
       }
       const body = s.slice(open + 1, k - 1);
       if (head.startsWith('@media') || head.startsWith('@supports')) walk(body, base);
-      else if (!head.startsWith('@keyframes') && !head.startsWith('@font-face')) {
+      else if (head.startsWith('@property')) {
+        // A registered custom property is global, so only the v2 prefix keeps it out of other pages' way.
+        if (!/^@property --iz-[\w-]+$/.test(head)) out.push({ sel: head, at: base + j });
+      } else if (!head.startsWith('@keyframes') && !head.startsWith('@font-face')) {
         for (const part of splitTop(head)) out.push({ sel: part.trim(), at: base + j });
       }
       j = k;

@@ -2,13 +2,14 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { motionTier } from '@/lib/v2/motion/runtime';
 
 export const READING_EVENT = 'iz:reading';
 
 /**
  * Reading progress (F-016 S7.7.1, F-017): only after mount and only under prefers-reduced-motion: no-preference, so
- * it is absent without JavaScript and under reduced motion. Measured over the article body, transform: scaleX() only,
- * written in a requestAnimationFrame from a passive scroll listener. No GSAP.
+ * it is absent without JavaScript, under reduced motion and in the minimal motion tier (Save-Data). Measured over the
+ * article body, transform: scaleX() only, written in a requestAnimationFrame from a passive scroll listener. No GSAP.
  *
  * F-017: the line sits on the bottom edge of the navbar capsule (a portal into SiteNav's .iz-nav). The navbar hides
  * while scrolling down, so a second line along the top edge of the screen shows only then (v2-article.css reads the
@@ -23,7 +24,7 @@ export default function ReadingProgress() {
 
   useEffect(() => {
     const mq = window.matchMedia('(prefers-reduced-motion: no-preference)');
-    const update = () => setOn(mq.matches);
+    const update = () => setOn(mq.matches && motionTier() !== 'minimal');
     update();
     mq.addEventListener('change', update);
     return () => mq.removeEventListener('change', update);

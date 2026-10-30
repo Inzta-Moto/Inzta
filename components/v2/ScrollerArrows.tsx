@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { ChevronLeft, ChevronRight } from '@/components/v2/icons';
+import { motionOn } from '@/lib/v2/motion/runtime';
 
 type Edge = { overflow: boolean; atStart: boolean; atEnd: boolean };
 
@@ -41,8 +42,8 @@ export default function ScrollerArrows({ targetId }: { targetId: string }) {
     const card = el.firstElementChild as HTMLElement | null;
     const gap = parseFloat(getComputedStyle(el).columnGap || '0') || 0;
     const step = card ? card.offsetWidth + gap : el.clientWidth * 0.8;
-    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    el.scrollBy({ left: dir * step, behavior: reduce ? 'auto' : 'smooth' });
+    // Instant under reduced motion and in the minimal motion tier (Save-Data).
+    el.scrollBy({ left: dir * step, behavior: motionOn() ? 'smooth' : 'auto' });
   };
 
   return (

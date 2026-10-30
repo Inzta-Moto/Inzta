@@ -10,6 +10,7 @@
 :where(.iz-page) [id] { scroll-margin-top: 80px; }
 @media (max-width: 767px) { :where(.iz-page) [id] { scroll-margin-top: 68px; } }
 @media (prefers-reduced-motion: reduce) { html.iz-v2 { scroll-behavior: auto; } }
+html.iz-v2[data-iz-tier="minimal"] { scroll-behavior: auto; }
 
 /* 40 px navbar controls keep their look and get a 48 px hit area (20.4). */
 .iz-nav__menu, .iz-motorchip, .iz-nav__cta { position: relative; }

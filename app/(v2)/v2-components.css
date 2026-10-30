@@ -70,6 +70,10 @@
 .iz-navwrap { position: sticky; top: var(--space-4); height: 0; z-index: 50; padding-inline: var(--space-6); }
 .iz-nav { max-width: var(--size-content); margin: 0 auto; height: var(--size-nav); border-radius: var(--radius-pill); background: var(--c-nav-light); border: 1px solid var(--c-garis); box-shadow: var(--shadow-float); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); padding: 0 var(--space-3) 0 var(--space-6); color: var(--c-tinta); }
 .iz-nav--dark { background: var(--c-nav-dark); border-color: var(--c-line-on-dark); color: var(--c-krem); }
+/* Lite motion tier (lib/v2/motion/tier.ts): a near-solid capsule instead of the backdrop blur, which re-blurs the page
+   under the sticky navbar on every scrolled frame. */
+html[data-iz-tier="lite"] .iz-nav { background: rgba(253, 252, 249, 0.95); -webkit-backdrop-filter: none; backdrop-filter: none; }
+html[data-iz-tier="lite"] .iz-nav--dark { background: rgba(22, 20, 15, 0.95); }
 .iz-brand { display: inline-flex; align-items: center; gap: 10px; min-height: var(--size-tap); }
 .iz-brand img { height: 32px; width: auto; }
 .iz-brand span { font-family: var(--font-display); font-weight: 800; font-size: 24px; letter-spacing: -0.02em; line-height: 1; }
@@ -259,6 +263,9 @@ img.iz-crop-half { height: 200% !important; object-position: 35% 0% !important; 
 .iz-acc details[open] .iz-acc__plus { transform: rotate(45deg); }
 .iz-acc__body { padding: 0 var(--space-6) var(--space-6); color: var(--c-batu); font-size: 17px; }
 .iz-mbar { position: sticky; bottom: 12px; z-index: 40; margin: 0 12px; display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 68px; padding: 10px 10px 10px 12px; border-radius: var(--radius-tile-lg); background: var(--c-nav-light); border: 1px solid var(--c-garis); box-shadow: var(--shadow-float); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+/* Lite motion tier: near solid instead of the blur, which re-blurs the scrolling page under the fixed phone bar on
+   every frame (same reason as the navbar above). */
+html[data-iz-tier="lite"] .iz-mbar { background: rgba(253, 252, 249, 0.95); -webkit-backdrop-filter: none; backdrop-filter: none; }
 .iz-mbar--static { position: relative; bottom: auto; margin: 12px; }
 .iz-mbar__item { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .iz-mbar__item img { width: 48px; height: 48px; border-radius: 12px; object-fit: cover; background: var(--c-pasir-muda); border: 1px solid var(--c-garis); flex: none; }
@@ -747,3 +754,5 @@ img.iz-crop-half { height: 200% !important; object-position: 35% 0% !important; 
   .iz-page *, .iz-page *::before, .iz-page *::after { transition: none !important; }
   .iz-chat__typing span { animation: none; opacity: .7; }
 }
+/* The minimal motion tier (Save-Data, ?motion=minimal) follows the reduced-motion path above. */
+html[data-iz-tier="minimal"] .iz-page *, html[data-iz-tier="minimal"] .iz-page *::before, html[data-iz-tier="minimal"] .iz-page *::after { transition: none !important; }

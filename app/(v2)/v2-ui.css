@@ -9,6 +9,7 @@
 .iz-dark .iz-skel::after, .iz-skel--dark::after { background: linear-gradient(90deg, transparent, rgba(253, 252, 249, .08), transparent); }
 @keyframes iz-shimmer { to { transform: translateX(100%); } }
 @media (prefers-reduced-motion: reduce) { .iz-skel::after { animation: none; opacity: 0; } }
+html[data-iz-tier="minimal"] .iz-skel::after { animation: none; opacity: 0; }
 /* Image placeholders stay plain: every lazy image below the fold kept an endless shimmer running until it loaded,
    10-14 at once on the Beranda, and Chrome restyled each of them on the main thread every frame of a phone scroll
    (trace, 2026-10-29). Loading screens (LoadingV2) keep their shimmer. */

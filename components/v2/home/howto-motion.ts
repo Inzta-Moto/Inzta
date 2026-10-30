@@ -1,5 +1,5 @@
 import type { MotionKit } from '@/lib/v2/motion/runtime';
-import { DESKTOP, MOBILE, handBack, scrollIdle, whenRevealed } from '@/lib/v2/motion/runtime';
+import { DESKTOP, MOBILE, handBack, motionTier, noteSetup, onTierChange, scrollIdle, whenRevealed } from '@/lib/v2/motion/runtime';
 
 type Gsap = MotionKit['gsap'];
 type Timeline = gsap.core.Timeline;
@@ -20,6 +20,11 @@ const AT_3 = AT_2 + PLAN.hold2 + PLAN.fill;
 const PRIORITY = 0;
 // Longest wait for the page engine to set up the film pin above before the journey is measured anyway.
 const ENGINE_WAIT_MS = 3000;
+// Lite tier (lib/v2/motion/tier.ts): stagger between the three steps of the CSS entrance, the pause between a scene
+// ending and the road to the next step filling, and the road fill itself (v2-howto.css .iz-howto--ease).
+const LITE_STAGGER_MS = 100;
+const LITE_PAUSE_MS = 350;
+const LITE_FILL_MS = 600;
 
 const q = (el: ParentNode, sel: string) => el.querySelector<HTMLElement>(sel);
 const qa = (el: ParentNode, sel: string) => Array.from(el.querySelectorAll<HTMLElement>(sel));
@@ -27,6 +32,8 @@ const qa = (el: ParentNode, sel: string) => Array.from(el.querySelectorAll<HTMLE
 // Each scene builder returns a paused timeline whose first frame is the scene before the step and whose last frame is
 // the server markup (v2-howto.css), so reverting it leaves the finished scene. Offsets are percentages of the moving
 // element, which keeps them right at every scene scale.
+// lite (motion tier): the same beats, presses and pulse rings included (small transform and opacity tweens, already
+// compositor work); only the steps that repaint change technique (the pre-filled lines, the typing dots).
 function pickScene(gsap: Gsap, el: HTMLElement): Timeline {
   const tl = gsap.timeline({ paused: true });
   const cursor = q(el, '.iz-vig-cursor');
@@ -49,7 +56,7 @@ function pickScene(gsap: Gsap, el: HTMLElement): Timeline {
   return tl;
 }
 
-function sendScene(gsap: Gsap, el: HTMLElement): Timeline {
+function sendScene(gsap: Gsap, el: HTMLElement, lite: boolean): Timeline {
   const tl = gsap.timeline({ paused: true });
   const cta = q(el, '.iz-vig-send__cta');
   const note = q(el, '.iz-vig-send__note');
@@ -69,14 +76,16 @@ function sendScene(gsap: Gsap, el: HTMLElement): Timeline {
     .fromTo(btn, { scale: 1 }, { scale: 0.93, duration: 0.1, ease: 'power2.inOut', yoyo: true, repeat: 1 }, 0.88)
     .fromTo(ring, { scale: 0.3, opacity: 0.8 }, { scale: 1.9, opacity: 0, duration: 0.55, ease: 'power2.out' }, 0.92)
     .to(cursor, { opacity: 0, duration: 0.25, ease: 'none' }, 1.05)
-    .fromTo(wa, { opacity: 0, scale: 0.8, yPercent: 8 }, { opacity: 1, scale: 1, yPercent: 0, duration: 0.6, ease: 'back.out(1.4)' }, 1.2)
-    .fromTo(lines, { clipPath: 'inset(0% 100% 0% 0%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: 0.3, ease: 'none', stagger: 0.16 }, 1.5)
-    .fromTo(go, { scale: 0.5, opacity: 0.35 }, { scale: 1, opacity: 1, duration: 0.4, ease: 'back.out(2.4)' }, 2.3)
+    .fromTo(wa, { opacity: 0, scale: 0.8, yPercent: 8 }, { opacity: 1, scale: 1, yPercent: 0, duration: 0.6, ease: 'back.out(1.4)' }, 1.2);
+  // Lite: the pre-filled lines fade and slide in (compositor) instead of a clip-path wipe that repaints each frame.
+  if (lite) tl.fromTo(lines, { opacity: 0, xPercent: -4 }, { opacity: 1, xPercent: 0, duration: 0.3, ease: 'power2.out', stagger: 0.16 }, 1.5);
+  else tl.fromTo(lines, { clipPath: 'inset(0% 100% 0% 0%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: 0.3, ease: 'none', stagger: 0.16 }, 1.5);
+  tl.fromTo(go, { scale: 0.5, opacity: 0.35 }, { scale: 1, opacity: 1, duration: 0.4, ease: 'back.out(2.4)' }, 2.3)
     .to(go, { scale: 1.14, duration: 0.18, ease: 'power1.inOut', yoyo: true, repeat: 1 }, 2.75);
   return tl;
 }
 
-function replyScene(gsap: Gsap, el: HTMLElement): Timeline {
+function replyScene(gsap: Gsap, el: HTMLElement, lite: boolean): Timeline {
   const tl = gsap.timeline({ paused: true });
   const out = q(el, '.iz-vig-reply__out');
   const read = q(el, '.iz-vig-ticks__read');
@@ -89,10 +98,11 @@ function replyScene(gsap: Gsap, el: HTMLElement): Timeline {
   // Before the step the order sits in the chat as sent (grey ticks). Then it is read (blue ticks), the admin types for
   // a moment, and the reply arrives with its two confirmations. The dots bounce a few times only, so nothing loops
   // while the scene sits finished.
+  // Lite: the dots bounce once instead of twice.
   tl.fromTo(out, { scale: 1 }, { scale: 1.04, duration: 0.18, ease: 'power1.out', yoyo: true, repeat: 1, transformOrigin: '100% 100%' }, 0.2)
     .fromTo(read, { opacity: 0 }, { opacity: 1, duration: 0.25, ease: 'none' }, 0.35)
     .fromTo(typing, { opacity: 0, scale: 0.6 }, { opacity: 1, scale: 1, duration: 0.3, ease: 'back.out(2)' }, 0.55)
-    .fromTo(dots, { yPercent: 0 }, { yPercent: -80, duration: 0.22, ease: 'sine.inOut', yoyo: true, repeat: 3, stagger: 0.1 }, 0.65)
+    .fromTo(dots, { yPercent: 0 }, { yPercent: -80, duration: 0.22, ease: 'sine.inOut', yoyo: true, repeat: lite ? 1 : 3, stagger: 0.1 }, 0.65)
     .to(typing, { opacity: 0, scale: 0.8, duration: 0.2, ease: 'power2.in' }, 1.65)
     .fromTo(reply, { opacity: 0, scale: 0.86, yPercent: 8 }, { opacity: 1, scale: 1, yPercent: 0, duration: 0.5, ease: 'back.out(1.5)' }, 1.7)
     .fromTo(chips, { opacity: 0, scale: 0.5 }, { opacity: 1, scale: 1, duration: 0.42, ease: 'back.out(2.2)', stagger: 0.16 }, 2.05);
@@ -102,13 +112,13 @@ function replyScene(gsap: Gsap, el: HTMLElement): Timeline {
 
 // Plays a scene when its step lights up, hurries it to its end once the step is passed, and winds it back quickly when
 // the visitor scrolls back above it, so it plays again next time.
-function control(gsap: Gsap, step: HTMLElement): SceneControl {
+function control(gsap: Gsap, step: HTMLElement, lite: boolean): SceneControl {
   const el = q(step, '.iz-vig');
   let tl: Timeline;
   if (!el) tl = gsap.timeline({ paused: true });
   else if (el.classList.contains('iz-vig-pick')) tl = pickScene(gsap, el);
-  else if (el.classList.contains('iz-vig-send')) tl = sendScene(gsap, el);
-  else tl = replyScene(gsap, el);
+  else if (el.classList.contains('iz-vig-send')) tl = sendScene(gsap, el, lite);
+  else tl = replyScene(gsap, el, lite);
   // Initialise every tween now, while the page is still (the build waits for that), instead of on first play, when a
   // to() reads its start values from computed style in the middle of a scroll. Events are suppressed both ways.
   tl.progress(1, true).progress(0, true);
@@ -153,6 +163,12 @@ function entrance(gsap: Gsap, steps: HTMLElement[]): Timeline {
  * has set up the film pin above (it does the blocks below the first screen after the curtain), so the pin is measured
  * in page order; a refresh then measures the closing panel and footer below it again. Cards are only hidden for their
  * entrance when the section is still below the viewport, so nothing on screen blinks out. Returns the cleanup.
+ *
+ * Lite tier (lib/v2/motion/tier.ts): no pin on any width. The same 1 -> 2 -> 3 walk is driven by the steps reaching the
+ * viewport (desktop: the row arrives and the walk plays on a timer; phones: each card lights as it scrolls in), the
+ * entrance and the road fills are CSS transitions on transform and opacity (v2-howto.css .iz-howto--lite), and the
+ * scenes keep every beat (only the pre-filled lines and the typing dots change technique). A downgrade from the frame probe before the visitor has
+ * reached the section rebuilds it in lite; once the walk has started it is left as it is.
  */
 export function attachHowTo(root: HTMLElement, kit: MotionKit): () => void {
   const { gsap, ScrollTrigger } = kit;
@@ -166,13 +182,18 @@ export function attachHowTo(root: HTMLElement, kit: MotionKit): () => void {
   let frame = 0;
   let resizeTimer = 0;
   let pinFits: boolean | null = null;
+  // Which tier the current build used, and whether its walk has lit a step yet (a downgrade only rebuilds before that).
+  let builtLite = false;
+  let touched = false;
 
   const fits = () => root.offsetHeight + ROOM * 2 <= window.innerHeight;
   const stepAt = (p: number) => (p >= AT_3 - 1e-3 ? 2 : p >= AT_2 - 1e-3 ? 1 : 0);
 
   function build(desktop: boolean): () => void {
     const below = root.getBoundingClientRect().top >= window.innerHeight;
-    const scenes = steps.map(step => control(gsap, step));
+    const lite = motionTier() === 'lite';
+    builtLite = lite;
+    const scenes = steps.map(step => control(gsap, step, lite));
     const roads = steps.map(s => q(s, '.iz-journey__road')).filter((el): el is HTMLElement => !!el);
     root.classList.add('iz-howto--live');
 
@@ -180,6 +201,7 @@ export function attachHowTo(root: HTMLElement, kit: MotionKit): () => void {
     const setActive = (n: number) => {
       if (n === active) return;
       active = n;
+      touched = true;
       // The last stop marks every step reached (v2-howto.css .iz-howto--complete).
       root.classList.toggle('iz-howto--complete', n === steps.length - 1);
       steps.forEach((step, i) => {
@@ -194,6 +216,8 @@ export function attachHowTo(root: HTMLElement, kit: MotionKit): () => void {
       root.classList.remove('iz-howto--live', 'iz-howto--complete');
       steps.forEach(s => s.classList.remove('iz-journey__step--on', 'iz-journey__step--done'));
     };
+
+    if (lite) return buildLite(desktop, below, setActive, () => active, scenes, cleanup);
 
     if (!desktop) {
       pinFits = null;
@@ -273,18 +297,112 @@ export function attachHowTo(root: HTMLElement, kit: MotionKit): () => void {
     return cleanup;
   }
 
+  /**
+   * Lite build: the walk without a pin. Step classes drive everything visible (v2-howto.css): --wait holds a step at its
+   * entrance start state, --road fills the road to the next step; .iz-howto--ease turns the transitions on two frames
+   * after the start states are in, so nothing on screen animates into its hidden state. ScrollTrigger once-triggers
+   * (no scrub, no pin) fire even when a jump skips past them; they and the scene timelines belong to the matchMedia
+   * context, the timers are cleared here.
+   */
+  function buildLite(
+    desktop: boolean,
+    below: boolean,
+    setActive: (n: number) => void,
+    activeNow: () => number,
+    scenes: SceneControl[],
+    cleanup: () => void,
+  ): () => void {
+    pinFits = null;
+    const timers: number[] = [];
+    const later = (fn: () => void, ms: number) => timers.push(window.setTimeout(fn, ms));
+    root.classList.add('iz-howto--lite');
+    const waiting = desktop
+      ? below
+        ? steps.slice()
+        : []
+      : steps.filter(step => {
+          const card = q(step, '.iz-journey__card');
+          return !!card && card.getBoundingClientRect().top >= window.innerHeight;
+        });
+    waiting.forEach(step => step.classList.add('iz-journey__step--wait'));
+    let ease = requestAnimationFrame(() => {
+      ease = requestAnimationFrame(() => {
+        ease = 0;
+        root.classList.add('iz-howto--ease');
+      });
+    });
+    const rise = (list: HTMLElement[]) =>
+      list.forEach((step, i) => {
+        step.style.setProperty('--hw-d', `${i * LITE_STAGGER_MS}ms`);
+        step.classList.remove('iz-journey__step--wait');
+      });
+    const road = (i: number) => steps[i]?.classList.add('iz-journey__step--road');
+
+    if (desktop) {
+      // The row arrives as one, so the walk plays on a timer like the short-window tour of the full tier.
+      ScrollTrigger.create({
+        trigger: list,
+        start: 'top 75%',
+        once: true,
+        onEnter: () => {
+          const held = steps.filter(step => step.classList.contains('iz-journey__step--wait'));
+          rise(held);
+          // Step 1 lights as the cards land, or at once when they were already on screen.
+          let at = held.length ? 550 : 100;
+          later(() => setActive(0), at);
+          for (let i = 1; i < steps.length; i++) {
+            at += scenes[i - 1].duration * 1000 + LITE_PAUSE_MS;
+            later(() => road(i - 1), at);
+            at += LITE_FILL_MS;
+            later(() => setActive(i), at);
+          }
+        },
+      });
+    } else {
+      steps.forEach((step, i) => {
+        const card = q(step, '.iz-journey__card');
+        if (!card) return;
+        if (step.classList.contains('iz-journey__step--wait')) ScrollTrigger.create({ trigger: card, start: 'top 96%', once: true, onEnter: () => rise([step]) });
+        ScrollTrigger.create({
+          trigger: card,
+          start: 'top 62%',
+          once: true,
+          onEnter: () => {
+            if (i <= activeNow()) return;
+            for (let j = Math.max(0, activeNow()); j < i; j++) road(j);
+            setActive(i);
+          },
+        });
+      });
+    }
+
+    return () => {
+      timers.forEach(t => window.clearTimeout(t));
+      if (ease) cancelAnimationFrame(ease);
+      cleanup();
+      root.classList.remove('iz-howto--lite', 'iz-howto--ease');
+      steps.forEach(step => {
+        step.classList.remove('iz-journey__step--wait', 'iz-journey__step--road');
+        step.style.removeProperty('--hw-d');
+      });
+    };
+  }
+
   const start = () => {
     if (disposed || mm) return;
     mm = gsap.matchMedia();
     mm.add({ desktop: DESKTOP, mobile: MOBILE }, context => build(Boolean(context.conditions?.desktop)));
     // The new pin pushes everything below it down; a global refresh (page order, see PRIORITY) measures it again.
     ScrollTrigger.refresh();
+    noteSetup();
   };
 
   // On desktop the film strip above pins, and the page engine sets that block up only after the curtain lifts. The
   // engine marks the strip with is-pinned when it does; without that mark the journey waits a moment, then goes ahead.
+  // The lite tier never pins the strip (it stays a swipe row) and builds no pin here either, so there is nothing to
+  // measure in order and the build goes ahead at once.
   const engineReady = () => {
-    if (!window.matchMedia(DESKTOP).matches) return true;
+    if (!window.matchMedia(DESKTOP).matches || motionTier() === 'lite') return true;
     const film = document.querySelector<HTMLElement>('[data-scene="film"]');
     if (!film || film.compareDocumentPosition(root) & Node.DOCUMENT_POSITION_PRECEDING) return true;
     return film.classList.contains('is-pinned');
@@ -334,8 +452,31 @@ export function attachHowTo(root: HTMLElement, kit: MotionKit): () => void {
   };
   window.addEventListener('resize', onResize);
 
+  // The frame probe lowered the tier to lite. A full build the visitor has not reached yet (the section builds four
+  // screens ahead) is swapped for the lite one; one already walking, or on screen, keeps going as it is. The verdict
+  // lands inside the probe's frame, usually mid-scroll, so the swap (a layout read, the pin revert that changes the
+  // page height, the refresh in start()) waits for a still moment, like the build itself.
+  let tierFrame = 0;
+  const swapToLite = () => {
+    tierFrame = 0;
+    if (!mm || builtLite || touched || disposed) return;
+    if (!scrollIdle()) {
+      tierFrame = requestAnimationFrame(swapToLite);
+      return;
+    }
+    if (root.getBoundingClientRect().top < window.innerHeight) return;
+    mm.revert();
+    mm = null;
+    begin();
+  };
+  const stopTier = onTierChange(next => {
+    if (next === 'lite' && !tierFrame) tierFrame = requestAnimationFrame(swapToLite);
+  });
+
   return () => {
     disposed = true;
+    stopTier();
+    if (tierFrame) cancelAnimationFrame(tierFrame);
     stopReveal();
     io?.disconnect();
     io = null;

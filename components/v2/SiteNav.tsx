@@ -10,6 +10,7 @@ import { useMotorCategory } from '@/components/v2/MotorCategory';
 import CategoryLink from '@/components/v2/CategoryLink';
 import { ArrowRight, ChevronDown, Motorcycle, WhatsApp } from '@/components/v2/icons';
 import Bounce from '@/components/v2/motion/Bounce';
+import { motionOn, motionTier } from '@/lib/v2/motion/runtime';
 
 type OpenMenu = 'produk' | 'motor' | null;
 export type NavTab = 'produk' | 'motor' | 'artikel' | 'tentang';
@@ -68,9 +69,11 @@ export default function SiteNav({
   }, []);
 
   // Hides while scrolling down and returns on the way up, so the capsule never sits over what is being read (Sehan,
-  // 2026-10-29). It stays under reduced motion, while a menu is open, and while it holds keyboard focus.
+  // 2026-10-29). It stays under reduced motion and in the minimal motion tier, while a menu is open, and while it holds
+  // keyboard focus.
   useEffect(() => {
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const still = () => reduce.matches || motionTier() === 'minimal';
     let last = window.scrollY;
     let ticking = false;
     const onScroll = () => {
@@ -82,7 +85,7 @@ export default function SiteNav({
         const delta = y - last;
         if (Math.abs(delta) < 8 && y > 120) return;
         last = y;
-        setScrolledAway(!reduce.matches && !focusInside.current && y > 160 && delta > 0);
+        setScrolledAway(!still() && !focusInside.current && y > 160 && delta > 0);
       });
     };
     window.addEventListener('scroll', onScroll, { passive: true });
@@ -130,7 +133,8 @@ export default function SiteNav({
       return;
     }
     if (!sheetShown) return;
-    const ms = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 320;
+    // The sheet's closing animation only runs with motion on (v2-motion.css); otherwise it unmounts at once.
+    const ms = motionOn() ? 320 : 0;
     const t = window.setTimeout(() => setSheetShown(false), ms);
     return () => window.clearTimeout(t);
   }, [sheetOpen, sheetShown]);
