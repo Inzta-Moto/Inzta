@@ -3,6 +3,8 @@ import { Suspense } from 'react';
 import AffiliateTracker from '@/components/AffiliateTracker';
 import TrackingScripts from '@/components/TrackingScripts';
 import { DEFAULT_OG_IMAGE, PAGE_TEXT, SITE_NAME } from '@/lib/seo';
+import SiteMotion from '@/components/v2/motion/SiteMotion';
+import { bootScript } from '@/lib/v2/motion/boot';
 import { Inter } from 'next/font/google';
 import './globals.css';
 
@@ -12,6 +14,7 @@ const inter = Inter({
   weight: ['300', '400', '500', '600', '700', '800', '900'],
 });
 
+// F-016 E5 only set claim-free defaults until F-005 phase 2 (F-016 C-3); these are the RND-approved F-005 texts.
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://inzta.id'),
   // F-005 phase 2: pages pass their own title; the template adds the brand (requirement 6.2).
@@ -46,8 +49,10 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="id">
+    // The boot script marks <html> (iz-js, data-iz-curtain) before hydration on public v2 routes (F-016 C5).
+    <html lang="id" suppressHydrationWarning>
       <head>
+        <script dangerouslySetInnerHTML={{ __html: bootScript }} />
       </head>
       <body className={inter.className}>
         <Suspense fallback={null}>
@@ -55,6 +60,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <TrackingScripts />
         </Suspense>
         {children}
+        <SiteMotion />
       </body>
     </html>
   );

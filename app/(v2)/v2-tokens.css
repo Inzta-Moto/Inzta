@@ -1,0 +1,79 @@
+/* INZTA v2 tokens (F-016). Copied from inzta-web-design @ 3281681 claude-design/ds/project/tokens.css, scoped to
+   .iz-page instead of :root so they stay inert on pages that do not use v2 (review REV-05). */
+.iz-page {
+  --c-kertas: #f6f4ef;
+  --c-kertas-terang: #fdfcf9;
+  --c-pasir-muda: #ede8de;
+  --c-pasir-hover: #e5dfd4;
+  --c-garis: #e2ddd2;
+  --c-tinta: #1a1813;
+  --c-batu: #5c574d;
+  --c-batu-muda: #7a7364;
+  --c-kuning: #f59e0b;
+  --c-kuning-tua: #8a5200;
+  --c-on-kuning: #1a1813;
+  --c-fit: #2f6b3a;
+  --c-fit-bg: #e4eedf;
+  --c-aspal: #16140f;
+  --c-arang-naik: #2a2620;
+  --c-krem: #f3efe6;
+  --c-pasir: #b9b2a3;
+  --c-focus: var(--c-kuning-tua);
+  --c-scrim-strong: rgba(22, 20, 15, 0.92);
+  --c-scrim-soft: rgba(22, 20, 15, 0.5);
+  --c-scrim-clear: rgba(22, 20, 15, 0);
+  --c-nav-light: rgba(253, 252, 249, 0.92);
+  --c-nav-dark: rgba(22, 20, 15, 0.8);
+  --c-line-on-dark: rgba(226, 221, 210, 0.2);
+  --c-tag-bg: rgba(22, 20, 15, 0.72);
+  --shadow-float: 0 10px 15px -3px rgba(22, 20, 15, 0.12), 0 4px 6px -4px rgba(22, 20, 15, 0.1);
+  --shadow-lift: 0 4px 6px -1px rgba(22, 20, 15, 0.08), 0 2px 4px -2px rgba(22, 20, 15, 0.08);
+}
+.iz-page {
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-18: 72px;
+  --space-30: 120px;
+  /* Gap between page sections: 120 px desktop, 72 px phone (design README, "Jarak antar bagian"), fluid in between.
+     Inside 1024-1439 px v2-fit.css scales both ends, so the gap stays 120 design px there. */
+  --space-section: clamp(var(--space-18), 100vw / 12, var(--space-30));
+  /* A section that continues the one above it (.iz-section--tight, tabs over their grid) sits half as far. */
+  --space-section-tight: calc(var(--space-section) / 2);
+  --radius-thumb: 16px;
+  --radius-tile: 20px;
+  --radius-tile-lg: 24px;
+  --radius-panel: 28px;
+  --radius-band: 32px;
+  --radius-pill: 999px;
+  --size-content: 1200px;
+  --size-reading: 680px;
+  --size-nav: 64px;
+  --size-button: 56px;
+  --size-tap: 48px;
+  --size-chip: 40px;
+  --font-display: "Bricolage Grotesque", "Arial", sans-serif;
+  --font-sans: Figtree, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+.t-display { font-family: var(--font-display); font-size: 88px; line-height: 1; font-weight: 800; letter-spacing: -0.02em; font-variation-settings: 'opsz' 96; }
+.t-h2-landing { font-family: var(--font-display); font-size: 48px; line-height: 1.05; font-weight: 800; letter-spacing: -0.02em; font-variation-settings: 'opsz' 48; }
+.t-h3-landing { font-family: var(--font-display); font-size: 24px; line-height: 1.2; font-weight: 700; letter-spacing: -0.01em; }
+.t-h1-shop { font-family: var(--font-sans); font-size: 56px; line-height: 1.1; font-weight: 700; letter-spacing: -0.01em; }
+.t-h1-product { font-family: var(--font-sans); font-size: 34px; line-height: 1.15; font-weight: 700; letter-spacing: -0.01em; }
+.t-h1-article { font-family: var(--font-sans); font-size: 44px; line-height: 1.15; font-weight: 700; letter-spacing: -0.01em; }
+.t-h2-shop { font-family: var(--font-sans); font-size: 28px; line-height: 1.2; font-weight: 700; letter-spacing: -0.01em; }
+.t-h3 { font-family: var(--font-sans); font-size: 20px; line-height: 1.3; font-weight: 700; }
+.t-lead { font-family: var(--font-sans); font-size: 21px; line-height: 1.55; font-weight: 400; }
+.t-body { font-family: var(--font-sans); font-size: 18px; line-height: 1.6; font-weight: 400; }
+.t-article { font-family: var(--font-sans); font-size: 19px; line-height: 1.7; font-weight: 400; }
+.t-label { font-family: var(--font-sans); font-size: 17px; line-height: 1.2; font-weight: 700; }
+.t-product-name { font-family: var(--font-sans); font-size: 17px; line-height: 1.35; font-weight: 600; }
+.t-price { font-family: var(--font-sans); font-size: 18px; line-height: 1.3; font-weight: 700; }
+.t-price-page { font-family: var(--font-sans); font-size: 32px; line-height: 1.15; font-weight: 700; }
+.t-eyebrow { font-family: var(--font-sans); font-size: 15px; line-height: 1.3; font-weight: 700; letter-spacing: 0.06em; }
+.t-small { font-family: var(--font-sans); font-size: 15px; line-height: 1.5; font-weight: 500; }

@@ -1,0 +1,331 @@
+[
+  {
+    "artboard": "admin-sisi",
+    "kind": "artboard",
+    "value": "*",
+    "reason": "The side picker preset sits inside the existing admin form, which keeps the admin style and needs a login; only its preview uses .iz-page. Checked by component render and screenshots in B4.",
+    "requirement": "S4.6"
+  },
+  {
+    "artboard": "Main",
+    "kind": "heading",
+    "value": "Gasber 16 Indonesia Ride Adventure: matic sampai bigbike di jalur tanah Banten–Bogor",
+    "reason": "Article card titles come from published articles in Firestore (data, not canvas copy); the canvas shows sample titles.",
+    "requirement": "S1.8, design.md §19 data-driven text"
+  },
+  {
+    "artboard": "Main-flash",
+    "kind": "heading",
+    "value": "Gasber 16 Indonesia Ride Adventure: matic sampai bigbike di jalur tanah Banten–Bogor",
+    "reason": "Article card titles come from published articles in Firestore (data, not canvas copy); the canvas shows sample titles.",
+    "requirement": "S1.8, design.md §19 data-driven text"
+  },
+  {
+    "artboard": "Main",
+    "kind": "heading",
+    "value": "Tas samping XSR 155: versi tali vs versi baut, depan vs belakang",
+    "reason": "Article card titles come from published articles in Firestore (data, not canvas copy); the canvas shows sample titles.",
+    "requirement": "S1.8, design.md §19 data-driven text"
+  },
+  {
+    "artboard": "Main-flash",
+    "kind": "heading",
+    "value": "Tas samping XSR 155: versi tali vs versi baut, depan vs belakang",
+    "reason": "Article card titles come from published articles in Firestore (data, not canvas copy); the canvas shows sample titles.",
+    "requirement": "S1.8, design.md §19 data-driven text"
+  },
+  {
+    "artboard": "Main",
+    "kind": "heading",
+    "value": "Panduan memilih tas motor: tank bag, tail bag, side bag, atau box?",
+    "reason": "Article card titles come from published articles in Firestore (data, not canvas copy); the canvas shows sample titles.",
+    "requirement": "S1.8, design.md §19 data-driven text"
+  },
+  {
+    "artboard": "Main-flash",
+    "kind": "heading",
+    "value": "Panduan memilih tas motor: tank bag, tail bag, side bag, atau box?",
+    "reason": "Article card titles come from published articles in Firestore (data, not canvas copy); the canvas shows sample titles.",
+    "requirement": "S1.8, design.md §19 data-driven text"
+  },
+  {
+    "artboard": "produk",
+    "kind": "class",
+    "value": "iz-fchip--motor",
+    "reason": "The \"Motor saya\" chip renders only when a motor category is chosen; the choice lives in the browser (localStorage), so the server HTML never has it. The canvas draws the chosen state (Retro).",
+    "requirement": "S2.2, S0.6"
+  },
+  {
+    "artboard": "motor",
+    "kind": "heading",
+    "value": "Dibuat untuk XSR 155.",
+    "reason": "Replaced by \"Tas yang ditandai untuk motor <Kategori>.\": being in a category does not mean the product fits every motor in it (ADR-0019 point 4).",
+    "requirement": "S5.3, design.md §11"
+  },
+  {
+    "artboard": "motor",
+    "kind": "heading",
+    "value": "Side bag Inzta XSR 155",
+    "reason": "Card names come from the products whose kategoriMotor holds the category (data, not canvas copy); the canvas shows sample products and the draft mapping differs.",
+    "requirement": "S5.3, S5.5, D2, design.md §19 data-driven text"
+  },
+  {
+    "artboard": "motor",
+    "kind": "heading",
+    "value": "Side bag Inzta XSR Srcrambag",
+    "reason": "Card names come from the products whose kategoriMotor holds the category (data, not canvas copy); the canvas shows sample products and the draft mapping differs.",
+    "requirement": "S5.3, S5.5, D2, design.md §19 data-driven text"
+  },
+  {
+    "artboard": "motor",
+    "kind": "heading",
+    "value": "Side Bag Motor Inzta Foldpack Z10 Vol 10L",
+    "reason": "Card names come from the products whose kategoriMotor holds the category (data, not canvas copy); the canvas shows sample products and the draft mapping differs.",
+    "requirement": "S5.3, S5.5, D2, design.md §19 data-driven text"
+  },
+  {
+    "artboard": "motor",
+    "kind": "heading",
+    "value": "Sidebag inzta Adventure 20L",
+    "reason": "Card names come from the products whose kategoriMotor holds the category (data, not canvas copy); the canvas shows sample products and the draft mapping differs.",
+    "requirement": "S5.3, S5.5, D2, design.md §19 data-driven text"
+  },
+  {
+    "artboard": "motor",
+    "kind": "heading",
+    "value": "Side bag Inzta Foldbag 7L",
+    "reason": "Card names come from the products whose kategoriMotor holds the category (data, not canvas copy); the canvas shows sample products and the draft mapping differs.",
+    "requirement": "S5.3, S5.5, D2, design.md §19 data-driven text"
+  },
+  {
+    "artboard": "motor",
+    "kind": "heading",
+    "value": "Tankbag and Tailbag wanderpack 10L",
+    "reason": "Card names come from the products whose kategoriMotor holds the category (data, not canvas copy); the canvas shows sample products and the draft mapping differs.",
+    "requirement": "S5.3, S5.5, D2, design.md §19 data-driven text"
+  },
+  {
+    "artboard": "motor",
+    "kind": "heading",
+    "value": "Tas samping XSR 155: versi tali vs versi baut, depan vs belakang",
+    "reason": "The featured title comes from the newest published per-motor article of the category (data); hidden when none qualifies.",
+    "requirement": "S5.6, S5.6.3, design.md §19 data-driven text"
+  },
+  {
+    "artboard": "blog",
+    "kind": "block",
+    "value": "iz-panel",
+    "reason": "The category panel sits inside the list tabpanel (role=tabpanel wraps featured card, grid, panel, pager) and renders only when the current page shows four or more cards; the shared fixture has three articles.",
+    "requirement": "S6.2.1, S6.4.2, S6.6.2"
+  },
+  {
+    "artboard": "blog",
+    "kind": "block",
+    "value": "iz-closing",
+    "reason": "The shared Closing component carries its own .iz-wrap (as in Main.dc.html) because V2Layout main#isi is not .iz-wrap.",
+    "requirement": "S0.8"
+  },
+  {
+    "artboard": "blog",
+    "kind": "heading",
+    "value": "Cari tas untuk motor Anda",
+    "reason": "Panel heading renders only from five articles on a page (featured + 4 cards); verified on a local 5/8/50-article fixture.",
+    "requirement": "S6.4.2, S6.6.2"
+  },
+  {
+    "artboard": "blog",
+    "kind": "heading",
+    "value": "Gasber 16 Indonesia Ride Adventure: matic sampai bigbike di jalur tanah Banten–Bogor",
+    "reason": "Article titles come from published articles in Firestore (data, not canvas copy); the canvas shows sample titles.",
+    "requirement": "S6.3, S6.4, design.md §19 data-driven text"
+  },
+  {
+    "artboard": "blog",
+    "kind": "heading",
+    "value": "Panduan memilih tas motor: tank bag, tail bag, side bag, atau box?",
+    "reason": "Article titles come from published articles in Firestore (data, not canvas copy); the canvas shows sample titles.",
+    "requirement": "S6.3, S6.4, design.md §19 data-driven text"
+  },
+  {
+    "artboard": "blog",
+    "kind": "heading",
+    "value": "Tas motor NMAX: pilihan tas tengah, samping, belakang, dan botol",
+    "reason": "Article titles come from published articles in Firestore (data, not canvas copy); the canvas shows sample titles.",
+    "requirement": "S6.3, S6.4, design.md §19 data-driven text"
+  },
+  {
+    "artboard": "blog",
+    "kind": "heading",
+    "value": "Checklist touring: perkakas, P3K, dan cara packing per posisi tas",
+    "reason": "Article titles come from published articles in Firestore (data, not canvas copy); the canvas shows sample titles.",
+    "requirement": "S6.3, S6.4, design.md §19 data-driven text"
+  },
+  {
+    "artboard": "blog",
+    "kind": "heading",
+    "value": "Tail bag vs top box: mana yang cocok untuk harian dan touring?",
+    "reason": "Article titles come from published articles in Firestore (data, not canvas copy); the canvas shows sample titles.",
+    "requirement": "S6.3, S6.4, design.md §19 data-driven text"
+  },
+  {
+    "artboard": "tentang",
+    "kind": "class",
+    "value": "iz-steps",
+    "reason": "The process row sits inside a focusable role=region wrapper (.iz-steps-region) so the swipe row below 1024 px scrolls with the arrow keys; .iz-steps moves one level down (accessibility fix).",
+    "requirement": "S8.2.6, design.md §17"
+  },
+  {
+    "artboard": "tentang",
+    "kind": "heading",
+    "value": "+62 895-1348-2410",
+    "reason": "The number is formatted from WA_NUMBER (NEXT_PUBLIC_WA_NUMBER); a checkout without that variable shows the constant fallback, so the text is data, not canvas copy.",
+    "requirement": "S8.6.1, design.md §19 data-driven text"
+  },
+  {
+    "artboard": "artikel",
+    "kind": "block",
+    "value": "iz-closing",
+    "reason": "The shared Closing component carries its own .iz-wrap (as in Main.dc.html) because V2Layout main#isi is not .iz-wrap.",
+    "requirement": "S0.8"
+  },
+  {
+    "artboard": "artikel",
+    "kind": "class",
+    "value": "iz-toc",
+    "reason": "TOC not rendered while KS-01 is option b: body h2 ids need Angkasa's lib/markdown.ts change; Toc renders nothing without bagian- ids.",
+    "requirement": "S7.3.3, KS-01, VF-14"
+  },
+  {
+    "artboard": "artikel",
+    "kind": "heading",
+    "value": "Daftar isi",
+    "reason": "TOC heading; TOC not rendered while KS-01 is option b.",
+    "requirement": "S7.3.3, KS-01, VF-14"
+  },
+  {
+    "artboard": "artikel",
+    "kind": "class",
+    "value": "iz-prose",
+    "reason": ".iz-prose must not wrap .article-body (its li bullets double F-013 list-style and its h2 margin undoes WEB-02); the body keeps the F-013 renderer output restyled by CSS only.",
+    "requirement": "S7.3.7, S7.3.8 e"
+  },
+  {
+    "artboard": "artikel",
+    "kind": "heading",
+    "value": "Untuk perkakas dan P3K di perjalanan",
+    "reason": "Canvas inline-product panel heading is not generated; the author writes an h3 before the markers, each marker stays its own F-013 card.",
+    "requirement": "S7.4.2"
+  },
+  {
+    "artboard": "artikel",
+    "kind": "heading",
+    "value": "Tas samping XSR 155: versi tali vs versi baut, depan vs belakang",
+    "reason": "Article titles come from published articles in Firestore (data, not canvas copy); the canvas shows sample titles.",
+    "requirement": "S7.6, design.md §19 data-driven text"
+  },
+  {
+    "artboard": "artikel",
+    "kind": "heading",
+    "value": "Checklist touring: perkakas, P3K, dan cara packing per posisi tas",
+    "reason": "Article titles come from published articles in Firestore (data, not canvas copy); the canvas shows sample titles.",
+    "requirement": "S7.6, design.md §19 data-driven text"
+  },
+  {
+    "artboard": "motor",
+    "kind": "block",
+    "value": "iz-tabs",
+    "reason": "The position tablist renders only when the category products cover two or more of Side/Tank/Tail; with the draft mapping (F016_KATEGORI=draft) Retro lists side bags only, so there is no tablist. With two or more positions the block is present and matches.",
+    "requirement": "S5.2.2"
+  },
+  {
+    "artboard": "produk-detail",
+    "kind": "block",
+    "value": "iz-closing",
+    "reason": "The shared Closing component (components/v2/Closing.tsx) wraps .iz-closing in .iz-wrap because V2Layout owns <main>; the panel and its classes are identical one level down.",
+    "requirement": "S0.8, design.md §17 (V2Layout frame)"
+  },
+  {
+    "artboard": "produk-detail",
+    "kind": "block",
+    "value": "iz-mbar",
+    "reason": "The mobile order bar is a client-only island: not rendered without JavaScript, and placed inside main because the footer belongs to V2Layout.",
+    "requirement": "S3.9.1, S3.9 ST-NOJS"
+  },
+  {
+    "artboard": "produk-detail",
+    "kind": "class",
+    "value": "iz-for",
+    "reason": "The \"Untuk ...\" / \"Universal, pakai strap\" line comes only from the sourced list, which is empty at launch; the canvas Tourmax line is an example.",
+    "requirement": "S3.3, D10, E7"
+  },
+  {
+    "artboard": "produk-detail",
+    "kind": "class",
+    "value": "iz-sizerow",
+    "reason": "The size row needs structured size data; products have none yet, so the row is hidden.",
+    "requirement": "S3.3, P-15"
+  },
+  {
+    "artboard": "produk-detail",
+    "kind": "class",
+    "value": "iz-spec",
+    "reason": "Data-driven: the specification list renders only when the product has features; the fixture Tourmax 30 has none (the canvas rows are an example).",
+    "requirement": "S3.5, E7"
+  },
+  {
+    "artboard": "produk-detail",
+    "kind": "heading",
+    "value": "Spesifikasi",
+    "reason": "Data-driven: the Spesifikasi section is hidden for a product without features.",
+    "requirement": "S3.5"
+  },
+  {
+    "artboard": "produk-detail",
+    "kind": "heading",
+    "value": "Tankbag TK 5",
+    "reason": "Related product names come from data (S3.8 selection: other positions, best sellers first, newest next); the canvas shows sample cards.",
+    "requirement": "S3.8, design.md §19 data-driven text"
+  },
+  {
+    "artboard": "produk-detail",
+    "kind": "heading",
+    "value": "Acc Toolkit Rollkit",
+    "reason": "Related product names come from data (S3.8 selection: other positions, best sellers first, newest next); the canvas shows sample cards.",
+    "requirement": "S3.8, design.md §19 data-driven text"
+  },
+  {
+    "artboard": "produk-detail",
+    "kind": "heading",
+    "value": "Botol bag Inzta Xmax",
+    "reason": "Related product names come from data (S3.8 selection: other positions, best sellers first, newest next); the canvas shows sample cards.",
+    "requirement": "S3.8, design.md §19 data-driven text"
+  },
+  {
+    "artboard": "produk-detail",
+    "kind": "heading",
+    "value": "Side bag Inzta Foldbag 7L",
+    "reason": "Related product names come from data (S3.8 selection: other positions, best sellers first, newest next); the canvas shows sample cards.",
+    "requirement": "S3.8, design.md §19 data-driven text"
+  },
+  {
+    "artboard": "produk-sisi",
+    "kind": "class",
+    "value": "iz-ordersum",
+    "reason": "The summary appears only after a side is chosen; the server render has no choice (the canvas draws the Sepasang state).",
+    "requirement": "S4.2.1, S4.5"
+  },
+  {
+    "artboard": "produk-sisi",
+    "kind": "heading",
+    "value": "Side bag Inzta XSR 155",
+    "reason": "The product name comes from data; no public product is side-sold yet, so the check runs on a local demo product.",
+    "requirement": "S4.1.1, design.md §19 data-driven text"
+  },
+  {
+    "artboard": "produk-sisi",
+    "kind": "heading",
+    "value": "Pilihan sisi dalam tiga keadaan",
+    "reason": "The \"Keadaan lain\" state board is a design artefact and is not rendered on the site.",
+    "requirement": "S4.5.2"
+  }
+]

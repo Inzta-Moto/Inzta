@@ -13,6 +13,17 @@ function itemSlug(item: any): string {
   return item.productSlug ?? item.id ?? '';
 }
 
+// F-016 S4.3.6: every item of one product works on the same copy of `variants`, written once per transaction. With
+// one copy per item, a Sepasang order (Kiri + Kanan of one product) kept only the last item's change.
+function variantsCopy(copies: Map<string, { ref: any; variants: any[] }>, slug: string, ref: any, pData: any): any[] {
+  let copy = copies.get(slug);
+  if (!copy) {
+    copy = { ref, variants: Array.isArray(pData.variants) ? [...pData.variants] : [] };
+    copies.set(slug, copy);
+  }
+  return copy.variants;
+}
+
 // Lookup commission: gunakan commissionId jika ada (order baru),
 // fallback ke query (order lama yang belum punya field ini).
 async function findCommissionRef(
@@ -87,10 +98,11 @@ export async function PATCH(
         // PHASE 2 — VALIDATION (throw = tidak di-retry oleh Firestore)
         type ChangeEntry =
           | { kind: 'simple'; ref: any; qty: number; before: number }
-          | { kind: 'variable'; ref: any; variants: any[]; totalStock: number; before: number; variationId: string };
+          | { kind: 'variable'; ref: any; variants: any[]; totalStock: number };
 
         const changes: ChangeEntry[] = [];
         const snapItems: InventorySnapshotItem[] = [];
+        const variantCopies = new Map<string, { ref: any; variants: any[] }>();
 
         for (let i = 0; i < items.length; i++) {
           const item = items[i];
@@ -118,7 +130,7 @@ export async function PATCH(
             if (!variationId)
               throw new Error(`Variasi tidak dispesifikasikan untuk produk "${pData.name}"`);
 
-            const variants: any[] = Array.isArray(pData.variants) ? [...pData.variants] : [];
+            const variants = variantsCopy(variantCopies, itemSlug(item), productRefs[i], pData);
             const idx = variants.findIndex((v) => v.variationId === variationId);
             if (idx === -1)
               throw new Error(`Variasi tidak ditemukan dalam produk "${pData.name}"`);
@@ -129,9 +141,7 @@ export async function PATCH(
 
             // Modifikasi copy array (belum ditulis — masih validation phase)
             variants[idx] = { ...variants[idx], stock: before - item.quantity };
-            const totalStock = computeTotalStock(variants);
 
-            changes.push({ kind: 'variable', ref: productRefs[i], variants, totalStock, before, variationId });
             snapItems.push({
               productSlug: itemSlug(item),
               variationId,
@@ -140,6 +150,10 @@ export async function PATCH(
               stockAfter: before - item.quantity,
             });
           }
+        }
+
+        for (const { ref, variants } of variantCopies.values()) {
+          changes.push({ kind: 'variable', ref, variants, totalStock: computeTotalStock(variants) });
         }
 
         // PHASE 3 — WRITE
@@ -249,6 +263,7 @@ export async function PATCH(
           | { kind: 'skip' };
 
         const reverts: RevertEntry[] = [];
+        const variantCopies = new Map<string, { ref: any; variants: any[] }>();
 
         for (const item of items) {
           const productType = item.productType ?? 'simple';
@@ -277,7 +292,7 @@ export async function PATCH(
             }
 
             const pData = pSnap.data() as any;
-            const variants: any[] = Array.isArray(pData.variants) ? [...pData.variants] : [];
+            const variants = variantsCopy(variantCopies, itemSlug(item), db.collection('products').doc(itemSlug(item)), pData);
             const idx = variants.findIndex((v) => v.variationId === variationId);
 
             if (idx === -1) {
@@ -293,13 +308,10 @@ export async function PATCH(
             }
 
             variants[idx] = { ...variants[idx], stock: (variants[idx].stock ?? 0) + qty };
-            reverts.push({
-              kind: 'variable',
-              ref: db.collection('products').doc(itemSlug(item)),
-              variants,
-              totalStock: computeTotalStock(variants),
-            });
           }
+        }
+        for (const { ref, variants } of variantCopies.values()) {
+          reverts.push({ kind: 'variable', ref, variants, totalStock: computeTotalStock(variants) });
         }
 
         // PHASE 3 — WRITE
@@ -394,6 +406,7 @@ export async function DELETE(
         }
 
         // Restore stock
+        const variantCopies = new Map<string, { ref: any; variants: any[] }>();
         for (const item of items) {
           const productType = item.productType ?? 'simple';
           const slug = itemSlug(item);
@@ -407,15 +420,14 @@ export async function DELETE(
             const pSnap = variableProductSnaps.get(slug);
             if (!pSnap?.exists || !variationId) continue; // skip — data corruption
             const pData = pSnap.data() as any;
-            const variants: any[] = Array.isArray(pData.variants) ? [...pData.variants] : [];
+            const variants = variantsCopy(variantCopies, slug, db.collection('products').doc(slug), pData);
             const idx = variants.findIndex((v) => v.variationId === variationId);
             if (idx === -1) continue; // skip — variant hilang
             variants[idx] = { ...variants[idx], stock: (variants[idx].stock ?? 0) + item.quantity };
-            transaction.update(db.collection('products').doc(slug), {
-              variants,
-              totalStock: computeTotalStock(variants),
-            });
           }
+        }
+        for (const { ref, variants } of variantCopies.values()) {
+          transaction.update(ref, { variants, totalStock: computeTotalStock(variants) });
         }
 
         if (orderData.voucherCode) {

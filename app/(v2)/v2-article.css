@@ -1,0 +1,77 @@
+/* F-016 S6, S7: states and fixes for /blog and /blog/[slug] that the ported Design System does not cover. Imported by
+   the route pages only. Every selector is an iz- class; F-013 body classes are never named here (S7.3.8). */
+
+/* Article photos use SmartImage inside the canvas .iz-photo box, whose ratio comes from the card rule (S6.3.2, S6.4.1). */
+.iz-aphoto > .iz-smartimg { position: absolute; inset: 0; background: transparent; }
+.iz-aphoto > .iz-tag { z-index: 1; }
+.iz-aphoto .iz-smartimg > img { transition: transform .4s ease; }
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .iz-acard:hover .iz-aphoto .iz-smartimg > img { transform: scale(1.04); }
+  .iz-grow:hover .iz-aphoto .iz-smartimg > img { transform: scale(1.03); }
+}
+/* ST-RM: no hover zoom on cards (S6.4 states, S7.6). */
+@media (prefers-reduced-motion: reduce) {
+  .iz-aphoto .iz-smartimg > img { transition: none; transform: none; }
+}
+
+/* Cards outside the current page carry `hidden`; .iz-acard sets display, which would beat the UA rule (S6.5.2). */
+.iz-acard[hidden] { display: none; }
+/* Long titles clamp to three lines; the full title stays in the DOM (S6.4.3). */
+.iz-acard .t-h3 { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; overflow: hidden; }
+
+/* Tabs keep their 44 px look with a 48 px hit area (S6.2 BP, G-A2). The phone row scrolls, so it gets room for it. */
+.iz-atabs .iz-fchip { position: relative; }
+.iz-atabs .iz-fchip::after { content: ""; position: absolute; inset: -2px 0; }
+@media (max-width: 767px) {
+  .iz-atabs { padding-block: 2px; }
+}
+
+/* Tab change: list fades in over 150 ms (design.md §8 "tabs fade 150 ms"); never on first paint, never under ST-RM. */
+@media (prefers-reduced-motion: no-preference) {
+  .iz-alist--fade { animation: iz-alist-fade 150ms ease-out; }
+}
+@keyframes iz-alist-fade { from { opacity: 0; } to { opacity: 1; } }
+
+/* Pager: disabled ends, ellipsis, and wrapping at 390 px without horizontal scroll (S6.5.3, S6.5 BP). */
+.iz-alist .iz-pager { flex-wrap: wrap; }
+.iz-alist .iz-pager button:disabled { opacity: .45; cursor: default; }
+.iz-pager__gap { min-width: 24px; text-align: center; color: var(--c-batu); }
+
+/* Article page (S7). The canvas sets these inside main.iz-wrap; V2Layout's main is not .iz-wrap, so the figure and the
+   body grid carry the same side padding themselves and stay page-level blocks like the canvas (design.md §19). */
+.iz-figure--cover { width: calc(100% - 2 * var(--space-6)); max-width: 1120px; margin: 40px auto 56px; }
+.iz-article--page { max-width: var(--size-content); margin: 40px auto 0; padding-inline: var(--space-6); }
+.iz-figure--cover + .iz-article--page { margin-top: 0; }
+@media (max-width: 767px) {
+  .iz-figure--cover { width: calc(100% - 2 * var(--space-5)); }
+  .iz-article--page { padding-inline: var(--space-5); }
+}
+/* S7.3.4: without a TOC the body column is centred alone at the reading width, no empty 280 px column. */
+.iz-article.iz-article--solo { grid-template-columns: minmax(0, var(--size-reading)); }
+.iz-article__col { display: flex; flex-direction: column; gap: var(--space-12); min-width: 0; }
+/* S7.3.5: the sticky TOC needs 1024 px; below that it is a static panel above the body. Its list scrolls inside. */
+.iz-article--page .iz-toc { max-height: calc(100vh - 128px); overflow-y: auto; }
+@media (max-width: 1023px) {
+  .iz-article--page:not(.iz-article--solo) { grid-template-columns: minmax(0, var(--size-reading)); }
+  .iz-article--page .iz-toc { position: static; max-height: none; }
+}
+
+/* S7.2.5: legacy gallery, whole photo visible on the sand panel; other images as a thumbnail row. */
+.iz-figure--legacy > .iz-aphoto { background: var(--c-pasir-muda); }
+.iz-figure--legacy > .iz-aphoto .iz-smartimg > img { object-fit: contain; }
+.iz-athumbs { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px; }
+.iz-figure .iz-athumbs .iz-photo { aspect-ratio: 1 / 1; border-radius: var(--radius-tile); }
+
+/* S7.5.3: copy feedback under the chips. It hangs below the row instead of reserving an empty line, so the section gap
+   after the article starts at the chips; a message then appears inside that gap and moves nothing. */
+.iz-share { position: relative; }
+.iz-share__msg { position: absolute; top: 100%; left: 0; right: 0; margin-top: 10px; font-weight: 500; line-height: 1.4; color: var(--c-batu); }
+.iz-share > a.iz-fchip { color: var(--c-tinta); }
+
+/* S7.8.3: preview banner above the head (admin only). */
+.iz-preview-banner { max-width: 920px; margin: 0 auto 24px; padding: 10px 16px; border-radius: var(--radius-thumb); background: var(--c-pasir-muda); font-size: 15px; font-weight: 600; }
+
+/* S7.7.1: progress bar, transform only; never under reduced motion (the component also skips rendering). */
+.iz-progress { position: fixed; top: 0; left: 0; right: 0; height: 3px; z-index: 70; pointer-events: none; }
+.iz-progress > span { display: block; height: 100%; background: var(--c-kuning-tua); transform: scaleX(0); transform-origin: 0 50%; }
+@media (prefers-reduced-motion: reduce) { .iz-progress { display: none; } }

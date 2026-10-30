@@ -1,0 +1,320 @@
+/* Closing panel (F-016 S0.8), third pass (Sehan 2026-10-29: a background idea after his BookMate site, and a chat
+   card that looks right). The band is a touring route map, after BookMate's section backdrops (procedural line art
+   that climbs toward the visual, one yellow accent line, a soft light behind the visual, loops paused off screen):
+   topographic contours from periodic noise, a seamless 640 x 600 tile used as a mask so the light inside the layer
+   only shows on the lines; a warm glow behind the chat; a kuning route that runs under the button into the chat; and
+   on fine pointers a headlight that follows the cursor. The copy side stays calm: the lines fade to a quarter there.
+   The chat is a light WhatsApp-style card in the site's own chat language (the order-flow vignette of HowToOrder).
+   Every rule outside the motion blocks is the final state, so the panel is complete without JavaScript and under
+   reduced motion. Start states exist only under .iz-closing--armed, which ClosingStage adds when motion is allowed.
+   Band sizes go through --closing-u (the fit unit of v2-fit.css, 1px outside 1024-1439 px) because the fit generator
+   reads a fixed list of files that does not include this one; the chat scales with its own width (--cu, container
+   units). The engine clips .iz-closing and fades its .iz-wa and .iz-btn, so nothing here transforms those. */
+
+.iz-closing {
+  --closing-u: var(--u, 1px);
+  --closing-ease: cubic-bezier(0.625, 0.05, 0, 1);
+  --closing-pop: cubic-bezier(0.34, 1.56, 0.64, 1);
+  position: relative;
+}
+.iz-closing .iz-closing__body { position: relative; z-index: 1; }
+
+/* Map. The topo layer overhangs the band so its slow drift never shows an edge; the band clips it. */
+.iz-closing__map { position: absolute; inset: 0; z-index: 0; overflow: hidden; border-radius: inherit; pointer-events: none; }
+.iz-closing__map::before { content: ""; position: absolute; left: 77%; top: 50%; width: calc(760 * var(--closing-u)); aspect-ratio: 1; translate: -50% -50%; border-radius: 50%; background: radial-gradient(closest-side, rgba(245, 158, 11, 0.14), rgba(245, 158, 11, 0)); }
+.iz-closing__topo {
+  /* Generated tile (seed 7, 12 levels, Catmull-Rom curves): faint minor contours, every fourth one stronger. One file,
+     shared with the route map of the Tentang cards (v2-about.css), so the browser fetches and caches it once. */
+  --closing-topo: url("/images/v2/topo-contours.svg");
+  --closing-calm: linear-gradient(90deg, rgba(0, 0, 0, 0.26) 0 48%, #000 68%);
+  position: absolute;
+  inset: calc(-40 * var(--closing-u));
+  background: rgba(243, 239, 230, 0.15);
+  -webkit-mask-image: var(--closing-topo), var(--closing-calm);
+  -webkit-mask-size: calc(640 * var(--closing-u)) calc(600 * var(--closing-u)), 100% 100%;
+  -webkit-mask-repeat: repeat, no-repeat;
+  -webkit-mask-composite: source-in;
+  mask-image: var(--closing-topo), var(--closing-calm);
+  mask-size: calc(640 * var(--closing-u)) calc(600 * var(--closing-u)), 100% 100%;
+  mask-repeat: repeat, no-repeat;
+  mask-composite: intersect;
+}
+.iz-closing__glow { position: absolute; left: 76%; top: 50%; width: calc(880 * var(--closing-u)); aspect-ratio: 1; translate: -50% -50%; border-radius: 50%; background: radial-gradient(closest-side, rgba(245, 158, 11, 0.52), rgba(245, 158, 11, 0.16) 55%, rgba(245, 158, 11, 0)); }
+.iz-closing__lamp { position: absolute; left: 0; top: 0; width: calc(460 * var(--closing-u)); aspect-ratio: 1; margin: calc(-230 * var(--closing-u)) 0 0 calc(-230 * var(--closing-u)); border-radius: 50%; background: radial-gradient(closest-side, rgba(245, 158, 11, 0.85), rgba(245, 158, 11, 0.3) 45%, rgba(245, 158, 11, 0)); opacity: 0; translate: var(--iz-lx, 0px) var(--iz-ly, 0px); transition: opacity 0.6s ease; will-change: translate, opacity; }
+.iz-closing--lamp .iz-closing__lamp { opacity: 1; }
+
+/* Route: each SVG has the aspect of its slice of the 1152 x 566 design box, pinned to the band's bottom (main leg) or
+   top right corner (exit leg). The reveal path in each mask draws the dashed road in; at rest it is fully drawn. */
+.iz-closing__trail { position: absolute; left: 0; bottom: 0; width: 100%; height: auto; aspect-ratio: 1152 / 286; overflow: visible; }
+.iz-closing__trail--exit { left: auto; right: 0; top: 0; bottom: auto; width: calc(100% * 112 / 1152); aspect-ratio: 112 / 170; }
+.iz-closing__road { fill: none; stroke: var(--c-kuning); stroke-opacity: 0.6; stroke-width: 2.2; stroke-linecap: round; stroke-dasharray: 11 9; }
+.iz-closing__reveal { fill: none; stroke: #fff; stroke-width: 16; stroke-dasharray: 1 2; stroke-dashoffset: 0; }
+
+/* Route: three numbered stops joined by a dashed road line, across on wide screens, down on narrow ones. */
+.iz-closing .iz-closing__route {
+  --closing-n: max(28px, calc(32 * var(--closing-u)));
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-4);
+  width: 100%;
+  max-width: calc(580 * var(--closing-u));
+  margin-top: var(--space-2);
+}
+.iz-closing__route > li { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: calc(10 * var(--closing-u)); }
+.iz-closing__n { position: relative; isolation: isolate; flex: none; display: grid; place-items: center; width: var(--closing-n); height: var(--closing-n); border-radius: 50%; box-shadow: inset 0 0 0 1.5px var(--c-line-on-dark); color: var(--c-on-kuning); font-family: var(--font-display); font-size: max(13px, calc(15 * var(--closing-u))); font-weight: 800; line-height: 1; }
+.iz-closing__n::before { content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit; background: var(--c-kuning); }
+.iz-closing__stop { color: var(--c-krem); font-size: max(12.6px, calc(15 * var(--closing-u))); font-weight: 600; line-height: 1.4; text-wrap: pretty; }
+.iz-closing__route > li:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  top: calc(var(--closing-n) / 2 - 1px);
+  left: calc(var(--closing-n) + 8px);
+  right: calc(8px - var(--space-4));
+  height: 2px;
+  background: repeating-linear-gradient(90deg, color-mix(in srgb, var(--c-kuning) 70%, transparent) 0 6px, transparent 6px 12px);
+  transform-origin: 0 50%;
+}
+
+/* Chat card: header, the visitor's photo, the admin's reply with a real product, typing dots, and the round patch on
+   the bottom right corner where the thread leaves empty space. Inside the card one design pixel is --cu (card width
+   / 372), with floors on the text; the card itself is sized in band units. */
+.iz-closing .iz-chat {
+  --cu: calc(100cqi / 372);
+  --chat-tick: #53bdeb;
+  position: relative;
+  z-index: 1;
+  isolation: isolate;
+  container-type: inline-size;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  width: min(100%, calc(372 * var(--closing-u)));
+  justify-self: center;
+  padding: 0;
+  border-radius: var(--radius-tile-lg);
+  background: var(--c-kertas-terang);
+  color: var(--c-tinta);
+  box-shadow: 0 0 0 1px rgba(243, 239, 230, 0.16), 0 0 0 calc(8 * var(--closing-u)) rgba(243, 239, 230, 0.05), 0 44px 80px -26px rgba(0, 0, 0, 0.78);
+  transform: none;
+  rotate: none;
+}
+.iz-closing .iz-chat__head { display: flex; align-items: center; gap: calc(10 * var(--cu)); padding: calc(11 * var(--cu)) calc(16 * var(--cu)) calc(11 * var(--cu)) calc(12 * var(--cu)); border-bottom: 1px solid var(--c-garis); border-radius: var(--radius-tile-lg) var(--radius-tile-lg) 0 0; background: var(--c-kertas-terang); }
+.iz-closing .iz-chat__avatar { width: calc(38 * var(--cu)); height: calc(38 * var(--cu)); background: var(--c-aspal); }
+.iz-closing .iz-chat__avatar img { width: 46%; height: auto; }
+.iz-closing .iz-chat__who { flex: 1; min-width: 0; gap: calc(1 * var(--cu)); }
+.iz-closing .iz-chat .iz-chat__who b { font-size: max(12px, calc(15 * var(--cu))); line-height: 1.2; color: var(--c-tinta); }
+.iz-closing .iz-chat .iz-chat__who span { font-size: max(10px, calc(12 * var(--cu))); line-height: 1.25; color: var(--c-batu); }
+.iz-closing .iz-chat__status { display: grid; }
+.iz-closing .iz-chat__status > span { grid-area: 1 / 1; }
+.iz-closing .iz-chat__status-idle { opacity: 0; }
+.iz-closing .iz-chat .iz-chat__status-typing { color: var(--c-fit); font-weight: 600; }
+.iz-closing .iz-chat__app { flex: none; display: grid; width: calc(22 * var(--cu)); color: #25d366; }
+.iz-closing .iz-chat__app svg { width: 100%; height: auto; }
+
+.iz-closing .iz-chat__thread {
+  display: flex;
+  flex-direction: column;
+  gap: calc(8 * var(--cu));
+  padding: calc(14 * var(--cu)) calc(12 * var(--cu)) calc(16 * var(--cu));
+  border-radius: 0 0 var(--radius-tile-lg) var(--radius-tile-lg);
+  background-color: var(--c-pasir-muda);
+  background-image: radial-gradient(circle, rgba(26, 24, 19, 0.08) 1px, transparent 1.4px);
+  background-size: calc(14 * var(--cu)) calc(14 * var(--cu));
+}
+.iz-closing .iz-chat__text { position: relative; display: block; padding: calc(3 * var(--cu)) calc(6 * var(--cu)) calc(4 * var(--cu)); font-size: max(11px, calc(13.5 * var(--cu))); line-height: 1.35; color: var(--c-tinta); text-wrap: pretty; }
+.iz-closing .iz-chat__meta { display: inline-flex; align-items: center; gap: calc(3 * var(--cu)); font-size: max(9px, calc(10.5 * var(--cu))); line-height: 1; color: var(--c-batu); white-space: nowrap; }
+
+.iz-closing .iz-chat__out { align-self: flex-end; width: 70%; gap: calc(4 * var(--cu)); padding: calc(4 * var(--cu)); border-radius: var(--radius-thumb) calc(4 * var(--cu)) var(--radius-thumb) var(--radius-thumb); background: color-mix(in srgb, var(--c-kuning) 24%, var(--c-kertas-terang)); color: var(--c-tinta); box-shadow: 0 1px 0 rgba(26, 24, 19, 0.06); }
+.iz-closing .iz-chat__out .iz-photo { aspect-ratio: 4 / 3; border-radius: calc(var(--radius-thumb) - 4px); }
+.iz-closing .iz-chat__out .iz-photo img { object-position: 50% 72%; }
+.iz-closing .iz-chat .iz-chat__out .iz-photo > .iz-tag { left: calc(8 * var(--cu)); bottom: calc(8 * var(--cu)); min-height: calc(20 * var(--cu)); padding: 0 calc(8 * var(--cu)); font-size: max(9.5px, calc(11 * var(--cu))); }
+/* The time sits on the last line of the caption, or on its own line when the caption fills it (a spacer reserves it). */
+.iz-closing .iz-chat__out .iz-chat__text { text-wrap: balance; }
+.iz-closing .iz-chat__out .iz-chat__text::after { content: ""; display: inline-block; width: calc(54 * var(--cu)); }
+.iz-closing .iz-chat__out .iz-chat__meta { position: absolute; right: calc(6 * var(--cu)); bottom: calc(4 * var(--cu)); }
+.iz-chat__ticks { width: calc(17 * var(--cu)); height: auto; color: var(--chat-tick); }
+.iz-chat__ticks path { fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+
+.iz-closing .iz-chat__slot { display: grid; justify-items: start; align-items: start; }
+.iz-closing .iz-chat__slot > * { grid-area: 1 / 1; }
+.iz-closing .iz-chat__in { display: flex; flex-direction: column; gap: calc(6 * var(--cu)); max-width: 88%; padding: calc(6 * var(--cu)); border-radius: calc(4 * var(--cu)) var(--radius-thumb) var(--radius-thumb) var(--radius-thumb); background: var(--c-kertas-terang); box-shadow: 0 0 0 1px var(--c-garis), 0 12px 24px -18px rgba(22, 20, 15, 0.4); }
+.iz-closing .iz-chat__pick { display: grid; grid-template-columns: calc(46 * var(--cu)) minmax(0, 1fr); align-items: center; gap: calc(10 * var(--cu)); padding: calc(6 * var(--cu)) calc(10 * var(--cu)) calc(6 * var(--cu)) calc(6 * var(--cu)); border-radius: calc(var(--radius-thumb) - 4px); background: var(--c-kertas); box-shadow: inset 0 0 0 1px var(--c-garis); }
+.iz-closing .iz-chat__pick img { width: 100%; height: auto; aspect-ratio: 1; border-radius: calc(8 * var(--cu)); object-fit: cover; background: var(--c-pasir-muda); }
+.iz-closing .iz-chat__pick-text { display: flex; flex-direction: column; align-items: flex-start; gap: calc(5 * var(--cu)); min-width: 0; }
+.iz-closing .iz-chat__pick-text b { font-size: max(11px, calc(13 * var(--cu))); line-height: 1.25; font-weight: 700; color: var(--c-tinta); }
+.iz-closing .iz-chat__fit { padding: calc(3 * var(--cu)) calc(8 * var(--cu)); border-radius: var(--radius-pill); background: var(--c-fit-bg); color: var(--c-fit); font-size: max(9px, calc(10.5 * var(--cu))); font-weight: 700; line-height: 1.2; white-space: nowrap; }
+
+.iz-closing .iz-chat__typing { align-self: flex-start; gap: calc(4 * var(--cu)); padding: calc(11 * var(--cu)) calc(13 * var(--cu)); border-radius: calc(4 * var(--cu)) var(--radius-thumb) var(--radius-thumb) var(--radius-thumb); background: var(--c-kertas-terang); box-shadow: 0 0 0 1px var(--c-garis); }
+.iz-closing .iz-chat__typing span { width: calc(6.5 * var(--cu)); height: calc(6.5 * var(--cu)); background: var(--c-batu-muda); animation: none; opacity: 0.7; }
+.iz-closing .iz-chat__typing--pre { opacity: 0; }
+
+.iz-closing .iz-chat__patch { position: absolute; z-index: 2; right: calc(-26 * var(--cu)); bottom: calc(-24 * var(--cu)); width: max(60px, calc(84 * var(--cu))); aspect-ratio: 1; rotate: 10deg; filter: drop-shadow(0 10px 12px rgba(0, 0, 0, 0.35)); }
+.iz-chat__patch svg { display: block; width: 100%; height: 100%; overflow: visible; color: var(--c-on-kuning); }
+.iz-chat__patch-disc { fill: var(--c-kuning); }
+.iz-chat__patch-stitch { fill: none; stroke: var(--c-on-kuning); stroke-opacity: 0.5; stroke-width: 1.2; stroke-dasharray: 3.2 2.6; }
+.iz-chat__patch-text { fill: var(--c-on-kuning); font-family: var(--font-display); font-size: 12.5px; font-weight: 800; letter-spacing: 0.02em; text-transform: uppercase; }
+
+/* Two columns stay from 768 px; below 1024 px the chat column gets a fixed share, so the card keeps a readable size.
+   Phones stack the chat under the button, where it cannot crowd the call to action. The route needs the wide layout. */
+@media (max-width: 1023px) {
+  .iz-closing .iz-closing__route { grid-template-columns: minmax(0, 1fr); gap: var(--space-3); }
+  .iz-closing__route > li { flex-direction: row; gap: var(--space-3); }
+  .iz-closing__stop { padding-top: calc((var(--closing-n) - 1.4em) / 2); }
+  .iz-closing__route > li:not(:last-child)::after {
+    top: calc(var(--closing-n) + 4px);
+    bottom: calc(4px - var(--space-3));
+    left: calc(var(--closing-n) / 2 - 1px);
+    right: auto;
+    width: 2px;
+    height: auto;
+    background: repeating-linear-gradient(180deg, color-mix(in srgb, var(--c-kuning) 70%, transparent) 0 6px, transparent 6px 12px);
+    transform-origin: 50% 0;
+  }
+  .iz-closing__trail { display: none; }
+}
+@media (min-width: 768px) and (max-width: 1023px) {
+  .iz-closing.iz-closing--split { grid-template-columns: minmax(0, 1fr) minmax(0, clamp(280px, 34vw, 340px)); gap: var(--space-8); padding-left: var(--space-12); padding-right: var(--space-10); }
+}
+@media (max-width: 767px) {
+  .iz-closing .iz-chat { display: flex; width: min(100%, 330px); }
+  .iz-closing .iz-chat__patch { right: calc(-10 * var(--cu)); bottom: calc(-16 * var(--cu)); }
+  .iz-closing__map::before, .iz-closing__glow { left: 50%; top: 82%; }
+  .iz-closing__topo { --closing-calm: linear-gradient(180deg, rgba(0, 0, 0, 0.26) 0 50%, #000 70%); }
+}
+@media (forced-colors: active) {
+  .iz-closing__map { display: none; }
+  .iz-closing .iz-chat, .iz-closing .iz-chat__out, .iz-closing .iz-chat__in, .iz-closing .iz-chat__pick, .iz-closing .iz-chat__typing { border: 1px solid CanvasText; }
+  .iz-closing .iz-chat__typing span { forced-color-adjust: none; background: CanvasText; }
+}
+
+/* Motion. ClosingStage adds .iz-closing--motion when motion is allowed and keeps .iz-closing--live on the panel while
+   it is on screen; every loop takes its play state from --closing-idle, so it pauses off screen and resumes where it
+   stopped. Armed parts wait at their start keyframe (fill both, paused) until .iz-closing--play; one custom property
+   flips them all, pseudo-elements included. Story order: card and map light, route plotted, photo sent and read,
+   admin typing, reply with the product, patch, typing again; the three stops light with the matching chat beats. */
+@media (prefers-reduced-motion: no-preference) {
+  .iz-closing--motion { --closing-idle: paused; }
+  .iz-closing--motion.iz-closing--live { --closing-idle: running; }
+  /* Phones and tablets keep the one-time assembly but not the endless idle loops (map drift, glow, card float, dots,
+     stamp spin, route rider): their keyframes use var(), so Chrome runs them on the main thread, and with the band on
+     screen they took frames from every scroll on a phone (trace, 2026-10-29). */
+  @media (max-width: 1023.98px) {
+    .iz-closing--motion.iz-closing--live { --closing-idle: paused; }
+    .iz-closing.iz-closing--ride.iz-closing--live { --closing-ride-run: paused; }
+  }
+  .iz-closing--armed { --closing-run: paused; }
+  .iz-closing--armed.iz-closing--play { --closing-run: running; }
+
+  .iz-closing--motion .iz-closing__topo { animation: iz-closing-drift 56s ease-in-out infinite; animation-play-state: var(--closing-idle); }
+  .iz-closing--motion .iz-closing__glow { animation: iz-closing-breathe 9s ease-in-out infinite; animation-play-state: var(--closing-idle); }
+  .iz-closing--armed .iz-closing__glow { animation: iz-closing-fade 1.4s ease-out both, iz-closing-breathe 9s ease-in-out 1.4s infinite; animation-play-state: var(--closing-run), var(--closing-idle); }
+  .iz-closing--armed .iz-closing__map::before { animation: iz-closing-fade 1.4s ease-out both; animation-play-state: var(--closing-run); }
+  .iz-closing--armed .iz-closing__reveal { animation: iz-closing-plot 1.8s cubic-bezier(0.65, 0, 0.35, 1) 0.15s both; animation-play-state: var(--closing-run); }
+  .iz-closing--armed .iz-closing__trail--exit .iz-closing__reveal { animation-duration: 0.7s; animation-delay: 1.8s; }
+
+  .iz-closing--motion:not(.iz-closing--armed) .iz-chat { animation: iz-closing-float 7s ease-in-out infinite; animation-play-state: var(--closing-idle); }
+  .iz-closing--armed .iz-chat { animation: iz-closing-card 0.9s var(--closing-ease) both; animation-play-state: var(--closing-run); }
+  .iz-closing--armed.iz-closing--play .iz-chat { animation: iz-closing-card 0.9s var(--closing-ease) both, iz-closing-float 7s ease-in-out 1.4s infinite; animation-play-state: running, var(--closing-idle); }
+  .iz-closing--armed .iz-chat__out { transform-origin: 100% 0; animation: iz-closing-sent 0.7s var(--closing-ease) 0.45s both; animation-play-state: var(--closing-run); }
+  .iz-closing--armed .iz-chat__out img { animation: iz-closing-zoom 1.3s var(--closing-ease) 0.45s both; animation-play-state: var(--closing-run); }
+  .iz-closing--armed .iz-chat__ticks { animation: iz-closing-read 0.3s ease 1.3s both; animation-play-state: var(--closing-run); }
+  .iz-closing--armed .iz-chat__status-idle { animation: iz-closing-status-idle 3.6s linear both; animation-play-state: var(--closing-run); }
+  .iz-closing--armed .iz-chat__status-typing { animation: iz-closing-status-typing 3.6s linear both; animation-play-state: var(--closing-run); }
+  .iz-closing--armed .iz-chat__typing--pre { transform-origin: 0 0; animation: iz-closing-pretype 3.6s linear both; animation-play-state: var(--closing-run); }
+  .iz-closing--armed .iz-chat__typing--pre span { animation: iz-closing-dot 0.8s ease-in-out 1.6s 2 both; animation-play-state: var(--closing-run); }
+  .iz-closing--armed .iz-chat__typing--pre span:nth-child(2) { animation-delay: 1.72s; }
+  .iz-closing--armed .iz-chat__typing--pre span:nth-child(3) { animation-delay: 1.84s; }
+  .iz-closing--armed .iz-chat__in { transform-origin: 0 0; animation: iz-closing-reply 0.6s var(--closing-pop) 2.65s both; animation-play-state: var(--closing-run); }
+  .iz-closing--armed .iz-chat__pick { animation: iz-closing-pick 0.6s var(--closing-ease) 2.85s both; animation-play-state: var(--closing-run); }
+  .iz-closing--armed .iz-chat__patch { animation: iz-closing-stamp 0.85s var(--closing-pop) 3.15s both; animation-play-state: var(--closing-run); }
+  .iz-closing--armed .iz-chat__typing:not(.iz-chat__typing--pre) { transform-origin: 0 100%; animation: iz-closing-typing 0.45s var(--closing-pop) 3.45s both; animation-play-state: var(--closing-run); }
+
+  /* Idle chat: the typing dots keep bouncing and the patch ring turns, from mount or once the assembly is done. */
+  .iz-closing--motion:not(.iz-closing--armed) .iz-chat__typing:not(.iz-chat__typing--pre) span { --closing-dot-at: 0s; animation: iz-closing-dot-loop 1.2s ease-in-out var(--closing-dot-at) infinite both; animation-play-state: var(--closing-idle); }
+  .iz-closing--armed.iz-closing--play .iz-chat__typing:not(.iz-chat__typing--pre) span { --closing-dot-at: 3.9s; animation: iz-closing-dot-loop 1.2s ease-in-out var(--closing-dot-at) infinite both; animation-play-state: var(--closing-idle); }
+  .iz-closing--motion .iz-chat__typing:not(.iz-chat__typing--pre) span:nth-child(2) { animation-delay: calc(var(--closing-dot-at, 0s) + 0.15s); }
+  .iz-closing--motion .iz-chat__typing:not(.iz-chat__typing--pre) span:nth-child(3) { animation-delay: calc(var(--closing-dot-at, 0s) + 0.3s); }
+  .iz-closing--motion .iz-chat__patch-text, .iz-closing--motion .iz-chat__patch-stitch { transform-box: view-box; transform-origin: 50% 50%; animation: iz-closing-spin 22s linear infinite; animation-play-state: var(--closing-idle); }
+  .iz-closing--motion .iz-chat__patch-stitch { animation-duration: 36s; animation-direction: reverse; }
+
+  .iz-closing--armed .iz-closing__route > li:nth-child(1) { --closing-at: 0.45s; --closing-road: 0.85s; --closing-road-d: 1.7s; }
+  .iz-closing--armed .iz-closing__route > li:nth-child(2) { --closing-at: 2.65s; --closing-road: 2.8s; --closing-road-d: 0.35s; }
+  .iz-closing--armed .iz-closing__route > li:nth-child(3) { --closing-at: 3.2s; }
+  .iz-closing--armed .iz-closing__n { animation: iz-closing-num 0.35s ease-out var(--closing-at) both; animation-play-state: var(--closing-run); }
+  .iz-closing--armed .iz-closing__n::before { animation: iz-closing-fill 0.55s var(--closing-pop) var(--closing-at) both; animation-play-state: var(--closing-run); }
+  .iz-closing--armed .iz-closing__stop { animation: iz-closing-stop 0.5s ease-out var(--closing-at) both; animation-play-state: var(--closing-run); }
+  .iz-closing--armed .iz-closing__route > li:not(:last-child)::after { animation: iz-closing-road-x var(--closing-road-d) var(--closing-ease) var(--closing-road) both; animation-play-state: var(--closing-run); }
+
+  /* The chat leans toward a fine pointer and the patch drifts forward, for depth. */
+  .iz-closing--tilt .iz-chat { transform: perspective(1200px) rotateX(calc(var(--iz-py, 0) * -6deg)) rotateY(calc(var(--iz-px, 0) * 8deg)); transition: transform 0.9s cubic-bezier(0.16, 1, 0.3, 1); }
+  .iz-closing--tilt .iz-chat__patch { translate: calc(var(--iz-px, 0) * 18px) calc(var(--iz-py, 0) * 14px); transition: translate 0.9s cubic-bezier(0.16, 1, 0.3, 1); }
+}
+@media (prefers-reduced-motion: no-preference) and (max-width: 1023px) {
+  .iz-closing--armed .iz-closing__route > li:not(:last-child)::after { animation-name: iz-closing-road-y; }
+}
+
+/* Rider (Sehan, 2026-10-29: "animasikan bagian section ini"): once the route is drawn, a kuning dot rides it from stop
+   1 to stop 3 and starts over, and each number chip pops with a ring as the dot reaches it. ClosingStage adds
+   .iz-closing--ride and measures the chip centres into --ride-mx/my (stop 2) and --ride-x/y (stop 3); the loop runs
+   only while the panel is on screen (.iz-closing--live). The dot is painted before the list items, so it passes under
+   the chips. Without JavaScript or under reduced motion none of this exists. */
+@media (prefers-reduced-motion: no-preference) {
+  .iz-closing--ride { --closing-ride-run: paused; }
+  .iz-closing--ride.iz-closing--live { --closing-ride-run: running; }
+  .iz-closing--ride .iz-closing__route { position: relative; }
+  .iz-closing--ride .iz-closing__route::before {
+    content: "";
+    position: absolute;
+    top: calc(var(--closing-n) / 2 - 6px);
+    left: calc(var(--closing-n) / 2 - 6px);
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--c-kuning);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--c-kuning) 25%, transparent), 0 0 18px 2px color-mix(in srgb, var(--c-kuning) 55%, transparent);
+    pointer-events: none;
+    animation: iz-closing-ride 5s linear infinite;
+    animation-play-state: var(--closing-ride-run);
+  }
+  .iz-closing--ride .iz-closing__route > li:nth-child(1) { --closing-ride-at: 0s; }
+  .iz-closing--ride .iz-closing__route > li:nth-child(2) { --closing-ride-at: 2.3s; }
+  .iz-closing--ride .iz-closing__route > li:nth-child(3) { --closing-ride-at: 4.4s; }
+  .iz-closing--ride .iz-closing__n { animation: iz-closing-chip 5s var(--closing-ride-at) infinite; animation-play-state: var(--closing-ride-run); }
+  .iz-closing--ride .iz-closing__n::after { content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit; border: 2px solid var(--c-kuning); opacity: 0; animation: iz-closing-ring 5s ease-out var(--closing-ride-at) infinite; animation-play-state: var(--closing-ride-run); }
+}
+
+@keyframes iz-closing-ride {
+  0% { opacity: 0; scale: 0.3; translate: 0 0; }
+  6% { opacity: 1; scale: 1; translate: 0 0; animation-timing-function: cubic-bezier(0.45, 0, 0.25, 1); }
+  46% { translate: var(--ride-mx, 0px) var(--ride-my, 0px); }
+  54% { translate: var(--ride-mx, 0px) var(--ride-my, 0px); animation-timing-function: cubic-bezier(0.45, 0, 0.25, 1); }
+  88% { opacity: 1; scale: 1; translate: var(--ride-x, 0px) var(--ride-y, 0px); }
+  95%, 100% { opacity: 0; scale: 0.3; translate: var(--ride-x, 0px) var(--ride-y, 0px); }
+}
+@keyframes iz-closing-chip { 0%, 14%, 100% { scale: 1; } 5% { scale: 1.18; } }
+@keyframes iz-closing-ring { 0% { opacity: 0.9; scale: 1; } 18%, 100% { opacity: 0; scale: 1.9; } }
+
+@keyframes iz-closing-drift { 0%, 100% { translate: 0 0; } 50% { translate: calc(-36 * var(--closing-u)) calc(-16 * var(--closing-u)); } }
+@keyframes iz-closing-breathe { 0%, 100% { scale: 1; } 50% { scale: 1.1; } }
+@keyframes iz-closing-fade { from { opacity: 0; } }
+@keyframes iz-closing-plot { from { stroke-dashoffset: 1; } }
+@keyframes iz-closing-card { 0% { opacity: 0; translate: 0 calc(48 * var(--closing-u)); scale: 0.96; } 35% { opacity: 1; } }
+@keyframes iz-closing-float { 0%, 100% { translate: 0 0; } 50% { translate: 0 calc(-8 * var(--closing-u)); } }
+@keyframes iz-closing-sent { from { opacity: 0; translate: calc(28 * var(--cu)) calc(10 * var(--cu)); scale: 0.88; } }
+@keyframes iz-closing-zoom { from { scale: 1.18; } }
+@keyframes iz-closing-read { from { color: var(--c-batu-muda); } }
+@keyframes iz-closing-status-idle { 0%, 40% { opacity: 1; } 44%, 72% { opacity: 0; } 76%, 94% { opacity: 1; } 98%, 100% { opacity: 0; } }
+@keyframes iz-closing-status-typing { 0%, 40% { opacity: 0; } 44%, 72% { opacity: 1; } 76%, 94% { opacity: 0; } 98%, 100% { opacity: 1; } }
+@keyframes iz-closing-pretype { 0%, 41% { opacity: 0; scale: 0.5; } 46%, 72% { opacity: 1; scale: 1; } 75%, 100% { opacity: 0; scale: 0.9; } }
+@keyframes iz-closing-dot { 0%, 100% { opacity: 0.7; translate: 0 0; } 40% { opacity: 1; translate: 0 calc(-3 * var(--cu)); } }
+@keyframes iz-closing-reply { from { opacity: 0; translate: 0 calc(8 * var(--cu)); scale: 0.9; } }
+@keyframes iz-closing-pick { from { opacity: 0; translate: 0 calc(8 * var(--cu)); } }
+@keyframes iz-closing-stamp { from { opacity: 0; scale: 0.3; rotate: -150deg; } }
+@keyframes iz-closing-typing { from { opacity: 0; scale: 0.5; } }
+@keyframes iz-closing-dot-loop { 0%, 60%, 100% { translate: 0 0; opacity: 0.55; } 30% { translate: 0 calc(-4 * var(--cu)); opacity: 1; } }
+@keyframes iz-closing-spin { to { transform: rotate(360deg); } }
+@keyframes iz-closing-fill { from { scale: 0; } }
+@keyframes iz-closing-num { from { color: var(--c-pasir); } }
+@keyframes iz-closing-stop { from { opacity: 0; translate: 0 calc(12 * var(--closing-u)); } }
+@keyframes iz-closing-road-x { from { scale: 0 1; } }
+@keyframes iz-closing-road-y { from { scale: 1 0; } }

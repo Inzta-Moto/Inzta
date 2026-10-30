@@ -1,27 +1,28 @@
-import Header from '@/components/Header';
-import dynamic from 'next/dynamic';
+import type { Metadata } from 'next';
 import Link from 'next/link';
-
-const Footer = dynamic(() => import('@/components/Footer'));
+import V2StaticFrame from '@/components/v2/V2StaticFrame';
 
 // F-005 6.6: rendered by notFound() in [slug]/layout.tsx, so an unknown product answers 404 instead of 200.
 // It lives one level up because a segment's own not-found does not catch its layout.
-// Same markup as the error branch of DetailClient.
+// F-016 S0.11.3: same v2 frame and markup as app/not-found.tsx, with the product wording.
+export const metadata: Metadata = {
+  title: 'Produk tidak ditemukan',
+  robots: { index: false },
+};
+
 export default function ProductNotFound() {
   return (
-    <>
-      <Header active="produk" />
-      {/* Same top spacing as a product page, below the fixed header. */}
-      <section className="detail-page-header" />
-      <section className="detail-section">
-        <div className="container">
-          <div className="empty-state">
-            <p>Produk tidak ditemukan</p>
-            <Link href="/produk" style={{ marginTop: '1rem', display: 'inline-block', color: '#0070f3' }}>Kembali ke halaman produk</Link>
+    <V2StaticFrame current="produk">
+      <section className="iz-state">
+        <div className="iz-wrap">
+          <h1 className="t-h1-shop">Produk tidak ditemukan</h1>
+          <p>Produk yang Anda cari tidak ada atau sudah dipindah.</p>
+          <div className="iz-row">
+            <Link className="iz-btn iz-btn--primary" href="/produk">Lihat produk</Link>
+            <Link className="iz-btn iz-btn--secondary" href="/">Ke Beranda</Link>
           </div>
         </div>
       </section>
-      <Footer />
-    </>
+    </V2StaticFrame>
   );
 }

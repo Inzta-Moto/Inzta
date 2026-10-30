@@ -1,0 +1,44 @@
+/* F-016 S2 Katalog: states and pieces the canvas does not draw (design.md §7). Imported by app/produk/page.tsx. */
+
+/* The DS rules set display on these, which would beat the hidden attribute. */
+.iz-filters__meta > .iz-row[hidden],
+.iz-popover[hidden],
+.iz-catalog__more[hidden] { display: none; }
+
+.iz-fgroup { position: relative; }
+.iz-fgroup:last-child .iz-popover { left: auto; right: 0; }
+
+/* S2.2.5: options and the motor chip with no result. */
+.iz-fchip:disabled { opacity: 0.5; cursor: not-allowed; }
+.iz-check:has(input:disabled) { opacity: 0.5; cursor: not-allowed; }
+.iz-check:has(input:disabled):hover { background: none; }
+
+.iz-filters__meta .iz-link { min-height: 36px; }
+
+/* S2.5: "Muat 12 produk lagi" (canvas inline style). */
+.iz-catalog__more { display: flex; justify-content: center; margin-top: 48px; }
+
+/* S2.4.4: cards fade 200 ms on a result change; two names so each change restarts the animation. */
+.iz-catalog__grid[data-anim="a"] > * { animation: iz-catfade-a 200ms ease-out; }
+.iz-catalog__grid[data-anim="b"] > * { animation: iz-catfade-b 200ms ease-out; }
+@keyframes iz-catfade-a { from { opacity: 0; } to { opacity: 1; } }
+@keyframes iz-catfade-b { from { opacity: 0; } to { opacity: 1; } }
+
+/* S2.2.7: phone filter sheet, slides up 250 ms (design.md §8). */
+.iz-fsheet { position: fixed; inset: 0; z-index: 90; display: flex; align-items: flex-end; background: rgba(22, 20, 15, 0.45); }
+.iz-fsheet__panel { width: 100%; max-height: min(88vh, 720px); display: flex; flex-direction: column; background: var(--c-kertas-terang); border-radius: var(--radius-tile-lg) var(--radius-tile-lg) 0 0; box-shadow: var(--shadow-float); animation: iz-fsheet-in 250ms cubic-bezier(0.23, 1, 0.32, 1); }
+.iz-fsheet__head { display: flex; justify-content: flex-end; padding: var(--space-3) var(--space-4) 0; }
+.iz-fsheet__close { display: inline-flex; align-items: center; gap: 8px; min-height: var(--size-tap); padding: 0 var(--space-3); border-radius: var(--radius-pill); font-size: 16px; font-weight: 600; }
+.iz-fsheet__close svg { width: 20px; height: 20px; }
+.iz-fsheet__body { overflow-y: auto; overscroll-behavior: contain; padding: 0 var(--space-4) var(--space-4); display: flex; flex-direction: column; gap: var(--space-4); }
+.iz-fsheet__group { display: flex; flex-direction: column; gap: 2px; }
+.iz-fsheet__group + .iz-fsheet__group { padding-top: var(--space-4); border-top: 1px solid var(--c-garis); }
+.iz-fsheet__legend { padding: 0 10px 6px; font-size: 14px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--c-batu); }
+.iz-fsheet__foot { padding: var(--space-3) var(--space-4) calc(var(--space-4) + env(safe-area-inset-bottom)); border-top: 1px solid var(--c-garis); }
+.iz-fsheet__foot .iz-btn { width: 100%; }
+@keyframes iz-fsheet-in { from { transform: translateY(100%); } to { transform: none; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .iz-catalog__grid[data-anim] > * { animation: none; }
+  .iz-fsheet__panel { animation: none; }
+}

@@ -1,0 +1,318 @@
+/* F-016 C5 site motion (SiteMotion, lib/v2/motion/*). Loaded by the root layout through SiteMotion, so every rule is
+   scoped to an iz- class or to html.iz-js / html.iz-motion, which only public v2 routes ever get (S0.1.1). */
+
+/* Page curtain: shown over the first paint only when the boot script set data-iz-curtain (JS present, motion
+   allowed, public route), and during a route change while SiteMotion holds data-active. */
+.iz-curtain { position: fixed; inset: 0; z-index: 2147483000; display: none; pointer-events: none; }
+html.iz-js[data-iz-curtain] .iz-curtain, html.iz-js .iz-curtain[data-active] { display: block; pointer-events: auto; cursor: progress; }
+.iz-curtain__sheets { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.iz-curtain__sheet--kuning { fill: #f59e0b; }
+.iz-curtain__sheet--aspal { fill: #16140f; }
+.iz-curtain__mark { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; padding: 24px; color: #f3efe6; text-align: center; }
+.iz-curtain__mark [hidden] { display: none; }
+.iz-curtain__logo { width: 46px; height: auto; animation: iz-curtain-rise 0.9s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.iz-curtain__word { display: flex; overflow: hidden; padding-bottom: 0.08em; font-family: var(--font-display-v2), "Arial Black", "Arial", sans-serif; font-weight: 800; font-size: clamp(48px, 7vw, 104px); line-height: 1; letter-spacing: -0.02em; }
+.iz-curtain__word > span { display: inline-block; animation: iz-curtain-rise 0.9s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.iz-curtain__label { max-width: 14ch; font-family: var(--font-display-v2), "Arial Black", "Arial", sans-serif; font-weight: 800; font-size: clamp(34px, 5vw, 72px); line-height: 1.02; letter-spacing: -0.02em; text-wrap: balance; }
+@keyframes iz-curtain-rise { from { transform: translateY(110%); opacity: 0; } to { transform: none; opacity: 1; } }
+
+/* The scrollbar lane is always reserved on v2 pages, and the scrollbar is hidden while a curtain covers the page:
+   showing or hiding it no longer changes the page width, which made the layout jump as the curtain lifted. */
+html.iz-v2 { scrollbar-gutter: stable; }
+/* app/globals.css sets scroll-behavior: smooth on html; Lenis scrolls the window every frame, so the browser smoothed
+   each of its steps again and the scroll felt uneven. Native smooth scrolling stays for pages without Lenis. */
+html.iz-js { scroll-behavior: auto; }
+/* globals.css gives body overflow-x: hidden, which silently makes it an overflow-y: auto box; clip keeps the
+   horizontal guard without turning body into a scroll container (it confused Lenis and sticky positioning). */
+html.iz-v2 body { overflow-x: clip; }
+html.iz-js[data-iz-curtain], html.iz-js[data-iz-covered] { overflow: hidden; }
+
+/* Card group entrance (engine.ts prepareRise/riseTimeline): plain transitions on transform and opacity, which the
+   compositor runs, so a group arriving mid-scroll costs no style work per frame. --wait holds the from-state. */
+html.iz-motion .iz-rise { transition: opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1), transform 1.15s cubic-bezier(0.16, 1, 0.3, 1); transition-delay: var(--iz-rise-d, 0ms); }
+html.iz-motion .iz-rise.iz-rise--quick { transition-duration: 0.5s, 0.6s; }
+html.iz-motion .iz-rise-img { transition: transform 1.7s cubic-bezier(0.16, 1, 0.3, 1); transition-delay: var(--iz-rise-d, 0ms); }
+html.iz-motion .iz-rise.iz-rise--wait { opacity: 0; transform: translateY(var(--iz-rise-y, 44px)); transition: none; }
+html.iz-motion .iz-rise-img.iz-rise--wait { transform: scale(1.28); transition: none; }
+
+/* Caret of the hero retype loop (lib/v2/motion/engine.ts retype()). */
+.iz-caret { position: absolute; top: 0.14em; left: 0; width: 0.07em; height: 0.8em; border-radius: 2px; background: var(--c-kuning); opacity: 0; visibility: hidden; pointer-events: none; }
+
+/* Navbar hides while scrolling down and returns on the way up (Sehan, 2026-10-29); SiteNav sets data-hidden. */
+.iz-navwrap .iz-nav { transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease; }
+.iz-navwrap[data-hidden="true"] .iz-nav { transform: translateY(calc(-100% - 40px)); box-shadow: none; }
+
+/* Roll text: the label carries its own copy as a text-shadow one line below and slides up to it on hover. */
+.iz-roll { display: inline-flex; overflow: hidden; height: 1.3em; line-height: 1.3; vertical-align: middle; }
+.iz-roll > span { display: block; text-shadow: 0 1.3em currentColor; transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
+
+/* Bounce labels (components/v2/motion/Bounce.tsx). */
+.iz-bounce { display: inline-flex; }
+.iz-bounce__w { display: inline-flex; white-space: nowrap; }
+.iz-bounce__w:not(:last-child) { margin-right: 0.27em; }
+.iz-bounce__c { display: inline-block; transform-origin: 50% 75%; }
+/* The navbar CTA styles every span as its round icon; the letters and the screen-reader copy opt out. */
+.iz-nav__cta .iz-bounce, .iz-nav__cta .iz-bounce__w, .iz-nav__cta .iz-bounce__c { width: auto; height: auto; border-radius: 0; background: none; color: inherit; place-items: normal; }
+.iz-nav__cta .iz-bounce, .iz-nav__cta .iz-bounce__w { display: inline-flex; }
+.iz-nav__cta .iz-bounce__c { display: inline-block; }
+.iz-nav__cta .iz-sr { width: 1px; height: 1px; }
+
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .iz-nav__links :is(a, button):hover .iz-roll > span, .iz-footer a:hover .iz-roll > span { transform: translateY(-1.3em); }
+
+  /* Buttons lift on a soft landing; outline buttons flood from the pointer's entry point (--fx/--fy from SiteMotion). */
+  .iz-page .iz-btn { position: relative; isolation: isolate; overflow: hidden; transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.5s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s ease, color 0.35s ease, border-color 0.35s ease, filter 0.2s ease; }
+  .iz-page .iz-btn:hover { transform: translateY(-3px); box-shadow: 0 16px 30px -16px rgba(22, 20, 15, 0.6); }
+  .iz-page .iz-btn:active { transform: translateY(0) scale(0.98); transition-duration: 0.15s; }
+  .iz-page .iz-btn--secondary::before { content: ""; position: absolute; inset: -2px; z-index: -1; border-radius: inherit; background: var(--c-tinta); clip-path: circle(0% at var(--fx, 50%) var(--fy, 50%)); transition: clip-path 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
+  .iz-page .iz-btn--secondary:hover::before { clip-path: circle(150% at var(--fx, 50%) var(--fy, 50%)); }
+  .iz-page .iz-btn--secondary:hover { background: transparent; color: var(--c-krem); }
+  .iz-page :is(.iz-dark, .iz-on-photo) .iz-btn--secondary::before { background: var(--c-krem); }
+  .iz-page :is(.iz-dark, .iz-on-photo) .iz-btn--secondary:hover { background: transparent; color: var(--c-tinta); }
+  .iz-page .iz-btn > svg, .iz-page .iz-btn__icon { transition: transform 0.55s cubic-bezier(0.16, 1, 0.3, 1); }
+  .iz-page .iz-btn:hover > svg { transform: translateX(-2px) rotate(-10deg); }
+  .iz-page .iz-btn:hover .iz-btn__icon, .iz-page .iz-nav__cta:hover > span:first-child { transform: translateX(4px) rotate(-14deg) scale(1.06); }
+  .iz-page .iz-link svg { transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1); }
+  .iz-page .iz-link:hover svg { transform: translateX(6px); }
+}
+
+/* Community filmstrip while SiteMotion pins it (desktop): the section fills the viewport so the pin never shows an
+   empty band, and the strip becomes a track that GSAP moves sideways. */
+html.iz-motion .iz-film-scene.is-pinned { min-height: 100svh; display: flex; flex-direction: column; justify-content: center; overflow: clip; padding-block: 64px 32px; }
+/* Auto margins stop a column flex item from stretching, so the header wrap takes the full row again. */
+html.iz-motion .iz-film-scene.is-pinned > .iz-wrap { width: 100%; }
+html.iz-motion .iz-film-scene.is-pinned .iz-film { overflow: visible; scroll-snap-type: none; }
+html.iz-motion .iz-film-scene.is-pinned .iz-photo > .iz-smartimg { inset: 0; }
+
+/* Reduced motion: nothing moves, nothing hides. */
+@media (prefers-reduced-motion: reduce) {
+  .iz-navwrap[data-hidden="true"] .iz-nav { transform: none; }
+  .iz-curtain { display: none; }
+}
+
+/* Phone menu (Sehan, 2026-10-29: animate the burger, after BookMate and the portfolio, in INZTA style): the three
+   lines fold into an X, the sheet wipes down from the capsule, rows rise in one after another, the page behind dims. */
+.iz-burger { position: relative; display: block; width: 18px; height: 12px; }
+.iz-burger > span { position: absolute; left: 0; right: 0; height: 2px; border-radius: 2px; background: currentColor; transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease, top 0.45s cubic-bezier(0.16, 1, 0.3, 1); }
+.iz-burger > span:nth-child(1) { top: 0; }
+.iz-burger > span:nth-child(2) { top: 5px; }
+.iz-burger > span:nth-child(3) { top: 10px; }
+.iz-nav__menu[aria-expanded="true"] .iz-burger > span:nth-child(1) { top: 5px; transform: rotate(45deg); }
+.iz-nav__menu[aria-expanded="true"] .iz-burger > span:nth-child(2) { opacity: 0; transform: scaleX(0.2); }
+.iz-nav__menu[aria-expanded="true"] .iz-burger > span:nth-child(3) { top: 5px; transform: rotate(-45deg); }
+.iz-msheet__row { justify-content: flex-start; }
+.iz-msheet__label { flex: 1; }
+.iz-msheet__ico { width: 36px; height: 36px; flex: none; border-radius: 10px; overflow: hidden; background: var(--c-pasir-muda); }
+.iz-msheet__ico img { width: 100%; height: 100%; object-fit: cover; }
+.iz-mbackdrop { position: fixed; inset: 0; z-index: -1; background: rgba(22, 20, 15, 0.5); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+@media (prefers-reduced-motion: no-preference) {
+  .iz-navwrap .iz-msheet[data-state="open"] { animation: iz-sheet-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) both; }
+  .iz-navwrap .iz-msheet[data-state="closing"] { animation: iz-sheet-out 0.3s cubic-bezier(0.7, 0, 0.84, 0) both; }
+  .iz-msheet[data-state="open"] .iz-msheet__group > *, .iz-msheet[data-state="open"] .iz-msheet__links > a, .iz-msheet[data-state="open"] > .iz-wa { animation: iz-sheet-item 0.55s cubic-bezier(0.16, 1, 0.3, 1) both; }
+  .iz-msheet__group > :nth-child(2) { animation-delay: 0.1s; }
+  .iz-msheet__group > :nth-child(3) { animation-delay: 0.14s; }
+  .iz-msheet__group > :nth-child(4) { animation-delay: 0.18s; }
+  .iz-msheet__group > :nth-child(5) { animation-delay: 0.22s; }
+  .iz-msheet__group > :nth-child(6) { animation-delay: 0.26s; }
+  .iz-msheet__group > :nth-child(n+7) { animation-delay: 0.3s; }
+  .iz-msheet__group + .iz-msheet__group > * { animation-delay: 0.3s; }
+  .iz-msheet__links > a, .iz-msheet > .iz-wa { animation-delay: 0.38s; }
+  .iz-mbackdrop[data-state="open"] { animation: iz-fade-in 0.4s ease both; }
+  .iz-mbackdrop[data-state="closing"] { animation: iz-fade-in 0.3s ease reverse both; }
+  .iz-msheet__row { transition: background-color 0.2s ease, transform 0.2s ease; }
+  .iz-msheet__row:active, .iz-msheet__links a:active { transform: scale(0.98); }
+
+  /* Taps on the phone menu (Sehan, 2026-10-29: the buttons looked flat). SiteMotion onPress sets --fx/--fy and
+     data-press: the tapped surface floods from the finger, the arrow or icon nudges, and the button springs back.
+     The flood is a clip-path circle like the desktop hover, so the label never moves under the finger. */
+  .iz-msheet__links a, .iz-msheet__row, .iz-msheet .iz-btn--primary { position: relative; isolation: isolate; overflow: hidden; }
+  .iz-msheet__links a::before, .iz-msheet__row::before, .iz-msheet .iz-btn--primary::before {
+    content: ""; position: absolute; inset: -2px; z-index: -1; border-radius: inherit; pointer-events: none;
+    clip-path: circle(0% at var(--fx, 50%) var(--fy, 50%)); transition: clip-path 0.45s cubic-bezier(0.7, 0, 0.84, 0);
+  }
+  .iz-msheet__links a::before, .iz-msheet .iz-btn--primary::before { background: var(--c-aspal); }
+  .iz-msheet__row::before { background: var(--c-pasir-muda); }
+  .iz-msheet__links a[data-press]::before, .iz-msheet__row[data-press]::before, .iz-msheet .iz-btn--primary[data-press]::before {
+    clip-path: circle(150% at var(--fx, 50%) var(--fy, 50%)); transition: clip-path 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .iz-msheet__links a, .iz-msheet .iz-btn--primary { transition: color 0.3s ease, transform 0.2s ease; }
+  .iz-msheet__links a[data-press], .iz-msheet .iz-btn--primary[data-press] { color: var(--c-krem); }
+  .iz-msheet__links a > svg { transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
+  .iz-msheet__links a[data-press] > svg { transform: translateX(5px); color: var(--c-kuning); }
+  .iz-msheet__ico { transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
+  .iz-msheet__row[data-press] .iz-msheet__ico { transform: scale(1.12) rotate(-4deg); }
+  .iz-msheet .iz-btn--primary .iz-btn__icon { transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.3s ease, color 0.3s ease; }
+  .iz-msheet .iz-btn--primary[data-press] .iz-btn__icon { transform: scale(1.12) rotate(-8deg); background: var(--c-kuning); color: var(--c-on-kuning); }
+  .iz-nav__menu, .iz-motorchip { transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1); }
+  .iz-nav__menu[data-press], .iz-motorchip[data-press] { animation: iz-press-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1); }
+  /* One light sweep over "Chat admin" as the sheet settles, so the main action catches the eye once (no loop). */
+  .iz-msheet .iz-btn--wa::after {
+    content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+    background: linear-gradient(105deg, transparent 30%, rgba(255, 255, 255, 0.55) 50%, transparent 70%); transform: translateX(-120%);
+  }
+  .iz-msheet[data-state="open"] .iz-btn--wa::after { animation: iz-shine 1.1s cubic-bezier(0.4, 0, 0.2, 1) 0.75s both; }
+}
+@keyframes iz-press-pop { 0% { transform: scale(1); } 35% { transform: scale(0.9); } 100% { transform: scale(1); } }
+@keyframes iz-shine { to { transform: translateX(120%); } }
+/* The browser's own tap flash (light blue on Android) fought the flood; the press styles above replace it. */
+.iz-msheet a, .iz-msheet button, .iz-nav__menu, .iz-motorchip { -webkit-tap-highlight-color: transparent; }
+/* Sheet page links: label with an arrow; the page you are on is shown as a filled pill. */
+.iz-msheet__links a { gap: 8px; }
+.iz-msheet__links a > svg { color: var(--c-kuning-tua); }
+.iz-msheet__links a[aria-current="page"] { background: var(--c-aspal); color: var(--c-krem); }
+.iz-msheet__links a[aria-current="page"] > svg { color: var(--c-kuning); }
+@keyframes iz-sheet-in { from { clip-path: inset(0 0 100% 0 round 24px); transform: translateY(-8px); } to { clip-path: inset(0 0 0 0 round 24px); transform: none; } }
+@keyframes iz-sheet-out { from { clip-path: inset(0 0 0 0 round 24px); } to { clip-path: inset(0 0 100% 0 round 24px); opacity: 0.4; } }
+@keyframes iz-sheet-item { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+@keyframes iz-fade-in { from { opacity: 0; } to { opacity: 1; } }
+
+/* Shop channel pills (Sehan, 2026-10-29): the link floods with krem from the pointer, lifts, and its arrow slides. */
+.iz-footer__shops a { position: relative; isolation: isolate; overflow: hidden; gap: 8px; transition: color 0.35s ease, border-color 0.35s ease, transform 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
+.iz-footer__shops a svg { width: 16px; height: 16px; flex: none; transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1); }
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .iz-footer__shops a::before { content: ""; position: absolute; inset: -2px; z-index: -1; border-radius: inherit; background: var(--c-krem); clip-path: circle(0% at var(--fx, 0%) var(--fy, 50%)); transition: clip-path 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
+  .iz-footer__shops a:hover::before { clip-path: circle(150% at var(--fx, 0%) var(--fy, 50%)); }
+  .iz-footer__shops a:hover { color: var(--c-tinta); border-color: var(--c-krem); transform: translateY(-2px); }
+  .iz-footer__shops a:hover svg { transform: translate(3px, -3px); }
+}
+.iz-footer__shops a:focus-visible { outline: 2px solid var(--c-kuning); outline-offset: 3px; }
+
+/* Phone hero (Sehan, 2026-10-29): full screen, copy anchored low on a stronger scrim, a compact second action and a
+   scroll cue, so the first screen reads as one composed frame. */
+@media (max-width: 767px) {
+  .iz-page .iz-hero:not(.iz-hero--short) { min-height: 100svh; }
+  .iz-page .iz-hero:not(.iz-hero--short)::after { background: linear-gradient(to top, var(--c-aspal) 0%, rgba(22, 20, 15, 0.82) 34%, rgba(22, 20, 15, 0.15) 66%, rgba(22, 20, 15, 0.35) 100%); }
+  .iz-page .iz-hero__body { padding-bottom: calc(var(--space-12) + env(safe-area-inset-bottom)); gap: var(--space-4); }
+  .iz-page .iz-hero__body > .iz-row { flex-direction: row; flex-wrap: wrap; gap: var(--space-3); }
+  .iz-page .iz-hero__body > .iz-row > .iz-btn--primary { flex: 1 1 100%; }
+  .iz-page .iz-hero__body > .iz-row > .iz-btn--secondary { flex: 1 1 100%; min-height: 48px; border-color: rgba(243, 239, 230, 0.4); }
+}
+.iz-hero__cue { display: none; }
+@media (max-width: 767px) and (prefers-reduced-motion: no-preference) {
+  .iz-hero__cue { position: absolute; z-index: 1; left: 50%; bottom: 14px; display: block; width: 2px; height: 26px; margin-left: -1px; border-radius: 2px; background: rgba(243, 239, 230, 0.25); overflow: hidden; }
+  /* Four runs, then still: an endless loop restyled this pseudo-element on the main thread every frame of a phone
+     scroll (trace, 2026-10-29). It moves with transform; animating top forced a layout per frame. */
+  .iz-hero__cue::after { content: ""; position: absolute; left: 0; right: 0; top: -40%; height: 40%; background: var(--c-kuning); animation: iz-cue 1.6s cubic-bezier(0.65, 0, 0.35, 1) 0.8s 4; }
+}
+@keyframes iz-cue { to { transform: translateY(350%); } }
+
+/* Phone swipe rows: a progress line under the filmstrip that follows the swipe (engine swipe()). */
+html.iz-motion .iz-film-scene.is-swipe .iz-film__progress { display: block; width: 120px; height: 3px; margin: var(--space-5) auto 0; border-radius: var(--radius-pill); background: var(--c-garis); overflow: hidden; }
+html.iz-motion .iz-film-scene.is-swipe .iz-film__progress > span { display: block; height: 100%; background: var(--c-kuning); transform: scaleX(0); transform-origin: left center; }
+
+/* Reduced motion switched on after the page opened: the CSS-driven loops stop too (review REV-07). */
+@media (prefers-reduced-motion: reduce) {
+  .iz-rcol__track { animation: none !important; transform: none !important; }
+  .iz-rcard[data-dup] { display: none !important; }
+}
+
+/* Windows high contrast drops text-shadow, which carries the roll copy; the label stays still there (review REV-08). */
+@media (forced-colors: active) {
+  .iz-roll > span { text-shadow: none; transform: none !important; }
+}
+
+/* Pointer follower (lib/v2/motion/cursor.ts, fine pointers only): dot and ring blend against any background; over
+   cards the ring becomes a yellow pill with a short label. */
+.iz-cursor { position: fixed; top: 0; left: 0; z-index: 2147482000; pointer-events: none; visibility: hidden; opacity: 0; }
+.iz-cursor--dot { width: 6px; height: 6px; border-radius: 50%; background: #f3efe6; mix-blend-mode: difference; }
+.iz-cursor--ring { width: 26px; height: 26px; border-radius: 50%; border: 1.5px solid #f3efe6; mix-blend-mode: difference; transition: width 0.35s cubic-bezier(0.16, 1, 0.3, 1), height 0.35s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.35s ease; }
+.iz-cursor--ring[data-state="link"] { width: 44px; height: 44px; background: rgba(243, 239, 230, 0.12); }
+.iz-cursor--pill { padding: 8px 16px; border-radius: 999px; background: #f59e0b; color: #1a1813; font-family: var(--font-sans-v2), system-ui, sans-serif; font-size: 14px; font-weight: 700; letter-spacing: 0.02em; white-space: nowrap; box-shadow: 0 10px 24px -10px rgba(22, 20, 15, 0.5); }
+
+/* Light cards catch a soft warm light under the pointer, so they read as surfaces rather than flat boxes. */
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .iz-page :is(.iz-pcard, .iz-rcard, .iz-mfill)[data-glow] { background-image: radial-gradient(360px circle at var(--mx, 50%) var(--my, 50%), rgba(245, 158, 11, 0.12), rgba(245, 158, 11, 0) 65%); }
+  .iz-page .iz-msheet__row[data-glow] { background-color: var(--c-pasir-muda); }
+}
+
+/* Orange buttons flood with asphalt from the point the pointer came in, like the shop pills (Sehan, 2026-10-29):
+   the label turns krem and the WhatsApp chip swaps to yellow. The letter bounce stays as the accent. */
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .iz-page .iz-btn--primary::before, .iz-page .iz-nav__cta::before { content: ""; position: absolute; inset: -2px; z-index: -1; border-radius: inherit; background: var(--c-aspal); clip-path: circle(0% at var(--fx, 50%) var(--fy, 50%)); transition: clip-path 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
+  .iz-page .iz-btn--primary:hover::before, .iz-page .iz-nav__cta:hover::before { clip-path: circle(150% at var(--fx, 50%) var(--fy, 50%)); }
+  .iz-page .iz-btn--primary:hover, .iz-page .iz-nav__cta:hover { color: var(--c-krem); filter: none; }
+  .iz-page .iz-nav__cta { position: relative; isolation: isolate; overflow: hidden; transition: color 0.35s ease; }
+  .iz-page .iz-btn--primary .iz-btn__icon, .iz-page .iz-nav__cta > span:first-child { transition: transform 0.55s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.35s ease, color 0.35s ease; }
+  .iz-page .iz-btn--primary:hover .iz-btn__icon, .iz-page .iz-nav__cta:hover > span:first-child { background: var(--c-kuning); color: var(--c-on-kuning); }
+  /* Every dark surface floods with krem; asphalt on asphalt made the button vanish (Sehan, 2026-10-29). */
+  .iz-page :is(.iz-dark, .iz-on-photo, .iz-band, .iz-closing, .iz-footer, .iz-helpcard, .iz-rfeature, .iz-mfill--wa) .iz-btn--primary::before { background: var(--c-krem); }
+  .iz-page :is(.iz-dark, .iz-on-photo, .iz-band, .iz-closing, .iz-footer, .iz-helpcard, .iz-rfeature, .iz-mfill--wa) .iz-btn--primary:hover { color: var(--c-tinta); }
+}
+
+/* Rounded boxes whose photo moves inside them (parallax, zoom, tilt): Chrome sometimes drops the border-radius clip of
+   overflow: hidden while the child is animated on the GPU, so a corner flashes square. A rounded clip-path always
+   holds (Sehan, 2026-10-29: hero bottom sometimes straight, sometimes round). */
+.iz-page .iz-hero { clip-path: inset(0 round 0 0 var(--radius-band) var(--radius-band)); }
+/* The hero's bottom corners are also painted: page-coloured wedges above the photo. The photo zooms in and drifts with
+   the scroll on the GPU, and some Chrome builds still dropped the rounded clip for a few frames, so the edge flicked
+   between straight and round while scrolling back up (Sehan, 2026-10-29). A painted corner cannot be dropped. */
+.iz-page .iz-hero::before {
+  content: ""; position: absolute; z-index: 2; left: 0; right: 0; bottom: 0; height: var(--radius-band); pointer-events: none;
+  background:
+    radial-gradient(circle at 100% 0, transparent calc(var(--radius-band) - 0.75px), var(--c-kertas) var(--radius-band)) left bottom / var(--radius-band) var(--radius-band) no-repeat,
+    radial-gradient(circle at 0 0, transparent calc(var(--radius-band) - 0.75px), var(--c-kertas) var(--radius-band)) right bottom / var(--radius-band) var(--radius-band) no-repeat;
+}
+.iz-page :is(.iz-why__photo, .iz-overlap__photo, .iz-gfeature) { clip-path: inset(0 round var(--radius-panel)); }
+.iz-page .iz-cat, .iz-page .iz-film > .iz-photo { clip-path: inset(0 round var(--radius-tile-lg)); }
+.iz-page .iz-mtile, .iz-page .iz-step .iz-photo { clip-path: inset(0 round var(--radius-tile)); }
+.iz-page .iz-pcard__tile, .iz-page .iz-rfeature > .iz-photo { clip-path: inset(0 round var(--radius-thumb)); }
+@media (max-width: 767px) {
+  .iz-page :is(.iz-why__photo, .iz-gfeature) { clip-path: inset(0 round var(--radius-tile-lg)); }
+}
+
+/* Motor chip (Sehan, 2026-10-29): photo badge of the chosen category, "Motor saya" over the category name, and a
+   yellow "Ganti" pill as the clear action. */
+.iz-motorchip--set { gap: 10px; padding: 0 5px 0 5px; }
+.iz-motorchip__thumb { width: 30px; height: 30px; flex: none; border-radius: 50%; overflow: hidden; box-shadow: 0 0 0 2px var(--c-kuning); }
+.iz-motorchip__thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.iz-motorchip__text { display: grid; line-height: 1.05; text-align: left; }
+.iz-motorchip__text small { font-size: 10.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.65; }
+.iz-motorchip__text b { font-size: 14.5px; font-weight: 700; }
+.iz-motorchip__swap { display: inline-flex; align-items: center; height: 28px; padding: 0 12px; border-radius: var(--radius-pill); background: var(--c-kuning); color: var(--c-on-kuning); font-size: 13px; font-weight: 700; transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.25s ease; }
+@media (hover: hover) and (pointer: fine) {
+  .iz-motorchip--set:hover .iz-motorchip__swap { transform: translateX(2px); background: #ffb02e; }
+}
+@media (max-width: 767px) {
+  .iz-motorchip--set { padding: 0 12px 0 5px; }
+}
+
+/* Garasi: the chosen tile steps forward a little. The scale property composes with the tilt transform. */
+.iz-gtile { transition: background-color 0.15s ease, box-shadow 0.3s ease, scale 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
+.iz-gtile[aria-pressed="true"] { scale: 1.05; z-index: 1; box-shadow: 0 0 0 3px var(--c-kuning), 0 24px 40px -24px rgba(22, 20, 15, 0.45); }
+@media (prefers-reduced-motion: reduce) { .iz-gtile[aria-pressed="true"] { scale: 1; } }
+
+/* Horizontal card rows clip in both axes (overflow-x: auto forces overflow-y too), which cut hover shadows. The row
+   gets room for the shadow inside, given back with negative margins so the layout does not move. */
+.iz-page .iz-scroller { padding-block: 18px 34px; margin-block: -18px -26px; padding-inline: 14px; margin-inline: -14px; scroll-padding-inline: 14px; }
+@media (max-width: 767px) {
+  .iz-page .iz-scroller { padding-inline: var(--space-5); margin-inline: calc(var(--space-5) * -1); scroll-padding-inline: var(--space-5); }
+}
+
+/* Footer (Sehan, 2026-10-29): columns fade up as it arrives (engine footer()), link underlines draw on hover and the
+   divider draws in. */
+.iz-footer { overflow: hidden; }
+.iz-footer li a { position: relative; transition: color 0.3s ease, translate 0.45s cubic-bezier(0.16, 1, 0.3, 1); }
+.iz-footer li a::after { content: ""; position: absolute; left: 0; right: 0; bottom: 6px; height: 1px; background: currentColor; transform: scaleX(0); transform-origin: right center; transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .iz-footer li a:hover { translate: 4px 0; }
+  .iz-footer li a:hover::after { transform: scaleX(1); transform-origin: left center; }
+}
+.iz-footer__bottom { --line: 1; position: relative; border-top: 0; }
+.iz-footer__bottom::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: var(--c-line-on-dark); transform: scaleX(var(--line)); transform-origin: left center; }
+
+/* Scroll system (Sehan, 2026-10-29): a slim INZTA scrollbar (asphalt pill on a krem track, yellow on hover) and a
+   yellow reading-progress line along the top edge, driven by Lenis (SiteMotion startLenis). Chrome and Edge 121+
+   ignore ::-webkit-scrollbar once scrollbar-color is set, so the standard properties are only given to browsers
+   without the pseudo-elements (Firefox). */
+html.iz-v2::-webkit-scrollbar { width: 12px; height: 12px; }
+html.iz-v2::-webkit-scrollbar-track { background: #f6f4ef; }
+html.iz-v2::-webkit-scrollbar-thumb { background: #16140f; border-radius: 999px; border: 3px solid #f6f4ef; }
+html.iz-v2::-webkit-scrollbar-thumb:hover { background: #f59e0b; }
+html.iz-v2::-webkit-scrollbar-button { display: none; height: 0; }
+@supports not selector(::-webkit-scrollbar) {
+  html.iz-v2 { scrollbar-width: thin; scrollbar-color: #16140f #f6f4ef; }
+}
+/* html.iz-v2 comes from the boot script (and SiteMotion on route changes). These rules used html:has(.iz-page),
+   which made Chrome re-check the whole document on every style change; in a phone scroll trace that single selector
+   cost more than any other (2026-10-29). Article pages hide the line in SiteMotion (they have their own S7.7 bar). */
+.iz-readline { position: fixed; top: 0; left: 0; right: 0; z-index: 60; height: 3px; background: #f59e0b; transform: scaleX(0); transform-origin: left center; pointer-events: none; }
