@@ -32,7 +32,7 @@ export default function ProductCardV2({
           <SmartImage src={image} alt="" sizes={sizes} imgClassName={cropClass ?? undefined} className="iz-pcard__img" fallbackLabel="Foto produk" />
         ) : (
           <span className="iz-pcard__noimg">
-            <span className="iz-for iz-placeholder">Foto produk: PLACEHOLDER</span>
+            <span className="iz-for iz-placeholder">Foto belum tersedia</span>
           </span>
         )}
         {positionLabel && <span className="iz-pcard__pos">{positionLabel}</span>}

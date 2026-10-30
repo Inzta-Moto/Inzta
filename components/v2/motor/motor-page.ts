@@ -14,7 +14,10 @@ const APPROVED_LEAD: Partial<Record<MotorCategory, string>> = {
   retro:
     'Side bag dan tas tangki INZTA untuk motor retro seperti Yamaha XSR 155, dari tas samping ringkas untuk harian sampai side bag 20 liter untuk touring.',
 };
-export const LEAD_PLACEHOLDER = 'Kalimat kategori: PLACEHOLDER';
+// Categories without an approved line get a neutral lead that names no model (S5.1.1) and points to the admin.
+export function fallbackLead(label: string): string {
+  return `Tas INZTA untuk motor ${label}. Ragu soal ukuran? Tanyakan ke admin lewat WhatsApp.`;
+}
 
 export const UNIVERSAL_MAX = 3;
 export const THUMBS_MAX = 4;

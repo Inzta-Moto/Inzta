@@ -8,6 +8,23 @@
 .iz-step .iz-photo > .iz-step__badge { z-index: 1; }
 .iz-about-photos .iz-photo > .iz-tag { z-index: 1; }
 
+/* Hero framing of hero-99 (3200 x 2400, Sehan, 2026-10-30: the old hero was soft). Desktop keeps the bike and the
+   rider, who sit on the right clear of the headline, with the dusty road below; the tall box below 1024 px is pulled
+   right so the whole rider and bike stay in frame. */
+/* 40%: on a wide screen only about two thirds of the photo's height shows, and 78% put the rider's helmet under the
+   navbar (Sehan, 2026-10-30); the lower edge of the wheels gives way instead. */
+.iz-hero__img.iz-hero__img--about { object-position: 50% 40%; }
+@media (max-width: 1023.98px) {
+  .iz-hero__img.iz-hero__img--about { object-position: 75% 50%; }
+}
+
+/* "Yang kami pegang" photo (Tourmax, 3:4): the bottom of the photo is empty asphalt, so the H2 sits there instead of
+   over the scooters' tail bags. */
+.iz-why__photo .iz-why__img--values { object-position: 50% 100%; }
+@media (max-width: 767px) {
+  .iz-why__photo .iz-why__img--values { object-position: 50% 77%; }
+}
+
 /* S8.4.2 ST-ERR: the organiser credit disappears together with a failed Gasber photo. */
 .iz-photo:has(> .iz-smartimg[data-state="error"]) > .iz-tag { display: none; }
 

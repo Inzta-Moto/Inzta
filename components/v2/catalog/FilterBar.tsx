@@ -4,14 +4,25 @@ import { useEffect, useId, useRef, useState, type FocusEvent as ReactFocusEvent,
 import type { MotorCategory } from '@/types';
 import { ChevronDown } from '@/components/v2/icons';
 import FilterFields, { type FieldGroup } from '@/components/v2/catalog/FilterFields';
-import { activeCount, optionCount, totalActive, urutLabel, type CatalogItem, type FilterState } from '@/components/v2/catalog/filter';
+import {
+  GROUP_TITLES,
+  activeCount,
+  isGroupVisible,
+  isOptionVisible,
+  totalActive,
+  urutLabel,
+  type FacetCounts,
+  type FilterChange,
+  type FilterState,
+  type KeptSelection,
+} from '@/components/v2/catalog/filter';
 
 export const PHONE_QUERY = '(max-width: 767px)';
 
 const GROUPS: readonly { group: FieldGroup; title: string }[] = [
-  { group: 'posisi', title: 'Posisi tas' },
-  { group: 'harga', title: 'Harga' },
-  { group: 'label', title: 'Label' },
+  { group: 'posisi', title: GROUP_TITLES.posisi },
+  { group: 'harga', title: GROUP_TITLES.harga },
+  { group: 'label', title: GROUP_TITLES.label },
   { group: 'urut', title: 'Urutkan' },
 ];
 
@@ -26,31 +37,37 @@ export function SlidersIcon() {
   );
 }
 
-// The sticky chip row of produk.dc.html (S2.2). Desktop chips open one popover at a time; nothing applies until
-// "Terapkan" and closing discards the pending change (S2.2.1). On phones the chips open the filter sheet instead,
-// because the popovers are hidden there (S2.2.7, bundle.css).
+// The chip row of produk.dc.html (S2.2), scrolling with the page. Desktop chips open one popover at a time and every tick applies at
+// once (results, badge, chips, and URL), with the popover kept open and focus on the ticked input; Escape, an outside
+// click, or Tab-out only close it, as there is nothing pending to discard. On phones the chips open the filter sheet
+// instead, because the popovers are hidden there (S2.2.7, bundle.css).
 export default function FilterBar({
-  items,
   state,
+  facets,
+  avail,
+  kept,
   category,
   categoryText,
   sheetOpen,
-  onApply,
+  onChange,
   onOpenSheet,
 }: {
-  items: readonly CatalogItem[];
   state: FilterState;
+  facets: FacetCounts;
+  avail: FacetCounts;
+  // Decides which options and chips render (isOptionVisible); see CatalogBody.
+  kept: KeptSelection;
   category: MotorCategory | null;
   categoryText: string | null;
   sheetOpen: boolean;
-  onApply: (next: FilterState) => void;
+  onChange: (change: FilterChange) => void;
   onOpenSheet: (group: FieldGroup | null, opener: HTMLElement) => void;
 }) {
   const uid = useId().replace(/:/g, '');
   const [open, setOpen] = useState<FieldGroup | null>(null);
-  const [draft, setDraft] = useState<FilterState>(state);
   const chipRefs = useRef<Partial<Record<FieldGroup, HTMLButtonElement | null>>>({});
   const groupRefs = useRef<Partial<Record<FieldGroup, HTMLDivElement | null>>>({});
+  const rootRef = useRef<HTMLDivElement>(null);
 
   const close = (refocus: boolean) => {
     const g = open;
@@ -73,11 +90,11 @@ export default function FilterBar({
     return () => document.removeEventListener('pointerdown', onDown);
   }, [open]);
 
-  // Focus the selected or first enabled option when a popover opens, so the keyboard lands inside it.
+  // Focus the selected or first option when a popover opens, so the keyboard lands inside it.
   useEffect(() => {
     if (!open) return;
     const pop = groupRefs.current[open]?.querySelector<HTMLElement>('.iz-popover');
-    const target = pop?.querySelector<HTMLInputElement>('input:checked:not(:disabled)') ?? pop?.querySelector<HTMLInputElement>('input:not(:disabled)');
+    const target = pop?.querySelector<HTMLInputElement>('input:checked') ?? pop?.querySelector<HTMLInputElement>('input');
     target?.focus();
   }, [open]);
 
@@ -87,19 +104,13 @@ export default function FilterBar({
       onOpenSheet(g, chip);
       return;
     }
-    if (open === g) {
-      setOpen(null);
-      return;
-    }
-    setDraft(state);
-    setOpen(g);
+    setOpen(open === g ? null : g);
   };
 
-  const apply = () => {
-    const g = open;
-    setOpen(null);
-    if (g) chipRefs.current[g]?.focus();
-    onApply(draft);
+  // "Hapus" removes the link that had focus, so focus moves to the first option of the same popover.
+  const clearGroup = (g: Exclude<FieldGroup, 'urut'>) => {
+    onChange({ type: 'clearGroup', group: g });
+    requestAnimationFrame(() => groupRefs.current[g]?.querySelector<HTMLInputElement>('.iz-popover input')?.focus());
   };
 
   const onKeyDown = (e: ReactKeyboardEvent<HTMLDivElement>, g: FieldGroup) => {
@@ -110,8 +121,8 @@ export default function FilterBar({
     }
   };
 
-  // Tabbing out of an open popover closes it without applying; a null relatedTarget (a click on a label in some
-  // browsers) is ignored so the popover does not close under the pointer.
+  // Tabbing out of an open popover closes it; a null relatedTarget (a click on a label in some browsers, or an
+  // option that left the DOM) is ignored so the popover does not close under the pointer.
   const onBlur = (e: ReactFocusEvent<HTMLDivElement>, g: FieldGroup) => {
     if (open !== g) return;
     const next = e.relatedTarget as Node | null;
@@ -119,11 +130,26 @@ export default function FilterBar({
   };
 
   const motorOn = category !== null && state.motor === category;
-  const motorZero = category !== null && !motorOn && optionCount(items, state, 'motor', category) === 0;
+  // Hidden while no product carries the category at all (likely until kategoriMotor is filled in, A-049), unless a
+  // ?motor= link selected it; then it stays after being turned off, so it does not vanish under the pointer.
+  const motorVisible = category !== null && isOptionVisible('motor', category, avail, kept);
   const total = totalActive(state);
+  const shownGroups = GROUPS.filter(({ group }) => group === 'urut' || isGroupVisible(group, avail, kept));
+  const openShown = open !== null && shownGroups.some(g => g.group === open);
+
+  // Safety net for a catalogue that changes under an open popover (ISR refresh): `open` must not point at a group
+  // that no longer renders, and focus goes to the first chip instead of falling to <body>.
+  useEffect(() => {
+    if (open === null || openShown) return;
+    setOpen(null);
+    requestAnimationFrame(() => {
+      const chips = rootRef.current?.querySelectorAll<HTMLElement>('[data-fchip]') ?? [];
+      Array.from(chips).find(c => c.getClientRects().length > 0)?.focus();
+    });
+  }, [open, openShown]);
 
   return (
-    <div className="iz-filters">
+    <div className="iz-filters" ref={rootRef}>
       <button
         className="iz-fchip iz-only-mob"
         type="button"
@@ -136,21 +162,19 @@ export default function FilterBar({
         Buka filter
         {total > 0 && <span className="iz-fcount">{total}</span>}
       </button>
-      {category && categoryText && (
+      {category && categoryText && motorVisible && (
         <button
           className={`iz-fchip iz-fchip--motor${motorOn ? ' iz-fchip--active' : ''}`}
           type="button"
           aria-pressed={motorOn}
-          disabled={motorZero}
           data-fchip="motor"
-          onClick={() => onApply({ ...state, motor: motorOn ? null : category })}
+          onClick={() => onChange({ type: 'toggle', group: 'motor', value: category })}
         >
           <span className="iz-motorchip__dot" aria-hidden="true" />
           Motor saya: {categoryText}
-          {motorZero && ' (0)'}
         </button>
       )}
-      {GROUPS.map(({ group, title }) => {
+      {shownGroups.map(({ group, title }) => {
         const count = group === 'urut' ? 0 : activeCount(state, group);
         const popId = `${uid}-pop-${group}`;
         const isOpen = open === group;
@@ -186,10 +210,15 @@ export default function FilterBar({
             </button>
             <div className="iz-popover" id={popId} role="group" aria-labelledby={`${popId}-t`} hidden={!isOpen}>
               <span className="iz-popover__title" id={`${popId}-t`}>{title}</span>
-              <FilterFields group={group} draft={isOpen ? draft : state} items={items} idPrefix={`${uid}-${group}`} onChange={setDraft} />
-              <button className="iz-btn iz-btn--primary" type="button" style={{ marginTop: 8, minHeight: 48 }} onClick={apply}>
-                Terapkan
-              </button>
+              {/* Only the open popover renders its rows; the hidden ones would recount on every tick for nothing. */}
+              {isOpen && <FilterFields group={group} state={state} counts={facets} avail={avail} kept={kept} idPrefix={`${uid}-${group}`} onChange={onChange} />}
+              {isOpen && group !== 'urut' && count > 0 && (
+                <div className="iz-popover__foot">
+                  <button className="iz-link" type="button" aria-label={`Hapus filter ${title}`} onClick={() => clearGroup(group)}>
+                    Hapus
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         );

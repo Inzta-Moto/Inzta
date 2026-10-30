@@ -5,18 +5,39 @@
 .iz-popover[hidden],
 .iz-catalog__more[hidden] { display: none; }
 
+/* The bar scrolls with the page (Sehan, 2026-10-30: a bar that followed the scroll sat on top of the cards and looked
+   messy); z-index keeps its popovers above the results. */
+.iz-catalog__filters { position: relative; z-index: 20; background: var(--c-kertas); }
+.iz-catalog__filters > .iz-filters { position: static; }
+
+/* The DS writes .iz-fchip--motor after .iz-fchip--active, so a pressed "Motor saya" chip kept the sand background
+   under the cream active text (about 1.1:1). The pressed state wins here. */
+.iz-fchip--motor.iz-fchip--active { background: var(--c-tinta); border-color: var(--c-tinta); color: var(--c-kertas); }
+
+/* The lead's green-mark sentence is always in the markup; it shows once a motor category is known, either from React
+   (--on) or from the attribute CatalogPage's inline script sets before the first paint, so it never shifts the page. */
+.iz-lead-motor { display: none; }
+.iz-lead-motor--on, html.iz-v2[data-iz-motor] .iz-lead-motor { display: inline; }
+
 .iz-fgroup { position: relative; }
 .iz-fgroup:last-child .iz-popover { left: auto; right: 0; }
 
-/* S2.2.5: options and the motor chip with no result. */
-.iz-fchip:disabled { opacity: 0.5; cursor: not-allowed; }
-.iz-check:has(input:disabled) { opacity: 0.5; cursor: not-allowed; }
-.iz-check:has(input:disabled):hover { background: none; }
+/* Live option counts. A 0 is muted, never disabled: the option stays in the Tab order and can still be chosen. */
+.iz-check__count { margin-left: auto; color: var(--c-batu); font-variant-numeric: tabular-nums; }
+.iz-check--zero { color: var(--c-batu); }
+.iz-popover__foot { display: flex; justify-content: flex-end; margin-top: 4px; padding-top: 4px; border-top: 1px solid var(--c-garis); }
 
 .iz-filters__meta .iz-link { min-height: 36px; }
 
-/* S2.5: "Muat 12 produk lagi" (canvas inline style). */
-.iz-catalog__more { display: flex; justify-content: center; margin-top: 48px; }
+/* S2.5: "Muat 12 produk lagi" (canvas inline style) with the progress line above it. */
+.iz-catalog__more { display: flex; flex-direction: column; align-items: center; gap: var(--space-3); margin-top: 48px; }
+.iz-catalog__progress { color: var(--c-batu); font-variant-numeric: tabular-nums; }
+
+/* S2.6.1: nearest products under an empty result. */
+.iz-catalog__near { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-4); margin-top: var(--space-12); }
+.iz-catalog__near-title { font-size: 22px; font-weight: 700; line-height: 1.3; }
+.iz-catalog__near .iz-grid-4 { width: 100%; }
+.iz-empty > .iz-link { margin-top: calc(var(--space-2) * -1); }
 
 /* S2.4.4: cards fade 200 ms on a result change; two names so each change restarts the animation. */
 .iz-catalog__grid[data-anim="a"] > * { animation: iz-catfade-a 200ms ease-out; }
@@ -35,8 +56,18 @@
 .iz-fsheet__group + .iz-fsheet__group { padding-top: var(--space-4); border-top: 1px solid var(--c-garis); }
 .iz-fsheet__legend { padding: 0 10px 6px; font-size: 14px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--c-batu); }
 .iz-fsheet__foot { padding: var(--space-3) var(--space-4) calc(var(--space-4) + env(safe-area-inset-bottom)); border-top: 1px solid var(--c-garis); }
-.iz-fsheet__foot .iz-btn { width: 100%; }
+.iz-fsheet__note { margin-bottom: var(--space-2); color: var(--c-batu); text-align: center; }
+.iz-fsheet__actions { display: flex; gap: var(--space-3); }
+.iz-fsheet__actions .iz-btn { min-height: 48px; }
+.iz-fsheet__actions .iz-btn--primary { flex: 1; }
 @keyframes iz-fsheet-in { from { transform: translateY(100%); } to { transform: none; } }
+
+/* Phones: 44 px hit areas for the small remove buttons and the "Hapus semua" link; the chip keeps its 28 px look. */
+@media (max-width: 767px) {
+  .iz-activechip button { position: relative; }
+  .iz-activechip button::before { content: ""; position: absolute; inset: -8px; }
+  .iz-filters__meta .iz-link { min-height: var(--size-tap); }
+}
 
 @media (prefers-reduced-motion: reduce) {
   .iz-catalog__grid[data-anim] > * { animation: none; }
