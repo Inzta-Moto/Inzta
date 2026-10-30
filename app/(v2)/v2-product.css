@@ -104,3 +104,5 @@ html .iz-page main > .iz-pdp-block { margin-top: max(var(--space-12), var(--spac
   .iz-vpick__opt { transition: none; }
   .iz-more__btn svg { transition: none; }
 }
+html[data-iz-tier="minimal"] .iz-gallery__main--switched > .iz-smartimg > img { animation: none; }
+html[data-iz-tier="minimal"] .iz-mbar--fixed, html[data-iz-tier="minimal"] .iz-mbar--fixed[data-shown="true"], html[data-iz-tier="minimal"] .iz-acc__plus, html[data-iz-tier="minimal"] .iz-vpick__opt { transition: none; }

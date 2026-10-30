@@ -10,17 +10,38 @@ import { FULL, cover, framesSettled, lift, pageReady, pageSettled } from '@/lib/
 import { initCursor } from '@/lib/v2/motion/cursor';
 import { initPage, type PageMode, type PageMotion } from '@/lib/v2/motion/engine';
 import { routeLabel, samePage, transitionTarget } from '@/lib/v2/motion/links';
-import { HOVER, MOTION_OK, jumpTo, loadMotion, markCovered, markRevealed, setLenis, type MotionKit } from '@/lib/v2/motion/runtime';
+import { startProbe, type Probe } from '@/lib/v2/motion/probe';
+import {
+  HOVER,
+  getLenis,
+  jumpTo,
+  loadMotion,
+  markCovered,
+  markRevealed,
+  motionOn,
+  motionTier,
+  onTierChange,
+  scrollIdle,
+  setLenis,
+  syncTierAttr,
+  type MotionKit,
+} from '@/lib/v2/motion/runtime';
 
 const WORD = 'INZTA';
 // A route that never arrives (network error, redirect elsewhere) still lifts the curtain after this long.
 const ROUTE_SAFETY_MS = 8000;
+// Lenis inertia per tier: lite eases to the target faster, so fewer smoothed frames follow each wheel notch.
+const lerpFor = () => (motionTier() === 'lite' ? 0.1 : 0.065);
+// A probe downgrade near the top re-attaches the page in lite once the hero entrance has landed (about 2 s after the
+// curtain lifts), so no letter is caught mid-flight.
+const REATTACH_AFTER_MS = 2200;
 
 const modeFor = (pathname: string): PageMode => (pathname === '/produk' || pathname.startsWith('/produk/') ? 'light' : 'full');
 
 // The GSAP chunks start downloading as soon as this module runs, while React is still hydrating, instead of after
-// the first effect; the load curtain lifts sooner. Admin routes and reduced-motion visitors download nothing.
-if (typeof window !== 'undefined' && isMotionRoute(window.location.pathname) && window.matchMedia(MOTION_OK).matches) {
+// the first effect; the load curtain lifts sooner. Admin routes and the minimal tier (reduced motion, Save-Data)
+// download nothing.
+if (typeof window !== 'undefined' && isMotionRoute(window.location.pathname) && motionOn()) {
   void loadMotion().catch(() => undefined);
   void import('lenis').catch(() => undefined);
 }
@@ -49,22 +70,58 @@ function createController(curtain: HTMLDivElement, push: (href: string) => void,
   // stop, or its engine and Lenis outlive it and the page gets two pins on one section.
   let disposed = false;
   const bouncing = new WeakSet<Element>();
-  const motionOk = () => window.matchMedia(MOTION_OK).matches;
+  const motionOk = motionOn;
+  let probe: Probe | null = null;
+  let revealedAt = 0;
+  let reattachTimer = 0;
+  // Tier the current engine was attached in; a logo replay after a probe downgrade re-attaches instead of replaying.
+  let attachedTier = motionTier();
   const html = document.documentElement;
   const word = curtain.querySelector<HTMLElement>('[data-curtain-word]');
   const label = curtain.querySelector<HTMLElement>('[data-curtain-label]');
 
-  function attach(root: HTMLElement) {
+  function attach(root: HTMLElement, settled = false) {
     if (disposed) return;
     revert?.();
     revert = null;
     stale = false;
     if (!kit || !motionOk()) return;
     html.classList.add('iz-motion');
+    attachedTier = motionTier();
     // Article pages have their own reading bar over the body (S7.7, .iz-progress); one line at the top is enough.
     document.querySelector<HTMLElement>('.iz-readline')?.toggleAttribute('hidden', !!root.querySelector('.iz-progress'));
-    revert = initPage(root, kit, modeFor(committed));
+    revert = initPage(root, kit, modeFor(committed), { settled });
   }
+
+  // The frame probe lowered the tier. Lenis lightens at once. Near the top of the page (a cheap moment, like the logo
+  // replay but without a curtain) the page re-attaches in lite, leaving what is on screen as it is; further down, the
+  // blocks set up later and the next route use lite.
+  function tierLowered() {
+    const lenis = getLenis();
+    if (lenis) lenis.options.lerp = lerpFor();
+    // Touch-only devices drop Lenis in lite (startLenis); swapping it out mid-page costs nothing visible there.
+    if (lenis && motionTier() === 'lite' && window.matchMedia('(hover: none) and (pointer: coarse)').matches) {
+      disposeLenis?.();
+      void startLenis();
+    }
+    if (motionTier() !== 'lite' || !revert) return;
+    window.clearTimeout(reattachTimer);
+    const tryReattach = () => {
+      reattachTimer = 0;
+      // attachedTier already matches when a logo replay re-attached the page in the meantime.
+      if (disposed || busy || stale || !revert || attachedTier === motionTier() || window.scrollY >= window.innerHeight) return;
+      if (!scrollIdle()) {
+        reattachTimer = window.setTimeout(tryReattach, 250);
+        return;
+      }
+      const root = readyRoot();
+      if (!root) return;
+      // initPage ends with its own ScrollTrigger.refresh(), which measures the re-attached page.
+      attach(root, true);
+    };
+    reattachTimer = window.setTimeout(tryReattach, Math.max(0, revealedAt + REATTACH_AFTER_MS - performance.now()));
+  }
+  const offTier = onTierChange(tierLowered);
 
   function detach() {
     revert?.();
@@ -97,9 +154,47 @@ function createController(curtain: HTMLDivElement, push: (href: string) => void,
 
   async function startLenis() {
     if (disposeLenis || !kit || !motionOk()) return;
+    const { gsap, ScrollTrigger } = kit;
+    // Page progress along the top edge (v2-motion.css .iz-readline). Its own class: .iz-progress is the article's
+    // reading bar (S7.7), which the shared name hid by scaling its container to zero.
+    const bar = document.createElement('div');
+    bar.className = 'iz-readline';
+    bar.setAttribute('aria-hidden', 'true');
+    const progress = (p: number) => {
+      bar.style.transform = `scaleX(${Math.min(1, Math.max(0, p || 0)).toFixed(4)})`;
+    };
+    // Lite on a touch-only device: no Lenis at all. Touch scrolling was native anyway, but Lenis still listened to
+    // every touchmove without passive (so the compositor waited on the main thread mid-swipe), rewrote the <html>
+    // class on each scroll start and stop, and ran its raf on the ticker (6x phone trace, 2026-10-30). ScrollTrigger
+    // reads native scroll on its own; the bar follows a passive listener with the limit measured once per refresh.
+    if (motionTier() === 'lite' && window.matchMedia('(hover: none) and (pointer: coarse)').matches) {
+      document.body.appendChild(bar);
+      let max = 1;
+      let raf = 0;
+      const measure = () => {
+        max = Math.max(1, ScrollTrigger.maxScroll(window));
+        progress(window.scrollY / max);
+      };
+      const onScroll = () => {
+        if (!raf) raf = requestAnimationFrame(() => {
+          raf = 0;
+          progress(window.scrollY / max);
+        });
+      };
+      measure();
+      ScrollTrigger.addEventListener('refresh', measure);
+      window.addEventListener('scroll', onScroll, { passive: true });
+      disposeLenis = () => {
+        ScrollTrigger.removeEventListener('refresh', measure);
+        window.removeEventListener('scroll', onScroll);
+        cancelAnimationFrame(raf);
+        bar.remove();
+        disposeLenis = null;
+      };
+      return;
+    }
     const { default: Lenis } = await import('lenis');
     if (disposeLenis || !kit || disposed) return;
-    const { gsap, ScrollTrigger } = kit;
     // Weighted scroll, the same both ways (Sehan, 2026-10-29). Duration mode restarted its 1.35 s ease on every wheel
     // notch, so a run of notches downward piled up and felt fast; a low lerp is plain inertia toward the target, which
     // feels equally heavy up and down, and each notch travels a little less.
@@ -107,18 +202,11 @@ function createController(curtain: HTMLDivElement, push: (href: string) => void,
     // box (overflow-x: hidden makes overflow-y auto) 4 px taller than its content, so scrolling down was native and
     // only scrolling up was smoothed (Sehan: heavy only upward, stutter, smooth only after waiting; probe in QA).
     // Panels that scroll on their own carry data-lenis-prevent instead (phone menu, catalogue filter sheet, TOC).
-    const lenis = new Lenis({ lerp: 0.065, wheelMultiplier: 0.8, touchMultiplier: 1, smoothWheel: true, anchors: true, stopInertiaOnNavigate: true });
+    // The lite tier uses a lighter inertia (lerpFor); touch stays native in both.
+    const lenis = new Lenis({ lerp: lerpFor(), wheelMultiplier: 0.8, touchMultiplier: 1, smoothWheel: true, anchors: true, stopInertiaOnNavigate: true });
     lenis.on('scroll', ScrollTrigger.update);
-    // Page progress along the top edge (v2-motion.css .iz-readline). Its own class: .iz-progress is the article's
-    // reading bar (S7.7), which the shared name hid by scaling its container to zero.
-    const bar = document.createElement('div');
-    bar.className = 'iz-readline';
-    bar.setAttribute('aria-hidden', 'true');
     document.body.appendChild(bar);
-    const onProgress = (l: { progress: number }) => {
-      bar.style.transform = `scaleX(${Math.min(1, Math.max(0, l.progress || 0)).toFixed(4)})`;
-    };
-    lenis.on('scroll', onProgress);
+    lenis.on('scroll', (l: { progress: number }) => progress(l.progress));
     const tick = (time: number) => lenis.raf(time * 1000);
     gsap.ticker.add(tick);
     gsap.ticker.lagSmoothing(0);
@@ -168,7 +256,9 @@ function createController(curtain: HTMLDivElement, push: (href: string) => void,
       endCurtain();
     }
     markRevealed();
+    revealedAt = performance.now();
     kit.ScrollTrigger.refresh();
+    if (!disposed) probe = startProbe();
   }
 
   function waitForPage(): Promise<HTMLElement | null> {
@@ -188,6 +278,8 @@ function createController(curtain: HTMLDivElement, push: (href: string) => void,
   async function navigate(url: URL, text: string | undefined) {
     if (!kit) return;
     busy = true;
+    // Route changes are not representative frames for the probe.
+    probe?.pause();
     // Whatever happens below (a malformed hash, a failed route), the curtain comes down and the page stays usable
     // (review REV-05).
     try {
@@ -202,6 +294,8 @@ function createController(curtain: HTMLDivElement, push: (href: string) => void,
       if (word) word.hidden = false;
       if (label) label.hidden = true;
       busy = false;
+      revealedAt = performance.now();
+      probe?.resume();
     }
   }
 
@@ -245,9 +339,13 @@ function createController(curtain: HTMLDivElement, push: (href: string) => void,
 
   // Covers the page with the load curtain (logo and INZTA), goes back to the top, rebuilds the hero entrance so it
   // plays again, and lifts. The rest of the page keeps its motion; rebuilding all of it held the logo for seconds.
+  // After a probe downgrade the engine still holds full-tier techniques (the hero entrance captured its tier), so the
+  // page is attached again under the curtain instead: at the top only the first screen is set up before the lift (the
+  // rest follows in the deferred queue), and the hero entrance plays in lite.
   async function replay() {
     if (!kit) return;
     busy = true;
+    probe?.pause();
     markCovered();
     if (word) word.hidden = false;
     if (label) label.hidden = true;
@@ -257,7 +355,7 @@ function createController(curtain: HTMLDivElement, push: (href: string) => void,
       await cover(kit, curtain);
       jumpTo(0);
       const root = readyRoot();
-      if (revert) revert.intro();
+      if (revert && attachedTier === motionTier()) revert.intro();
       else if (root) attach(root);
       await framesSettled(60, 300);
       await lift(kit, curtain, markRevealed);
@@ -268,6 +366,8 @@ function createController(curtain: HTMLDivElement, push: (href: string) => void,
       html.removeAttribute('data-iz-covered');
       curtain.removeAttribute('data-active');
       busy = false;
+      revealedAt = performance.now();
+      probe?.resume();
     }
   }
 
@@ -339,13 +439,17 @@ function createController(curtain: HTMLDivElement, push: (href: string) => void,
     (btn as HTMLElement).style.setProperty('--fx', `${((e.clientX - box.left) / box.width) * 100}%`);
     (btn as HTMLElement).style.setProperty('--fy', `${((e.clientY - box.top) / box.height) * 100}%`);
     if (e.type !== 'pointerover' || !kit || bouncing.has(btn)) return;
-    const chars = btn.querySelectorAll('.iz-bounce__c');
+    // Lite labels are split into words only (Bounce.tsx) and bounce per word. A whole word takes a shallower dip: the
+    // letter values squashed and tilted it like a rendering glitch (motion audit, 2026-10-30).
+    let chars: NodeListOf<Element> = btn.querySelectorAll('.iz-bounce__c');
+    const words = !chars.length;
+    if (words) chars = btn.querySelectorAll('.iz-bounce__w');
     if (!chars.length) return;
     bouncing.add(btn);
     kit.gsap.to(chars, {
       keyframes: {
         '0%': { yPercent: 0, scaleY: 1, rotate: 0 },
-        '22%': { yPercent: 40, scaleY: 0.5, rotate: 10, ease: 'power2.in' },
+        '22%': words ? { yPercent: 18, scaleY: 0.85, rotate: 3, ease: 'power2.in' } : { yPercent: 40, scaleY: 0.5, rotate: 10, ease: 'power2.in' },
         '100%': { yPercent: 0, scaleY: 1, rotate: 0, ease: 'elastic.out(1, 0.5)' },
       },
       duration: 0.75,
@@ -388,11 +492,15 @@ function createController(curtain: HTMLDivElement, push: (href: string) => void,
       if (pathname === committed) return;
       committed = pathname;
       stale = true;
-      // The boot script set it for the first page; client navigation to or from admin keeps it in step.
+      // The boot script set them for the first page; client navigation to or from admin keeps them in step.
       html.classList.toggle('iz-v2', isMotionRoute(pathname));
+      syncTierAttr(isMotionRoute(pathname));
       if (!isMotionRoute(pathname)) {
         detach();
         disposeLenis?.();
+        // Frames of a non-v2 page must not judge the tier (and store lite for two weeks).
+        probe?.stop();
+        probe = null;
         return;
       }
       if (!busy) {
@@ -405,6 +513,9 @@ function createController(curtain: HTMLDivElement, push: (href: string) => void,
     },
     dispose() {
       disposed = true;
+      probe?.stop();
+      offTier();
+      window.clearTimeout(reattachTimer);
       observer.disconnect();
       window.removeEventListener('iz:page-ready', schedule);
       if (frame) window.clearTimeout(frame);
@@ -440,7 +551,7 @@ export default function SiteMotion() {
 
   useEffect(() => {
     const curtain = curtainRef.current;
-    if (!curtain || !isMotionRoute(window.location.pathname) || !window.matchMedia(MOTION_OK).matches) return;
+    if (!curtain || !isMotionRoute(window.location.pathname) || !motionOn()) return;
     const c = createController(
       curtain,
       href => routerRef.current.push(href),
@@ -454,7 +565,10 @@ export default function SiteMotion() {
   }, []);
 
   useEffect(() => {
-    controller.current?.routeChanged(pathname);
+    if (controller.current) controller.current.routeChanged(pathname);
+    // No controller (minimal tier, or a visit that opened on an admin route): the tier attribute still follows the
+    // route, so the lite and minimal CSS match what HowToStage and ClosingStage decide in JS.
+    else syncTierAttr(isMotionRoute(pathname));
   }, [pathname]);
 
   return (

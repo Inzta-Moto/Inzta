@@ -1,4 +1,5 @@
 import type { MotionKit } from '@/lib/v2/motion/runtime';
+import { motionTier } from '@/lib/v2/motion/runtime';
 
 // The curtain is two sheets in a 100x100 box stretched over the viewport: yellow behind, asphalt in front. Entering,
 // a sheet rises from the bottom with a bulging top edge; leaving, it goes up with a sagging bottom edge (after the
@@ -11,9 +12,15 @@ export const FULL = 'M0 0H100V100H0Z';
 
 type Parts = { sheets: SVGPathElement[]; mark: HTMLElement[] };
 
+// The lite tier moves one sheet, the asphalt one that ends on top, so each frame redraws one full-screen path instead
+// of two; the yellow sheet is emptied and its edge rides on the asphalt path as a stroke (v2-motion.css). Same mark,
+// label and hold.
 function parts(root: HTMLElement): Parts {
+  const all = Array.from(root.querySelectorAll<SVGPathElement>('[data-curtain-sheet]'));
+  const sheets = motionTier() === 'lite' && all.length > 1 ? all.slice(-1) : all;
+  for (const path of all) if (!sheets.includes(path)) path.setAttribute('d', fromBottom({ e: 100, c: 100 }));
   return {
-    sheets: Array.from(root.querySelectorAll<SVGPathElement>('[data-curtain-sheet]')),
+    sheets,
     mark: Array.from(root.querySelectorAll<HTMLElement>('[data-curtain-part]')).filter(el => !el.hidden),
   };
 }

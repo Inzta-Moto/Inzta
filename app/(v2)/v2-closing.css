@@ -283,6 +283,30 @@
   .iz-closing--ride .iz-closing__n::after { content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit; border: 2px solid var(--c-kuning); opacity: 0; animation: iz-closing-ring 5s ease-out var(--closing-ride-at) infinite; animation-play-state: var(--closing-ride-run); }
 }
 
+/* Lite motion tier (lib/v2/motion/tier.ts): ClosingStage adds .iz-closing--lite. Every loop runs twice and rests on
+   its first keyframe (they all start and end at rest), except the typing dots, which keep going until the card's
+   float settles, and the patch ring, whose last turn slows to a stop instead of halting at full speed; the armed glow and chat keep their one-time entrance as the
+   first animation of their list. The rider rides twice and then stays on stop 3 (a second animation that ends there),
+   the chips pop with it. The route plots faster (its mask repaints each frame) and the headlight lags by a translate
+   transition instead of a per-frame chase. Below 1024 px the loops stay paused, as in the full tier. */
+@media (prefers-reduced-motion: no-preference) {
+  .iz-closing.iz-closing--lite.iz-closing--motion .iz-closing__topo,
+  .iz-closing.iz-closing--lite.iz-closing--motion:not(.iz-closing--armed) .iz-closing__glow,
+  .iz-closing.iz-closing--lite.iz-closing--motion:not(.iz-closing--armed) .iz-chat { animation-iteration-count: 2; }
+  .iz-closing.iz-closing--lite.iz-closing--motion:not(.iz-closing--armed) .iz-chat__typing:not(.iz-chat__typing--pre) span { animation-iteration-count: 11; }
+  .iz-closing.iz-closing--lite.iz-closing--armed.iz-closing--play .iz-chat__typing:not(.iz-chat__typing--pre) span { animation-iteration-count: 9; }
+  .iz-closing.iz-closing--lite.iz-closing--motion .iz-chat__patch-text { animation: iz-closing-spin 22s linear, iz-closing-spin 33s cubic-bezier(0.4, 0.6, 0.6, 1) 22s; animation-play-state: var(--closing-idle); }
+  .iz-closing.iz-closing--lite.iz-closing--motion .iz-chat__patch-stitch { animation: iz-closing-spin 36s linear reverse, iz-closing-spin 54s cubic-bezier(0.4, 0, 0.6, 0.4) 36s reverse; animation-play-state: var(--closing-idle); }
+  .iz-closing.iz-closing--lite.iz-closing--armed .iz-closing__glow,
+  .iz-closing.iz-closing--lite.iz-closing--armed.iz-closing--play .iz-chat { animation-iteration-count: 1, 2; }
+  .iz-closing.iz-closing--lite.iz-closing--armed .iz-closing__reveal { animation-duration: 1.2s; }
+  .iz-closing.iz-closing--lite.iz-closing--armed .iz-closing__trail--exit .iz-closing__reveal { animation-duration: 0.5s; animation-delay: 1.3s; }
+  .iz-closing.iz-closing--lite.iz-closing--ride .iz-closing__route::before { animation: iz-closing-ride 5s linear, iz-closing-ride-rest 5s linear 5s forwards; animation-play-state: var(--closing-ride-run), var(--closing-ride-run); }
+  .iz-closing.iz-closing--lite.iz-closing--ride .iz-closing__n,
+  .iz-closing.iz-closing--lite.iz-closing--ride .iz-closing__n::after { animation-iteration-count: 2; }
+  .iz-closing.iz-closing--lite .iz-closing__lamp { transition: opacity 0.6s ease, translate 0.45s cubic-bezier(0.16, 1, 0.3, 1); }
+}
+
 @keyframes iz-closing-ride {
   0% { opacity: 0; scale: 0.3; translate: 0 0; }
   6% { opacity: 1; scale: 1; translate: 0 0; animation-timing-function: cubic-bezier(0.45, 0, 0.25, 1); }
@@ -290,6 +314,14 @@
   54% { translate: var(--ride-mx, 0px) var(--ride-my, 0px); animation-timing-function: cubic-bezier(0.45, 0, 0.25, 1); }
   88% { opacity: 1; scale: 1; translate: var(--ride-x, 0px) var(--ride-y, 0px); }
   95%, 100% { opacity: 0; scale: 0.3; translate: var(--ride-x, 0px) var(--ride-y, 0px); }
+}
+/* The rider's last run in the lite tier: the same path, but it stays lit on stop 3. */
+@keyframes iz-closing-ride-rest {
+  0% { opacity: 0; scale: 0.3; translate: 0 0; }
+  6% { opacity: 1; scale: 1; translate: 0 0; animation-timing-function: cubic-bezier(0.45, 0, 0.25, 1); }
+  46% { translate: var(--ride-mx, 0px) var(--ride-my, 0px); }
+  54% { translate: var(--ride-mx, 0px) var(--ride-my, 0px); animation-timing-function: cubic-bezier(0.45, 0, 0.25, 1); }
+  88%, 100% { opacity: 1; scale: 1; translate: var(--ride-x, 0px) var(--ride-y, 0px); }
 }
 @keyframes iz-closing-chip { 0%, 14%, 100% { scale: 1; } 5% { scale: 1.18; } }
 @keyframes iz-closing-ring { 0% { opacity: 0.9; scale: 1; } 18%, 100% { opacity: 0; scale: 1.9; } }

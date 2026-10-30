@@ -1,5 +1,5 @@
 import type { MotionKit } from '@/lib/v2/motion/runtime';
-import { HOVER } from '@/lib/v2/motion/runtime';
+import { HOVER, motionTier } from '@/lib/v2/motion/runtime';
 
 // Labels the ring turns into over these targets; the first match wins. Built from the classes the pages already use,
 // so no markup needs a data attribute (an explicit data-cursor-label still wins).
@@ -40,6 +40,9 @@ export function initCursor(kit: MotionKit): () => void {
   let label = '';
   let last: { x: number; y: number } | null = null;
   let glow: HTMLElement | null = null;
+  // Lite measures a card once when the pointer enters it (and again after a scroll) instead of on every move, so the
+  // light follows without a layout read per pointer event.
+  let box: DOMRect | null = null;
 
   const show = (on: boolean) => {
     if (on === visible) return;
@@ -74,9 +77,11 @@ export function initCursor(kit: MotionKit): () => void {
     read(target);
     const card = target?.closest<HTMLElement>(GLOW) ?? null;
     if (glow && glow !== card) glow.removeAttribute('data-glow');
+    if (glow !== card) box = null;
     glow = card;
     if (card) {
-      const r = card.getBoundingClientRect();
+      const lite = motionTier() === 'lite';
+      const r = lite ? (box ??= card.getBoundingClientRect()) : card.getBoundingClientRect();
       card.style.setProperty('--mx', `${e.clientX - r.left}px`);
       card.style.setProperty('--my', `${e.clientY - r.top}px`);
       card.setAttribute('data-glow', '');
@@ -84,6 +89,7 @@ export function initCursor(kit: MotionKit): () => void {
   };
   // Scrolling moves the page under a still pointer; read what is under it again.
   const onScroll = () => {
+    box = null;
     if (last && visible) read(document.elementFromPoint(last.x, last.y));
   };
   const onLeave = () => show(false);

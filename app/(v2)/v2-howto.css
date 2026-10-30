@@ -201,6 +201,28 @@
   .iz-howto--live .iz-journey__body { transition: opacity 0.5s ease; }
 }
 
+/* Lite motion tier (lib/v2/motion/tier.ts): howto-motion.ts builds the journey without a pin and adds .iz-howto--lite.
+   Steps wait at their entrance start (--wait: card, and on desktop numeral, node and road too), the road to the next
+   step fills once its step gets --road, and .iz-howto--ease (added two frames later, so nothing on screen animates into
+   its hidden state) carries every transition, on transform and opacity only. --hw-d is the step's stagger. The cursor
+   and its ring get their own compositor layers: the cursor's drop shadow is rasterised once and its moves, presses and
+   ring pulse only move layers instead of repainting the filter on every frame. */
+.iz-howto--lite .iz-vig-cursor, .iz-howto--lite .iz-vig-cursor__ring { will-change: transform, opacity; }
+.iz-howto--lite .iz-journey__step:not(.iz-journey__step--road) .iz-journey__fill { --hw-fill: 0; }
+.iz-howto--lite .iz-journey__step--wait .iz-journey__card { opacity: 0; transform: translateY(36px); }
+@media (min-width: 1024px) {
+  .iz-howto--lite .iz-journey__step--wait .iz-journey__n { opacity: 0; transform: translateY(45%); }
+  .iz-howto--lite .iz-journey__step--wait .iz-journey__node { transform: scale(0); }
+  .iz-howto--lite .iz-journey__step--wait .iz-journey__road { --hw-draw: 0; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .iz-howto--ease .iz-journey__card { transition: translate 0.6s var(--hw-ease), opacity 0.7s ease var(--hw-d, 0ms), transform 0.9s var(--hw-ease) var(--hw-d, 0ms); }
+  .iz-howto--ease .iz-journey__n { transition: opacity 0.6s ease calc(var(--hw-d, 0ms) + 50ms), transform 0.8s var(--hw-ease) calc(var(--hw-d, 0ms) + 50ms); }
+  .iz-howto--ease .iz-journey__node { transition: transform 0.5s var(--hw-pop) calc(var(--hw-d, 0ms) + 300ms); }
+  .iz-howto--ease .iz-journey__road { transition: transform 0.8s var(--hw-ease) calc(var(--hw-d, 0ms) + 450ms); }
+  .iz-howto--ease .iz-journey__fill { transition: transform 0.6s cubic-bezier(0.45, 0, 0.55, 1); }
+}
+
 /* Forced colours drop shadows and backgrounds: the active card keeps a system outline, the boxes their borders. */
 @media (forced-colors: active) {
   .iz-journey__card { outline: 1px solid CanvasText; }

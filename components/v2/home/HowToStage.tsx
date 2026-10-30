@@ -1,12 +1,12 @@
 'use client';
 
 import { useEffect, useRef, type ReactNode } from 'react';
-import { MOTION_OK, loadMotion } from '@/lib/v2/motion/runtime';
+import { loadMotion, motionOn } from '@/lib/v2/motion/runtime';
 
 /**
  * Frame of "Pesan dalam tiga langkah" (F-016 S1.10). The steps and their scenes are complete in the server HTML; this
  * component only drives them, so without JavaScript, when the motion runtime fails, or with reduced motion nothing is
- * hidden or moving. data-scene="howto" tells the page engine to leave the steps to this component (the engine still
+ * hidden or moving; the minimal motion tier (reduced motion or Save-Data) counts as reduced. data-scene="howto" tells the page engine to leave the steps to this component (the engine still
  * reveals the heading and the eyebrow). The journey itself (desktop pin, phone reveals, scene timelines) lives in
  * howto-motion.ts, loaded next to the shared GSAP chunk so neither is in the route's first-load JS.
  */
@@ -15,7 +15,7 @@ export default function HowToStage({ className, children }: { className: string;
 
   useEffect(() => {
     const root = ref.current;
-    if (!root || !window.matchMedia(MOTION_OK).matches) return;
+    if (!root || !motionOn()) return;
     // React Strict Mode mounts, cleans up and mounts again in development: the first mount's promise resolves after
     // its cleanup and must not attach, or the section would get two pins.
     let disposed = false;
