@@ -27,6 +27,14 @@ html.iz-js { scroll-behavior: auto; }
 html.iz-v2 body { overflow-x: clip; }
 html.iz-js[data-iz-curtain], html.iz-js[data-iz-covered] { overflow: hidden; }
 
+/* Card group entrance (engine.ts prepareRise/riseTimeline): plain transitions on transform and opacity, which the
+   compositor runs, so a group arriving mid-scroll costs no style work per frame. --wait holds the from-state. */
+html.iz-motion .iz-rise { transition: opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1), transform 1.15s cubic-bezier(0.16, 1, 0.3, 1); transition-delay: var(--iz-rise-d, 0ms); }
+html.iz-motion .iz-rise.iz-rise--quick { transition-duration: 0.5s, 0.6s; }
+html.iz-motion .iz-rise-img { transition: transform 1.7s cubic-bezier(0.16, 1, 0.3, 1); transition-delay: var(--iz-rise-d, 0ms); }
+html.iz-motion .iz-rise.iz-rise--wait { opacity: 0; transform: translateY(var(--iz-rise-y, 44px)); transition: none; }
+html.iz-motion .iz-rise-img.iz-rise--wait { transform: scale(1.28); transition: none; }
+
 /* Caret of the hero retype loop (lib/v2/motion/engine.ts retype()). */
 .iz-caret { position: absolute; top: 0.14em; left: 0; width: 0.07em; height: 0.8em; border-radius: 2px; background: var(--c-kuning); opacity: 0; visibility: hidden; pointer-events: none; }
 

@@ -203,11 +203,19 @@ export function initPage(root: HTMLElement, kit: MotionKit, mode: PageMode): Pag
         caret.className = 'iz-caret';
         caret.setAttribute('aria-hidden', 'true');
         line.appendChild(caret);
+        // Letter edges are measured once per build (a width change rebuilds): the letters only move vertically, and
+        // reading rects at every step forced a layout in the middle of the loop. The caret moves by its own style, not
+        // gsap.set, which created a tween (and a computed-style read) at every step.
+        const base = line.getBoundingClientRect().left;
+        const left = chars[0].getBoundingClientRect().left - base;
+        const rights = chars.map(c => c.getBoundingClientRect().right - base);
         const at = (i: number) => {
-          const base = line.getBoundingClientRect();
-          const x = i < 0 ? chars[0].getBoundingClientRect().left - base.left : chars[i].getBoundingClientRect().right - base.left;
-          gsap.set(caret, { x });
+          if (caret) caret.style.transform = `translateX(${i < 0 ? left : rights[i]}px)`;
         };
+        // Blur repaints every letter on each frame; phones keep the flip without it.
+        const blur = window.matchMedia(HOVER).matches;
+        const out = blur ? { filter: 'blur(6px)' } : {};
+        const sharp = blur ? { filter: 'blur(0px)' } : {};
         // One sub-timeline per letter, 0.05 s apart: out for 0.24 s, back in for 0.42 s, the caret stepping behind
         // each letter as it lands. About five letters are in flight at once, so the gap travels like a wave.
         const wave = gsap.timeline();
@@ -215,10 +223,10 @@ export function initPage(root: HTMLElement, kit: MotionKit, mode: PageMode): Pag
           wave.add(
             gsap
               .timeline()
-              .to(c, { yPercent: -70, opacity: 0, filter: 'blur(6px)', duration: 0.24, ease: 'power2.in' })
+              .to(c, { yPercent: -70, opacity: 0, ...out, duration: 0.24, ease: 'power2.in' })
               .call(() => at(i))
               .set(c, { yPercent: 70 })
-              .to(c, { yPercent: 0, opacity: 1, filter: 'blur(0px)', duration: 0.42, ease: 'power3.out' }),
+              .to(c, { yPercent: 0, opacity: 1, ...sharp, duration: 0.42, ease: 'power3.out' }),
             i * 0.05,
           );
         });
@@ -327,24 +335,59 @@ export function initPage(root: HTMLElement, kit: MotionKit, mode: PageMode): Pag
         if (light) {
           if (bare && !active) return;
           // Long catalogue grids reveal row by row as they come into view.
-          gsap.set(items, { y: 28, opacity: 0 });
+          prepareRise(items, [], 28, true);
           ScrollTrigger.batch(items, {
             start: 'top 94%',
             once: true,
-            // fromTo with explicit starts: a plain to() read each card's opacity from computed style mid-scroll.
-            onEnter: batch =>
-              play(gsap.fromTo(batch, { y: 28, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6, stagger: 0.05, overwrite: true, paused: true, onComplete: () => handBack(batch) })),
+            onEnter: batch => play(riseTimeline(batch as HTMLElement[], [], 50)),
           });
           return;
         }
         const imgs = items.map(item => item.querySelector('img')).filter((img): img is HTMLImageElement => !!img);
-        // The cards go back to CSS afterwards (a leftover inline transform blocked their hover lift), through handBack
-        // rather than clearProps, which re-read every transform from computed style as the cards landed mid-scroll.
-        const tl = gsap.timeline({ paused: true, onComplete: () => handBack([...items, ...imgs]) });
-        tl.fromTo(items, { y: desktop ? 44 : 28, opacity: 0 }, { y: 0, opacity: 1, duration: 1.15, ease: 'expo.out', stagger: 0.085 }, 0);
-        if (imgs.length) tl.fromTo(imgs, { scale: 1.28 }, { scale: 1, duration: 1.7, ease: 'expo.out', stagger: 0.085 }, 0);
-        onEnter(group, tl);
+        prepareRise(items, imgs, desktop ? 44 : 28, false);
+        onEnter(group, riseTimeline(items, imgs, 85));
       });
+    }
+
+    // Card groups rise through CSS transitions on transform and opacity (v2-motion.css .iz-rise), which the
+    // compositor runs off the main thread. GSAP tweens wrote inline styles on every card and image each frame, and
+    // with a section arriving mid-scroll those writes cost style recalcs inside the scroll frames on phones (trace,
+    // 2026-10-29). Only classes and two custom properties are used and all are removed afterwards, so hover lifts
+    // and the tilt find the cards as their CSS describes them.
+    function prepareRise(items: HTMLElement[], imgs: HTMLElement[], y: number, quick: boolean) {
+      for (const el of items) {
+        el.style.setProperty('--iz-rise-y', `${y}px`);
+        el.classList.add('iz-rise', 'iz-rise--wait');
+        if (quick) el.classList.add('iz-rise--quick');
+      }
+      for (const el of imgs) el.classList.add('iz-rise-img', 'iz-rise--wait');
+      undo.push(() => settleRise([...items, ...imgs]));
+    }
+    function settleRise(els: HTMLElement[]) {
+      for (const el of els) {
+        el.classList.remove('iz-rise', 'iz-rise-img', 'iz-rise--wait', 'iz-rise--quick');
+        el.style.removeProperty('--iz-rise-y');
+        el.style.removeProperty('--iz-rise-d');
+      }
+    }
+    // A paused timeline whose only job is to start the transitions when played (so it queues behind the curtain and
+    // the once-triggers like every other entrance) and to clean up once they have run.
+    function riseTimeline(items: HTMLElement[], imgs: HTMLElement[], stepMs: number) {
+      let timer = 0;
+      undo.push(() => window.clearTimeout(timer));
+      return gsap
+        .timeline({ paused: true })
+        .call(
+          () => {
+            items.forEach((el, i) => el.style.setProperty('--iz-rise-d', `${i * stepMs}ms`));
+            imgs.forEach((el, i) => el.style.setProperty('--iz-rise-d', `${i * stepMs}ms`));
+            for (const el of [...items, ...imgs]) el.classList.remove('iz-rise--wait');
+            timer = window.setTimeout(() => settleRise([...items, ...imgs]), 1800 + items.length * stepMs);
+          },
+          [],
+          0.001,
+        )
+        .to({}, { duration: 0.02 });
     }
 
     // Large photos open from the bottom while the image settles, then drift slower than the page.
