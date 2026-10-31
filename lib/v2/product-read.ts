@@ -7,7 +7,8 @@ import type { Product } from '@/types';
 
 // One product read per render, shared by generateMetadata and the page (F-016 S3.10.1). A read error propagates
 // (S3.10.3): ISR keeps the last good page or the route shows error.tsx; it never caches a "not found" for a product
-// that exists. An inactive product is still returned, as today (S3.10.2: the order API rejects it).
+// that exists. F-003 task 4: an inactive product (or a legacy one without isActive, which the catalog and sitemap
+// also skip) reads as missing, so its page answers 404 like the catalog and the public product API.
 export const getProduct = cache(async (slug: string): Promise<Product | null> => {
   // F-016 A5: local fixture in development only; it holds active products only.
   const fixture = fixtureProducts();
@@ -16,6 +17,7 @@ export const getProduct = cache(async (slug: string): Promise<Product | null> =>
     const doc = await getAdminDb().collection('products').doc(slug).get();
     if (!doc.exists) return null;
     const data = doc.data() ?? {};
+    if (data.isActive !== true) return null;
     // Dates become epoch milliseconds so the product can be passed to client components.
     return {
       ...normalizeProduct(slug, data),
