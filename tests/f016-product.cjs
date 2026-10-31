@@ -208,6 +208,19 @@ function mockFetch(table) {
       fs.unlinkSync(tmp);
     }
   });
+  await check('F-003 task 4: getProduct from Firestore returns an active product, null for inactive or without isActive', async () => {
+    const R = require(path.join(ROOT, 'lib/v2/product-read.ts'));
+    docs.set('products/f003-aktif', { name: 'Tas Aktif', isActive: true, price: 1, stock: 1 });
+    docs.set('products/f003-nonaktif', { name: 'Tas Nonaktif', isActive: false, price: 1, stock: 1 });
+    docs.set('products/f003-tanpa-status', { name: 'Tas Lama', price: 1, stock: 1 });
+    try {
+      assert.strictEqual((await R.getProduct('f003-aktif')).name, 'Tas Aktif');
+      assert.strictEqual(await R.getProduct('f003-nonaktif'), null);
+      assert.strictEqual(await R.getProduct('f003-tanpa-status'), null);
+    } finally {
+      for (const k of ['f003-aktif', 'f003-nonaktif', 'f003-tanpa-status']) docs.delete('products/' + k);
+    }
+  });
   await check('S3.10.2/S3.10.3: the page calls notFound() for null and has no try/catch around the product read; ISR 3600, no prebuilt slugs', () => {
     const src = fs.readFileSync(path.join(ROOT, 'app/produk/[slug]/page.tsx'), 'utf8');
     assert.match(src, /export const revalidate = 3600;/);
