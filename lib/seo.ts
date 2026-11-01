@@ -26,7 +26,8 @@ export const SITE_NAME = 'INZTA Moto';
 export const PAGE_TEXT = {
   home: {
     title: 'INZTA Moto: Tas Motor dan Perlengkapan Touring',
-    description: 'Tas samping, tank bag, tail bag, tas crashbar, dan aksesori touring buatan INZTA. Pesan langsung lewat WhatsApp.',
+    // "Tas motor" leads the description since the Beranda H1 became the owner's English line (2026-11-02).
+    description: 'Tas motor buatan INZTA: tas samping, tank bag, tail bag, tas crashbar, dan aksesori touring. Pesan langsung lewat WhatsApp.',
   },
   produk: {
     title: 'Semua Produk Tas Motor',

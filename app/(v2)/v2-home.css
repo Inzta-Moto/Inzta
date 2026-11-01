@@ -178,3 +178,11 @@ html.iz-motion .iz-film-scene.is-pinned .iz-film__progress > span { display: blo
 html.iz-motion .iz-film-scene.is-pinned .iz-film > .iz-photo { height: clamp(320px, 52vh, 480px); }
 html.iz-motion .iz-film-scene.is-pinned .iz-film > .iz-photo--wide { width: auto; aspect-ratio: 13 / 9; }
 html.iz-motion .iz-film-scene.is-pinned .iz-film > .iz-photo--tall { width: auto; aspect-ratio: 7 / 9; }
+
+/* Beranda hero title (owner copy, 2026-11-02): one sentence per line. */
+.iz-hero__title--home .iz-hero__line { display: block; }
+/* The second sentence fits one line at about 76 px within the 780 px title box; at 88 px it broke onto a third line,
+   and a wider box would run the yellow words over the rider's yellow jacket. Phones keep the shared 44 px. */
+@media (min-width: 1024px) {
+  .iz-page .t-display.iz-hero__title--home { font-size: clamp(52px, min(5.2vw, 9.5vh), 76px); }
+}
