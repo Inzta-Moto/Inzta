@@ -15,11 +15,14 @@ const sessions = {
   'cookie-admin-unverified': { uid: 'u-admin2', email: 'admin@inzta.id', email_verified: false },
   'cookie-affiliate': { uid: 'u-aff', email: 'aff@example.com' },
   'cookie-claim': { uid: 'u-claim', email: 'other@example.com', admin: true },
+  // RUL-02: a second account that only shares the affiliate's email (e.g. created by public sign-up).
+  'cookie-same-email': { uid: 'u-new', email: 'aff@example.com', email_verified: false },
 };
 const idTokens = {
   'token-admin': { uid: 'u-admin', email: 'admin@inzta.id', email_verified: true },
   'token-admin-unverified': { uid: 'u-admin2', email: 'admin@inzta.id', email_verified: false },
   'token-affiliate': { uid: 'u-aff', email: 'aff@example.com' },
+  'token-same-email': { uid: 'u-new', email: 'aff@example.com', email_verified: false },
 };
 let writes = 0;
 let reads = 0;
@@ -45,13 +48,26 @@ const fakeDb = {
   collection: (col) => ({
     doc: (id) => docRef(col, id),
     get: async () => { reads++; return { docs: [...docs.entries()].filter(([k]) => k.startsWith(col + '/')).map(([k, v]) => ({ id: k.split('/')[1], data: () => v })) }; },
-    where: () => ({ limit: () => ({ get: async () => ({ empty: true, docs: [] }) }) }),
+    // Only '==' is evaluated (RUL-02 affiliate lookups); other operators match nothing, as before.
+    where: (field, op, value) => {
+      const get = (n) => async () => {
+        const hits = op !== '==' ? [] : [...docs.entries()].filter(([k, v]) => k.startsWith(col + '/') && v[field] === value).slice(0, n);
+        return { empty: hits.length === 0, docs: hits.map(([k, v]) => ({ id: k.split('/')[1], data: () => v })) };
+      };
+      return { get: get(), limit: (n) => ({ get: get(n) }) };
+    },
   }),
 };
 const fakeAuth = {
   verifySessionCookie: async (c) => { if (!sessions[c]) throw new Error('invalid'); return sessions[c]; },
   verifyIdToken: async (t) => { if (!idTokens[t]) throw new Error('invalid'); return idTokens[t]; },
   createSessionCookie: async (t) => 'issued-' + t,
+  authCalls: [],
+  updateUser: async (uid, props) => {
+    if (props.email === 'taken@example.com') { const e = new Error('in use'); e.code = 'auth/email-already-exists'; throw e; }
+    fakeAuth.authCalls.push(['updateUser', uid, props]);
+  },
+  createUser: async (props) => { fakeAuth.authCalls.push(['createUser', props]); return { uid: 'u-created' }; },
 };
 const stubs = {
   // F-013 phase C4: the publish checks import the card resolver, which shares lib/public-content.ts (react cache).
@@ -97,6 +113,8 @@ const products = require(path.join(ROOT, 'app/api/products/route.ts'));
 const product = require(path.join(ROOT, 'app/api/products/[slug]/route.ts'));
 const variantOrders = require(path.join(ROOT, 'app/api/products/[slug]/variant-orders/route.ts'));
 const session = require(path.join(ROOT, 'app/api/auth/session/route.ts'));
+const commissions = require(path.join(ROOT, 'app/api/affiliate/commissions/route.ts'));
+const adminAffiliates = require(path.join(ROOT, 'app/api/admin/affiliates/route.ts'));
 const { middleware } = require(path.join(ROOT, 'middleware.ts'));
 const { NextRequest } = require(path.join(ROOT, 'node_modules/next/server'));
 const { isAllowedAdmin, verifyAdminSession } = require(path.join(ROOT, 'lib/auth.ts'));
@@ -164,9 +182,42 @@ const simpleProduct = { slug: 'tas-uji', name: 'Tas uji', productType: 'simple',
     jar.clear(); const r = await session.POST(req({ idToken: 'token-admin', role: 'admin' }));
     assert.strictEqual(r.status, 200); assert.ok(jar.has('admin_session'));
   });
-  await check('session: affiliate login unchanged -> 200 with affiliate cookie', async () => {
+  // RUL-02 / FB-01: affiliates are matched by uid only; an account that only shares the email gets nothing.
+  docs.set('affiliates/a1', { id: 'a1', uid: 'u-aff', email: 'aff@example.com', name: 'Aff', voucherCode: 'INZ-AAAAA' });
+  await check('session: affiliate login unchanged -> 200 with affiliate cookie and voucher', async () => {
     jar.clear(); const r = await session.POST(req({ idToken: 'token-affiliate', role: 'affiliate' }));
     assert.strictEqual(r.status, 200); assert.ok(jar.has('affiliate_session'));
+    assert.strictEqual((await r.json()).voucherCode, 'INZ-AAAAA');
+  });
+  await check('session: account sharing an affiliate email but not linked -> 403, no cookie (RUL-02)', async () => {
+    jar.clear(); const r = await session.POST(req({ idToken: 'token-same-email', role: 'affiliate' }));
+    assert.strictEqual(r.status, 403); assert.ok(!jar.has('affiliate_session'));
+  });
+  await check('commissions: unlinked account with same email -> 404, uid not rewritten (RUL-02)', async () => {
+    jar.clear(); jar.set('affiliate_session', 'cookie-same-email'); const w = writes;
+    const r = await commissions.GET();
+    assert.strictEqual(r.status, 404); assert.strictEqual(writes, w); assert.strictEqual(docs.get('affiliates/a1').uid, 'u-aff');
+  });
+  await check('commissions: linked affiliate -> 200', async () => {
+    jar.clear(); jar.set('affiliate_session', 'cookie-affiliate');
+    assert.strictEqual((await commissions.GET()).status, 200);
+  });
+  await check('admin affiliates: email change without password updates the Auth email of the stored uid (RUL-02)', async () => {
+    as('cookie-admin'); fakeAuth.authCalls.length = 0;
+    const r = await adminAffiliates.POST(req({ id: 'a1', uid: 'u-forged', email: 'new@example.com', name: 'Aff', voucherCode: 'INZ-AAAAA' }));
+    assert.strictEqual(r.status, 201);
+    assert.deepStrictEqual(fakeAuth.authCalls, [['updateUser', 'u-aff', { email: 'new@example.com' }]]);
+    assert.strictEqual(docs.get('affiliates/a1').email, 'new@example.com'); assert.strictEqual(docs.get('affiliates/a1').uid, 'u-aff');
+  });
+  await check('admin affiliates: email used by another account -> 400, document unchanged', async () => {
+    as('cookie-admin'); const w = writes;
+    const r = await adminAffiliates.POST(req({ id: 'a1', email: 'taken@example.com', name: 'Aff' }));
+    assert.strictEqual(r.status, 400); assert.strictEqual(writes, w); assert.strictEqual(docs.get('affiliates/a1').email, 'new@example.com');
+  });
+  await check('admin affiliates: new affiliate with password -> createUser, uid stored', async () => {
+    as('cookie-admin'); fakeAuth.authCalls.length = 0;
+    const r = await adminAffiliates.POST(req({ id: 'a2', email: 'b@example.com', password: 'secret1', name: 'B', voucherCode: 'INZ-BBBBB' }));
+    assert.strictEqual(r.status, 201); assert.strictEqual(fakeAuth.authCalls[0][0], 'createUser'); assert.strictEqual(docs.get('affiliates/a2').uid, 'u-created');
   });
 
   // F-012: new articles are Markdown drafts; status, author, and source come from the server, never the body.
