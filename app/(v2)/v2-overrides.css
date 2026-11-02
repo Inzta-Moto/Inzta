@@ -80,6 +80,9 @@ html:not(.js-nav) .iz-navdd:focus-within .iz-navdd__btn svg { transform: rotate(
 
 /* Footer brand column: a short description under the tagline so the column is not empty (Sehan, 2026-10-29). */
 .iz-footer__about { margin-top: 12px; max-width: 36ch; color: var(--c-pasir); font-size: 15px; line-height: 1.6; }
+/* Business name and address (Google Ads destination requirements, 2026-11-02): one line each, upright, not italic. */
+.iz-footer__address { font-style: normal; }
+.iz-footer__address span { display: block; }
 
 /* Tablet footer: five columns left the Kontak column too narrow for the phone number and shop pills at 768 px, so the
    brand takes its own row above four columns. */

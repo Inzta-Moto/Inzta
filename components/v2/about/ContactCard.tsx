@@ -1,4 +1,4 @@
-import { WA_NUMBER } from '@/lib/constants';
+import { BUSINESS_ADDRESS, BUSINESS_EMAIL, BUSINESS_NAME, WA_NUMBER } from '@/lib/constants';
 import { formatWaDisplay } from '@/lib/v2/home-data';
 import { WhatsApp } from '@/components/v2/icons';
 import AboutMap from '@/components/v2/about/AboutMap';
@@ -79,6 +79,32 @@ export default function ContactCard() {
             </span>
             Dikirim dari gudang INZTA
           </div>
+          {/* Email and business address (Google Ads destination requirements; confirmed by Angkasa, 2026-11-02). */}
+          <a className="iz-channel" href={`mailto:${BUSINESS_EMAIL}`}>
+            <span className="iz-iconbtn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <rect x="2" y="4" width="20" height="16" rx="2" />
+                <path d="m22 7-10 6L2 7" />
+              </svg>
+            </span>
+            <span>
+              Email <span className="iz-nowrap">{BUSINESS_EMAIL}</span>
+            </span>
+          </a>
+          <address className="iz-channel iz-channel--plain iz-channel--address">
+            <span className="iz-iconbtn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+                <circle cx="12" cy="10" r="3" />
+              </svg>
+            </span>
+            <span>
+              {BUSINESS_NAME}
+              {BUSINESS_ADDRESS.map(line => (
+                <span key={line} className="iz-channel__line">{line}</span>
+              ))}
+            </span>
+          </address>
         </div>
       </div>
     </section>

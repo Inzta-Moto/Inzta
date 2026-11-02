@@ -15,3 +15,14 @@ export const DEFAULT_AUTHOR = 'Tim INZTA';
 // F-005: the one public origin for canonical URLs and JSON-LD. Deliberately not NEXT_PUBLIC_SITE_URL or the
 // request host, so Preview, staging, and www all point Google at inzta.id (requirement 1.3).
 export const SITE_ORIGIN = 'https://inzta.id';
+
+// Business identity shown in the footer, /tentang, and the legal pages (Google Ads destination requirements,
+// Trello "[WEB] Perbaiki temuan inzta.id sebelum Google Ads"). Address and email confirmed by Angkasa on 2026-11-02;
+// hello@inzta.id receives mail (A-035).
+export const BUSINESS_NAME = 'PT Inzta Gear Indonesia';
+export const BUSINESS_EMAIL = 'hello@inzta.id';
+export const BUSINESS_ADDRESS: readonly string[] = [
+  'Komp. Interkota Indah, Jl. Ring Road No. 2 Blok A4, RT 10/RW 7',
+  'Duri Kosambi, Cengkareng',
+  'Jakarta Barat, DKI Jakarta 11750',
+];

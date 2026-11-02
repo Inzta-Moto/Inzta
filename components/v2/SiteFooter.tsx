@@ -4,6 +4,7 @@ import { INSTAGRAM, MOTOR_CATEGORIES, SHOP_LINKS } from '@/lib/v2/home-content';
 import type { MotorCategory } from '@/types';
 import CategoryLink from '@/components/v2/CategoryLink';
 import { ArrowUpRight } from '@/components/v2/icons';
+import { BUSINESS_ADDRESS, BUSINESS_EMAIL, BUSINESS_NAME } from '@/lib/constants';
 
 // F-016 S0.7: position keys shared with the catalog filter (S2.2).
 const PRODUCT_LINKS = [
@@ -32,6 +33,13 @@ export default function SiteFooter({ waHref, waNumber, currentCategory }: { waHr
             dikirim dari gudang INZTA.
           </p>
           <p className="iz-footer__about">Pertanyaan dan pesanan dijawab admin INZTA lewat WhatsApp.</p>
+          {/* Business identity for Google Ads destination requirements (address confirmed by Angkasa, 2026-11-02). */}
+          <address className="iz-footer__about iz-footer__address">
+            {BUSINESS_NAME}
+            {BUSINESS_ADDRESS.map(line => (
+              <span key={line}>{line}</span>
+            ))}
+          </address>
         </div>
         <div>
           <h2>Produk</h2>
@@ -59,6 +67,8 @@ export default function SiteFooter({ waHref, waNumber, currentCategory }: { waHr
             <li><Link href="/tentang">Tentang INZTA</Link></li>
             <li><Link href="/tentang#cara-pesan">Cara pesan</Link></li>
             <li><Link href="/blog">Artikel</Link></li>
+            <li><Link href="/kebijakan-privasi">Kebijakan Privasi</Link></li>
+            <li><Link href="/syarat-ketentuan">Syarat dan Ketentuan</Link></li>
           </ul>
         </div>
         <div>
@@ -72,6 +82,11 @@ export default function SiteFooter({ waHref, waNumber, currentCategory }: { waHr
             <li>
               <a href={INSTAGRAM.href} target="_blank" rel="noopener noreferrer">
                 <span>Instagram <span className="iz-nowrap">{INSTAGRAM.handle}</span></span>
+              </a>
+            </li>
+            <li>
+              <a href={`mailto:${BUSINESS_EMAIL}`}>
+                <span>Email <span className="iz-nowrap">{BUSINESS_EMAIL}</span></span>
               </a>
             </li>
           </ul>
