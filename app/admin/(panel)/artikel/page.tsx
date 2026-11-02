@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Edit2, Eye, Trash2 } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
 import { readAdminError } from '@/lib/admin-messages';
@@ -27,6 +28,7 @@ const FILTERS: { id: Filter; label: string }[] = [
 const ITEMS_PER_PAGE = 10;
 
 export default function ArticlesPage() {
+  const router = useRouter();
   const [articles, setArticles] = useState<ArticleRow[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [loadError, setLoadError] = useState('');
@@ -62,7 +64,8 @@ export default function ArticlesPage() {
     try {
       const res = await fetch('/api/articles/' + deleteTarget.slug, { method: 'DELETE' });
       if (res.ok) {
-        setDeleteTarget(null); loadArticles();
+        // Clears the browser's Router Cache so shop pages visited in this tab are fetched again, not the cached copy.
+        setDeleteTarget(null); loadArticles(); router.refresh();
       } else {
         alert(await readAdminError(res));
       }
