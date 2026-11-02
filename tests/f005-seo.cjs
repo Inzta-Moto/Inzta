@@ -313,7 +313,7 @@ const CONTROL = /[<>&\u2028\u2029]/;
     docs.set('products/tas-aktif', { name: 'Tas', isActive: true, price: 1, stock: 1 });
     const sitemap = require(path.join(ROOT, 'app/sitemap.ts')).default;
     const urls = (await sitemap()).map(e => e.url);
-    const expected = [seo.canonicalUrl(), seo.canonicalUrl('produk'), seo.canonicalUrl('blog'), seo.canonicalUrl('tentang') /* F-016 S8.7.3 */, seo.canonicalUrl('produk', 'tas-aktif'), seo.canonicalUrl('blog', 'gasber-16')];
+    const expected = [seo.canonicalUrl(), seo.canonicalUrl('produk'), seo.canonicalUrl('blog'), seo.canonicalUrl('tentang') /* F-016 S8.7.3 */, seo.canonicalUrl('kebijakan-privasi'), seo.canonicalUrl('syarat-ketentuan'), seo.canonicalUrl('produk', 'tas-aktif'), seo.canonicalUrl('blog', 'gasber-16')];
     const strip = (u) => u.replace(/\/$/, '');
     assert.deepStrictEqual(urls.map(strip), expected.map(strip));
   });

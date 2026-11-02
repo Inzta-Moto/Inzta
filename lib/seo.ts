@@ -37,6 +37,15 @@ export const PAGE_TEXT = {
     title: 'Blog Touring dan Tas Motor',
     description: 'Catatan perjalanan, cara memilih dan memasang tas motor, dan kabar acara touring dari Tim INZTA.',
   },
+  // Legal pages (F-004, Google Ads destination requirements, 2026-11-02). The key is the URL segment.
+  'kebijakan-privasi': {
+    title: 'Kebijakan Privasi',
+    description: 'Data yang dikumpulkan inzta.id dan WhatsApp admin INZTA, untuk apa dipakai, pihak yang ikut memproses, dan cara meminta data Anda.',
+  },
+  'syarat-ketentuan': {
+    title: 'Syarat dan Ketentuan',
+    description: 'Ketentuan pesan di inzta.id: harga dan stok, pembayaran lewat WhatsApp admin, voucher, pengiriman dari Jakarta Barat, retur, dan garansi.',
+  },
 } as const;
 
 export const DEFAULT_OG_IMAGE = { url: `${SITE_ORIGIN}/logo-mtg.png`, width: 842, height: 842, alt: SITE_NAME };
@@ -51,7 +60,7 @@ export function openGraph(o: { url: string; title: string; description: string; 
   return { type: o.type ?? 'website', locale: 'id_ID', siteName: SITE_NAME, url: o.url, title: o.title, description: o.description, images: o.images ?? [DEFAULT_OG_IMAGE] };
 }
 
-/** Metadata for `/`, `/produk`, `/blog`: unique title and description, canonical, og, and twitter (6.1, 6.5). */
+/** Metadata for `/`, `/produk`, `/blog`, and the legal pages: unique title and description, canonical, og, and twitter (6.1, 6.5). */
 export function sectionMetadata(page: keyof typeof PAGE_TEXT): Metadata {
   const { title, description } = PAGE_TEXT[page];
   const url = page === 'home' ? canonicalUrl() : canonicalUrl(page);

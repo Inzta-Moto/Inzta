@@ -42,6 +42,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'monthly',
       priority: 0.6,
     },
+    // Legal pages (Google Ads destination requirements, 2026-11-02): static, so no lastModified.
+    { url: `${baseUrl}/kebijakan-privasi`, changeFrequency: 'yearly', priority: 0.3 },
+    { url: `${baseUrl}/syarat-ketentuan`, changeFrequency: 'yearly', priority: 0.3 },
   ];
 
   // Halaman dinamis produk
