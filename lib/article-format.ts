@@ -23,8 +23,14 @@ export function toMillis(value: unknown): number | null {
   return null;
 }
 
+// F-010 (REV-06): who ran the automation token is internal; pages and the public API never carry it.
+export function withoutInternalFields<T extends Record<string, any>>(data: T): Omit<T, 'createdBy' | 'publishedBy'> {
+  const { createdBy, publishedBy, ...rest } = data;
+  return rest;
+}
+
 export function toPublicArticle(id: string, data: Record<string, any>): PublicArticle {
-  const { createdAt, updatedAt, publishedAt, ...rest } = data as Article;
+  const { createdAt, updatedAt, publishedAt, ...rest } = withoutInternalFields(data) as Article;
   return {
     ...rest,
     slug: id,

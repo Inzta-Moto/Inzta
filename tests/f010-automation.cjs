@@ -96,6 +96,8 @@ require.extensions['.ts'] = function (m, filename) {
 
 const route = require(path.join(ROOT, 'app/api/automation/articles/route.ts'));
 const automationAuth = require(path.join(ROOT, 'lib/automation-auth.ts'));
+const articlesApi = require(path.join(ROOT, 'app/api/articles/route.ts'));
+const format = require(path.join(ROOT, 'lib/article-format.ts'));
 
 const results = [];
 async function check(name, fn) {
@@ -167,6 +169,29 @@ const ready = (slug, extra = {}) => ({
     assert.ok(d.publishedAt && d.publishedAt === d.createdAt && d.createdAt === d.updatedAt);
     assert.deepStrictEqual(d.images, []);
     assert.deepStrictEqual(revalidated, paths('tank-bag-motor-matic'));
+  });
+  await check('201 lists the editor warnings: missing topik (W-7); none for topik and 2 H2', async () => {
+    const r = await call(ready('peringatan-topik'));
+    const { warnings } = await r.json();
+    assert.ok(warnings.some(w => w.id === 'W-7'), JSON.stringify(warnings));
+    const ok = await (await call(ready('dengan-topik', { topik: 'touring' }))).json();
+    assert.deepStrictEqual(ok.warnings.map(w => w.id), [], JSON.stringify(ok.warnings));
+    assert.strictEqual(docs.get('articles/dengan-topik').topik, 'touring');
+  });
+  await check('a name with an underscore is accepted (AUTOMATION_TOKEN_M_SECHAN -> m_sechan)', async () => {
+    setTokens({ AUTOMATION_TOKEN_M_SECHAN: TOKEN_S });
+    assert.strictEqual((await call(ready('garis-bawah'), { token: TOKEN_S })).status, 201);
+    assert.strictEqual(docs.get('articles/garis-bawah').publishedBy, 'm_sechan');
+    setTokens({ AUTOMATION_TOKEN_ANGKASA: TOKEN_A, AUTOMATION_TOKEN_SEHAN: TOKEN_S });
+  });
+  await check('REV-06: createdBy and publishedBy never reach the public API or public page data', async () => {
+    const r = await quiet(() => articlesApi.GET(new Request('http://localhost/api/articles')));
+    const { items } = await r.json();
+    const item = items.find(i => i.slug === 'tank-bag-motor-matic');
+    assert.ok(item, 'published article listed');
+    assert.ok(!('createdBy' in item) && !('publishedBy' in item), JSON.stringify(Object.keys(item)));
+    const pub = format.toPublicArticle('tank-bag-motor-matic', docs.get('articles/tank-bag-motor-matic'));
+    assert.ok(!('createdBy' in pub) && !('publishedBy' in pub));
   });
   await check('each person has their own token: the Sehan token records "sehan"', async () => {
     assert.strictEqual((await call(ready('artikel-sehan'), { token: TOKEN_S })).status, 201);
