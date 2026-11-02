@@ -334,5 +334,19 @@
     "value": "iz-figure",
     "reason": "F-017 redesign: the cover is part of the article grid's head area (as wide as the 680 px reading column) instead of a page-level 1120 px figure. Canvas: \"Redesain Halaman Artikel INZTA\" (https://claude.ai/artifact/ATpPo5YaiGDFLCJtnhYFxZ).",
     "requirement": "F-017"
+  },
+  {
+    "artboard": "Main",
+    "kind": "heading",
+    "value": "Tas motor untuk perjalanan Anda.",
+    "reason": "Beranda H1 changed to 'Carry Your Gear. Create Your Adventure.' at the owner's request (Om Fahrul via Sehan, 2026-11-02); the canvas keeps the old line.",
+    "requirement": "S1.1"
+  },
+  {
+    "artboard": "Main-flash",
+    "kind": "heading",
+    "value": "Tas motor untuk perjalanan Anda.",
+    "reason": "Beranda H1 changed to 'Carry Your Gear. Create Your Adventure.' at the owner's request (Om Fahrul via Sehan, 2026-11-02); the canvas keeps the old line.",
+    "requirement": "S1.1"
   }
 ]

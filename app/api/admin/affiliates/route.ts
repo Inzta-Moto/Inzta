@@ -30,23 +30,26 @@ export async function POST(request: Request) {
     }
 
     const auth = getAdminAuth();
-    let uid = data.uid;
+    // RUL-02 / FB-01: the linked account comes from the stored document, never from the request body.
+    const existing = await getAdminDb().collection('affiliates').doc(id).get();
+    let uid: string = existing.data()?.uid || '';
 
-    // If password is provided, it means we need to create or update the user
-    if (password) {
-      try {
-        if (uid) {
-          // Update existing user
-          await auth.updateUser(uid, { email, password });
-        } else {
-          // Create new user
-          const userRecord = await auth.createUser({ email, password, displayName: name });
-          uid = userRecord.uid;
-        }
-      } catch (authErr: any) {
-        console.error('Auth error:', authErr);
-        return NextResponse.json({ error: authErr.message }, { status: 400 });
+    try {
+      if (uid) {
+        // The Auth email always follows the document, so the login email and the affiliate email never drift.
+        await auth.updateUser(uid, password ? { email, password } : { email });
+      } else if (password) {
+        const userRecord = await auth.createUser({ email, password, displayName: name });
+        uid = userRecord.uid;
       }
+    } catch (authErr: any) {
+      console.error('Auth error:', authErr);
+      const message = authErr.code === 'auth/email-already-exists'
+        ? 'Email ini sudah dipakai akun lain. Pakai email lain.'
+        : authErr.code === 'auth/user-not-found'
+          ? 'Akun login affiliate ini tidak ditemukan di Firebase Auth. Hubungi Tim Developer.'
+          : authErr.message;
+      return NextResponse.json({ error: message }, { status: 400 });
     }
 
     const affiliateData = {

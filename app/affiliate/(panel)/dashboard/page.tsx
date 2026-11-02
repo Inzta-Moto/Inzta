@@ -18,21 +18,10 @@ export default async function AffiliateDashboardPage() {
 
     const decodedClaims = await getAdminAuth().verifySessionCookie(sessionCookie, true);
     const uid = decodedClaims.uid;
-    const email = decodedClaims.email;
 
-    // Find the affiliate by uid
-    let affSnap = await getAdminDb().collection('affiliates').where('uid', '==', uid).limit(1).get();
-    
-    // Fallback: If not found by UID, try finding by email
-    if (affSnap.empty && email) {
-      affSnap = await getAdminDb().collection('affiliates').where('email', '==', email).limit(1).get();
-      
-      // Self-healing: if found by email, update the document with the correct UID
-      if (!affSnap.empty) {
-        const docId = affSnap.docs[0].id;
-        await getAdminDb().collection('affiliates').doc(docId).update({ uid: uid });
-      }
-    }
+    // RUL-02 / FB-01: match by uid only. The old email fallback trusted unverified emails and rewrote
+    // the document's uid, so any account with that email could take over the dashboard.
+    const affSnap = await getAdminDb().collection('affiliates').where('uid', '==', uid).limit(1).get();
 
     if (affSnap.empty) {
       redirect('/affiliate/login');
@@ -63,6 +52,8 @@ export default async function AffiliateDashboardPage() {
         voucherData = {
           ...vData,
           expiresAt: vData.expiresAt ? (vData.expiresAt.toMillis ? vData.expiresAt.toMillis() : vData.expiresAt) : null,
+          // Some vouchers store createdAt as a Timestamp; a class instance cannot cross into the client component.
+          createdAt: vData.createdAt?.toMillis ? vData.createdAt.toMillis() : vData.createdAt ?? null,
         };
       }
     }
