@@ -103,10 +103,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           
           <div className="sidebar-divider"></div>
           
-          <Link href="/" className="sidebar-link" onClick={() => setSidebarOpen(false)}>
+          {/* A full page load, not <Link>: Next 14 keeps visited and prefetched shop pages in the browser's Router Cache
+              for up to 5 minutes, so after an admin write a soft navigation could show the old /blog or product list
+              (deleted article still listed, its page 404). The server copy is already fresh (revalidatePath). */}
+          <a href="/" className="sidebar-link" onClick={() => setSidebarOpen(false)}>
             <ArrowLeft size={18} />
             <span>Kembali ke Toko</span>
-          </Link>
+          </a>
           
           <button 
             onClick={async () => {
