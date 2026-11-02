@@ -3,6 +3,7 @@ import { getAdminDb } from '@/lib/firebaseAdmin';
 import { parseArticleInput } from '@/lib/article-input';
 import { isAlreadyExists } from '@/lib/firestore-errors';
 import { ARTICLE_SERVER_FAIL, serverPublishFailures } from '@/lib/admin-articles';
+import { runChecklist } from '@/lib/article-checklist';
 import { allowAutomationRequest, requireAutomationToken } from '@/lib/automation-auth';
 import { revalidateArticlePaths } from '@/lib/revalidate';
 
@@ -64,6 +65,12 @@ export async function POST(request: Request) {
       if (checks.length) return NextResponse.json({ error: 'Belum lolos cek sebelum terbit', checks }, { status: 400 });
     }
 
+    // REV-02: the editor shows these before the admin clicks Terbitkan; here they go back to the script instead.
+    // topik is always passed, so a missing topic is reported (W-7) rather than skipped.
+    const warnings = runChecklist({ ...fields, contentFormat: 'markdown', topik: fields.topik ?? '' }).warnings
+      .filter(w => !w.ok)
+      .map(({ id, label, detail }) => ({ id, label, detail }));
+
     const now = new Date().toISOString();
     const item = {
       ...fields,
@@ -89,6 +96,7 @@ export async function POST(request: Request) {
         url: `/blog/${fields.slug}`,
         editUrl: `/admin/artikel/${fields.slug}`,
         previewUrl: `/admin/pratinjau/${fields.slug}`,
+        warnings,
       },
       { status: 201 },
     );

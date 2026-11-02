@@ -4,7 +4,7 @@ import { createHash, timingSafeEqual } from 'crypto';
 // session. Each person has one Vercel variable AUTOMATION_TOKEN_<NAME> (for example AUTOMATION_TOKEN_ANGKASA);
 // <NAME> in lower case becomes the actor stored on the article, so one token can be revoked without the others.
 const PREFIX = 'AUTOMATION_TOKEN_';
-const NAME_PATTERN = /^[A-Z][A-Z0-9]{1,31}$/;
+const NAME_PATTERN = /^[A-Z][A-Z0-9_]{1,31}$/;
 // 32 characters is the floor for a random token (openssl rand -base64 32 gives 44); shorter values are ignored.
 export const MIN_TOKEN_LENGTH = 32;
 
@@ -22,7 +22,10 @@ function configuredTokens(env: Env): { actor: string; digest: Buffer }[] {
     if (!key.startsWith(PREFIX) || !value) continue;
     const name = key.slice(PREFIX.length);
     const token = value.trim();
-    if (!NAME_PATTERN.test(name)) continue;
+    if (!NAME_PATTERN.test(name)) {
+      console.error('Automation token ignored: name must be capital letters, digits, or underscores', { variable: key });
+      continue;
+    }
     if (token.length < MIN_TOKEN_LENGTH) {
       // Names only, never values: a short token in Vercel is a setup mistake the owner has to see in the logs.
       console.error('Automation token ignored: shorter than the minimum length', { variable: key });
