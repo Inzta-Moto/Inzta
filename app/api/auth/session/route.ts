@@ -17,16 +17,28 @@ export async function POST(request: Request) {
 
     const adminAuth = getAdminAuth();
 
-    // Verify the ID token to get the user's UID and email
+    // Verify the ID token to get the user's UID
     const decodedToken = await adminAuth.verifyIdToken(idToken);
     const uid = decodedToken.uid;
-    const email = decodedToken.email;
 
     // The role in the body is only a request; admin is granted from the verified token and the allowlist.
     if (role === 'admin' && !isAllowedAdmin(decodedToken)) {
       console.warn('Admin session refused: account not in allowlist', { uid });
       cookies().delete('admin_session');
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    // RUL-02 / FB-01: an affiliate session needs an affiliate document linked to this account's uid.
+    // No email fallback: email/password accounts are unverified, so a matching email proves nothing.
+    let voucherCode = null;
+    if (role === 'affiliate') {
+      const affSnap = await getAdminDb().collection('affiliates').where('uid', '==', uid).limit(1).get();
+      if (affSnap.empty) {
+        console.warn('Affiliate session refused: no affiliate linked to account', { uid });
+        cookies().delete('affiliate_session');
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
+      voucherCode = affSnap.docs[0].data().voucherCode ?? null;
     }
 
     // Set session expiration to 5 days
@@ -46,23 +58,6 @@ export async function POST(request: Request) {
       path: '/',
       sameSite: 'lax',
     });
-
-    let voucherCode = null;
-
-    if (role === 'affiliate') {
-      const db = getAdminDb();
-      // First try to find by uid
-      let affSnap = await db.collection('affiliates').where('uid', '==', uid).limit(1).get();
-      
-      // Fallback to email if uid is not set
-      if (affSnap.empty && email) {
-        affSnap = await db.collection('affiliates').where('email', '==', email).limit(1).get();
-      }
-
-      if (!affSnap.empty) {
-        voucherCode = affSnap.docs[0].data().voucherCode;
-      }
-    }
 
     return NextResponse.json({ status: 'success', voucherCode }, { status: 200 });
   } catch (error: any) {
