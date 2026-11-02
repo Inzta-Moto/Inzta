@@ -4,7 +4,7 @@ import { requireAdmin } from '@/lib/auth';
 import { parseArticleInput } from '@/lib/article-input';
 import { isAlreadyExists } from '@/lib/firestore-errors';
 import { ARTICLE_SERVER_FAIL, serializeArticle } from '@/lib/admin-articles';
-import { statusOf } from '@/lib/article-format';
+import { statusOf, withoutInternalFields } from '@/lib/article-format';
 
 // Admins get drafts too; anyone else gets published articles only. A failed admin check is not an
 // error here, it just means the filtered list.
@@ -14,7 +14,7 @@ export async function GET() {
     const snapshot = await getAdminDb().collection('articles').get();
     const items = snapshot.docs
       .filter(doc => isAdmin || statusOf(doc.data()) === 'published')
-      .map(doc => serializeArticle(doc.id, doc.data()));
+      .map(doc => serializeArticle(doc.id, isAdmin ? doc.data() : withoutInternalFields(doc.data())));
     // viewer tells the admin list that a rejected session is why drafts are missing; it says nothing about anyone else.
     return NextResponse.json({ items, viewer: isAdmin ? 'admin' : 'public' }, { status: 200 });
   } catch (error: any) {

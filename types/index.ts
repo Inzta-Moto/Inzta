@@ -164,6 +164,9 @@ export interface Article {
   imageUrl?: string;
   author?: string;
   source?: 'admin' | 'automation';
+  // F-010 (ADR-0020): who created or published it through POST /api/automation/articles (token name, e.g. 'angkasa').
+  createdBy?: string;
+  publishedBy?: string;
   // Legacy documents hold a Firestore Timestamp; writes since F-000 store an ISO string.
   createdAt?: StoredDate;
   updatedAt?: StoredDate;
