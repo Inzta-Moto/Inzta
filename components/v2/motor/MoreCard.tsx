@@ -4,7 +4,7 @@ import { ArrowRight } from '@/components/v2/icons';
 import SmartImage from '@/components/v2/ui/SmartImage';
 import { MOTOR_CATEGORIES } from '@/lib/v2/home-content';
 
-// "Semua motor (strap)" (S5.5): the whole card is one link to the catalog. The four category photos in mini form say
+// "Semua motor (strap)" (S5.5): the whole card is one link to the catalog. The five category photos in mini form say
 // "semua motor" in pictures; they are decorative (the title names the link), and the current category is ringed so the
 // card ties back to "Bisa juga untuk motor X". The photos are INZTA's own category photos, so no "Foto contoh" tag.
 // On desktop a tile can be a strip about 119 x 308 px; a square photo covers it about 308 px wide and the 4:3

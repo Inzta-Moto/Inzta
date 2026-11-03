@@ -56,17 +56,19 @@ export const GASBER_CREDIT = 'Dok. Gasber 16 / Indonesia Ride Adventure';
 // Adventure from road-01 (the tall-screen adventure bike with yellow side bags) and Trail from road-09 (a dual-sport
 // bike on a sea cliff), both cropped 4:3 so the whole bike reads even as a 40 px menu thumb; their centred squares
 // still hold the bike, so the square slots (Garasi, menus, MoreCard, OtherCategories, CategoryPanel) cover them
-// without an object-position.
+// without an object-position. Sport (F-018) is RND's photo of a Kawasaki Ninja on a rice-field road at its own
+// 828 x 626, both plates in the background blurred.
 export const MOTOR_CATEGORIES: readonly CategoryItem[] = [
   { value: 'matic', label: 'Matic', image: '/images/v2/foto/kategori-matic.webp', alt: 'Rider berjaket INZTAMOTO berdiri di samping Yamaha XMAX dengan tail bag Tourmax 30 di jok belakang' },
   { value: 'adventure', label: 'Adventure', image: '/images/v2/foto/kategori-adventure.webp', alt: 'Rider di atas motor adventure berkaca depan tinggi dengan side bag kuning INZTA di jalan berkelok' },
   { value: 'retro', label: 'Retro', image: '/images/v2/foto/kategori-retro.webp', alt: 'Sidebag RD Depan Daily Ride terpasang di bawah tangki motor retro Yamaha hitam' },
   { value: 'trail', label: 'Trail', image: '/images/v2/foto/kategori-trail.webp', alt: 'Motor trail merah-hitam dengan side bag, tank bag, dan tas crashbar INZTA, terparkir di tebing di tepi laut' },
+  { value: 'sport', label: 'Sport', image: '/images/v2/foto/kategori-sport.webp', alt: 'Motor sport Kawasaki Ninja putih dengan tank bag INZTA, terparkir di tepi sawah' },
 ];
 
 // Photo in the "Kirim foto motor Anda" card of the category page (GridFill), styled like a buyer's phone photo. It is
-// a different photo from the category tile because MoreCard shows the tiles on the same page. Trail has no second
-// usable photo yet, so its frame stays a placeholder (rows 107, 169, 200).
+// a different photo from the category tile because MoreCard shows the tiles on the same page. Trail and Sport have no
+// second usable photo yet, so their frames stay a placeholder (rows 107, 169, 200; F-018 E6).
 export const CHAT_PHOTOS: Record<MotorCategory, string | null> = {
   matic: '/images/v2/foto/chat-matic.webp',
   adventure: '/images/v2/foto/chat-adventure.webp',

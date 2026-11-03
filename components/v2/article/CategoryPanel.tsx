@@ -11,10 +11,11 @@ export default function CategoryPanel() {
   return (
     <section className="iz-panel" style={{ marginTop: 56 }}>
       <h2 className="t-h2-shop" style={{ marginBottom: 20 }}>Cari tas untuk motor Anda</h2>
-      <div className="iz-grid-4">
-        {MOTOR_CATEGORIES.map(c => (
+      <div className="iz-grid-5">
+        {MOTOR_CATEGORIES.map((c, i) => (
           <CategoryLink key={c.value} value={c.value} className="iz-mtile">
-            <Image src={c.image} alt="" width={512} height={384} sizes="(max-width: 767px) 50vw, 270px" quality={PHOTO_QUALITY} />
+            {/* F-018: on phones an odd last tile spans both columns (v2-overrides.css). */}
+            <Image src={c.image} alt="" width={512} height={384} sizes={i === MOTOR_CATEGORIES.length - 1 && i % 2 === 0 ? '(max-width: 767px) 100vw, 220px' : '(max-width: 767px) 50vw, 220px'} quality={PHOTO_QUALITY} />
             <div className="iz-mtile__body">
               <div>
                 <b>{c.label}</b>

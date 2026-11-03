@@ -11,7 +11,7 @@
   color: var(--c-kuning);
   background: linear-gradient(160deg, var(--c-arang-naik) 0%, var(--c-aspal) 65%);
   /* A faint bevel on the top edge inside, and a soft shadow below that lifts the dark tile off the paper background. */
-  box-shadow: inset 0 1px 0 rgba(243, 239, 230, 0.08), 0 10px 20px -12px rgba(22, 20, 15, 0.6);
+  box-shadow: inset 0 1px 0 rgba(243, 239, 230, 0.08), 0 10px 20px -12px rgba(17, 17, 17, 0.6);
   isolation: isolate;
 }
 /* Stitch ring: a thin dashed kuning line inset like the seam of a sewn patch. */
