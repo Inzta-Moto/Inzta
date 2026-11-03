@@ -13,9 +13,10 @@ export default function MoreCard({ current }: { current?: MotorCategory }) {
   return (
     <Link className="iz-morecard" href="/produk">
       <span className="iz-morecard__tiles" aria-hidden="true">
-        {MOTOR_CATEGORIES.map(c => (
+        {MOTOR_CATEGORIES.map((c, i) => (
           <span key={c.value} className={`iz-morecard__tile${c.value === current ? ' is-current' : ''}`}>
-            <SmartImage src={c.image} alt="" sizes="(max-width: 767px) 45vw, 420px" />
+            {/* F-018: on phones an odd last tile spans the card (v2-motor.css), so it needs a wider variant. */}
+            <SmartImage src={c.image} alt="" sizes={i === MOTOR_CATEGORIES.length - 1 && i % 2 === 0 ? '(max-width: 767px) 90vw, 420px' : '(max-width: 767px) 45vw, 420px'} />
             <b>{c.label}</b>
           </span>
         ))}

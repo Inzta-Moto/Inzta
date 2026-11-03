@@ -11,7 +11,7 @@ export default function CategoryPanel() {
   return (
     <section className="iz-panel" style={{ marginTop: 56 }}>
       <h2 className="t-h2-shop" style={{ marginBottom: 20 }}>Cari tas untuk motor Anda</h2>
-      <div className="iz-grid-5">
+      <div className="iz-grid-5" data-reveal-stagger="">
         {MOTOR_CATEGORIES.map((c, i) => (
           <CategoryLink key={c.value} value={c.value} className="iz-mtile">
             {/* F-018: on phones an odd last tile spans both columns (v2-overrides.css). */}

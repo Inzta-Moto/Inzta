@@ -17,8 +17,12 @@
 .iz-hero__img.iz-hero__img--retro { object-position: 50% 40%; } /* 80% cut the helmet under the navbar on wide screens */
 .iz-hero__img.iz-hero__img--adventure { object-position: 50% 55%; }
 .iz-hero__img.iz-hero__img--matic { object-position: 50% 92%; }
-/* Sport (F-018): the Ninja fills the 4:3 photo; framed low so the wheels and the tank bag stay above the copy. */
+/* Sport (F-018): the Ninja fills the 4:3 photo. Up to about 1200 px the whole bike fits framed low; wider, cover
+   crops more height and 70% hid the INZTA tank bag behind the navbar, so the frame moves up to keep the bag. */
 .iz-hero__img.iz-hero__img--sport { object-position: 55% 70%; }
+@media (min-width: 1200px) {
+  .iz-hero__img.iz-hero__img--sport { object-position: 55% 25%; }
+}
 /* Trail (road-09): the bike stands on the left of the photo, so from 1024 px the copy takes the right half over the
    sea and the side scrim comes from the right; phones keep the copy at the bottom with the bike centred above it. */
 .iz-hero__img.iz-hero__img--trail { object-position: 30% 60%; }
