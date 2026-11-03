@@ -1,4 +1,5 @@
 import type { CategoryItem, FilmPhoto, MotorCategory, PositionItem, ReviewItem, ProductPosition } from '@/types';
+import { CATEGORY_LABELS } from '@/lib/v2/motor-category';
 
 export type { CategoryItem, FilmPhoto, PositionItem, ReviewItem };
 
@@ -71,6 +72,7 @@ export const CHAT_PHOTOS: Record<MotorCategory, string | null> = {
   adventure: '/images/v2/foto/chat-adventure.webp',
   retro: '/images/v2/foto/chat-retro.webp',
   trail: null,
+  sport: null,
 };
 
 // The visitor's photo in the Closing chat: a Yamaha XSR 155 with the Sidebag RD Depan Daily Ride (photo catalog row
@@ -78,7 +80,7 @@ export const CHAT_PHOTOS: Record<MotorCategory, string | null> = {
 export const CLOSING_CHAT_PHOTO = '/images/v2/foto/chat-xsr-155.webp';
 
 export function categoryLabel(value: MotorCategory): string {
-  return MOTOR_CATEGORIES.find(c => c.value === value)?.label ?? value;
+  return MOTOR_CATEGORIES.find(c => c.value === value)?.label ?? CATEGORY_LABELS[value];
 }
 
 // Local tiles are INZTA photos cropped 4:5 (576 x 720 or smaller, never enlarged): photo catalog rows 149 and 67, the

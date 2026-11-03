@@ -286,6 +286,8 @@ check('static photos: every local photo of the Beranda, category and Tentang con
     assert.notStrictEqual(C.CHAT_PHOTOS[c.value], c.image, `${c.value} chat photo repeats the tile`);
   }
   assert.strictEqual(C.CHAT_PHOTOS.trail, null);
+  assert.strictEqual(C.CHAT_PHOTOS.sport, null, 'F-018: no second Sport photo yet');
+  assert.strictEqual(C.categoryLabel('sport'), 'Sport', 'F-018: label before the Sport tile exists');
 });
 
 Promise.all(pending).then(() => {

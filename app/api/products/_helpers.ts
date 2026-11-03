@@ -89,7 +89,7 @@ export function validateV2Fields(data: any): ValidationError | null {
   return null;
 }
 
-// F-016 S4.6.7: an array of at most four unique D1 slugs (ADR-0019); [] clears the categories.
+// F-016 S4.6.7: an array of unique D1 slugs, at most one per category (ADR-0019, ADR-0022); [] clears the categories.
 function isValidKategoriMotor(v: unknown): v is string[] {
   return Array.isArray(v) && v.length <= CATEGORY_SLUGS.length && v.every(isMotorCategory) && new Set(v).size === v.length;
 }

@@ -1,8 +1,11 @@
 import type { MotorCategory, Product } from '@/types';
 
-// Motor categories of ADR-0019 (D1 slugs, D1 order). Pure: no Firebase or React imports, so the tests, the API
-// helpers, and scripts/f016-kategori-draft.mjs can load it.
-export const CATEGORY_SLUGS: readonly MotorCategory[] = ['matic', 'adventure', 'retro', 'trail'];
+// Motor categories of ADR-0019, plus Sport from ADR-0022 (F-018), last so the first four keep their order. Pure: no
+// Firebase or React imports, so the tests, the API helpers, and scripts/f016-kategori-draft.mjs can load it.
+export const CATEGORY_SLUGS: readonly MotorCategory[] = ['matic', 'adventure', 'retro', 'trail', 'sport'];
+
+// The one place for category names; tiles with photos (MOTOR_CATEGORIES in lib/v2/home-content.ts) may lag behind.
+export const CATEGORY_LABELS: Record<MotorCategory, string> = { matic: 'Matic', adventure: 'Adventure', retro: 'Retro', trail: 'Trail', sport: 'Sport' };
 
 // F-016 S5.8.4: a category page is indexable only after RND validates the mapping (A-049) and the owner's index
 // policy is known. Change this list only in a PR that cites that written validation.
@@ -28,18 +31,18 @@ export function normalizeKategoriMotor(v: unknown): MotorCategory[] {
 
 type WithKategori = Pick<Product, 'kategoriMotor'>;
 
-// F-016 S5.5: a product tagged with all four categories is a strap/universal product, shown under "Bisa juga".
+// F-016 S5.5: a product tagged with every category is a strap/universal product, shown under "Bisa juga".
 export function isUniversalProduct(p: WithKategori): boolean {
   return normalizeKategoriMotor(p.kategoriMotor).length === CATEGORY_SLUGS.length;
 }
 
-// F-016 D2, S5.3: tagged with the category, and not with all four (those belong to S5.5). Order is kept, so the
+// F-016 D2, S5.3: tagged with the category, and not with every category (those belong to S5.5). Order is kept, so the
 // caller decides the sort (best sellers first, then newest).
 export function productsForCategory<T extends WithKategori>(products: readonly T[], c: MotorCategory): T[] {
   return products.filter(p => !isUniversalProduct(p) && normalizeKategoriMotor(p.kategoriMotor).includes(c));
 }
 
-// F-016 D2, S5.5: products tagged with all four categories. Being universal here never produces the
+// F-016 D2, S5.5: products tagged with every category. Being universal here never produces the
 // "Universal, pakai strap" chip (S5.5.1, D10); that chip comes only from fitLabel().
 export function universalProducts<T extends WithKategori>(products: readonly T[]): T[] {
   return products.filter(isUniversalProduct);
@@ -62,6 +65,8 @@ const DRAFT_MODELS_BY_CATEGORY: Record<MotorCategory, readonly RegExp[]> = {
   matic: [/\bn\s*-?\s*max\b/i, /\bx\s*-?\s*max\b/i, /\bpcx\b/i, /\bmatic\b/i],
   adventure: [/\badventure\b/i, /\bversys\b/i, /\bcb\s*-?\s*150\s*x\b/i],
   trail: [],
+  // F-018: empty until RND names the Sport motors (A-055); no guessing.
+  sport: [],
 };
 
 export function madeForCategory(p: Pick<Product, 'name'>, c: MotorCategory): boolean {
@@ -76,7 +81,7 @@ export function categoriesOf(p: Pick<Product, 'name'>): MotorCategory[] {
   return CATEGORY_SLUGS.filter(c => madeForCategory(p, c));
 }
 
-// design.md §3.2: names with "universal" are proposed for all four categories, others by the model in the name.
+// design.md §3.2: names with "universal" are proposed for every category, others by the model in the name.
 export function draftKategoriMotor(p: Pick<Product, 'name'>): MotorCategory[] {
   return isUniversalByName(p) ? [...CATEGORY_SLUGS] : categoriesOf(p);
 }

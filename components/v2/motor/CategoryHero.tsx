@@ -49,6 +49,8 @@ const HERO_PHOTOS: Record<MotorCategory, HeroPhoto | null> = {
     sizes: '(max-width: 767px) 330vw, 100vw',
     flip: true,
   },
+  // F-018 T8 (Sehan): no Sport hero photo yet, so the hero shows its fallback tile.
+  sport: null,
 };
 
 // Short hero of the category page (S5.1). The photo is the only eager image and is never animated (S5.1.4); the
