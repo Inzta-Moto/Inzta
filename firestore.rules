@@ -42,5 +42,12 @@ service cloud.firestore {
     match /commissions/{commissionId} {
       allow read, write: if false;
     }
+
+    // RUL-01: settings (mis. settings/flashSale) dibaca dan ditulis server lewat Admin SDK.
+    // Rules Firestore bersifat OR: blok ini tidak menutup akses yang dibuka blok lain,
+    // jadi jangan tambah match wildcard yang ikut mencakup settings.
+    match /settings/{doc} {
+      allow read, write: if false;
+    }
   }
 }
