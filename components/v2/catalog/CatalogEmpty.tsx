@@ -46,8 +46,8 @@ export default function CatalogEmpty({
               {copy.relaxLabel}
             </button>
           )}
-          {/* Primary when no single removal brings products back (relaxLabel null), so the first button never leads to
-              a second empty state. */}
+          {/* Primary when no single removal brings products back (relaxLabel null) and no search is applied, so the
+              first button never leads to a second empty state; with a search, emptyCopy offers it only when it helps. */}
           {copy.showClearAll && (
             <button className={`iz-btn ${copy.relaxLabel || copy.clearSearch ? 'iz-btn--secondary' : 'iz-btn--primary'}`} type="button" onClick={onClearAll}>
               Hapus semua filter

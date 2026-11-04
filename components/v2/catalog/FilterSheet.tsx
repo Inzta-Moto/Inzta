@@ -58,8 +58,9 @@ export default function FilterSheet({
   const panelRef = useRef<HTMLDivElement>(null);
   const downOnBackdrop = useRef(false);
   const closeRef = useRef<HTMLButtonElement>(null);
-  // reduceFilter returns the same object when nothing changes, so the identity is a valid memo key.
-  const facets = useMemo(() => facetCounts(items, draft), [items, draft]);
+  // reduceFilter returns the same object when nothing changes, so the identity is a valid memo key. The search is not
+  // part of the draft (F-019 E8): a debounced search that lands while the sheet is open still counts.
+  const facets = useMemo(() => facetCounts(items, draft.q === state.q ? draft : { ...draft, q: state.q }), [items, draft, state.q]);
   const n = facets.total;
 
   const change = (c: FilterChange) => setDraft(d => reduceFilter(d, c));
