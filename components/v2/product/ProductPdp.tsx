@@ -200,8 +200,10 @@ export default function ProductPdp({ product, images, positionLabel, badge, fit,
           target={waRef}
           image={mainImage}
           name={product.name}
-          price={view.priceRow.kind === 'single' ? formatRupiah(view.priceRow.price) : `${formatRupiah(view.priceRow.low)} – ${formatRupiah(view.priceRow.high)}`}
-          label={button === 'ready' ? `Pesan · ${formatRupiah(order.total)}` : buttonText}
+          // The total sits once, beside the name; "Pesan · Rp…" in the button left the name a single letter at 320–390 px
+          // (Sehan, 2026-11-04).
+          price={button === 'ready' ? formatRupiah(order.total) : view.priceRow.kind === 'single' ? formatRupiah(view.priceRow.price) : `${formatRupiah(view.priceRow.low)} – ${formatRupiah(view.priceRow.high)}`}
+          label={button === 'ready' ? 'Pesan' : buttonText}
           disabled={button === 'processing' || button === 'soldout' || button === 'missing'}
           ariaDisabled={button === 'incomplete'}
           onActivate={activate}

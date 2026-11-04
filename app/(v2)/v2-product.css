@@ -96,10 +96,12 @@ html .iz-page main > .iz-pdp-block { margin-top: max(var(--space-12), var(--spac
 /* Mobile order bar (S3.9): fixed instead of the canvas sticky, enters with translateY while the main button is off screen. */
 .iz-mbar--fixed { position: fixed; left: 0; right: 0; bottom: 12px; margin: 0 12px; transform: translateY(calc(100% + 24px)); visibility: hidden; transition: transform 200ms ease-out, visibility 0s linear 200ms; }
 .iz-mbar--fixed[data-shown="true"] { transform: none; visibility: visible; transition: transform 200ms ease-out; }
-.iz-mbar__item { flex: 1 1 auto; }
+.iz-mbar__item { flex: 1 1 auto; min-width: 40%; }
 .iz-mbar__item > div { min-width: 0; }
 .iz-mbar__item span { white-space: nowrap; }
-.iz-mbar .iz-btn { flex: none; }
+/* A long state label ("Pilih variasi terlebih dahulu") wraps to two lines instead of squeezing the name away. */
+.iz-mbar .iz-btn { flex: 0 0 auto; max-width: 60%; }
+.iz-mbar .iz-btn > span:last-child { white-space: normal; line-height: 1.15; text-align: left; }
 @media (max-width: 767px) {
   .iz-page--mbar { padding-bottom: 96px; }
   /* Same 96 px as MBAR_ZONE_PX (mbar.ts): focus and in-page scrolling stop above the fixed bar. */

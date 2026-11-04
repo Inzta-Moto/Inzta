@@ -473,6 +473,9 @@ function mockFetch(table) {
     assert.match(css, /html\.iz-v2\.iz-mbar-on \{ scroll-padding-bottom: 96px; \}/);
     const bar = fs.readFileSync(path.join(ROOT, 'components/v2/product/MobileOrderBar.tsx'), 'utf8');
     assert.ok(bar.includes('[data-mbar-avoid]') && bar.includes('mainOut && !avoid'), 'bar hides for avoided controls');
+    const pdp = fs.readFileSync(path.join(ROOT, 'components/v2/product/ProductPdp.tsx'), 'utf8');
+    assert.ok(pdp.includes("label={button === 'ready' ? 'Pesan' : buttonText}"), 'bar button keeps the total out, so the name has room at 320 px');
+    assert.match(css, /\.iz-mbar__item \{ flex: 1 1 auto; min-width: 40%; \}/);
   });
   await check('S3.3.9: generic picker = one fieldset per attribute, native radios, unavailable values disabled, no SKU line', () => {
     const html = render(BUILTIN[2]);
