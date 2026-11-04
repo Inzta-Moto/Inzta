@@ -56,6 +56,27 @@ export async function checkVoucher(input: string, subtotal: number, fetchFn: Fet
   }
 }
 
+/**
+ * F-021 E6: the affiliate code to auto-apply. The ?aff= of the address wins: on the first visit through a shared
+ * product link this hook's effect runs before AffiliateTracker (root layout) has stored the code, so reading only
+ * localStorage left the voucher off until a reload. Otherwise the stored code (an earlier ?aff= or the affiliate's login).
+ */
+export function landingAffiliateCode(search: string, storage: Pick<Storage, 'getItem'> | null): string | null {
+  let fromUrl: string | null = null;
+  try {
+    fromUrl = new URLSearchParams(search).get('aff');
+  } catch {
+    fromUrl = null;
+  }
+  if (fromUrl && fromUrl.trim()) return fromUrl.trim();
+  try {
+    const stored = storage?.getItem('inzta_affiliate') ?? null;
+    return stored && stored.trim() ? stored.trim() : null;
+  } catch {
+    return null;
+  }
+}
+
 // S3.3.1: affiliate auto-apply (localStorage.inzta_affiliate → GET /api/vouchers/resolve). Every failure is silent
 // (null); DetailClient toasted the API text.
 export async function resolveAffiliateVoucher(affiliateId: string, subtotal: number, fetchFn: FetchLike): Promise<{ voucher: Voucher; discount: number } | null> {

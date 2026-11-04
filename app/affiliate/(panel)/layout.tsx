@@ -59,15 +59,21 @@ export default function AffiliateLayout({ children }: { children: React.ReactNod
           
           <button 
             onClick={async () => {
-              await signOut(auth);
-              await fetch('/api/auth/logout', { 
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ role: 'affiliate' })
-              });
+              // F-021 REV-02: clear the affiliate keys first, so a failed sign-out or network error cannot leave the
+              // affiliate's code on a shared device.
               localStorage.removeItem('inzta_affiliate');
               localStorage.removeItem('is_affiliate_logged_in');
-              window.location.href = '/affiliate/login';
+              localStorage.removeItem('inzta_affiliate_own');
+              try {
+                await signOut(auth);
+                await fetch('/api/auth/logout', { 
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ role: 'affiliate' })
+                });
+              } finally {
+                window.location.href = '/affiliate/login';
+              }
             }}
             className="sidebar-link logout" 
             style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}

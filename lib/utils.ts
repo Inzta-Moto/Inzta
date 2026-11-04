@@ -75,6 +75,7 @@ export function buildWaLink(
 export function clearAffiliateSession() {
   localStorage.removeItem('is_affiliate_logged_in');
   localStorage.removeItem('inzta_affiliate');
+  localStorage.removeItem('inzta_affiliate_own');
   // Optional: Add more cleanup if needed
 }
 
@@ -82,8 +83,17 @@ export function copyToClipboard(text: string): Promise<void> {
   return new Promise((resolve, reject) => {
     // 1. API Modern (Berjalan di HTTPS/Localhost)
     if (navigator.clipboard && window.isSecureContext) {
-      navigator.clipboard.writeText(text).then(resolve).catch(reject);
+      // F-021 REV-04: some in-app browsers reject writeText; try the selection fallback once before failing.
+      navigator.clipboard.writeText(text).then(resolve).catch(() => legacyCopy(text).then(resolve, reject));
     } else {
+      legacyCopy(text).then(resolve, reject);
+    }
+  });
+}
+
+function legacyCopy(text: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    {
       // 2. Fallback Khusus iOS / Safari / HTTP
       try {
         // Gunakan <span>, BUKAN <textarea>, untuk mengatasi bug seleksi iOS

@@ -9,6 +9,7 @@ export default async function AffiliateDashboardPage() {
   let commissions: any[] = [];
   let affiliateName = '';
   let voucherData = null;
+  let ownVoucherCode = '';
 
   try {
     const sessionCookie = cookies().get('affiliate_session')?.value;
@@ -31,6 +32,7 @@ export default async function AffiliateDashboardPage() {
     const affiliateId = affiliateDoc.id;
     const affiliateData = affiliateDoc.data();
     affiliateName = affiliateData.name || 'Afiliasi';
+    ownVoucherCode = typeof affiliateData.voucherCode === 'string' ? affiliateData.voucherCode : '';
 
     // Fetch commissions for this affiliate
     const commSnap = await getAdminDb().collection('commissions').where('affiliateId', '==', affiliateId).get();
@@ -68,6 +70,7 @@ export default async function AffiliateDashboardPage() {
       initialCommissions={commissions} 
       initialAffiliateName={affiliateName} 
       initialVoucherData={voucherData} 
+      ownVoucherCode={ownVoucherCode}
     />
   );
 }
