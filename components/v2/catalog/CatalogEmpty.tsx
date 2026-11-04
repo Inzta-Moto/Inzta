@@ -15,6 +15,7 @@ export default function CatalogEmpty({
   waHref,
   onRelax,
   onClearAll,
+  onClearSearch,
   onNearest,
 }: {
   copy: EmptyCopy;
@@ -22,6 +23,7 @@ export default function CatalogEmpty({
   waHref: string;
   onRelax: () => void;
   onClearAll: () => void;
+  onClearSearch: () => void;
   onNearest: () => void;
 }) {
   return (
@@ -33,6 +35,11 @@ export default function CatalogEmpty({
         <h2 className="iz-empty__title">{copy.title}</h2>
         {copy.text && <p className="iz-empty__text">{copy.text}</p>}
         <div className="iz-row">
+          {copy.clearSearch && (
+            <button className="iz-btn iz-btn--primary" type="button" onClick={onClearSearch}>
+              Hapus pencarian
+            </button>
+          )}
           {copy.relaxLabel && (
             <button className="iz-btn iz-btn--primary" type="button" onClick={onRelax}>
               {copy.relaxLabel}
@@ -41,13 +48,13 @@ export default function CatalogEmpty({
           {/* Primary when no single removal brings products back (relaxLabel null), so the first button never leads to
               a second empty state. */}
           {copy.showClearAll && (
-            <button className={`iz-btn ${copy.relaxLabel ? 'iz-btn--secondary' : 'iz-btn--primary'}`} type="button" onClick={onClearAll}>
+            <button className={`iz-btn ${copy.relaxLabel || copy.clearSearch ? 'iz-btn--secondary' : 'iz-btn--primary'}`} type="button" onClick={onClearAll}>
               Hapus semua filter
             </button>
           )}
         </div>
         <a className="iz-link" href={waHref} target="_blank" rel="noopener noreferrer">
-          Chat admin
+          {copy.clearSearch ? 'Tanya admin' : 'Chat admin'}
         </a>
       </div>
       {nearest && (

@@ -9,6 +9,7 @@ import { categoryLabel } from '@/lib/v2/home-content';
 import { jumpTo } from '@/lib/v2/motion/runtime';
 import CatalogHead from '@/components/v2/catalog/CatalogHead';
 import CatalogEmpty from '@/components/v2/catalog/CatalogEmpty';
+import CatalogSearch from '@/components/v2/catalog/CatalogSearch';
 import FilterBar from '@/components/v2/catalog/FilterBar';
 import FilterSheet from '@/components/v2/catalog/FilterSheet';
 import HelpCard from '@/components/v2/catalog/HelpCard';
@@ -39,7 +40,7 @@ import {
 // Grid columns: 4 from 768 px, 2 below (bundle.css .iz-grid-4); the content column is at most 1280 px.
 const GRID_SIZES = '(max-width: 767px) 50vw, (max-width: 1279px) 25vw, 300px';
 
-type PendingFocus = { kind: 'chip'; index: number } | { kind: 'posisi' } | { kind: 'card'; index: number } | null;
+type PendingFocus = { kind: 'chip'; index: number } | { kind: 'posisi' } | { kind: 'search' } | { kind: 'card'; index: number } | null;
 
 const noSubscribe = () => () => {};
 
@@ -131,6 +132,10 @@ export default function CatalogBody({
     const p = pendingFocus.current;
     if (!p || p.kind === 'card') return;
     pendingFocus.current = null;
+    if (p.kind === 'search') {
+      filtersRef.current?.querySelector<HTMLElement>('.iz-search__input')?.focus();
+      return;
+    }
     const posisiChip = filtersRef.current?.querySelector<HTMLElement>('[data-fchip="posisi"]');
     if (p.kind === 'chip') {
       const removes = metaRef.current?.querySelectorAll<HTMLElement>('.iz-activechip button') ?? [];
@@ -221,7 +226,7 @@ export default function CatalogBody({
         title={heading}
         lead={
           <>
-            {`${result.length} produk.`}
+            {view.q ? `${result.length} produk untuk "${view.q}".` : `${result.length} produk.`}
             {/* Always in the markup: CSS shows it once a category is known, from React or from the inline script in
                 CatalogPage that reads the stored category before the first paint (no layout shift on phones). */}
             <span className={`iz-lead-motor${category ? ' iz-lead-motor--on' : ''}`}>{` ${LEAD_MOTOR_NOTE}`}</span>
@@ -230,6 +235,7 @@ export default function CatalogBody({
       />
 
       <section className="iz-wrap iz-catalog__filters" ref={filtersRef}>
+        <CatalogSearch value={state.q} onSearch={onApply ? q => apply({ type: 'search', value: q }) : undefined} />
         <FilterBar
           state={state}
           facets={facets}
@@ -297,6 +303,7 @@ export default function CatalogBody({
             waHref={waHref}
             onRelax={() => relax && apply({ type: 'clearGroup', group: relax }, { kind: 'card', index: 0 })}
             onClearAll={() => apply({ type: 'clearAll' }, { kind: 'card', index: 0 })}
+            onClearSearch={() => apply({ type: 'search', value: '' }, { kind: 'search' })}
             onNearest={() => nearest && apply({ type: 'replace', state: nearest.state }, { kind: 'card', index: 0 })}
           />
         )}

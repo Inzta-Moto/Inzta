@@ -74,3 +74,18 @@
   .iz-fsheet__panel { animation: none; }
 }
 html[data-iz-tier="minimal"] .iz-catalog__grid[data-anim] > *, html[data-iz-tier="minimal"] .iz-fsheet__panel { animation: none; }
+
+/* F-019 search row, above the chip row: full width on phones, at most 480 px from 768 px. Same height, line, and
+   paper as the chips. The clear button sits inside the field and is only hidden, so typing never changes its width. */
+.iz-search { position: relative; display: flex; align-items: center; width: 100%; max-width: 480px; margin-top: var(--space-4); }
+.iz-search__ico { position: absolute; left: 16px; width: 18px; height: 18px; color: var(--c-batu); pointer-events: none; }
+.iz-search__input { width: 100%; min-height: 44px; padding: 0 48px 0 44px; border: 1px solid var(--c-garis); border-radius: var(--radius-pill); background: var(--c-kertas-terang); color: var(--c-tinta); font: inherit; font-size: 16px; appearance: none; }
+.iz-search__input::placeholder { color: var(--c-batu); opacity: 1; }
+.iz-search__input::-webkit-search-cancel-button, .iz-search__input::-webkit-search-decoration { appearance: none; display: none; }
+.iz-search__input:focus-visible { outline-offset: 0; border-color: var(--c-tinta); }
+.iz-search__clear { position: absolute; right: 2px; display: inline-grid; place-items: center; width: 44px; height: 44px; border: 0; border-radius: var(--radius-pill); background: transparent; color: var(--c-tinta); cursor: pointer; }
+.iz-search__clear[hidden] { display: none; }
+.iz-search + .iz-filters { padding-top: var(--space-3); }
+@media (max-width: 767px) {
+  .iz-search { max-width: none; }
+}

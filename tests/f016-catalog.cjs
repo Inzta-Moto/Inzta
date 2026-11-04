@@ -100,7 +100,7 @@ check('toCatalogItem: positions (incl. the second position of Wanderpack), label
 check('parseQuery: known values only, deduped, display order; unknown values ignored (S2.2.2)', () => {
   assert.deepStrictEqual(q(''), F.DEFAULT_STATE);
   assert.deepStrictEqual(q('posisi=side,tank,side,helm&motor=retro&harga=200rb-500rb&label=diskon,best-seller,x&urut=terbaru'), {
-    posisi: ['tank', 'side'], motor: 'retro', harga: '200rb-500rb', label: ['best-seller', 'diskon'], urut: 'terbaru',
+    posisi: ['tank', 'side'], motor: 'retro', harga: '200rb-500rb', label: ['best-seller', 'diskon'], urut: 'terbaru', q: '',
   });
   assert.deepStrictEqual(q('posisi=helm&motor=vespa&harga=murah&label=promo&urut=acak'), F.DEFAULT_STATE);
   assert.deepStrictEqual(q('urut=sesuai'), F.DEFAULT_STATE);
@@ -874,6 +874,133 @@ check('route: the dev fixture switch F016_STATE=error throws through getActivePr
   const env = { NODE_ENV: 'development', F016_FIXTURE: __filename, F016_STATE: 'error' };
   assert.throws(() => D.fixtureProducts(env), /forced error/);
   assert.deepStrictEqual(D.fixtureProducts({ ...env, F016_STATE: 'empty' }), []);
+});
+
+// F-019: catalogue search (?q=). Matching, URL, combination with the filters, empty state, render, and SEO header.
+const SP = [
+  simple('tankbag-tk-5', 'Tankbag TK 5', 400000, 455000, { badge: 'BEST SELLER', createdAt: 5000, description: 'Cocok untuk segala merk/type sepeda motor sport.', features: ['Waterproof'] }),
+  simple('side-bag-inzta-xsr-155', 'Side bag Inzta XSR 155', 150000, 175000, { createdAt: 4000, kategoriMotor: ['retro'] }),
+  simple('tankbag-tunnelbag-matic', 'Tankbag Tunnelbag Matic', 370000, 420000, { badge: 'NEW', createdAt: 9000, kategoriMotor: ['matic'], description: 'Dipasang di dek tengah NMAX dan PCX.' }),
+  simple('inzta-tourmax-30', 'Tailbag Inzta Tourmax 30', 620000, null, { createdAt: 3000 }),
+  simple('acc-pounch-inzta-travel-pack', 'Acc Pounch Inzta Travel pack', 100000, null, { createdAt: 2000 }),
+];
+const SITEMS = SP.map(F.toCatalogItem);
+const found = (qs, state = {}) => slugs(F.applyCatalog(SITEMS, st({ ...state, q: qs })));
+
+check('F-019 normalizeSearch / parseSearch: case, accents, punctuation, spaces, 60-character cap', () => {
+  assert.strictEqual(F.normalizeSearch('  Tank-Bag  XSR/155 '), 'tank bag xsr 155');
+  assert.strictEqual(F.normalizeSearch('Café'), 'cafe');
+  assert.strictEqual(F.parseSearch('  tank    bag '), 'tank bag');
+  assert.strictEqual(F.parseSearch(null), '');
+  assert.strictEqual(F.parseSearch('x'.repeat(80)).length, F.SEARCH_MAX);
+});
+
+check('F-019 matchesSearch: "tankbag" = "tank bag" = "Tank-Bag"; "xsr155" = "XSR 155"; every word must match', () => {
+  const tanks = ['tankbag-tk-5', 'tankbag-tunnelbag-matic'];
+  for (const qs of ['tankbag', 'tank bag', 'Tank-Bag', 'TANK BAG', ' tank   bag ']) assert.deepStrictEqual(found(qs).sort(), tanks, qs);
+  assert.deepStrictEqual(found('xsr155'), ['side-bag-inzta-xsr-155']);
+  assert.deepStrictEqual(found('XSR 155'), ['side-bag-inzta-xsr-155']);
+  assert.deepStrictEqual(found('tank matic'), ['tankbag-tunnelbag-matic'], 'AND across words');
+  assert.deepStrictEqual(found('tank vespa'), []);
+  assert.strictEqual(found('').length, SITEMS.length, 'an empty search matches everything');
+  assert.strictEqual(found('  - ').length, SITEMS.length, 'punctuation only is no search');
+});
+
+check('F-019 matchesSearch: position names (chip and Indonesian), labels, categories, description, features', () => {
+  assert.deepStrictEqual(found('tail bag'), ['inzta-tourmax-30']);
+  assert.deepStrictEqual(found('tas tangki').sort(), ['tankbag-tk-5', 'tankbag-tunnelbag-matic']);
+  assert.deepStrictEqual(found('samping'), ['side-bag-inzta-xsr-155']);
+  assert.deepStrictEqual(found('best seller'), ['tankbag-tk-5']);
+  assert.deepStrictEqual(found('retro'), ['side-bag-inzta-xsr-155'], 'category label');
+  assert.deepStrictEqual(found('nmax'), ['tankbag-tunnelbag-matic'], 'motor named only in the description');
+  assert.deepStrictEqual(found('waterproof'), ['tankbag-tk-5'], 'feature');
+  assert.deepStrictEqual(found('Tourmax'), ['inzta-tourmax-30']);
+  const item = F.toCatalogItem(SP[0]);
+  const words = item.search.split(' ');
+  assert.strictEqual(new Set(words).size, words.length, 'search text holds each word once');
+});
+
+check('F-019 URL: ?q= read and written (trimmed), other keys kept, a search change resets "Muat lagi"', () => {
+  assert.strictEqual(q('q=%20tank%20%20bag%20').q, 'tank bag');
+  assert.strictEqual(q('q=').q, '');
+  const s = st({ posisi: ['tank'], q: 'tank bag' });
+  assert.strictEqual(F.writeQuery('aff=ABC&q=lama', s), 'aff=ABC&posisi=tank&q=tank+bag');
+  assert.deepStrictEqual(q(F.writeQuery('', s)), s);
+  assert.strictEqual(F.writeQuery('q=lama', F.DEFAULT_STATE), '');
+  const cur = { state: st({ q: 'tank' }), shown: 24 };
+  const next = F.changeView(cur, { type: 'search', value: ' tank  bag ' });
+  assert.deepStrictEqual(next, { state: st({ q: 'tank bag' }), shown: F.PAGE_SIZE });
+  assert.strictEqual(F.changeView(cur, { type: 'search', value: 'tank ' }), null, 'same search after trim: no change');
+  assert.notStrictEqual(F.stateKey(st({ q: 'a' })), F.stateKey(F.DEFAULT_STATE));
+});
+
+check('F-019 combined with filters: AND with every group, counts follow the search, "Hapus semua" keeps it', () => {
+  assert.deepStrictEqual(found('inzta', { posisi: ['side'] }), ['side-bag-inzta-xsr-155']);
+  assert.deepStrictEqual(found('tank', { motor: 'matic' }), ['tankbag-tunnelbag-matic']);
+  assert.deepStrictEqual(found('tank', { harga: 'atas-500rb' }), []);
+  const s = st({ q: 'tank', label: ['best-seller'] });
+  const f = F.facetCounts(SITEMS, s);
+  assert.strictEqual(f.total, 1);
+  for (const o of F.POSISI_OPTIONS) assert.strictEqual(f.posisi[o.value], F.optionCount(SITEMS, s, 'posisi', o.value), o.value);
+  for (const o of F.LABEL_OPTIONS) assert.strictEqual(f.label[o.value], F.optionCount(SITEMS, s, 'label', o.value), o.value);
+  assert.strictEqual(F.facetCounts(SITEMS, st({ q: 'tank' })).hargaAll, 2);
+  assert.deepStrictEqual(F.clearFilters(st({ q: 'tank', posisi: ['tank'], urut: 'terbaru' })), st({ q: 'tank', urut: 'terbaru' }));
+  assert.strictEqual(F.totalActive(st({ q: 'tank' })), 0, 'the search is not counted on "Buka filter"');
+  assert.deepStrictEqual(F.activeChips(st({ q: 'tank' }), String), [], 'no "Filter aktif" chip for the search');
+  assert.deepStrictEqual(F.reduceFilter(st({ q: 'tank' }), { type: 'clearAll' }), st({ q: 'tank' }));
+});
+
+check('F-019 heading and empty state: "Hasil pencarian", "Hapus pencarian" first, nearest without the search', () => {
+  assert.strictEqual(F.catalogHeading(st({ q: 'tank' }), label), 'Hasil pencarian');
+  assert.strictEqual(F.catalogHeading(st({ q: 'tank', posisi: ['tank'] }), label), 'Tank bag');
+  const plain = F.emptyCopy(st({ q: 'vespa' }), null, label);
+  assert.strictEqual(plain.title, 'Tidak ada tas yang cocok dengan "vespa".');
+  assert.strictEqual(plain.clearSearch, true);
+  assert.strictEqual(plain.relaxLabel, null);
+  assert.strictEqual(plain.showClearAll, false);
+  const withFilter = F.emptyCopy(st({ q: 'vespa', posisi: ['tank'] }), 'posisi', label);
+  assert.strictEqual(withFilter.showClearAll, true);
+  assert.match(withFilter.text, /Filter aktif: Tank bag\.$/);
+  assert.strictEqual(F.emptyCopy(st({ posisi: ['extend'] }), 'posisi', label).clearSearch, false);
+  const n = F.nearestItems(SITEMS, st({ q: 'vespa', posisi: ['tank'] }));
+  assert.strictEqual(n.kind, 'search');
+  assert.deepStrictEqual(n.state, st({ posisi: ['tank'] }));
+  assert.strictEqual(n.heading, `Tanpa kata kunci: ${n.total} produk`);
+  assert.strictEqual(F.nearestItems(SITEMS, st({ q: 'vespa' })).heading, 'Produk lain');
+  const deeper = F.nearestItems(SITEMS, st({ q: 'vespa', posisi: ['tank'], harga: 'atas-500rb' }));
+  assert.strictEqual(deeper.state.q, '', 'the fallback chain runs without the search');
+});
+
+check('F-019 render: search row in the server fallback and the client view; lead and empty state follow ?q=', () => {
+  const fallback = html(React.createElement(CatalogBody, { items: SITEMS, waHref: WA }));
+  assert.match(fallback, /<form class="iz-search" role="search" action="\/produk" method="get">/);
+  assert.match(fallback, /<label class="iz-sr" for="[^"]+-q">Cari produk<\/label>/);
+  assert.match(fallback, /type="search" name="q" maxLength="60" placeholder="Cari tas, misalnya tank bag atau XSR"/);
+  assert.match(fallback, /aria-label="Hapus pencarian" hidden=""/, 'clear button hidden while empty');
+  const hit = clientHtml(React.createElement(CatalogBody, { items: SITEMS, state: st({ q: 'tank' }), waHref: WA, onApply: () => true }));
+  assert.match(hit, /value="tank"/);
+  assert.doesNotMatch(hit, /aria-label="Hapus pencarian" hidden/);
+  assert.match(hit, /2 produk untuk &quot;tank&quot;\./);
+  assert.match(hit, /<h1 class="t-h1-shop">Hasil pencarian<\/h1>/);
+  const none = clientHtml(React.createElement(CatalogBody, { items: SITEMS, state: st({ q: 'vespa' }), waHref: WA, onApply: () => true }));
+  assert.match(none, /Tidak ada tas yang cocok dengan &quot;vespa&quot;\./);
+  assert.match(none, /<button class="iz-btn iz-btn--primary" type="button">Hapus pencarian<\/button>/);
+  assert.match(none, />Tanya admin<\/a>/);
+  assert.doesNotMatch(none, /Hapus semua filter/);
+});
+
+check('F-019 source: debounce 200 ms, Enter without reload, no-JS hides the row, ?q= noindex by header', () => {
+  const s = src('components/v2/catalog/CatalogSearch.tsx');
+  assert.match(s, /SEARCH_DEBOUNCE_MS = 200/);
+  assert.match(s, /e\.preventDefault\(\);\s*commit\(text\)/);
+  assert.match(src('components/v2/catalog/CatalogPage.tsx'), /\.iz-search, \.iz-filters/);
+  const cfg = require(path.join(ROOT, 'next.config.js'));
+  return cfg.headers().then(rules => {
+    const rule = rules.find(r => r.source === '/produk');
+    assert.deepStrictEqual(rule.has, [{ type: 'query', key: 'q' }]);
+    assert.deepStrictEqual(rule.headers, [{ key: 'X-Robots-Tag', value: 'noindex' }]);
+    assert.doesNotMatch(src('app/produk/(katalog)/page.tsx'), /searchParams/, 'the route stays static');
+  });
 });
 
 Promise.all(pending).then(() => {
