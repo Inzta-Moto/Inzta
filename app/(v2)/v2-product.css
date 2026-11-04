@@ -81,6 +81,14 @@ html .iz-page main > .iz-pdp-block { margin-top: max(var(--space-12), var(--spac
 .iz-formmsg--error { color: var(--c-tinta); font-weight: 600; padding-left: 12px; border-left: 3px solid var(--c-kuning-tua); }
 .iz-formmsg--ok { display: flex; flex-direction: column; gap: 2px; padding: 10px 14px; border-radius: var(--radius-thumb); background: var(--c-fit-bg); color: var(--c-fit); }
 
+/* F-021 "Salin link": the status line keeps no height while empty but stays in the tree, so the live region announces. */
+.iz-copylink { display: flex; flex-direction: column; align-items: flex-start; }
+.iz-copylink .iz-link { white-space: nowrap; }
+.iz-copylink .iz-link svg { flex: none; }
+.iz-copylink__msg { margin: 0; font-size: 15px; line-height: 1.45; color: var(--c-batu); overflow-wrap: anywhere; }
+.iz-copylink__msg:not(:empty) { margin-top: 4px; }
+.iz-copylink__msg--error { color: var(--c-tinta); font-weight: 600; }
+
 /* Generic variant picker (S3.3.9): native radios styled with DS tokens, like the side cards. */
 .iz-vpick { display: flex; flex-direction: column; gap: var(--space-4); }
 .iz-vpick__set { border: 0; margin: 0; padding: 0; min-width: 0; display: flex; flex-direction: column; gap: 10px; }

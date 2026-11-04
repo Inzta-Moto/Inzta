@@ -176,7 +176,6 @@ export default function ProductPdp({ product, images, positionLabel, badge, fit,
   };
 
   const mainImage = images[0] ?? null;
-  const shareImage = tiles[active]?.kind === 'photo' ? (tiles[active] as Extract<GalleryTile, { kind: 'photo' }>).src : product.imageUrl ?? null;
 
   return (
     <section className="iz-pdp iz-wrap">
@@ -193,7 +192,6 @@ export default function ProductPdp({ product, images, positionLabel, badge, fit,
         optionsRef={optionsRef}
         waRef={waRef}
         onActivate={activate}
-        shareImage={shareImage}
       />
       {order.mounted && (
         <MobileOrderBar

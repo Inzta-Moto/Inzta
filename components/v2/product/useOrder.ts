@@ -7,6 +7,7 @@ import { browserStorage, readFirstTouchUtm } from '@/lib/utm';
 import {
   buildOrderBody,
   checkVoucher,
+  landingAffiliateCode,
   recalcVoucher,
   resolveAffiliateVoucher,
   submitOrder,
@@ -99,12 +100,13 @@ export function useOrder({ slug, unitTotal, maxQuantity, canOrder, selectionKey,
   // every subtotal change and release the voucher below its minimum purchase (S3.3.1).
   useEffect(() => {
     if (!voucher && !voucherMessage && !voucherInput) {
-      let affiliateId: string | null = null;
+      let storage: Storage | null = null;
       try {
-        affiliateId = localStorage.getItem('inzta_affiliate');
+        storage = window.localStorage;
       } catch {
-        affiliateId = null;
+        storage = null;
       }
+      const affiliateId = landingAffiliateCode(window.location.search, storage);
       if (!affiliateId) return;
       let cancelled = false;
       setChecking(true);

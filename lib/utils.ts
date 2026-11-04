@@ -75,6 +75,7 @@ export function buildWaLink(
 export function clearAffiliateSession() {
   localStorage.removeItem('is_affiliate_logged_in');
   localStorage.removeItem('inzta_affiliate');
+  localStorage.removeItem('inzta_affiliate_own');
   // Optional: Add more cleanup if needed
 }
 

@@ -38,6 +38,9 @@ export default function AffiliateLogin() {
         if (data.voucherCode) {
             localStorage.setItem('inzta_affiliate', data.voucherCode);
         }
+        // F-021: the affiliate's own code for "Salin link" ('' = no voucher), kept apart from inzta_affiliate,
+        // which a ?aff= link visited later overwrites.
+        localStorage.setItem('inzta_affiliate_own', data.voucherCode || '');
         
         router.replace('/affiliate/dashboard');
       } else {

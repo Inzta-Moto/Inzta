@@ -402,7 +402,7 @@ function mockFetch(table) {
     assert.match(html, /aria-label="Foto 2 dari 2" tabindex="-1"/);
     assert.match(html, /<a class="iz-btn iz-btn--primary iz-btn--wa" href="https:\/\/wa\.me\/\d+\?text=Halo%20INZTA%2C%20saya%20ingin%20pesan%20Tail%20bag%20Inzta%20Tourmax%2030" target="_blank" rel="noopener noreferrer">/);
     assert.match(html, /<noscript><style>\.iz-js-only \{ display: none !important; \}<\/style><\/noscript>/);
-    assert.ok(/class="iz-qty iz-js-only"/.test(html) && /class="iz-voucher iz-js-only"/.test(html) && /class="iz-link iz-js-only"/.test(html));
+    assert.ok(/class="iz-qty iz-js-only"/.test(html) && /class="iz-voucher iz-js-only"/.test(html) && /class="iz-copylink iz-js-only"/.test(html));
     assert.match(html, /Rp520\.000<\/b><s>Rp590\.000<\/s><span class="iz-save">Hemat Rp70\.000<\/span>/);
     assert.ok(html.includes('Dibalas admin INZTA') && html.includes('Garansi: tanya admin') && html.includes('Ongkir dikonfirmasi admin'));
     assert.match(html, /<details open=""><summary>Apakah bisa dipasang di motor saya\?/);
@@ -641,6 +641,72 @@ function mockFetch(table) {
     const res = await patch('completed').finally(() => { console.error = quiet; });
     assert.strictEqual(res.status, 500);
     assert.deepStrictEqual(stock(), [5, 7, 12, 10]);
+  });
+
+  // F-021: "Salin link" replaces "Bagikan produk". Pure helpers, the affiliate round trip, and the server markup.
+  const SH = require(path.join(ROOT, 'components/v2/product/share.ts'));
+  const store = (o) => ({ getItem: (k) => (Object.prototype.hasOwnProperty.call(o, k) ? o[k] : null) });
+  await check('F-021 E2: the copied link is origin + product path only (no query, no #fragment, no text)', () => {
+    assert.strictEqual(SH.productShareUrl('https://inzta.id', '/produk/tail-bag-inzta-tourmax-30', null), 'https://inzta.id/produk/tail-bag-inzta-tourmax-30');
+    assert.strictEqual(SH.productShareUrl('https://inzta.id/', 'produk/x', null), 'https://inzta.id/produk/x');
+    assert.strictEqual(SH.productShareUrl('https://inzta-staging.vercel.app', '/produk/x', 'INZ-UJIAFF'), 'https://inzta-staging.vercel.app/produk/x?aff=INZ-UJIAFF');
+    assert.strictEqual(SH.productShareUrl('https://inzta.id', '/produk/x', 'A B&C'), 'https://inzta.id/produk/x?aff=A%20B%26C');
+  });
+  await check('F-021 E3: ?aff= only for a logged-in affiliate; own code wins; legacy session falls back; no code -> plain link', () => {
+    assert.strictEqual(SH.affiliateShareCode(null), null);
+    assert.strictEqual(SH.affiliateShareCode(store({})), null);
+    // A visitor who arrived through someone's ?aff= link (AffiliateTracker stored it) is not logged in: plain link.
+    assert.strictEqual(SH.affiliateShareCode(store({ inzta_affiliate: 'INZ-ORANG' })), null);
+    assert.strictEqual(SH.affiliateShareCode(store({ is_affiliate_logged_in: 'false', inzta_affiliate: 'INZ-ORANG' })), null);
+    assert.strictEqual(SH.affiliateShareCode(store({ is_affiliate_logged_in: 'true', inzta_affiliate_own: 'INZ-SAYA', inzta_affiliate: 'INZ-SAYA' })), 'INZ-SAYA');
+    // Logged-in affiliate who later opened another affiliate's link: inzta_affiliate was overwritten, own code wins.
+    assert.strictEqual(SH.affiliateShareCode(store({ is_affiliate_logged_in: 'true', inzta_affiliate_own: 'INZ-SAYA', inzta_affiliate: 'INZ-ORANG' })), 'INZ-SAYA');
+    // Logged in before F-021 (no own-code key): fall back to inzta_affiliate, which the login wrote.
+    assert.strictEqual(SH.affiliateShareCode(store({ is_affiliate_logged_in: 'true', inzta_affiliate: ' INZ-LAMA ' })), 'INZ-LAMA');
+    // Affiliate account without a voucher: '' recorded at login, never someone else's code.
+    assert.strictEqual(SH.affiliateShareCode(store({ is_affiliate_logged_in: 'true', inzta_affiliate_own: '', inzta_affiliate: 'INZ-ORANG' })), null);
+    assert.strictEqual(SH.affiliateShareCode({ getItem: () => { throw new Error('blocked'); } }), null);
+  });
+  await check('F-021 E5: status text after copy (plain, affiliate, failure with the link to copy by hand)', () => {
+    assert.strictEqual(SH.copyMessage('ok', 'https://inzta.id/produk/x', null), 'Link disalin.');
+    assert.strictEqual(SH.copyMessage('ok', 'https://inzta.id/produk/x?aff=INZ-A', 'INZ-A'), 'Link disalin, sudah berisi kode affiliate INZ-A.');
+    assert.strictEqual(SH.copyMessage('error', 'https://inzta.id/produk/x', null), 'Link gagal disalin. Salin manual: https://inzta.id/produk/x');
+  });
+  await check('F-021 E6: affiliate round trip: copied ?aff= -> AffiliateTracker key -> auto-applied voucher discount -> order body carries the code', async () => {
+    const link = SH.productShareUrl('https://inzta.id', '/produk/tail-bag-inzta-tourmax-30', SH.affiliateShareCode(store({ is_affiliate_logged_in: 'true', inzta_affiliate_own: 'INZ-UJI10' })));
+    const aff = new URL(link).searchParams.get('aff'); // what AffiliateTracker stores as inzta_affiliate
+    assert.strictEqual(aff, 'INZ-UJI10');
+    const f = mockFetch({ '/api/vouchers/resolve': { status: 200, body: { voucher: { code: 'INZ-UJI10', type: 'percentage', value: 10, maxDiscount: 0, minPurchase: 0, affiliateId: 'aff-uji' } } } });
+    const r = await O.resolveAffiliateVoucher(aff, 520000, f);
+    assert.strictEqual(f.calls[0].url, '/api/vouchers/resolve?affiliateId=INZ-UJI10');
+    assert.strictEqual(r.discount, 52000);
+    const body = O.buildOrderBody([{ productSlug: 'tail-bag-inzta-tourmax-30', variationId: null, quantity: 1 }], r.voucher, null);
+    assert.deepStrictEqual([body.voucherCode, body.affiliateId], ['INZ-UJI10', 'aff-uji']);
+  });
+  await check('F-021 E6: auto-apply reads ?aff= of the address first (first visit, before AffiliateTracker stored it), else the stored code', () => {
+    assert.strictEqual(O.landingAffiliateCode('?aff=INZ-A', store({})), 'INZ-A');
+    assert.strictEqual(O.landingAffiliateCode('?utm_source=wa&aff=%20INZ-A%20', store({ inzta_affiliate: 'INZ-LAMA' })), 'INZ-A');
+    assert.strictEqual(O.landingAffiliateCode('', store({ inzta_affiliate: 'INZ-LAMA' })), 'INZ-LAMA');
+    assert.strictEqual(O.landingAffiliateCode('?aff=', store({ inzta_affiliate: 'INZ-LAMA' })), 'INZ-LAMA');
+    assert.strictEqual(O.landingAffiliateCode('', store({})), null);
+    assert.strictEqual(O.landingAffiliateCode('', null), null);
+    assert.strictEqual(O.landingAffiliateCode('', { getItem: () => { throw new Error('blocked'); } }), null);
+  });
+  await check('F-021 E1/E7: one "Salin link" button, hidden without JavaScript; no "Bagikan produk", no image share', () => {
+    const html = render(BUILTIN[0]);
+    assert.match(html, /<div class="iz-copylink iz-js-only"><button class="iz-link" type="button" style="color:var\(--c-tinta\)"><svg[^>]*>.*?<\/svg>Salin link<\/button><p class="iz-copylink__msg" aria-live="polite"><\/p><\/div>/);
+    assert.strictEqual((html.match(/Salin link/g) || []).length, 1);
+    for (const gone of ['Bagikan produk', 'Bagikan gambar', 'proxy-image']) assert.ok(!html.includes(gone), gone);
+    const src = fs.readFileSync(path.join(ROOT, 'components/v2/product/share.ts'), 'utf8');
+    assert.ok(!/navigator\.share|wa\.me|proxy-image/.test(src.replace(/^\/\/.*$/gm, '')), 'share.ts copies only');
+  });
+  await check('F-021 E4: affiliate login records the own code; every logout clears it', () => {
+    const login = fs.readFileSync(path.join(ROOT, 'app/affiliate/(public)/login/page.tsx'), 'utf8');
+    assert.match(login, /localStorage\.setItem\('inzta_affiliate_own', data\.voucherCode \|\| ''\)/);
+    const logout = fs.readFileSync(path.join(ROOT, 'app/affiliate/(panel)/layout.tsx'), 'utf8');
+    assert.match(logout, /localStorage\.removeItem\('inzta_affiliate_own'\)/);
+    const utils = fs.readFileSync(path.join(ROOT, 'lib/utils.ts'), 'utf8');
+    assert.match(utils, /clearAffiliateSession[\s\S]*?removeItem\('inzta_affiliate_own'\)/);
   });
 
   let failed = 0;

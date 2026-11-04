@@ -4,14 +4,14 @@ import type { MutableRefObject, RefObject } from 'react';
 import type { FitLabel, SideChoice, SidePickerData, VariableProduct } from '@/types';
 import { formatRupiah } from '@/lib/v2/home-data';
 import { WhatsApp } from '@/components/v2/icons';
-import { MinusIcon, PlusIcon, ShareIcon } from '@/components/v2/product/product-icons';
+import { MinusIcon, PlusIcon } from '@/components/v2/product/product-icons';
 import SidePicker from '@/components/v2/product/SidePicker';
 import VariantPicker from '@/components/v2/product/VariantPicker';
 import VoucherField from '@/components/v2/product/VoucherField';
 import OrderSummary, { type SummaryRow } from '@/components/v2/product/OrderSummary';
 import type { OrderApi } from '@/components/v2/product/useOrder';
 import type { ButtonState } from '@/components/v2/product/order-core';
-import { shareProduct } from '@/components/v2/product/share';
+import CopyLinkButton from '@/components/v2/product/CopyLinkButton';
 
 export interface BuyBoxView {
   name: string;
@@ -49,7 +49,6 @@ export default function BuyBox({
   optionsRef,
   waRef,
   onActivate,
-  shareImage,
 }: {
   view: BuyBoxView;
   order: OrderApi;
@@ -62,7 +61,6 @@ export default function BuyBox({
   optionsRef: MutableRefObject<HTMLElement | null>;
   waRef: RefObject<HTMLDivElement>;
   onActivate: () => void;
-  shareImage: string | null;
 }) {
   const { priceRow, fit, badge } = view;
   const qtyId = 'iz-qty-label';
@@ -173,10 +171,8 @@ export default function BuyBox({
         <OrderControl view={view} order={order} onActivate={onActivate} />
       </div>
 
-      <button className="iz-link iz-js-only" type="button" style={{ color: 'var(--c-tinta)' }} onClick={() => void shareProduct(view.name, shareImage)}>
-        <ShareIcon />
-        Bagikan produk
-      </button>
+      {/* F-021: copies the product link only (plus ?aff= for a logged-in affiliate); replaces "Bagikan produk". */}
+      <CopyLinkButton />
 
       <div className="iz-buybox__info">
         <span className="iz-infopill">Dibalas admin INZTA</span>

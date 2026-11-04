@@ -67,6 +67,7 @@ export default function AffiliateLayout({ children }: { children: React.ReactNod
               });
               localStorage.removeItem('inzta_affiliate');
               localStorage.removeItem('is_affiliate_logged_in');
+              localStorage.removeItem('inzta_affiliate_own');
               window.location.href = '/affiliate/login';
             }}
             className="sidebar-link logout" 
