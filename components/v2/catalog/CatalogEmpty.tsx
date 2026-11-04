@@ -15,6 +15,7 @@ export default function CatalogEmpty({
   waHref,
   onRelax,
   onClearAll,
+  onClearSearch,
   onNearest,
 }: {
   copy: EmptyCopy;
@@ -22,6 +23,8 @@ export default function CatalogEmpty({
   waHref: string;
   onRelax: () => void;
   onClearAll: () => void;
+  // `both` also clears the filters (F-019 E9: the filters alone give 0 as well).
+  onClearSearch: (both: boolean) => void;
   onNearest: () => void;
 }) {
   return (
@@ -33,21 +36,26 @@ export default function CatalogEmpty({
         <h2 className="iz-empty__title">{copy.title}</h2>
         {copy.text && <p className="iz-empty__text">{copy.text}</p>}
         <div className="iz-row">
+          {copy.clearSearch && (
+            <button className="iz-btn iz-btn--primary" type="button" onClick={() => onClearSearch(copy.clearSearch === 'both')}>
+              {copy.clearSearch === 'both' ? 'Hapus pencarian dan filter' : 'Hapus pencarian'}
+            </button>
+          )}
           {copy.relaxLabel && (
             <button className="iz-btn iz-btn--primary" type="button" onClick={onRelax}>
               {copy.relaxLabel}
             </button>
           )}
-          {/* Primary when no single removal brings products back (relaxLabel null), so the first button never leads to
-              a second empty state. */}
+          {/* Primary when no single removal brings products back (relaxLabel null) and no search is applied, so the
+              first button never leads to a second empty state; with a search, emptyCopy offers it only when it helps. */}
           {copy.showClearAll && (
-            <button className={`iz-btn ${copy.relaxLabel ? 'iz-btn--secondary' : 'iz-btn--primary'}`} type="button" onClick={onClearAll}>
+            <button className={`iz-btn ${copy.relaxLabel || copy.clearSearch ? 'iz-btn--secondary' : 'iz-btn--primary'}`} type="button" onClick={onClearAll}>
               Hapus semua filter
             </button>
           )}
         </div>
         <a className="iz-link" href={waHref} target="_blank" rel="noopener noreferrer">
-          Chat admin
+          {copy.adminLabel}
         </a>
       </div>
       {nearest && (
