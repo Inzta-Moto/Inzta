@@ -49,6 +49,14 @@ const HERO_PHOTOS: Record<MotorCategory, HeroPhoto | null> = {
     sizes: '(max-width: 767px) 330vw, 100vw',
     flip: true,
   },
+  // F-018 E6: the Sport tile photo itself (828 px, the only Sport photo so far), so it is the one hero that may be
+  // softer on wide screens until RND sends a larger file. The bike fills the frame left to right.
+  sport: {
+    src: '/images/v2/foto/kategori-sport.webp',
+    alt: 'Motor sport Kawasaki Ninja putih dengan tank bag INZTA, terparkir di tepi sawah',
+    position: 'iz-hero__img--sport',
+    sizes: '(max-width: 767px) 260vw, (max-width: 1023px) 135vw, 100vw',
+  },
 };
 
 // Short hero of the category page (S5.1). The photo is the only eager image and is never animated (S5.1.4); the

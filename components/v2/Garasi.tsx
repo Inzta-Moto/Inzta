@@ -24,8 +24,10 @@ export default function Garasi() {
           <p className="t-body">Pilih kategori motor Anda sekali. Kami tandai tas yang cocok di seluruh toko.</p>
         </div>
         <div className="iz-garasi" data-reveal-stagger="">
-          {MOTOR_CATEGORIES.map(c => {
+          {MOTOR_CATEGORIES.map((c, i) => {
             const pressed = category === c.value;
+            // F-018: on phones an odd last tile spans both columns (v2-overrides.css).
+            const wide = i === MOTOR_CATEGORIES.length - 1 && i % 2 === 0;
             return (
               <button
                 key={c.value}
@@ -34,7 +36,7 @@ export default function Garasi() {
                 aria-pressed={pressed}
                 onClick={() => setCategory(c.value)}
               >
-                <Image src={c.image} alt="" width={512} height={384} sizes="(max-width: 767px) 50vw, 282px" quality={PHOTO_QUALITY} />
+                <Image src={c.image} alt="" width={512} height={384} sizes={wide ? '(max-width: 767px) 100vw, 230px' : '(max-width: 767px) 50vw, 230px'} quality={PHOTO_QUALITY} />
                 <span className="iz-gtile__label">{c.label}</span>
                 {pressed && (
                   <span className="iz-gtile__check">

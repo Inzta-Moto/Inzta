@@ -33,7 +33,7 @@ function check(name, fn) {
   try { fn(); results.push(['PASS', name]); } catch (e) { results.push(['FAIL', name + ': ' + e.message]); }
 }
 
-const ALL = ['matic', 'adventure', 'retro', 'trail'];
+const ALL = ['matic', 'adventure', 'retro', 'trail', 'sport'];
 let t = 1000;
 const prod = (slug, name, kategoriMotor, extra = {}) => ({ productType: 'simple', slug, name, price: 100000, images: [`https://res.cloudinary.com/dukddlp0b/image/upload/v1/${slug}.jpg`], isActive: true, kategoriMotor, createdAt: t++, ...extra });
 const art = (slug, extra = {}) => ({ slug, title: slug, excerpt: '', content: '', contentFormat: 'markdown', status: 'published', createdAt: null, updatedAt: null, publishedAt: null, ...extra });

@@ -17,6 +17,12 @@
 .iz-hero__img.iz-hero__img--retro { object-position: 50% 40%; } /* 80% cut the helmet under the navbar on wide screens */
 .iz-hero__img.iz-hero__img--adventure { object-position: 50% 55%; }
 .iz-hero__img.iz-hero__img--matic { object-position: 50% 92%; }
+/* Sport (F-018): the Ninja fills the 4:3 photo. Up to about 1200 px the whole bike fits framed low; wider, cover
+   crops more height and 70% hid the INZTA tank bag behind the navbar, so the frame moves up to keep the bag. */
+.iz-hero__img.iz-hero__img--sport { object-position: 55% 70%; }
+@media (min-width: 1200px) {
+  .iz-hero__img.iz-hero__img--sport { object-position: 55% 25%; }
+}
 /* Trail (road-09): the bike stands on the left of the photo, so from 1024 px the copy takes the right half over the
    sea and the side scrim comes from the right; phones keep the copy at the bottom with the bike centred above it. */
 .iz-hero__img.iz-hero__img--trail { object-position: 30% 60%; }
@@ -140,15 +146,22 @@
 .iz-morecard__tile > b { position: absolute; z-index: 1; left: 10px; right: 6px; bottom: 8px; font-size: 14px; font-weight: 700; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 /* The category of this page is ringed, so the card reads "your motor is one of these". */
 .iz-morecard__tile.is-current { outline: 2.5px solid var(--c-kuning); outline-offset: 2px; }
+/* F-018: five tiles; in a 2-column block the fifth spans the row instead of leaving an empty cell. */
+.iz-morecard__tile:last-child:nth-child(odd) { grid-column: 1 / -1; }
 @media (min-width: 768px) {
   /* One strap card: the more-card takes the three spare columns so the row has no empty cell; tiles run as a strip. */
   .iz-grid-4 > .iz-pcard:first-child + .iz-morecard:last-child { grid-column: span 3; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.4fr); }
   .iz-grid-4 > .iz-morecard:first-child { grid-column: 1 / -1; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.4fr); }
   .iz-grid-4 > .iz-pcard:first-child + .iz-morecard:last-child .iz-morecard__tiles,
-  .iz-grid-4 > .iz-morecard:first-child .iz-morecard__tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .iz-grid-4 > .iz-morecard:first-child .iz-morecard__tiles { grid-template-columns: repeat(5, minmax(0, 1fr)); }
   /* Three strap cards leave one column: tiles on top, text under them. */
   .iz-grid-4 > .iz-pcard:nth-child(3) ~ .iz-morecard { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto auto; grid-template-areas: "tiles" "body" "cta"; gap: var(--space-4); padding: var(--space-5); }
   .iz-grid-4 > .iz-pcard:nth-child(3) ~ .iz-morecard .iz-morecard__tiles { min-height: 120px; }
+}
+/* The strip (desktop only, see the tablet rule below) keeps the fifth tile in its own cell. */
+@media (min-width: 1024px) {
+  .iz-grid-4 > .iz-pcard:first-child + .iz-morecard:last-child .iz-morecard__tile,
+  .iz-grid-4 > .iz-morecard:first-child .iz-morecard__tile { grid-column: auto; }
 }
 /* Tablet: a four-tile strip is too narrow for "Adventure" and squeezes the link, so the wide card keeps the 2 x 2 block. */
 @media (min-width: 768px) and (max-width: 1023px) {
@@ -162,10 +175,11 @@
   .iz-morecard:hover .iz-morecard__tile { transform: translateY(-4px); }
   .iz-morecard:hover .iz-morecard__tile > .iz-smartimg { transform: scale(1.06); }
   .iz-morecard:hover .iz-morecard__cta svg { transform: translateX(6px); }
-  /* A short stagger so the four tiles rise as a wave, not as one block. */
+  /* A short stagger so the five tiles rise as a wave, not as one block. */
   .iz-morecard__tile:nth-child(2) { transition-delay: 40ms; }
   .iz-morecard__tile:nth-child(3) { transition-delay: 80ms; }
   .iz-morecard__tile:nth-child(4) { transition-delay: 120ms; }
+  .iz-morecard__tile:nth-child(5) { transition-delay: 160ms; }
 }
 
 /* "Kategori lain": .iz-mtile__body span (pasir text) also matched the arrow, which almost vanished on the yellow circle. */
@@ -196,4 +210,5 @@
   .iz-grid-4 > .iz-morecard { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto auto; grid-template-areas: "tiles" "body" "cta"; gap: var(--space-4); padding: var(--space-5); }
   .iz-morecard__tiles { min-height: 0; grid-auto-rows: auto; }
   .iz-morecard__tile { aspect-ratio: 2 / 1; }
+  .iz-morecard__tile:last-child:nth-child(odd) { aspect-ratio: 4 / 1; }
 }

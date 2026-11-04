@@ -10,7 +10,7 @@ import { buildCategoryPage, categoryDescription, categoryIndexable, categoryTitl
 import '@/app/(v2)/v2-motor.css';
 import { canonicalUrl, DEFAULT_OG_IMAGE, openGraph, SITE_NAME } from '@/lib/seo';
 
-// F-016 S5.8.1: ISR; the four D1 slugs are prebuilt and every other slug, including case variants, is a 404.
+// F-016 S5.8.1: ISR; the D1 slugs are prebuilt and every other slug, including case variants, is a 404.
 export const revalidate = 3600;
 export const dynamicParams = false;
 

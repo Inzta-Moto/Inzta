@@ -23,7 +23,7 @@ export default function LoadingV2({ variant }: { variant: Variant }) {
           {variant === 'home' && (
             <>
               <Skeleton h="clamp(320px, 60vh, 560px)" r="var(--radius-band)" />
-              <div className="iz-grid-4">{Array.from({ length: 4 }, (_, i) => <Skeleton key={i} h="160px" r="var(--radius-tile)" />)}</div>
+              <div className="iz-garasi">{Array.from({ length: 5 }, (_, i) => <Skeleton key={i} h="160px" r="var(--radius-tile)" />)}</div>
               <Cards n={4} />
             </>
           )}

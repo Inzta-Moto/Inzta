@@ -2,11 +2,12 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { MotorCategory } from '@/types';
+import { CATEGORY_SLUGS } from '@/lib/v2/motor-category';
 
 // The visitor's motor category (F-016 5). The server cannot read it, so every render starts as "not chosen" and the
 // stored value is applied after mount (5.2). Storage can throw in private mode; the page must keep working (5.1).
 export const MOTOR_CATEGORY_KEY = 'inzta.motorCategory';
-const VALUES: readonly MotorCategory[] = ['matic', 'adventure', 'retro', 'trail'];
+const VALUES: readonly MotorCategory[] = CATEGORY_SLUGS;
 
 function parse(v: string | null): MotorCategory | null {
   return v && (VALUES as readonly string[]).includes(v) ? (v as MotorCategory) : null;

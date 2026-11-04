@@ -5,6 +5,7 @@ import { KATEGORI_LABEL } from './form-v2';
 import type { ProductFormV2Api } from './useProductFormV2';
 
 // "Kategori motor" (F-016 D2, S4.6) in the existing admin form style. Unchanged checkboxes write nothing (S4.6.5).
+// Ticking every category makes the product universal (S5.5, F-018 E5), so the hint says so.
 export default function KategoriMotorField({ v2 }: { v2: ProductFormV2Api }) {
   return (
     <div className="prod-form-card">
@@ -23,6 +24,9 @@ export default function KategoriMotorField({ v2 }: { v2: ProductFormV2Api }) {
             </label>
           ))}
         </div>
+        <small className="prod-form-hint">
+          Centang kelima kategori untuk tas strap yang bisa dipasang di semua motor; tas itu tampil di bagian &quot;Bisa juga&quot; tiap halaman kategori.
+        </small>
       </fieldset>
     </div>
   );
