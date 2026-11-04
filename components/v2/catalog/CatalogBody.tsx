@@ -21,6 +21,7 @@ import {
   applyCatalog,
   availability,
   LEAD_MOTOR_NOTE,
+  catalogDescription,
   catalogHeading,
   emptyCopy,
   facetCounts,
@@ -121,6 +122,7 @@ export default function CatalogBody({
   const helpAt = helpCardIndex(visible.length);
   const chips = activeChips(state, categoryLabel);
   const heading = catalogHeading(view, categoryLabel);
+  const description = catalogDescription(view, categoryLabel);
 
   // S2.4.4: restart the 200 ms fade on every result change (two keyframe names, no remount of the images).
   useEffect(() => {
@@ -228,6 +230,7 @@ export default function CatalogBody({
         title={heading}
         lead={
           <>
+            {description && `${description} `}
             {view.q ? `${result.length} produk untuk "${view.q}".` : `${result.length} produk.`}
             {/* Always in the markup: CSS shows it once a category is known, from React or from the inline script in
                 CatalogPage that reads the stored category before the first paint (no layout shift on phones). */}

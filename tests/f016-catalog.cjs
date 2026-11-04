@@ -563,7 +563,7 @@ check('render: Suspense fallback lists every product (h2 names), help card after
   assert.strictEqual(cardNames(out).length, 14);
   const grid = out.slice(out.indexOf('iz-catalog__grid'));
   assert.ok(grid.indexOf('Tankbag Nomor 6') < grid.indexOf('iz-helpcard') && grid.indexOf('iz-helpcard') < grid.indexOf('Tankbag Nomor 5'), 'help card after the 8th card (newest first)');
-  assert.match(out, /<h1 class="t-h1-shop">Semua tas motor INZTA<\/h1><p class="t-lead">14 produk\.<span class="iz-lead-motor"> Tas yang dibuat untuk motor Anda ditandai hijau\.<\/span><\/p>/);
+  assert.match(out, /<h1 class="t-h1-shop">Semua tas motor INZTA<\/h1><p class="t-lead">[^<]*14 produk\.<span class="iz-lead-motor"> Tas yang dibuat untuk motor Anda ditandai hijau\.<\/span><\/p>/);
   assert.match(out, /<div class="iz-catalog__more" hidden="">/);
   assert.doesNotMatch(out, /Menampilkan/, 'one count only: the lead');
   assert.doesNotMatch(out, /iz-lead-motor--on/, 'no motor category chosen: the sentence stays hidden unless the pre-paint attribute is set');
@@ -574,7 +574,7 @@ check('render: Suspense fallback lists every product (h2 names), help card after
 check('render (client): first 12 cards, "Menampilkan 12 dari 14 produk" above a real "Muat lagi" link (?tampil=24)', () => {
   const out = clientHtml(React.createElement(CatalogBody, { items: tankbags(14), waHref: WA, onApply: () => true, onMore: () => {} }));
   assert.strictEqual(cardNames(out).length, 12);
-  assert.match(out, /<p class="t-lead">14 produk\.<span class="iz-lead-motor"> Tas yang dibuat untuk motor Anda ditandai hijau\.<\/span><\/p>/);
+  assert.match(out, /<p class="t-lead">[^<]*14 produk\.<span class="iz-lead-motor"> Tas yang dibuat untuk motor Anda ditandai hijau\.<\/span><\/p>/);
   assert.match(out, /<div class="iz-catalog__more"><p class="iz-catalog__progress">Menampilkan 12 dari 14 produk<\/p><a class="iz-btn iz-btn--secondary" href="\/produk\?tampil=24">Muat 12 produk lagi<\/a><\/div>/);
 });
 
@@ -587,7 +587,7 @@ check('render (client): ?tampil=24 restores 24 cards; the next link keeps ?aff= 
 
 check('render: posisi=tank names the H1 and gives one count, no "Menampilkan" when everything fits', () => {
   const out = clientHtml(React.createElement(CatalogBody, { items: ITEMS, state: st({ posisi: ['tank'] }), waHref: WA, onApply: () => true }));
-  assert.match(out, /<h1 class="t-h1-shop">Tank bag<\/h1><p class="t-lead">3 produk\.<span class="iz-lead-motor"> Tas yang dibuat untuk motor Anda ditandai hijau\.<\/span><\/p>/);
+  assert.match(out, /<h1 class="t-h1-shop">Tank bag<\/h1><p class="t-lead">[^<]*3 produk\.<span class="iz-lead-motor"> Tas yang dibuat untuk motor Anda ditandai hijau\.<\/span><\/p>/);
   assert.strictEqual(cardNames(out).length, 3);
   assert.doesNotMatch(out, /Menampilkan/);
 });
@@ -602,7 +602,7 @@ check('render: an empty result names the filters, offers the most useful removal
   assert.ok(near >= 1 && near <= 4, `${near} nearby cards`);
   assert.match(out, /Tanpa filter Harga: 1 produk/);
   assert.doesNotMatch(out, /iz-catalog__grid/);
-  assert.match(out, /<p class="t-lead">0 produk\.<span class="iz-lead-motor"> Tas yang dibuat untuk motor Anda ditandai hijau\.<\/span><\/p>/);
+  assert.match(out, /<p class="t-lead">[^<]*0 produk\.<span class="iz-lead-motor"> Tas yang dibuat untuk motor Anda ditandai hijau\.<\/span><\/p>/);
   assert.doesNotMatch(out, /Menampilkan/);
 });
 
@@ -679,7 +679,7 @@ check('render with a stored motor category: lead adds the green-mark sentence; t
   try {
     const Body = require(bodyPath).default;
     const lead = html(React.createElement(Body, { items: ITEMS, waHref: WA }));
-    assert.match(lead, /<p class="t-lead">9 produk\.<span class="iz-lead-motor iz-lead-motor--on"> Tas yang dibuat untuk motor Anda ditandai hijau\.<\/span><\/p>/);
+    assert.match(lead, /<p class="t-lead">[^<]*9 produk\.<span class="iz-lead-motor iz-lead-motor--on"> Tas yang dibuat untuk motor Anda ditandai hijau\.<\/span><\/p>/);
     assert.match(lead, /data-fchip="motor"/);
     assert.doesNotMatch(lead, /disabled/);
     const empty = html(React.createElement(Body, { items: ITEMS, state: st({ posisi: ['tank'], motor: 'retro' }), waHref: WA }));
@@ -704,7 +704,7 @@ check('render CatalogQuery: the first state comes from the URL (?posisi=tank&tam
   try {
     const Query = require(queryPath).default;
     const out = clientHtml(React.createElement(Query, { items: [...ITEMS, ...tankbags(30)], waHref: WA }));
-    assert.match(out, /<h1 class="t-h1-shop">Tank bag<\/h1><p class="t-lead">33 produk\.<span class="iz-lead-motor"> Tas yang dibuat untuk motor Anda ditandai hijau\.<\/span><\/p>/);
+    assert.match(out, /<h1 class="t-h1-shop">Tank bag<\/h1><p class="t-lead">[^<]*33 produk\.<span class="iz-lead-motor"> Tas yang dibuat untuk motor Anda ditandai hijau\.<\/span><\/p>/);
     assert.strictEqual(cardNames(out).length, 24);
     assert.match(out, /href="\/produk\?aff=X&amp;posisi=tank&amp;tampil=36"/);
   } finally {
@@ -1034,6 +1034,24 @@ check('F-019 review fixes: phrase order kept (REV-01), word-start matching (REV-
 check('F-019 review fixes: the sheet never replaces the search, and leaving the field applies it (REV-03)', () => {
   assert.match(src('components/v2/catalog/CatalogBody.tsx'), /apply\(\{ type: 'replace', state: \{ \.\.\.next, q: state\.q \} \}\)/);
   assert.match(src('components/v2/catalog/CatalogSearch.tsx'), /onBlur=\{\(\) => \{\s*if \(timer\.current\) commit\(text\);/);
+});
+
+check('F-020 catalogDescription: one sentence per view; approved lines reused; search alone has none', () => {
+  const H = require(path.join(ROOT, 'lib/v2/home-content.ts'));
+  assert.strictEqual(F.catalogDescription(F.DEFAULT_STATE, label), H.CATALOG_DESCRIPTION.semua);
+  for (const o of F.POSISI_OPTIONS) {
+    const d = F.catalogDescription(st({ posisi: [o.value] }), label);
+    assert.ok(d && d.length > 20, o.value);
+    assert.strictEqual(F.catalogDescription(st({ posisi: [o.value], motor: 'matic', q: 'x' }), label), d, 'one position keeps its line');
+  }
+  for (const it of H.POSITION_ITEMS) assert.ok(H.CATALOG_DESCRIPTION[it.value].toLowerCase().includes(it.tileText.slice(0, -1).toLowerCase()), `${it.value} reuses the approved tile line`);
+  assert.strictEqual(F.catalogDescription(st({ motor: 'trail' }), label), 'Tas INZTA untuk motor Trail.');
+  assert.strictEqual(F.catalogDescription(st({ q: 'tank' }), label), null);
+  assert.strictEqual(F.catalogDescription(st({ posisi: ['tank', 'side'] }), label), 'Tas motor INZTA sesuai filter yang Anda pilih.');
+  assert.strictEqual(F.catalogDescription(st({ harga: 'atas-500rb' }), label), 'Tas motor INZTA sesuai filter yang Anda pilih.');
+  for (const d of Object.values(H.CATALOG_DESCRIPTION)) assert.doesNotMatch(d, /(100%|dijamin|pasti|terbaik|selamanya|anti air)/i, d);
+  const out = clientHtml(React.createElement(CatalogBody, { items: SITEMS, state: st({ posisi: ['tank'] }), waHref: WA, onApply: () => true }));
+  assert.match(out, /Tank bag dipasang di atas tangki, jadi ponsel, dompet, dan air minum tetap terjangkau\. 2 produk\./);
 });
 
 Promise.all(pending).then(() => {

@@ -1,6 +1,7 @@
 import type { HomeProductCard, MotorCategory, Product, ProductPosition } from '@/types';
 import { effectivePrice, positionsOf, toCard } from '@/lib/v2/home-data';
 import { CATEGORY_LABELS, CATEGORY_SLUGS, normalizeKategoriMotor } from '@/lib/v2/motor-category';
+import { CATALOG_DESCRIPTION } from '@/lib/v2/home-content';
 
 // Pure filter, sort, and query logic of the Katalog (F-016 S2.2–S2.5). No React or Firebase imports, so
 // tests/f016-catalog.cjs can load it. Types stay here because only the catalog uses them.
@@ -579,6 +580,17 @@ export function catalogHeading(state: FilterState, categoryLabel: (c: MotorCateg
   if (other || pos.length > 2) return 'Tas motor INZTA';
   const head = pos.length ? joinDan(pos) : 'Tas';
   return state.motor ? `${head} untuk motor ${categoryLabel(state.motor)}` : head;
+}
+
+// F-020: the description sentence of the current view, shown before the count. One position names that position;
+// a motor category alone uses the S5 description string; nothing filtered describes the whole catalogue; any other
+// mix gets a neutral line. A search alone has its own lead ("N produk untuk …"), so it gets none.
+export function catalogDescription(state: FilterState, categoryLabel: (c: MotorCategory) => string): string | null {
+  const other = state.harga !== null || state.label.length > 0;
+  if (state.posisi.length === 1) return CATALOG_DESCRIPTION[state.posisi[0]];
+  if (!state.posisi.length && state.motor && !other) return `Tas INZTA untuk motor ${categoryLabel(state.motor)}.`;
+  if (!state.posisi.length && !state.motor && !other) return state.q ? null : CATALOG_DESCRIPTION.semua;
+  return 'Tas motor INZTA sesuai filter yang Anda pilih.';
 }
 
 export const LEAD_MOTOR_NOTE = 'Tas yang dibuat untuk motor Anda ditandai hijau.';
