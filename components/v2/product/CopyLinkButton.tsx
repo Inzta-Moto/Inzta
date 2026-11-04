@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { copyToClipboard } from '@/lib/utils';
-import { affiliateShareCode, copyMessage, productShareUrl } from '@/components/v2/product/share';
+import { affiliateNeedsRefresh, affiliateShareCode, copyMessage, productShareUrl } from '@/components/v2/product/share';
 
 const LinkIcon = () => (
   <svg viewBox="0 0 24 24" width={18} height={18} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
@@ -41,13 +41,20 @@ export default function CopyLinkButton() {
       storage = null;
     }
     const code = affiliateShareCode(storage);
+    const refresh = !code && affiliateNeedsRefresh(storage);
     const url = productShareUrl(window.location.origin, window.location.pathname, code);
     if (timer.current) clearTimeout(timer.current);
+    // Empty first, so a repeated copy changes the live region and is announced again (REV-03).
+    setMessage(null);
     try {
       await copyToClipboard(url);
       setDone(true);
-      setMessage({ kind: 'ok', text: copyMessage('ok', url, code) });
-      timer.current = setTimeout(() => setDone(false), DONE_MS);
+      setMessage({ kind: 'ok', text: copyMessage('ok', url, code, refresh) });
+      // The plain confirmation clears with the label; the hint and the code line stay a little longer to be read.
+      timer.current = setTimeout(() => {
+        setDone(false);
+        setMessage(null);
+      }, code || refresh ? DONE_MS * 3 : DONE_MS);
     } catch {
       setDone(false);
       setMessage({ kind: 'error', text: copyMessage('error', url, code) });

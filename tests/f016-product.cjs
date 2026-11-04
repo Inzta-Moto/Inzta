@@ -661,8 +661,13 @@ function mockFetch(table) {
     assert.strictEqual(SH.affiliateShareCode(store({ is_affiliate_logged_in: 'true', inzta_affiliate_own: 'INZ-SAYA', inzta_affiliate: 'INZ-SAYA' })), 'INZ-SAYA');
     // Logged-in affiliate who later opened another affiliate's link: inzta_affiliate was overwritten, own code wins.
     assert.strictEqual(SH.affiliateShareCode(store({ is_affiliate_logged_in: 'true', inzta_affiliate_own: 'INZ-SAYA', inzta_affiliate: 'INZ-ORANG' })), 'INZ-SAYA');
-    // Logged in before F-021 (no own-code key): fall back to inzta_affiliate, which the login wrote.
-    assert.strictEqual(SH.affiliateShareCode(store({ is_affiliate_logged_in: 'true', inzta_affiliate: ' INZ-LAMA ' })), 'INZ-LAMA');
+    // Logged in before F-021 (no own-code key): plain link, never inzta_affiliate (another affiliate's ?aff= may have
+    // overwritten it, REV-01); the dashboard backfills the own key and the message says so.
+    assert.strictEqual(SH.affiliateShareCode(store({ is_affiliate_logged_in: 'true', inzta_affiliate: 'INZ-ORANG' })), null);
+    assert.strictEqual(SH.affiliateNeedsRefresh(store({ is_affiliate_logged_in: 'true', inzta_affiliate: 'INZ-ORANG' })), true);
+    assert.strictEqual(SH.affiliateNeedsRefresh(store({ is_affiliate_logged_in: 'true', inzta_affiliate_own: '' })), false);
+    assert.strictEqual(SH.affiliateNeedsRefresh(store({ inzta_affiliate: 'INZ-ORANG' })), false);
+    assert.strictEqual(SH.affiliateShareCode(store({ is_affiliate_logged_in: 'true', inzta_affiliate_own: ' INZ-SAYA ' })), 'INZ-SAYA');
     // Affiliate account without a voucher: '' recorded at login, never someone else's code.
     assert.strictEqual(SH.affiliateShareCode(store({ is_affiliate_logged_in: 'true', inzta_affiliate_own: '', inzta_affiliate: 'INZ-ORANG' })), null);
     assert.strictEqual(SH.affiliateShareCode({ getItem: () => { throw new Error('blocked'); } }), null);
@@ -671,6 +676,7 @@ function mockFetch(table) {
     assert.strictEqual(SH.copyMessage('ok', 'https://inzta.id/produk/x', null), 'Link disalin.');
     assert.strictEqual(SH.copyMessage('ok', 'https://inzta.id/produk/x?aff=INZ-A', 'INZ-A'), 'Link disalin, sudah berisi kode affiliate INZ-A.');
     assert.strictEqual(SH.copyMessage('error', 'https://inzta.id/produk/x', null), 'Link gagal disalin. Salin manual: https://inzta.id/produk/x');
+    assert.match(SH.copyMessage('ok', 'https://inzta.id/produk/x', null, true), /^Link disalin tanpa kode affiliate\. Buka dashboard affiliate/);
   });
   await check('F-021 E6: affiliate round trip: copied ?aff= -> AffiliateTracker key -> auto-applied voucher discount -> order body carries the code', async () => {
     const link = SH.productShareUrl('https://inzta.id', '/produk/tail-bag-inzta-tourmax-30', SH.affiliateShareCode(store({ is_affiliate_logged_in: 'true', inzta_affiliate_own: 'INZ-UJI10' })));
@@ -700,11 +706,17 @@ function mockFetch(table) {
     const src = fs.readFileSync(path.join(ROOT, 'components/v2/product/share.ts'), 'utf8');
     assert.ok(!/navigator\.share|wa\.me|proxy-image/.test(src.replace(/^\/\/.*$/gm, '')), 'share.ts copies only');
   });
-  await check('F-021 E4: affiliate login records the own code; every logout clears it', () => {
+  await check('F-021 E4: login and dashboard record the own code; logout clears it first', () => {
     const login = fs.readFileSync(path.join(ROOT, 'app/affiliate/(public)/login/page.tsx'), 'utf8');
     assert.match(login, /localStorage\.setItem\('inzta_affiliate_own', data\.voucherCode \|\| ''\)/);
     const logout = fs.readFileSync(path.join(ROOT, 'app/affiliate/(panel)/layout.tsx'), 'utf8');
     assert.match(logout, /localStorage\.removeItem\('inzta_affiliate_own'\)/);
+    // REV-02: keys are cleared before the network calls of the logout.
+    assert.ok(logout.indexOf("removeItem('inzta_affiliate_own')") < logout.indexOf('await signOut(auth)'));
+    // Dashboard (server-verified session) backfills the own code for sessions that logged in before F-021.
+    const dash = fs.readFileSync(path.join(ROOT, 'app/affiliate/(panel)/dashboard/AffiliateDashboardClient.tsx'), 'utf8');
+    assert.match(dash, /localStorage\.setItem\('inzta_affiliate_own', ownVoucherCode\)/);
+    assert.match(fs.readFileSync(path.join(ROOT, 'app/affiliate/(panel)/dashboard/page.tsx'), 'utf8'), /ownVoucherCode=\{ownVoucherCode\}/);
     const utils = fs.readFileSync(path.join(ROOT, 'lib/utils.ts'), 'utf8');
     assert.match(utils, /clearAffiliateSession[\s\S]*?removeItem\('inzta_affiliate_own'\)/);
   });

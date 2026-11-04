@@ -9,11 +9,13 @@ import { Commission } from '@/types';
 export default function AffiliateDashboardClient({ 
   initialCommissions, 
   initialAffiliateName, 
-  initialVoucherData 
+  initialVoucherData,
+  ownVoucherCode = ''
 }: { 
   initialCommissions: Commission[], 
   initialAffiliateName: string, 
-  initialVoucherData: any 
+  initialVoucherData: any,
+  ownVoucherCode?: string
 }) {
   const router = useRouter();
   
@@ -23,6 +25,15 @@ export default function AffiliateDashboardClient({
 
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
+
+  // F-021: the session is verified on the server here, so record the affiliate's own code for "Salin link" (also
+  // backfills sessions that logged in before F-021 and have no inzta_affiliate_own yet).
+  useEffect(() => {
+    try {
+      localStorage.setItem('is_affiliate_logged_in', 'true');
+      localStorage.setItem('inzta_affiliate_own', ownVoucherCode);
+    } catch {}
+  }, [ownVoucherCode]);
 
   useEffect(() => {
     const onFocus = () => {

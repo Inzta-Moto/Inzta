@@ -14,18 +14,28 @@ type StorageLike = Pick<Storage, 'getItem'>;
 
 /**
  * Code to put in a shared link, or null. Only a logged-in affiliate shares a code (E3): visitors who arrived through
- * someone's ?aff= link copy the plain link. The own-code key wins over `inzta_affiliate`, which a ?aff= link visited
- * after login overwrites; sessions that logged in before F-021 have no own-code key and fall back to it.
+ * someone's ?aff= link copy the plain link. Only the own-code key counts (written at login and on every dashboard
+ * visit): `inzta_affiliate` is overwritten by any ?aff= link visited later, so falling back to it could attach another
+ * affiliate's code (review REV-01). A session without the own-code key copies the plain link with a hint (E5).
  */
 export function affiliateShareCode(storage: StorageLike | null): string | null {
   if (!storage) return null;
   try {
     if (storage.getItem(AFFILIATE_FLAG_KEY) !== 'true') return null;
-    const own = storage.getItem(AFFILIATE_OWN_CODE_KEY);
-    const code = (own !== null ? own : storage.getItem(AFFILIATE_CODE_KEY) ?? '').trim();
-    return code || null;
+    const own = (storage.getItem(AFFILIATE_OWN_CODE_KEY) ?? '').trim();
+    return own || null;
   } catch {
     return null;
+  }
+}
+
+/** True for a logged-in affiliate session that has no own-code key yet (logged in before F-021). */
+export function affiliateNeedsRefresh(storage: StorageLike | null): boolean {
+  if (!storage) return false;
+  try {
+    return storage.getItem(AFFILIATE_FLAG_KEY) === 'true' && storage.getItem(AFFILIATE_OWN_CODE_KEY) === null;
+  } catch {
+    return false;
   }
 }
 
@@ -39,7 +49,8 @@ export function productShareUrl(origin: string, pathname: string, code: string |
 }
 
 /** Status line under the button (E5). */
-export function copyMessage(result: 'ok' | 'error', url: string, code: string | null): string {
+export function copyMessage(result: 'ok' | 'error', url: string, code: string | null, needsRefresh = false): string {
   if (result === 'error') return `Link gagal disalin. Salin manual: ${url}`;
-  return code ? `Link disalin, sudah berisi kode affiliate ${code}.` : 'Link disalin.';
+  if (code) return `Link disalin, sudah berisi kode affiliate ${code}.`;
+  return needsRefresh ? 'Link disalin tanpa kode affiliate. Buka dashboard affiliate sekali agar link berikutnya berisi kode Anda.' : 'Link disalin.';
 }
