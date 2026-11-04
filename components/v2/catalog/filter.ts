@@ -30,7 +30,7 @@ export interface CatalogItem {
   best: boolean;
   baru: boolean;
   createdAt: number | null;
-  // F-019 E2: normalized words the search matches against, each once (see searchText).
+  // F-019 E2: the normalized texts the search matches against, joined by "|" (see searchText).
   search: string;
 }
 
@@ -101,11 +101,15 @@ export function parseSearch(raw: string | null | undefined): string {
   return (raw ?? '').replace(/\s+/g, ' ').trim().slice(0, SEARCH_MAX).trim();
 }
 
-// Each word once, so a long description adds to the client payload no more than it must.
+// Each text keeps its word order ("XSR 155" stays one phrase); identical texts are kept once. "|" separates them, so a
+// query word never runs from the end of one text into the next.
 function searchText(parts: readonly (string | null | undefined)[]): string {
   const seen = new Set<string>();
-  for (const part of parts) for (const w of normalizeSearch(part ?? '').split(' ')) if (w) seen.add(w);
-  return Array.from(seen).join(' ');
+  for (const part of parts) {
+    const t = normalizeSearch(part ?? '');
+    if (t) seen.add(t);
+  }
+  return Array.from(seen).join('|');
 }
 
 export function toCatalogItem(p: Product): CatalogItem {
@@ -133,13 +137,22 @@ export function toCatalogItem(p: Product): CatalogItem {
   return { card, positions, kategori, price, discounted, best, baru, createdAt, search };
 }
 
-// F-019 E3: every word of the query must appear inside the product text with its spaces removed (AND across words),
-// so "tankbag", "tank bag", and "tank-bag" find the same products, and "xsr155" finds "XSR 155".
-export function matchesSearch(item: Pick<CatalogItem, 'search'>, q: string): boolean {
+let lastQuery: { q: string; patterns: RegExp[] } | null = null;
+
+// One pattern per query word: it starts at a word start and may skip one space between any two characters, so
+// "tankbag" finds "tank bag" and "xsr155" finds "XSR 155", while "r15" does not find "XSR 155". Normalized words hold
+// only a-z and 0-9, so nothing needs escaping. Memoized: every item of a state change reads the same query.
+function searchPatterns(q: string): RegExp[] {
+  if (lastQuery?.q === q) return lastQuery.patterns;
   const words = normalizeSearch(q).split(' ').filter(Boolean);
-  if (!words.length) return true;
-  const compact = item.search.replace(/ /g, '');
-  return words.every(w => compact.includes(w));
+  const patterns = words.map(w => new RegExp(`(?:^|[ |])${w.split('').join(' ?')}`));
+  lastQuery = { q, patterns };
+  return patterns;
+}
+
+// F-019 E3: every word of the query must match (AND across words).
+export function matchesSearch(item: Pick<CatalogItem, 'search'>, q: string): boolean {
+  return searchPatterns(q).every(re => re.test(item.search));
 }
 
 type Params = { get(key: string): string | null };
@@ -641,23 +654,48 @@ export interface EmptyCopy {
   // "Hapus semua filter" only adds something when more than one group is active. It is the primary action when
   // relaxLabel is null.
   showClearAll: boolean;
-  // F-019 E9: "Hapus pencarian" is the primary action when a search is applied.
-  clearSearch: boolean;
+  // F-019 E9: the primary action when a search is applied: "Hapus pencarian", or "Hapus pencarian dan filter" when the
+  // filters alone give 0 too; null without a search.
+  clearSearch: 'search' | 'both' | null;
+  // Text of the WhatsApp link under the buttons.
+  adminLabel: string;
+}
+
+// How many products the empty search result would give without the search (filters kept) and with the search alone.
+export interface SearchCounts {
+  withoutSearch: number;
+  searchOnly: number;
+}
+
+export function searchCounts(items: readonly CatalogItem[], state: FilterState): SearchCounts {
+  return {
+    withoutSearch: items.filter(i => matches(i, { ...state, q: '' })).length,
+    searchOnly: items.filter(i => matchesSearch(i, state.q)).length,
+  };
 }
 
 // Empty-state copy. The motor variant applies when the chosen motor is what empties the result: the motor tags are
 // still being filled in (A-049), so the copy says so and points to the admin instead of blaming the filters.
-export function emptyCopy(state: FilterState, relax: FilterGroup | null, categoryLabel: (c: MotorCategory) => string): EmptyCopy {
+// With a search (F-019 E9) every offered action must bring products back: "Hapus pencarian" when the filters alone
+// give some, "Hapus semua filter" (keeps the search) when the search alone gives some, else one action for both.
+export function emptyCopy(
+  state: FilterState,
+  relax: FilterGroup | null,
+  categoryLabel: (c: MotorCategory) => string,
+  counts: SearchCounts = { withoutSearch: 1, searchOnly: 1 },
+): EmptyCopy {
   const groups = RELAX_ORDER.filter(g => activeCount(state, g) > 0).length;
   if (state.q) {
     const chips = activeChips(state, categoryLabel);
     const hint = 'Coba kata lain, misalnya tank bag, side bag, atau nama motor Anda.';
+    const searchHelps = groups === 0 || counts.withoutSearch > 0;
     return {
       title: `Tidak ada tas yang cocok dengan "${state.q}".`,
       text: chips.length ? `${hint} Filter aktif: ${chips.map(c => c.label).join(', ')}.` : hint,
       relaxLabel: null,
-      showClearAll: groups > 0,
-      clearSearch: true,
+      showClearAll: groups > 0 && counts.searchOnly > 0,
+      clearSearch: searchHelps ? 'search' : counts.searchOnly > 0 ? null : 'both',
+      adminLabel: 'Tanya admin',
     };
   }
   const showClearAll = groups > 1 || (relax === null && groups > 0);
@@ -669,7 +707,8 @@ export function emptyCopy(state: FilterState, relax: FilterGroup | null, categor
       text: 'Penandaan motor masih kami lengkapi. Admin bisa bantu cek tas yang cocok.',
       relaxLabel: onlyPosition ? `Lihat semua ${phrase}` : 'Hapus filter Motor saya',
       showClearAll,
-      clearSearch: false,
+      clearSearch: null,
+      adminLabel: 'Chat admin',
     };
   }
   const chips = activeChips(state, categoryLabel);
@@ -683,6 +722,7 @@ export function emptyCopy(state: FilterState, relax: FilterGroup | null, categor
     text: chips.length ? `Filter aktif: ${chips.map(c => c.label).join(', ')}.` : '',
     relaxLabel,
     showClearAll,
-    clearSearch: false,
+    clearSearch: null,
+    adminLabel: 'Chat admin',
   };
 }

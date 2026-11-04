@@ -23,7 +23,8 @@ export default function CatalogEmpty({
   waHref: string;
   onRelax: () => void;
   onClearAll: () => void;
-  onClearSearch: () => void;
+  // `both` also clears the filters (F-019 E9: the filters alone give 0 as well).
+  onClearSearch: (both: boolean) => void;
   onNearest: () => void;
 }) {
   return (
@@ -36,8 +37,8 @@ export default function CatalogEmpty({
         {copy.text && <p className="iz-empty__text">{copy.text}</p>}
         <div className="iz-row">
           {copy.clearSearch && (
-            <button className="iz-btn iz-btn--primary" type="button" onClick={onClearSearch}>
-              Hapus pencarian
+            <button className="iz-btn iz-btn--primary" type="button" onClick={() => onClearSearch(copy.clearSearch === 'both')}>
+              {copy.clearSearch === 'both' ? 'Hapus pencarian dan filter' : 'Hapus pencarian'}
             </button>
           )}
           {copy.relaxLabel && (
@@ -54,7 +55,7 @@ export default function CatalogEmpty({
           )}
         </div>
         <a className="iz-link" href={waHref} target="_blank" rel="noopener noreferrer">
-          {copy.clearSearch ? 'Tanya admin' : 'Chat admin'}
+          {copy.adminLabel}
         </a>
       </div>
       {nearest && (

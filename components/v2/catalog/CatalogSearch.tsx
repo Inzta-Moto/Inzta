@@ -86,6 +86,11 @@ export default function CatalogSearch({ value, onSearch }: { value: string; onSe
         enterKeyHint="search"
         onChange={e => onChange(e.target.value)}
         onKeyDown={onKeyDown}
+        // Leaving the field (tapping "Buka filter" or a chip) applies the text at once, so no control acts on a
+        // state that is still waiting for the debounce.
+        onBlur={() => {
+          if (timer.current) commit(text);
+        }}
       />
       {/* Always in the markup and only hidden, so the field never changes width when the first letter is typed. */}
       <button className="iz-search__clear" type="button" aria-label="Hapus pencarian" hidden={!text} onClick={clear}>

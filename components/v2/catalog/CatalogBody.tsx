@@ -24,6 +24,7 @@ import {
   catalogHeading,
   emptyCopy,
   facetCounts,
+  searchCounts,
   helpCardIndex,
   nearestItems,
   relaxGroup,
@@ -97,6 +98,7 @@ export default function CatalogBody({
   const empty = result.length === 0;
   const relax = useMemo(() => (empty ? relaxGroup(items, view) : null), [empty, items, view]);
   const nearest = useMemo(() => (empty ? nearestItems(items, view, 4) : null), [empty, items, view]);
+  const searchCount = useMemo(() => (empty && view.q ? searchCounts(items, view) : undefined), [empty, items, view]);
 
   // false on the server and during hydration, true in a client render (useSyncExternalStore's server snapshot).
   const live = useSyncExternalStore(noSubscribe, () => true, () => false);
@@ -298,12 +300,14 @@ export default function CatalogBody({
           </>
         ) : (
           <CatalogEmpty
-            copy={emptyCopy(view, relax, categoryLabel)}
+            copy={emptyCopy(view, relax, categoryLabel, searchCount)}
             nearest={nearest}
             waHref={waHref}
             onRelax={() => relax && apply({ type: 'clearGroup', group: relax }, { kind: 'card', index: 0 })}
             onClearAll={() => apply({ type: 'clearAll' }, { kind: 'card', index: 0 })}
-            onClearSearch={() => apply({ type: 'search', value: '' }, { kind: 'search' })}
+            onClearSearch={both =>
+              apply(both ? { type: 'replace', state: { ...DEFAULT_STATE, urut: view.urut } } : { type: 'search', value: '' }, { kind: 'search' })
+            }
             onNearest={() => nearest && apply({ type: 'replace', state: nearest.state }, { kind: 'card', index: 0 })}
           />
         )}
@@ -323,7 +327,9 @@ export default function CatalogBody({
             startGroup={sheet.group}
             onApply={next => {
               closeSheet();
-              apply({ type: 'replace', state: next });
+              // The draft starts from the state at open; the search is owned by the search row, so it is never
+              // replaced by the draft's copy (F-019 E8).
+              apply({ type: 'replace', state: { ...next, q: state.q } });
             }}
             onClose={closeSheet}
           />,

@@ -916,8 +916,9 @@ check('F-019 matchesSearch: position names (chip and Indonesian), labels, catego
   assert.deepStrictEqual(found('waterproof'), ['tankbag-tk-5'], 'feature');
   assert.deepStrictEqual(found('Tourmax'), ['inzta-tourmax-30']);
   const item = F.toCatalogItem(SP[0]);
-  const words = item.search.split(' ');
-  assert.strictEqual(new Set(words).size, words.length, 'search text holds each word once');
+  const parts = item.search.split('|');
+  assert.strictEqual(new Set(parts).size, parts.length, 'identical texts are kept once');
+  assert.ok(parts.includes('tankbag tk 5'), 'each text keeps its word order');
 });
 
 check('F-019 URL: ?q= read and written (trimmed), other keys kept, a search change resets "Muat lagi"', () => {
@@ -955,13 +956,15 @@ check('F-019 heading and empty state: "Hasil pencarian", "Hapus pencarian" first
   assert.strictEqual(F.catalogHeading(st({ q: 'tank', posisi: ['tank'] }), label), 'Tank bag');
   const plain = F.emptyCopy(st({ q: 'vespa' }), null, label);
   assert.strictEqual(plain.title, 'Tidak ada tas yang cocok dengan "vespa".');
-  assert.strictEqual(plain.clearSearch, true);
+  assert.strictEqual(plain.clearSearch, 'search');
+  assert.strictEqual(plain.adminLabel, 'Tanya admin');
   assert.strictEqual(plain.relaxLabel, null);
   assert.strictEqual(plain.showClearAll, false);
   const withFilter = F.emptyCopy(st({ q: 'vespa', posisi: ['tank'] }), 'posisi', label);
   assert.strictEqual(withFilter.showClearAll, true);
   assert.match(withFilter.text, /Filter aktif: Tank bag\.$/);
-  assert.strictEqual(F.emptyCopy(st({ posisi: ['extend'] }), 'posisi', label).clearSearch, false);
+  assert.strictEqual(F.emptyCopy(st({ posisi: ['extend'] }), 'posisi', label).clearSearch, null);
+  assert.strictEqual(F.emptyCopy(st({ posisi: ['extend'] }), 'posisi', label).adminLabel, 'Chat admin');
   const n = F.nearestItems(SITEMS, st({ q: 'vespa', posisi: ['tank'] }));
   assert.strictEqual(n.kind, 'search');
   assert.deepStrictEqual(n.state, st({ posisi: ['tank'] }));
@@ -1001,6 +1004,36 @@ check('F-019 source: debounce 200 ms, Enter without reload, no-JS hides the row,
     assert.deepStrictEqual(rule.headers, [{ key: 'X-Robots-Tag', value: 'noindex' }]);
     assert.doesNotMatch(src('app/produk/(katalog)/page.tsx'), /searchParams/, 'the route stays static');
   });
+});
+
+check('F-019 review fixes: phrase order kept (REV-01), word-start matching (REV-02), no second empty state (REV-05)', () => {
+  const extra = [
+    simple('xsr-scrambag', 'Side bag Inzta XSR Scrambag', 380000, null, { createdAt: 10, description: 'Khusus Yamaha XSR 155.' }),
+    simple('sidebag-foldpack-z10', 'Sidebag Foldpack Z10', 530000, null, { createdAt: 11, description: 'Untuk XSR dan motor 155 cc.' }),
+  ].map(F.toCatalogItem);
+  const hit = qs => slugs(extra.filter(i => F.matchesSearch(i, qs))).sort();
+  assert.deepStrictEqual(hit('xsr155'), ['xsr-scrambag'], 'the phrase "XSR 155" lives in one text');
+  assert.deepStrictEqual(hit('xsr 155'), ['sidebag-foldpack-z10', 'xsr-scrambag'], 'two words may come from anywhere');
+  assert.deepStrictEqual(found('r15'), [], 'R15 is not inside "XSR 155"');
+  assert.deepStrictEqual(found('15'), ['side-bag-inzta-xsr-155'], 'a word prefix still matches');
+  assert.deepStrictEqual(found('tankbag tk'), ['tankbag-tk-5']);
+  const s = st({ q: 'vespa', posisi: ['tank'] });
+  assert.deepStrictEqual(F.searchCounts(SITEMS, s), { withoutSearch: 2, searchOnly: 0 });
+  const a = F.emptyCopy(s, null, label, F.searchCounts(SITEMS, s));
+  assert.strictEqual(a.clearSearch, 'search');
+  assert.strictEqual(a.showClearAll, false, '"Hapus semua filter" would keep "vespa": still empty');
+  const t2 = st({ q: 'xsr', posisi: ['tank'] });
+  const b = F.emptyCopy(t2, null, label, F.searchCounts(SITEMS, t2));
+  assert.strictEqual(b.showClearAll, true);
+  const u = st({ q: 'vespa', harga: 'atas-500rb', posisi: ['side'] });
+  const c = F.emptyCopy(u, null, label, F.searchCounts(SITEMS, u));
+  assert.strictEqual(c.clearSearch, 'both', 'neither removal alone helps: one action for both');
+  assert.strictEqual(c.showClearAll, false);
+});
+
+check('F-019 review fixes: the sheet never replaces the search, and leaving the field applies it (REV-03)', () => {
+  assert.match(src('components/v2/catalog/CatalogBody.tsx'), /apply\(\{ type: 'replace', state: \{ \.\.\.next, q: state\.q \} \}\)/);
+  assert.match(src('components/v2/catalog/CatalogSearch.tsx'), /onBlur=\{\(\) => \{\s*if \(timer\.current\) commit\(text\);/);
 });
 
 Promise.all(pending).then(() => {
