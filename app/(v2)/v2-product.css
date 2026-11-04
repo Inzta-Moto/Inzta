@@ -102,6 +102,8 @@ html .iz-page main > .iz-pdp-block { margin-top: max(var(--space-12), var(--spac
 .iz-mbar .iz-btn { flex: none; }
 @media (max-width: 767px) {
   .iz-page--mbar { padding-bottom: 96px; }
+  /* Same 96 px as MBAR_ZONE_PX (mbar.ts): focus and in-page scrolling stop above the fixed bar. */
+  html.iz-v2.iz-mbar-on { scroll-padding-bottom: 96px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

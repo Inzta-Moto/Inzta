@@ -451,13 +451,28 @@ function mockFetch(table) {
     const long = Array.from({ length: 8 }, (_, i) => `Paragraf ${i + 1}: ${'kata '.repeat(30).trim()}`).join('\n\n');
     const a = render({ ...BUILTIN[0], description: long });
     assert.match(a, /<div id="deskripsi-produk" class="iz-more__body iz-more__body--folded" style="--iz-more-fold:264px">/);
-    assert.match(a, /<button type="button" class="iz-more__btn" aria-expanded="false" aria-controls="deskripsi-produk">Lihat selengkapnya/);
+    assert.match(a, /<button type="button" class="iz-more__btn" aria-expanded="false" aria-controls="deskripsi-produk" data-mbar-avoid="">Lihat selengkapnya/);
     assert.ok(a.includes('Paragraf 8:'), 'the folded text is still server-rendered');
     assert.match(a, /<noscript><style>\.iz-more__body \{ max-height: none !important;/);
     const b = render({ ...BUILTIN[0], description: 'Satu\nDua\n\nTiga' });
     assert.ok(b.includes('class="iz-more__body"') && !b.includes('class="iz-more__btn"'));
     assert.strictEqual(V.descriptionFolds([['x'.repeat(55)]]), false);
     assert.strictEqual(V.descriptionFolds(Array.from({ length: 9 }, () => ['x'.repeat(100)])), true);
+  });
+  await check('S3.9 mobile bar: steps aside while a data-mbar-avoid control is in its bottom zone (bug Angkasa, 2026-11-04)', () => {
+    const M = require(path.join(ROOT, 'components/v2/product/mbar.ts'));
+    const vh = 760;
+    assert.strictEqual(M.MBAR_ZONE_PX, 96);
+    assert.strictEqual(M.barWouldCover([{ top: 690, bottom: 738 }], vh), true, '"Lihat selengkapnya" under the bar');
+    assert.strictEqual(M.barWouldCover([{ top: 640, bottom: 664 }], vh), false, 'just above the zone');
+    assert.strictEqual(M.barWouldCover([{ top: 760, bottom: 808 }], vh), false, 'below the viewport');
+    assert.strictEqual(M.barWouldCover([{ top: 600, bottom: 680 }], vh), true, 'straddling the zone edge');
+    assert.strictEqual(M.barWouldCover([], vh), false);
+    const css = fs.readFileSync(path.join(ROOT, 'app/(v2)/v2-product.css'), 'utf8');
+    assert.match(css, /\.iz-page--mbar \{ padding-bottom: 96px; \}/);
+    assert.match(css, /html\.iz-v2\.iz-mbar-on \{ scroll-padding-bottom: 96px; \}/);
+    const bar = fs.readFileSync(path.join(ROOT, 'components/v2/product/MobileOrderBar.tsx'), 'utf8');
+    assert.ok(bar.includes('[data-mbar-avoid]') && bar.includes('mainOut && !avoid'), 'bar hides for avoided controls');
   });
   await check('S3.3.9: generic picker = one fieldset per attribute, native radios, unavailable values disabled, no SKU line', () => {
     const html = render(BUILTIN[2]);

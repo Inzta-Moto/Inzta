@@ -51,7 +51,7 @@ export default function DescriptionMore({ id, folded, children }: { id: string; 
         {children}
       </div>
       {foldable && (
-        <button type="button" className="iz-more__btn" aria-expanded={open} aria-controls={id} onClick={toggle}>
+        <button type="button" className="iz-more__btn" aria-expanded={open} aria-controls={id} onClick={toggle} data-mbar-avoid="">
           {open ? 'Lihat lebih sedikit' : 'Lihat selengkapnya'}
           <ChevronDown />
         </button>
