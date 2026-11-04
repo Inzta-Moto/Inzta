@@ -8,7 +8,7 @@ import type { CatalogItem } from '@/components/v2/catalog/filter';
 import { CATEGORY_SLUGS } from '@/lib/v2/motor-category';
 
 // Without JavaScript the filters cannot apply, so they are hidden and every product stays listed (S2.2.10).
-const NOSCRIPT_STYLE = '<style>.iz-filters, .iz-filters__meta > .iz-row { display: none !important; }</style>';
+const NOSCRIPT_STYLE = '<style>.iz-search, .iz-filters, .iz-filters__meta > .iz-row { display: none !important; }</style>';
 
 // MotorCategoryProvider applies the stored category only after mount, so the lead's green-mark sentence used to
 // appear late and push the grid down by a line on phones (CLS about 0.13 at 390 px). This runs while the HTML is

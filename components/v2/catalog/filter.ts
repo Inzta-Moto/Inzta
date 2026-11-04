@@ -1,6 +1,6 @@
 import type { HomeProductCard, MotorCategory, Product, ProductPosition } from '@/types';
 import { effectivePrice, positionsOf, toCard } from '@/lib/v2/home-data';
-import { CATEGORY_SLUGS, normalizeKategoriMotor } from '@/lib/v2/motor-category';
+import { CATEGORY_LABELS, CATEGORY_SLUGS, normalizeKategoriMotor } from '@/lib/v2/motor-category';
 
 // Pure filter, sort, and query logic of the Katalog (F-016 S2.2–S2.5). No React or Firebase imports, so
 // tests/f016-catalog.cjs can load it. Types stay here because only the catalog uses them.
@@ -16,6 +16,8 @@ export interface FilterState {
   harga: HargaKey | null;
   label: LabelKey[];
   urut: UrutKey;
+  // F-019: the search text as written in ?q= (trimmed, single spaces, at most SEARCH_MAX characters); '' for none.
+  q: string;
 }
 
 // What a card needs to be filtered and sorted, computed once on the server so the client gets plain data.
@@ -28,6 +30,8 @@ export interface CatalogItem {
   best: boolean;
   baru: boolean;
   createdAt: number | null;
+  // F-019 E2: the normalized texts the search matches against, joined by "|" (see searchText).
+  search: string;
 }
 
 export interface Option<K extends string> {
@@ -63,25 +67,92 @@ export const URUT_OPTIONS: readonly Option<UrutKey>[] = [
 
 export const PAGE_SIZE = 12;
 export const HELP_AFTER = 8;
-export const QUERY_KEYS = ['posisi', 'motor', 'harga', 'label', 'urut'] as const;
+export const QUERY_KEYS = ['posisi', 'motor', 'harga', 'label', 'urut', 'q'] as const;
 export const SHOWN_KEY = 'tampil';
 
-export const DEFAULT_STATE: FilterState = { posisi: [], motor: null, harga: null, label: [], urut: 'sesuai' };
+export const DEFAULT_STATE: FilterState = { posisi: [], motor: null, harga: null, label: [], urut: 'sesuai', q: '' };
+
+export const SEARCH_MAX = 60;
+
+const POSITION_CHIP_TEXT = Object.fromEntries(POSISI_OPTIONS.map(o => [o.value, o.label])) as Record<ProductPosition, string>;
+
+// F-019 E2: the Indonesian names a visitor may type for a position, next to the chip label.
+const POSITION_ALIASES: Record<ProductPosition, string> = {
+  tank: 'tas tangki',
+  side: 'tas samping',
+  tail: 'tas belakang jok',
+  extend: 'tas tambahan',
+  aksesori: 'touring',
+  harian: 'tas harian',
+};
+
+// F-019 E3: lower case, no accents, every run of anything but letters and digits read as one space.
+export function normalizeSearch(text: string): string {
+  return text
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
+// What ?q= keeps: trimmed, single spaces, capped, so the URL and the input show the same text.
+export function parseSearch(raw: string | null | undefined): string {
+  return (raw ?? '').replace(/\s+/g, ' ').trim().slice(0, SEARCH_MAX).trim();
+}
+
+// Each text keeps its word order ("XSR 155" stays one phrase); identical texts are kept once. "|" separates them, so a
+// query word never runs from the end of one text into the next.
+function searchText(parts: readonly (string | null | undefined)[]): string {
+  const seen = new Set<string>();
+  for (const part of parts) {
+    const t = normalizeSearch(part ?? '');
+    if (t) seen.add(t);
+  }
+  return Array.from(seen).join('|');
+}
 
 export function toCatalogItem(p: Product): CatalogItem {
   const { price, compareAt } = effectivePrice(p);
   const badge = (p.badge ?? '').toLowerCase();
   const createdAt = typeof p.createdAt === 'number' && Number.isFinite(p.createdAt) ? p.createdAt : null;
-  return {
-    card: toCard(p),
-    positions: positionsOf(p),
-    kategori: normalizeKategoriMotor(p.kategoriMotor),
-    price,
-    discounted: compareAt !== null && compareAt > price,
-    best: badge.includes('best'),
-    baru: /\b(new|baru)\b/.test(badge),
-    createdAt,
-  };
+  const card = toCard(p);
+  const positions = positionsOf(p);
+  const kategori = normalizeKategoriMotor(p.kategoriMotor);
+  const discounted = compareAt !== null && compareAt > price;
+  const best = badge.includes('best');
+  const baru = /\b(new|baru)\b/.test(badge);
+  const search = searchText([
+    p.name,
+    ...positions.map(pos => `${POSITION_CHIP_TEXT[pos]} ${POSITION_ALIASES[pos]}`),
+    card.positionLabel,
+    card.fit?.text,
+    ...kategori.map(k => CATEGORY_LABELS[k]),
+    best ? 'best seller' : null,
+    baru ? 'baru new' : null,
+    discounted ? 'diskon promo' : null,
+    ...(Array.isArray(p.features) ? p.features : []),
+    typeof p.description === 'string' ? p.description : null,
+  ]);
+  return { card, positions, kategori, price, discounted, best, baru, createdAt, search };
+}
+
+let lastQuery: { q: string; patterns: RegExp[] } | null = null;
+
+// One pattern per query word: it starts at a word start and may skip one space between any two characters, so
+// "tankbag" finds "tank bag" and "xsr155" finds "XSR 155", while "r15" does not find "XSR 155". Normalized words hold
+// only a-z and 0-9, so nothing needs escaping. Memoized: every item of a state change reads the same query.
+function searchPatterns(q: string): RegExp[] {
+  if (lastQuery?.q === q) return lastQuery.patterns;
+  const words = normalizeSearch(q).split(' ').filter(Boolean);
+  const patterns = words.map(w => new RegExp(`(?:^|[ |])${w.split('').join(' ?')}`));
+  lastQuery = { q, patterns };
+  return patterns;
+}
+
+// F-019 E3: every word of the query must match (AND across words).
+export function matchesSearch(item: Pick<CatalogItem, 'search'>, q: string): boolean {
+  return searchPatterns(q).every(re => re.test(item.search));
 }
 
 type Params = { get(key: string): string | null };
@@ -106,6 +177,7 @@ export function parseQuery(params: Params): FilterState {
     label: pickList(params.get('label'), LABEL_OPTIONS),
     // "Paling sesuai" is the default and never written (S2.2.2), so `urut=sesuai` is ignored too.
     urut: pickOne(params.get('urut'), ['harga-terendah', 'harga-tertinggi', 'terbaru'] as const) ?? 'sesuai',
+    q: parseSearch(params.get('q')),
   };
 }
 
@@ -120,6 +192,7 @@ export function writeQuery(current: string, state: FilterState, shown?: number):
   if (state.harga) out.set('harga', state.harga);
   if (state.label.length) out.set('label', state.label.join(','));
   if (state.urut !== 'sesuai') out.set('urut', state.urut);
+  if (state.q) out.set('q', state.q);
   if (shown !== undefined && shown > PAGE_SIZE) out.set(SHOWN_KEY, String(shown));
   // Commas stay readable (posisi=tank,side), as written in S2.2.2.
   return out.toString().replace(/%2C/gi, ',');
@@ -186,8 +259,10 @@ function hasLabel(item: CatalogItem, l: LabelKey): boolean {
   return item.discounted;
 }
 
-// S2.2.3: OR within a group, AND across groups. `skip` leaves one group out, for the option counts of S2.2.5.
+// S2.2.3: OR within a group, AND across groups. `skip` leaves one group out, for the option counts of S2.2.5. The
+// search (F-019 E4) is never skipped: it narrows every count.
 export function matches(item: CatalogItem, state: FilterState, skip?: FilterGroup): boolean {
+  if (state.q && !matchesSearch(item, state.q)) return false;
   if (skip !== 'posisi' && state.posisi.length && !state.posisi.some(p => item.positions.includes(p))) return false;
   if (skip !== 'motor' && state.motor && !item.kategori.includes(state.motor)) return false;
   if (skip !== 'harga' && state.harga && !inHarga(item.price, state.harga)) return false;
@@ -284,9 +359,10 @@ export function removeValue(state: FilterState, group: FilterGroup, value: strin
   return { ...state, harga: null };
 }
 
-// S2.3.1: "Hapus semua" clears every filter, including motor, and keeps the sort.
+// S2.3.1: "Hapus semua" clears every filter, including motor, and keeps the sort. F-019 E8: it keeps the search
+// too, which has its own clear button.
 export function clearFilters(state: FilterState): FilterState {
-  return { ...DEFAULT_STATE, urut: state.urut };
+  return { ...DEFAULT_STATE, urut: state.urut, q: state.q };
 }
 
 export function toggleList<K extends string>(list: readonly K[], value: K, options: readonly Option<K>[]): K[] {
@@ -327,6 +403,7 @@ export type FilterChange =
   | { type: 'clearGroup'; group: FilterGroup }
   | { type: 'clearAll' }
   | { type: 'urut'; value: UrutKey }
+  | { type: 'search'; value: string }
   | { type: 'replace'; state: FilterState };
 
 const URUT_KEYS: readonly UrutKey[] = URUT_OPTIONS.map(o => o.value);
@@ -365,6 +442,8 @@ function nextState(prev: FilterState, change: FilterChange): FilterState {
       return clearFilters(prev);
     case 'urut':
       return URUT_KEYS.includes(change.value) ? { ...prev, urut: change.value } : prev;
+    case 'search':
+      return { ...prev, q: parseSearch(change.value) };
     case 'replace':
       return change.state;
   }
@@ -409,8 +488,9 @@ export function facetCounts(items: readonly CatalogItem[], state: FilterState): 
     harga: zeroes(HARGA_KEYS),
     label: zeroes(LABEL_KEYS),
   };
-  const { posisi, motor, harga, label } = state;
+  const { posisi, motor, harga, label, q } = state;
   for (const item of items) {
+    if (q && !matchesSearch(item, q)) continue;
     const pP = !posisi.length || posisi.some(p => item.positions.includes(p));
     const pM = !motor || item.kategori.includes(motor);
     const pH = !harga || inHarga(item.price, harga);
@@ -489,12 +569,13 @@ function posisiLabels(state: FilterState): string[] {
   return POSISI_OPTIONS.filter(o => state.posisi.includes(o.value)).map(o => o.label);
 }
 
-// H1 of the Katalog. "Semua" only when nothing filters (sort does not count); one or two positions name them; the
-// motor adds "untuk motor X"; anything else reads as the neutral "Tas motor INZTA".
+// H1 of the Katalog. "Semua" only when nothing filters (sort does not count); a search alone reads "Hasil
+// pencarian" (F-019); one or two positions name them; the motor adds "untuk motor X"; anything else reads as the
+// neutral "Tas motor INZTA".
 export function catalogHeading(state: FilterState, categoryLabel: (c: MotorCategory) => string): string {
   const pos = posisiLabels(state);
   const other = state.harga !== null || state.label.length > 0;
-  if (!pos.length && !state.motor && !other) return 'Semua tas motor INZTA';
+  if (!pos.length && !state.motor && !other) return state.q ? 'Hasil pencarian' : 'Semua tas motor INZTA';
   if (other || pos.length > 2) return 'Tas motor INZTA';
   const head = pos.length ? joinDan(pos) : 'Tas';
   return state.motor ? `${head} untuk motor ${categoryLabel(state.motor)}` : head;
@@ -531,7 +612,7 @@ export function relaxGroup(items: readonly CatalogItem[], state: FilterState): F
 }
 
 export interface Nearest {
-  kind: 'relax' | 'posisi' | 'all';
+  kind: 'search' | 'relax' | 'posisi' | 'all';
   // What the "Lihat n produk" link applies.
   state: FilterState;
   items: CatalogItem[];
@@ -542,6 +623,14 @@ export interface Nearest {
 // Products shown under an empty result, so the visitor is never stuck: first the result without the most
 // restrictive group, then the same positions only, then the whole catalogue. Each in the current sort.
 export function nearestItems(items: readonly CatalogItem[], state: FilterState, max = 4): Nearest | null {
+  // F-019 E9: an empty search first shows the same filters without the search, then the usual chain without it.
+  if (state.q) {
+    const base: FilterState = { ...state, q: '' };
+    const list = applyCatalog(items, base);
+    if (!list.length) return nearestItems(items, base, max);
+    const heading = totalActive(base) ? `Tanpa kata kunci: ${list.length} produk` : 'Produk lain';
+    return { kind: 'search', state: base, items: list.slice(0, max), total: list.length, heading };
+  }
   const relax = relaxGroup(items, state);
   const tries: { kind: Nearest['kind']; state: FilterState; heading: (n: number) => string }[] = [];
   if (relax) tries.push({ kind: 'relax', state: clearGroup(state, relax), heading: n => `Tanpa filter ${GROUP_TITLES[relax]}: ${n} produk` });
@@ -565,12 +654,50 @@ export interface EmptyCopy {
   // "Hapus semua filter" only adds something when more than one group is active. It is the primary action when
   // relaxLabel is null.
   showClearAll: boolean;
+  // F-019 E9: the primary action when a search is applied: "Hapus pencarian", or "Hapus pencarian dan filter" when the
+  // filters alone give 0 too; null without a search.
+  clearSearch: 'search' | 'both' | null;
+  // Text of the WhatsApp link under the buttons.
+  adminLabel: string;
+}
+
+// How many products the empty search result would give without the search (filters kept) and with the search alone.
+export interface SearchCounts {
+  withoutSearch: number;
+  searchOnly: number;
+}
+
+export function searchCounts(items: readonly CatalogItem[], state: FilterState): SearchCounts {
+  return {
+    withoutSearch: items.filter(i => matches(i, { ...state, q: '' })).length,
+    searchOnly: items.filter(i => matchesSearch(i, state.q)).length,
+  };
 }
 
 // Empty-state copy. The motor variant applies when the chosen motor is what empties the result: the motor tags are
 // still being filled in (A-049), so the copy says so and points to the admin instead of blaming the filters.
-export function emptyCopy(state: FilterState, relax: FilterGroup | null, categoryLabel: (c: MotorCategory) => string): EmptyCopy {
+// With a search (F-019 E9) every offered action must bring products back: "Hapus pencarian" when the filters alone
+// give some, "Hapus semua filter" (keeps the search) when the search alone gives some, else one action for both.
+export function emptyCopy(
+  state: FilterState,
+  relax: FilterGroup | null,
+  categoryLabel: (c: MotorCategory) => string,
+  counts: SearchCounts = { withoutSearch: 1, searchOnly: 1 },
+): EmptyCopy {
   const groups = RELAX_ORDER.filter(g => activeCount(state, g) > 0).length;
+  if (state.q) {
+    const chips = activeChips(state, categoryLabel);
+    const hint = 'Coba kata lain, misalnya tank bag, side bag, atau nama motor Anda.';
+    const searchHelps = groups === 0 || counts.withoutSearch > 0;
+    return {
+      title: `Tidak ada tas yang cocok dengan "${state.q}".`,
+      text: chips.length ? `${hint} Filter aktif: ${chips.map(c => c.label).join(', ')}.` : hint,
+      relaxLabel: null,
+      showClearAll: groups > 0 && counts.searchOnly > 0,
+      clearSearch: searchHelps ? 'search' : counts.searchOnly > 0 ? null : 'both',
+      adminLabel: 'Tanya admin',
+    };
+  }
   const showClearAll = groups > 1 || (relax === null && groups > 0);
   if (relax === 'motor' && state.motor) {
     const phrase = positionPhrase(state);
@@ -580,6 +707,8 @@ export function emptyCopy(state: FilterState, relax: FilterGroup | null, categor
       text: 'Penandaan motor masih kami lengkapi. Admin bisa bantu cek tas yang cocok.',
       relaxLabel: onlyPosition ? `Lihat semua ${phrase}` : 'Hapus filter Motor saya',
       showClearAll,
+      clearSearch: null,
+      adminLabel: 'Chat admin',
     };
   }
   const chips = activeChips(state, categoryLabel);
@@ -593,5 +722,7 @@ export function emptyCopy(state: FilterState, relax: FilterGroup | null, categor
     text: chips.length ? `Filter aktif: ${chips.map(c => c.label).join(', ')}.` : '',
     relaxLabel,
     showClearAll,
+    clearSearch: null,
+    adminLabel: 'Chat admin',
   };
 }
