@@ -75,16 +75,16 @@
 }
 html[data-iz-tier="minimal"] .iz-catalog__grid[data-anim] > *, html[data-iz-tier="minimal"] .iz-fsheet__panel { animation: none; }
 
-/* F-019: the heading block holds the search. Below 1024 px it sits under the lead, full width on phones and at most
-   560 px on tablets; from 1024 px it moves right of the heading, bottom-aligned with the lead, so the chip row below
-   keeps one line. Same height, line, and paper as the chips. The clear button sits inside the field and is only
-   hidden, so typing never changes its width. */
-.iz-catalog__headrow { display: grid; gap: var(--space-5); margin-top: 16px; margin-bottom: 8px; }
-.iz-catalog__headrow > .iz-head { margin: 0; }
-.iz-search { position: relative; display: flex; align-items: center; width: 100%; max-width: 560px; }
+/* F-019: the search shares the filter row. From 1024 px the chips stay left and the search sits right on the same
+   line (it wraps under the chips only if they ever fill the row); below 1024 px the chip row scrolls sideways, so the
+   search takes its own full-width line above it (at most 560 px on tablets). Same paper and line as the chips. The
+   clear button sits inside the field and is only hidden, so typing never changes its width. */
+.iz-catalog__toolbar { display: flex; flex-direction: column; }
+.iz-search { position: relative; display: flex; align-items: center; width: 100%; max-width: 560px; margin-top: var(--space-4); }
 @media (min-width: 1024px) {
-  .iz-catalog__headrow { grid-template-columns: minmax(0, 1fr) minmax(300px, 400px); align-items: end; column-gap: var(--space-8); }
-  .iz-search { max-width: none; }
+  .iz-catalog__toolbar { flex-direction: row; flex-wrap: wrap; align-items: center; column-gap: var(--space-6); }
+  .iz-catalog__toolbar > .iz-filters { order: 1; flex: 0 1 auto; min-width: 0; }
+  .iz-catalog__toolbar > .iz-search { order: 2; flex: 1 1 260px; max-width: 380px; margin: 0 0 0 auto; }
 }
 @media (max-width: 767px) {
   .iz-search { max-width: none; }

@@ -135,7 +135,7 @@ export default function CatalogBody({
     if (!p || p.kind === 'card') return;
     pendingFocus.current = null;
     if (p.kind === 'search') {
-      document.querySelector<HTMLElement>('.iz-page .iz-search__input')?.focus();
+      filtersRef.current?.querySelector<HTMLElement>('.iz-search__input')?.focus();
       return;
     }
     const posisiChip = filtersRef.current?.querySelector<HTMLElement>('[data-fchip="posisi"]');
@@ -234,10 +234,10 @@ export default function CatalogBody({
             <span className={`iz-lead-motor${category ? ' iz-lead-motor--on' : ''}`}>{` ${LEAD_MOTOR_NOTE}`}</span>
           </>
         }
-        aside={<CatalogSearch value={state.q} onSearch={onApply ? q => apply({ type: 'search', value: q }) : undefined} />}
       />
 
-      <section className="iz-wrap iz-catalog__filters" ref={filtersRef}>
+      <section className="iz-wrap iz-catalog__filters iz-catalog__toolbar" ref={filtersRef}>
+        <CatalogSearch value={state.q} onSearch={onApply ? q => apply({ type: 'search', value: q }) : undefined} />
         <FilterBar
           state={state}
           facets={facets}
