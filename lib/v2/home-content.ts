@@ -97,6 +97,20 @@ export const POSITION_ITEMS: readonly PositionItem[] = [
   { value: 'aksesori', menuLabel: 'Aksesori touring', tileTitle: 'Aksesori', tileText: 'Perkakas, P3K, dan botol di perjalanan.', image: '/images/v2/foto/posisi-aksesori.webp', alt: 'Bottle bag INZTAWORKS berisi botol minum terpasang di panel kaki skuter matic' },
 ];
 
+// F-020: the sentence under the Katalog H1 for each view. Tank, side, tail, and aksesori reuse the approved Beranda
+// tile lines above; "semua" is the approved /produk meta description (F-005 phase 2, lib/seo.ts). Extend and harian
+// have no approved line yet: neutral drafts that claim nothing beyond the position, waiting for G2 (Bang Raja or Om
+// Fahrul) before they are final.
+export const CATALOG_DESCRIPTION: Record<ProductPosition | 'semua', string> = {
+  semua: 'Daftar tas samping, tank bag, tail bag, tas crashbar, dan aksesori touring INZTA, dengan harga dan stok terbaru.',
+  tank: 'Tank bag dipasang di atas tangki, jadi ponsel, dompet, dan air minum tetap terjangkau.',
+  side: 'Side bag dipasang di sisi motor, jadi muatan besar dibagi dua sisi.',
+  tail: 'Tail bag dipasang di jok belakang, untuk bawaan perjalanan beberapa hari.',
+  extend: 'Extend bag untuk menambah ruang bawaan di motor.',
+  aksesori: 'Aksesori touring untuk perkakas, P3K, dan botol di perjalanan.',
+  harian: 'Tas harian INZTA untuk dibawa sehari-hari.',
+};
+
 // F-016 S0.9 chip labels, keyed like the catalog filter (S2.2).
 export const POSITION_CHIP: Record<ProductPosition, string> = {
   tank: 'Tank bag',
