@@ -23,14 +23,6 @@ function Svg({ children, strokeWidth = 2, size }: { children: ReactNode; strokeW
 export const MinusIcon = () => <Svg strokeWidth={2.5}><path d="M5 12h14" /></Svg>;
 export const PlusIcon = () => <Svg strokeWidth={2.5}><path d="M5 12h14M12 5v14" /></Svg>;
 export const AccPlusIcon = () => <Svg size={18}><path d="M12 5v14M5 12h14" /></Svg>;
-export const ShareIcon = () => (
-  <Svg size={18}>
-    <circle cx="18" cy="5" r="3" />
-    <circle cx="6" cy="12" r="3" />
-    <circle cx="18" cy="19" r="3" />
-    <path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4" />
-  </Svg>
-);
 export const InfoIcon = () => (
   <Svg>
     <circle cx="12" cy="12" r="10" />
