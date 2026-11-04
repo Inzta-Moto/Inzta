@@ -118,13 +118,13 @@
   padding: calc(14 * var(--cu)) calc(12 * var(--cu)) calc(16 * var(--cu));
   border-radius: 0 0 var(--radius-tile-lg) var(--radius-tile-lg);
   background-color: var(--c-pasir-muda);
-  background-image: radial-gradient(circle, rgba(26, 24, 19, 0.08) 1px, transparent 1.4px);
+  background-image: radial-gradient(circle, rgba(17, 17, 17, 0.08) 1px, transparent 1.4px);
   background-size: calc(14 * var(--cu)) calc(14 * var(--cu));
 }
 .iz-closing .iz-chat__text { position: relative; display: block; padding: calc(3 * var(--cu)) calc(6 * var(--cu)) calc(4 * var(--cu)); font-size: max(11px, calc(13.5 * var(--cu))); line-height: 1.35; color: var(--c-tinta); text-wrap: pretty; }
 .iz-closing .iz-chat__meta { display: inline-flex; align-items: center; gap: calc(3 * var(--cu)); font-size: max(9px, calc(10.5 * var(--cu))); line-height: 1; color: var(--c-batu); white-space: nowrap; }
 
-.iz-closing .iz-chat__out { align-self: flex-end; width: 70%; gap: calc(4 * var(--cu)); padding: calc(4 * var(--cu)); border-radius: var(--radius-thumb) calc(4 * var(--cu)) var(--radius-thumb) var(--radius-thumb); background: color-mix(in srgb, var(--c-kuning) 24%, var(--c-kertas-terang)); color: var(--c-tinta); box-shadow: 0 1px 0 rgba(26, 24, 19, 0.06); }
+.iz-closing .iz-chat__out { align-self: flex-end; width: 70%; gap: calc(4 * var(--cu)); padding: calc(4 * var(--cu)); border-radius: var(--radius-thumb) calc(4 * var(--cu)) var(--radius-thumb) var(--radius-thumb); background: color-mix(in srgb, var(--c-kuning) 24%, var(--c-kertas-terang)); color: var(--c-tinta); box-shadow: 0 1px 0 rgba(17, 17, 17, 0.06); }
 .iz-closing .iz-chat__out .iz-photo { aspect-ratio: 4 / 3; border-radius: calc(var(--radius-thumb) - 4px); }
 .iz-closing .iz-chat__out .iz-photo img { object-position: 50% 72%; }
 /* The time sits on the last line of the caption, or on its own line when the caption fills it (a spacer reserves it). */
@@ -136,7 +136,7 @@
 
 .iz-closing .iz-chat__slot { display: grid; justify-items: start; align-items: start; }
 .iz-closing .iz-chat__slot > * { grid-area: 1 / 1; }
-.iz-closing .iz-chat__in { display: flex; flex-direction: column; gap: calc(6 * var(--cu)); max-width: 88%; padding: calc(6 * var(--cu)); border-radius: calc(4 * var(--cu)) var(--radius-thumb) var(--radius-thumb) var(--radius-thumb); background: var(--c-kertas-terang); box-shadow: 0 0 0 1px var(--c-garis), 0 12px 24px -18px rgba(22, 20, 15, 0.4); }
+.iz-closing .iz-chat__in { display: flex; flex-direction: column; gap: calc(6 * var(--cu)); max-width: 88%; padding: calc(6 * var(--cu)); border-radius: calc(4 * var(--cu)) var(--radius-thumb) var(--radius-thumb) var(--radius-thumb); background: var(--c-kertas-terang); box-shadow: 0 0 0 1px var(--c-garis), 0 12px 24px -18px rgba(17, 17, 17, 0.4); }
 .iz-closing .iz-chat__pick { display: grid; grid-template-columns: calc(46 * var(--cu)) minmax(0, 1fr); align-items: center; gap: calc(10 * var(--cu)); padding: calc(6 * var(--cu)) calc(10 * var(--cu)) calc(6 * var(--cu)) calc(6 * var(--cu)); border-radius: calc(var(--radius-thumb) - 4px); background: var(--c-kertas); box-shadow: inset 0 0 0 1px var(--c-garis); }
 .iz-closing .iz-chat__pick img { width: 100%; height: auto; aspect-ratio: 1; border-radius: calc(8 * var(--cu)); object-fit: cover; background: var(--c-pasir-muda); }
 .iz-closing .iz-chat__pick-text { display: flex; flex-direction: column; align-items: flex-start; gap: calc(5 * var(--cu)); min-width: 0; }

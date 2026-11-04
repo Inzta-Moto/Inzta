@@ -119,27 +119,32 @@ const sideProduct = (extra = {}, kiri = {}, kanan = {}) => ({
   await check('D2/S5.3: normalizeKategoriMotor keeps D1 slugs once, in D1 order; anything else reads as []', () => {
     assert.deepStrictEqual(M.normalizeKategoriMotor(['retro', 'matic', 'retro', 'vespa', 7]), ['matic', 'retro']);
     for (const v of [undefined, null, 'retro', {}, 3]) assert.deepStrictEqual(M.normalizeKategoriMotor(v), [], String(v));
-    assert.deepStrictEqual(M.CATEGORY_SLUGS, ['matic', 'adventure', 'retro', 'trail']);
+    assert.deepStrictEqual(M.CATEGORY_SLUGS, ['matic', 'adventure', 'retro', 'trail', 'sport']);
     assert.strictEqual(M.isMotorCategory('trail'), true);
+    assert.strictEqual(M.isMotorCategory('sport'), true, 'F-018');
+    assert.deepStrictEqual(Object.keys(M.CATEGORY_LABELS), M.CATEGORY_SLUGS);
+    assert.strictEqual(M.CATEGORY_LABELS.sport, 'Sport');
     assert.strictEqual(M.isMotorCategory('Retro'), false);
     assert.strictEqual(M.isMotorCategory(null), false);
   });
   const catalog = [
     simple('xsr', 'Side bag Inzta XSR 155', { kategoriMotor: ['retro'] }),
     simple('tk5', 'Tankbag TK 5', { kategoriMotor: ['retro', 'adventure'] }),
-    simple('strap', 'Tail bag Tourmax 30', { kategoriMotor: ['trail', 'retro', 'matic', 'adventure'] }),
+    simple('strap', 'Tail bag Tourmax 30', { kategoriMotor: ['sport', 'trail', 'retro', 'matic', 'adventure'] }),
     simple('legacy', 'Side bag Inzta XSR Srcrambag'),
     simple('junk', 'Botol bag Inzta Xmax', { kategoriMotor: 'matic' }),
   ];
-  await check('D2/S5.3: productsForCategory reads kategoriMotor only (no name rule), excludes all-four products, keeps order', () => {
+  await check('D2/S5.3: productsForCategory reads kategoriMotor only (no name rule), excludes every-category products, keeps order', () => {
     assert.deepStrictEqual(M.productsForCategory(catalog, 'retro').map(x => x.slug), ['xsr', 'tk5']);
     assert.deepStrictEqual(M.productsForCategory(catalog, 'adventure').map(x => x.slug), ['tk5']);
     assert.deepStrictEqual(M.productsForCategory(catalog, 'matic').map(x => x.slug), [], 'a non-array value and a name with "Xmax" place nothing');
     assert.deepStrictEqual(M.productsForCategory([], 'trail'), []);
   });
-  await check('S5.5: universalProducts = tagged with all four categories (duplicates and order do not matter)', () => {
+  await check('S5.5: universalProducts = tagged with all five categories (duplicates and order do not matter)', () => {
     assert.deepStrictEqual(M.universalProducts(catalog).map(x => x.slug), ['strap']);
     assert.strictEqual(M.isUniversalProduct({ kategoriMotor: ['matic', 'adventure', 'retro', 'retro'] }), false);
+    assert.strictEqual(M.isUniversalProduct({ kategoriMotor: ['matic', 'adventure', 'retro', 'trail'] }), false, 'F-018: the four old categories without Sport are not universal');
+    assert.deepStrictEqual(M.productsForCategory([simple('old4', 'Old 4', { kategoriMotor: ['matic', 'adventure', 'retro', 'trail'] })], 'trail').map(x => x.slug), ['old4']);
   });
   await check('S5.8.4: INDEXABLE_CATEGORIES is empty at launch, so no category is indexable even with products and a lead', () => {
     assert.deepStrictEqual(M.INDEXABLE_CATEGORIES, []);
@@ -149,13 +154,14 @@ const sideProduct = (extra = {}, kiri = {}, kanan = {}) => ({
       assert.strictEqual(M.isCategoryIndexable(c, [], false), false, c);
     }
   });
-  await check('design.md §3.2: draft proposal from names (XSR -> retro, NMAX/XMAX/PCX/Matic -> matic, Adventure/Versys/CB150X -> adventure, universal -> all four)', () => {
+  await check('design.md §3.2: draft proposal from names (XSR -> retro, NMAX/XMAX/PCX/Matic -> matic, Adventure/Versys/CB150X -> adventure, universal -> all five, nothing -> sport)', () => {
     assert.deepStrictEqual(M.draftKategoriMotor({ name: 'Side bag Inzta XSR 155' }), ['retro']);
     assert.deepStrictEqual(M.draftKategoriMotor({ name: 'Botol bag Inzta Xmax' }), ['matic']);
     assert.deepStrictEqual(M.draftKategoriMotor({ name: 'Tas PCX 160' }), ['matic']);
     assert.deepStrictEqual(M.draftKategoriMotor({ name: 'Sidebag Versys 250' }), ['adventure']);
     assert.deepStrictEqual(M.draftKategoriMotor({ name: 'Crashbar bag CB150X' }), ['adventure']);
-    assert.deepStrictEqual(M.draftKategoriMotor({ name: 'Side bag inzta universal motor' }), ['matic', 'adventure', 'retro', 'trail']);
+    assert.deepStrictEqual(M.draftKategoriMotor({ name: 'Side bag inzta universal motor' }), ['matic', 'adventure', 'retro', 'trail', 'sport']);
+    assert.deepStrictEqual(M.draftKategoriMotor({ name: 'Tankbag Ninja 250' }), [], 'F-018: no Sport rule until A-055');
     assert.deepStrictEqual(M.draftKategoriMotor({ name: 'Tail bag Inzta Tourmax 30' }), []);
   });
   await check('draft script: refuses to run without --dry-run and contains no write call', () => {
@@ -227,12 +233,13 @@ const sideProduct = (extra = {}, kiri = {}, kanan = {}) => ({
       p('retro-new', ['retro'], { createdAt: 5 }),
       p('retro-best', ['retro', 'matic'], { badge: 'BEST SELLER', createdAt: 0 }),
       p('retro-4', ['retro'], { createdAt: 3 }),
-      p('strap', ['matic', 'adventure', 'retro', 'trail']),
+      p('strap', ['matic', 'adventure', 'retro', 'trail', 'sport']),
     ];
     const out = E.motorRailProducts(all);
     assert.deepStrictEqual(out.retro.map(x => x.slug), ['retro-best', 'retro-new', 'retro-4']);
     assert.deepStrictEqual(out.matic.map(x => x.slug), ['retro-best']);
     assert.deepStrictEqual(out.trail.map(x => x.slug), ['strap'], 'no own bag -> universal');
+    assert.deepStrictEqual(out.sport.map(x => x.slug), ['strap'], 'F-018: Sport gets the universal bags too');
     assert.deepStrictEqual(Object.keys(out.retro[0]).sort(), ['compareAtPrice', 'image', 'inStock', 'name', 'price', 'priceTo', 'slug']);
     assert.deepStrictEqual(E.motorRailProducts([]), {});
   });
@@ -455,10 +462,11 @@ const sideProduct = (extra = {}, kiri = {}, kanan = {}) => ({
     const KAT = { code: 'INVALID_KATEGORI_MOTOR', message: 'Kategori motor tidak dikenal.' };
     const FLAG = { code: 'INVALID_SIDE_FLAG', message: 'Nilai sisi harus true atau false.' };
     const SIDE = { code: 'INVALID_SIDE_VARIANTS', message: 'Produk per sisi harus punya varian Kiri dan Kanan.' };
-    for (const k of [['vespa'], ['retro', 'retro'], 'retro', null, ['matic', 'adventure', 'retro', 'trail', 'matic'], ['Retro']])
+    for (const k of [['vespa'], ['retro', 'retro'], 'retro', null, ['matic', 'adventure', 'retro', 'trail', 'sport', 'matic'], ['Retro'], ['Sport']])
       assert.deepStrictEqual(bad({ ...legacySimple, kategoriMotor: k }), KAT, JSON.stringify(k));
     assert.strictEqual(bad({ ...legacySimple, kategoriMotor: [] }), null);
     assert.strictEqual(bad({ ...legacySimple, kategoriMotor: ['trail', 'matic'] }), null);
+    assert.strictEqual(bad({ ...legacySimple, kategoriMotor: ['matic', 'adventure', 'retro', 'trail', 'sport'] }), null, 'F-018: all five');
     for (const v of ['true', 1, null]) {
       assert.deepStrictEqual(bad({ ...legacyVariable, jualPerSisi: v }), FLAG, `jualPerSisi ${v}`);
       assert.deepStrictEqual(bad({ ...legacyVariable, bisaSepasang: v }), FLAG, `bisaSepasang ${v}`);

@@ -7,7 +7,7 @@
 html.iz-js[data-iz-curtain] .iz-curtain, html.iz-js .iz-curtain[data-active] { display: block; pointer-events: auto; cursor: progress; }
 .iz-curtain__sheets { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 .iz-curtain__sheet--kuning { fill: #f59e0b; }
-.iz-curtain__sheet--aspal { fill: #16140f; }
+.iz-curtain__sheet--aspal { fill: #111111; }
 /* Lite tier: only the asphalt sheet moves (curtain.ts parts); the yellow edge that leads it on cover and trails it on
    lift rides on its path as a stroke. paint-order keeps the fill over the inner half, and the outer half of the box
    edges falls outside the clipped viewBox, so only the curved edge shows yellow and nothing shows at rest. */
@@ -112,7 +112,7 @@ html.iz-motion .iz-drawline.iz-drawline--wait::before { transition: none; }
 
   /* Buttons lift on a soft landing; outline buttons flood from the pointer's entry point (--fx/--fy from SiteMotion). */
   .iz-page .iz-btn { position: relative; isolation: isolate; overflow: hidden; transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.5s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s ease, color 0.35s ease, border-color 0.35s ease, filter 0.2s ease; }
-  .iz-page .iz-btn:hover { transform: translateY(-3px); box-shadow: 0 16px 30px -16px rgba(22, 20, 15, 0.6); }
+  .iz-page .iz-btn:hover { transform: translateY(-3px); box-shadow: 0 16px 30px -16px rgba(17, 17, 17, 0.6); }
   .iz-page .iz-btn:active { transform: translateY(0) scale(0.98); transition-duration: 0.15s; }
   .iz-page .iz-btn--secondary::before { content: ""; position: absolute; inset: -2px; z-index: -1; border-radius: inherit; background: var(--c-tinta); clip-path: circle(0% at var(--fx, 50%) var(--fy, 50%)); transition: clip-path 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
   .iz-page .iz-btn--secondary:hover::before { clip-path: circle(150% at var(--fx, 50%) var(--fy, 50%)); }
@@ -154,7 +154,7 @@ html.iz-motion .iz-film-scene.is-pinned .iz-photo > .iz-smartimg { inset: 0; }
 .iz-msheet__label { flex: 1; }
 .iz-msheet__ico { width: 36px; height: 36px; flex: none; border-radius: 10px; overflow: hidden; background: var(--c-pasir-muda); }
 .iz-msheet__ico img { width: 100%; height: 100%; object-fit: cover; }
-.iz-mbackdrop { position: fixed; inset: 0; z-index: -1; background: rgba(22, 20, 15, 0.5); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+.iz-mbackdrop { position: fixed; inset: 0; z-index: -1; background: rgba(17, 17, 17, 0.5); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
 @media (prefers-reduced-motion: no-preference) {
   .iz-navwrap .iz-msheet[data-state="open"] { animation: iz-sheet-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) both; }
   .iz-navwrap .iz-msheet[data-state="closing"] { animation: iz-sheet-out 0.3s cubic-bezier(0.7, 0, 0.84, 0) both; }
@@ -213,7 +213,7 @@ html.iz-motion .iz-film-scene.is-pinned .iz-photo > .iz-smartimg { inset: 0; }
 .iz-msheet__links a[aria-current="page"] > svg { color: var(--c-kuning); }
 /* Lite tier: the sheet slides and fades instead of the clip-path wipe (a repaint per frame), and the page behind dims
    without the backdrop blur, the most expensive layer on a phone. The tap flood stays. */
-html[data-iz-tier="lite"] .iz-mbackdrop { background: rgba(22, 20, 15, 0.6); -webkit-backdrop-filter: none; backdrop-filter: none; }
+html[data-iz-tier="lite"] .iz-mbackdrop { background: rgba(17, 17, 17, 0.6); -webkit-backdrop-filter: none; backdrop-filter: none; }
 @media (prefers-reduced-motion: no-preference) {
   html[data-iz-tier="lite"] .iz-navwrap .iz-msheet[data-state="open"] { animation-name: iz-sheet-in-lite; animation-duration: 0.45s; }
   html[data-iz-tier="lite"] .iz-navwrap .iz-msheet[data-state="closing"] { animation-name: iz-sheet-out-lite; }
@@ -240,7 +240,7 @@ html[data-iz-tier="lite"] .iz-mbackdrop { background: rgba(22, 20, 15, 0.6); -we
    scroll cue, so the first screen reads as one composed frame. */
 @media (max-width: 767px) {
   .iz-page .iz-hero:not(.iz-hero--short) { min-height: 100svh; }
-  .iz-page .iz-hero:not(.iz-hero--short)::after { background: linear-gradient(to top, var(--c-aspal) 0%, rgba(22, 20, 15, 0.82) 34%, rgba(22, 20, 15, 0.15) 66%, rgba(22, 20, 15, 0.35) 100%); }
+  .iz-page .iz-hero:not(.iz-hero--short)::after { background: linear-gradient(to top, var(--c-aspal) 0%, rgba(17, 17, 17, 0.82) 34%, rgba(17, 17, 17, 0.15) 66%, rgba(17, 17, 17, 0.35) 100%); }
   .iz-page .iz-hero__body { padding-bottom: calc(var(--space-12) + env(safe-area-inset-bottom)); gap: var(--space-4); }
   .iz-page .iz-hero__body > .iz-row { flex-direction: row; flex-wrap: wrap; gap: var(--space-3); }
   .iz-page .iz-hero__body > .iz-row > .iz-btn--primary { flex: 1 1 100%; }
@@ -290,7 +290,7 @@ html.iz-motion .iz-film-scene.is-swipe .iz-film__progress > span { display: bloc
 .iz-cursor--dot { width: 6px; height: 6px; border-radius: 50%; background: #f3efe6; mix-blend-mode: difference; }
 .iz-cursor--ring { width: 26px; height: 26px; border-radius: 50%; border: 1.5px solid #f3efe6; mix-blend-mode: difference; transition: width 0.35s cubic-bezier(0.16, 1, 0.3, 1), height 0.35s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.35s ease; }
 .iz-cursor--ring[data-state="link"] { width: 44px; height: 44px; background: rgba(243, 239, 230, 0.12); }
-.iz-cursor--pill { padding: 8px 16px; border-radius: 999px; background: #f59e0b; color: #1a1813; font-family: var(--font-sans-v2), system-ui, sans-serif; font-size: 14px; font-weight: 700; letter-spacing: 0.02em; white-space: nowrap; box-shadow: 0 10px 24px -10px rgba(22, 20, 15, 0.5); }
+.iz-cursor--pill { padding: 8px 16px; border-radius: 999px; background: #f59e0b; color: #171717; font-family: var(--font-sans-v2), system-ui, sans-serif; font-size: 14px; font-weight: 700; letter-spacing: 0.02em; white-space: nowrap; box-shadow: 0 10px 24px -10px rgba(17, 17, 17, 0.5); }
 
 /* Light cards catch a soft warm light under the pointer, so they read as surfaces rather than flat boxes. */
 @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
@@ -351,7 +351,7 @@ html.iz-motion .iz-film-scene.is-swipe .iz-film__progress > span { display: bloc
 
 /* Garasi: the chosen tile steps forward a little. The scale property composes with the tilt transform. */
 .iz-gtile { transition: background-color 0.15s ease, box-shadow 0.3s ease, scale 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
-.iz-gtile[aria-pressed="true"] { scale: 1.05; z-index: 1; box-shadow: 0 0 0 3px var(--c-kuning), 0 24px 40px -24px rgba(22, 20, 15, 0.45); }
+.iz-gtile[aria-pressed="true"] { scale: 1.05; z-index: 1; box-shadow: 0 0 0 3px var(--c-kuning), 0 24px 40px -24px rgba(17, 17, 17, 0.45); }
 @media (prefers-reduced-motion: reduce) { .iz-gtile[aria-pressed="true"] { scale: 1; } }
 
 /* Horizontal card rows clip in both axes (overflow-x: auto forces overflow-y too), which cut hover shadows. The row
@@ -379,11 +379,11 @@ html.iz-motion .iz-film-scene.is-swipe .iz-film__progress > span { display: bloc
    without the pseudo-elements (Firefox). */
 html.iz-v2::-webkit-scrollbar { width: 12px; height: 12px; }
 html.iz-v2::-webkit-scrollbar-track { background: #f6f4ef; }
-html.iz-v2::-webkit-scrollbar-thumb { background: #16140f; border-radius: 999px; border: 3px solid #f6f4ef; }
+html.iz-v2::-webkit-scrollbar-thumb { background: #111111; border-radius: 999px; border: 3px solid #f6f4ef; }
 html.iz-v2::-webkit-scrollbar-thumb:hover { background: #f59e0b; }
 html.iz-v2::-webkit-scrollbar-button { display: none; height: 0; }
 @supports not selector(::-webkit-scrollbar) {
-  html.iz-v2 { scrollbar-width: thin; scrollbar-color: #16140f #f6f4ef; }
+  html.iz-v2 { scrollbar-width: thin; scrollbar-color: #111111 #f6f4ef; }
 }
 /* html.iz-v2 comes from the boot script (and SiteMotion on route changes). These rules used html:has(.iz-page),
    which made Chrome re-check the whole document on every style change; in a phone scroll trace that single selector

@@ -296,9 +296,9 @@ export interface Commission {
   createdAt: any;
 }
 
-// F-016 landing page v2. Motor categories follow ADR-0019 (inzta-hq), positions are where a bag sits,
+// F-016 landing page v2. Motor categories follow ADR-0019 and ADR-0022 (inzta-hq), positions are where a bag sits,
 // not the Firestore `category` field (hardcase/softcase/tank).
-export type MotorCategory = 'matic' | 'adventure' | 'retro' | 'trail';
+export type MotorCategory = 'matic' | 'adventure' | 'retro' | 'trail' | 'sport';
 export type BagPosition = 'tank' | 'side' | 'tail' | 'aksesori';
 
 // Only one label shows per card (F-016 17.1); null means no label.

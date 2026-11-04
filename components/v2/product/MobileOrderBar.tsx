@@ -3,11 +3,13 @@
 import { useEffect, useRef, useState, type RefObject } from 'react';
 import { WhatsApp } from '@/components/v2/icons';
 import { cldWebp } from '@/lib/v2/image';
+import { barWouldCover } from '@/components/v2/product/mbar';
 
 /**
  * Mobile order bar `.iz-mbar` (F-016 S3.9). Rendered only after hydration (without JavaScript the main link remains),
  * shown at 767 px and narrower while the main order control is out of the viewport. It slides with translateY
- * (CSS, none under reduced motion) and is hidden from focus and assistive technology while off screen.
+ * (CSS, none under reduced motion) and is hidden from focus and assistive technology while off screen. It also steps
+ * aside while a control marked data-mbar-avoid is in its zone, so it never covers "Lihat selengkapnya".
  */
 export default function MobileOrderBar({
   target,
@@ -28,20 +30,46 @@ export default function MobileOrderBar({
   ariaDisabled: boolean;
   onActivate: () => void;
 }) {
-  const [shown, setShown] = useState(false);
+  const [mainOut, setMainOut] = useState(false);
+  const [avoid, setAvoid] = useState(false);
+  const shown = mainOut && !avoid;
   const bar = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const el = target.current;
     if (!el || typeof IntersectionObserver === 'undefined') return;
-    const io = new IntersectionObserver(([entry]) => setShown(!entry.isIntersecting), { threshold: 0 });
+    const io = new IntersectionObserver(([entry]) => setMainOut(!entry.isIntersecting), { threshold: 0 });
     io.observe(el);
-    // Bottom padding on the page so the bar never covers the footer's last line (S3.9.1).
+    // Bottom padding on the page so the bar never covers the footer's last line (S3.9.1); the html class adds the
+    // matching scroll-padding so focused or scrolled-to elements stop above the bar (WCAG 2.4.11).
     const page = el.closest('.iz-page');
     page?.classList.add('iz-page--mbar');
+    document.documentElement.classList.add('iz-mbar-on');
+
+    // One rect read per frame while scrolling; the ResizeObserver catches the description opening or closing,
+    // which moves its button without a scroll event.
+    let frame = 0;
+    const check = () => {
+      frame = 0;
+      const boxes = Array.from(document.querySelectorAll<HTMLElement>('[data-mbar-avoid]'), n => n.getBoundingClientRect());
+      setAvoid(barWouldCover(boxes, window.innerHeight));
+    };
+    const schedule = () => {
+      if (!frame) frame = requestAnimationFrame(check);
+    };
+    check();
+    window.addEventListener('scroll', schedule, { passive: true });
+    window.addEventListener('resize', schedule);
+    const ro = typeof ResizeObserver === 'undefined' || !page ? null : new ResizeObserver(schedule);
+    if (ro && page) ro.observe(page);
     return () => {
       io.disconnect();
+      ro?.disconnect();
+      window.removeEventListener('scroll', schedule);
+      window.removeEventListener('resize', schedule);
+      if (frame) cancelAnimationFrame(frame);
       page?.classList.remove('iz-page--mbar');
+      document.documentElement.classList.remove('iz-mbar-on');
     };
   }, [target]);
 

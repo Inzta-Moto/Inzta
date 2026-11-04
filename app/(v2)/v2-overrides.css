@@ -6,6 +6,42 @@
   --font-sans: var(--font-sans-v2), system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
+/* Dark tones in neutral black instead of the design's warm dark brown (Bang Raja, RND, 2026-11-03: "ke hitam aja";
+   inzta-hq ADR-0023). Overridden here because v2-tokens.css is a copy of the design repo. The kuning accents stay.
+   rgba(17, 17, 17, a) in the v2-<area>.css files is --c-aspal at an alpha, written out because some of those rules
+   sit outside .iz-page (scrollbar, curtain, cursor). */
+.iz-page {
+  --c-tinta: #171717;
+  --c-on-kuning: #171717;
+  --c-aspal: #111111;
+  --c-arang-naik: #262626;
+  --c-scrim-strong: rgba(17, 17, 17, 0.92);
+  --c-scrim-soft: rgba(17, 17, 17, 0.5);
+  --c-scrim-clear: rgba(17, 17, 17, 0);
+  /* 0.8 over the krem page read as brown-grey; 0.92 reads black and keeps a little of the blur. */
+  --c-nav-dark: rgba(17, 17, 17, 0.92);
+  --c-tag-bg: rgba(17, 17, 17, 0.72);
+  --shadow-float: 0 10px 15px -3px rgba(17, 17, 17, 0.12), 0 4px 6px -4px rgba(17, 17, 17, 0.1);
+  --shadow-lift: 0 4px 6px -1px rgba(17, 17, 17, 0.08), 0 2px 4px -2px rgba(17, 17, 17, 0.08);
+}
+html[data-iz-tier="lite"] .iz-nav--dark { background: rgba(17, 17, 17, 0.95); }
+
+/* F-018: five motor categories. From 1024 px one row of five; on tablets five columns cut the labels ("Adventure"),
+   so three tiles sit on top and two wider ones below; on phones the fifth tile spans both columns as a wide strip, so
+   the grids never end with an empty cell. The tablet rule counts on exactly five tiles. */
+.iz-garasi { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.iz-grid-5 { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--space-4); }
+@media (min-width: 768px) and (max-width: 1023.98px) {
+  .iz-garasi, .iz-grid-5 { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .iz-garasi > *, .iz-grid-5 > * { grid-column: span 2; }
+  .iz-garasi > :nth-child(n+4), .iz-grid-5 > :nth-child(n+4) { grid-column: span 3; aspect-ratio: 2 / 1; }
+}
+@media (max-width: 767px) {
+  .iz-garasi, .iz-grid-5 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .iz-grid-5 > .iz-mtile { aspect-ratio: 1 / 1; }
+  .iz-garasi > :last-child:nth-child(odd), .iz-grid-5 > :last-child:nth-child(odd) { grid-column: 1 / -1; aspect-ratio: 2 / 1; }
+}
+
 /* Section headings must not hide under the sticky navbar (4.10). */
 :where(.iz-page) [id] { scroll-margin-top: 80px; }
 @media (max-width: 767px) { :where(.iz-page) [id] { scroll-margin-top: 68px; } }
@@ -101,7 +137,7 @@ html:not(.js-nav) .iz-navdd:focus-within .iz-navdd__btn svg { transform: rotate(
 
 /* The eyebrow inside the "Mengapa pilih INZTA" photo panel sat on the dark photo in the light-page brown and could
    not be read (Sehan, 2026-10-29); on photos it uses the bright yellow like every other on-photo eyebrow. */
-.iz-why__photo .iz-eyebrow { color: var(--c-kuning); text-shadow: 0 1px 12px rgba(22, 20, 15, 0.6); }
+.iz-why__photo .iz-eyebrow { color: var(--c-kuning); text-shadow: 0 1px 12px rgba(17, 17, 17, 0.6); }
 
 /* Very wide monitors: the Tourmax band stops at the content width plus a margin and centres, so its photo panel is
    never stretched past the 1440 px source and the band lines up with the rest of the page. */

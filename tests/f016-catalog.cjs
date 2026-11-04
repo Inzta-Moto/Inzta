@@ -71,7 +71,7 @@ const P = [
   simple('tankbag-and-tailbag-wanderpack-10l', 'Tankbag and Tailbag wanderpack 10L', 390000, 450000, { createdAt: 3000 }),
   simple('sidebag-foldpack-z20', 'Sidebag Foldpack Z20', 790000, 850000, { createdAt: null }),
   simple('acc-pounch-inzta-travel-pack', 'Acc Pounch Inzta Travel pack', 100000, null, { createdAt: 2000 }),
-  simple('inzta-waistbag-rc-1', 'Inzta Waistbag RC 1', 200000, null, { createdAt: 1000, kategoriMotor: ['matic', 'adventure', 'retro', 'trail'] }),
+  simple('inzta-waistbag-rc-1', 'Inzta Waistbag RC 1', 200000, null, { createdAt: 1000, kategoriMotor: ['matic', 'adventure', 'retro', 'trail', 'sport'] }),
   simple('extend-bag-inzta-wheelbox-10l', 'Extend bag Inzta Wheelbox 10L', 500000, 340000, { createdAt: 8000 }),
   simple('costum-image-prodak', 'Costum image prodak', 0, null, { createdAt: 7000 }),
 ];
@@ -283,7 +283,7 @@ function* allStates() {
   for (const posisi of posSets)
     for (const harga of [null, ...F.HARGA_OPTIONS.map(o => o.value)])
       for (const lab of labelSets)
-        for (const motor of [null, 'matic', 'adventure', 'retro', 'trail']) yield st({ posisi, harga, label: lab, motor });
+        for (const motor of [null, 'matic', 'adventure', 'retro', 'trail', 'sport']) yield st({ posisi, harga, label: lab, motor });
 }
 
 function assertFacetsMatchBruteForce(items, state) {
@@ -292,7 +292,7 @@ function assertFacetsMatchBruteForce(items, state) {
   for (const o of F.POSISI_OPTIONS) assert.strictEqual(f.posisi[o.value], F.optionCount(items, state, 'posisi', o.value), `posisi ${o.value} @ ${F.stateKey(state)}`);
   for (const o of F.HARGA_OPTIONS) assert.strictEqual(f.harga[o.value], F.optionCount(items, state, 'harga', o.value), `harga ${o.value} @ ${F.stateKey(state)}`);
   for (const o of F.LABEL_OPTIONS) assert.strictEqual(f.label[o.value], F.optionCount(items, state, 'label', o.value), `label ${o.value} @ ${F.stateKey(state)}`);
-  for (const c of ['matic', 'adventure', 'retro', 'trail']) assert.strictEqual(f.motor[c], F.optionCount(items, state, 'motor', c), `motor ${c} @ ${F.stateKey(state)}`);
+  for (const c of ['matic', 'adventure', 'retro', 'trail', 'sport']) assert.strictEqual(f.motor[c], F.optionCount(items, state, 'motor', c), `motor ${c} @ ${F.stateKey(state)}`);
   assert.strictEqual(f.hargaAll, F.applyCatalog(items, { ...state, harga: null }).length, `hargaAll ${F.stateKey(state)}`);
 }
 
@@ -469,7 +469,7 @@ const BADGES = [null, null, null, 'BEST SELLER', 'NEW', 'Baru'];
 const BIG = Array.from({ length: 500 }, (_, i) => {
   const price = rand() < 0.03 ? 0 : 50000 + Math.round(rand() * 60) * 10000;
   const compare = rand() < 0.3 ? price + 50000 : null;
-  const cats = ['matic', 'adventure', 'retro', 'trail'].filter(() => rand() < 0.25);
+  const cats = ['matic', 'adventure', 'retro', 'trail', 'sport'].filter(() => rand() < 0.25);
   const name = `${pick(NAMES)} Seri ${i}`;
   return simple(`gen-${i}`, name, price, compare, { badge: pick(BADGES), createdAt: rand() < 0.1 ? null : Math.floor(rand() * 1e6), kategoriMotor: cats });
 }).map(F.toCatalogItem);
@@ -478,7 +478,7 @@ function randomState() {
   const posisi = F.POSISI_OPTIONS.map(o => o.value).filter(() => rand() < 0.2);
   const label = F.LABEL_OPTIONS.map(o => o.value).filter(() => rand() < 0.15);
   const harga = rand() < 0.4 ? pick(F.HARGA_OPTIONS).value : null;
-  const motor = rand() < 0.3 ? pick(['matic', 'adventure', 'retro', 'trail']) : null;
+  const motor = rand() < 0.3 ? pick(['matic', 'adventure', 'retro', 'trail', 'sport']) : null;
   const urut = pick(F.URUT_OPTIONS).value;
   return st({ posisi, label, harga, motor, urut });
 }

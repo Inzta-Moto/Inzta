@@ -1,4 +1,5 @@
 import { isMotionRoute } from '@/lib/v2/motion/boot';
+import { CATEGORY_LABELS, isMotorCategory } from '@/lib/v2/motor-category';
 
 export type LinkClick = {
   href: string | null;
@@ -48,7 +49,6 @@ export function samePage(click: LinkClick, current: URL): boolean {
   return url.origin === current.origin && isMotionRoute(url.pathname) && url.pathname === current.pathname && url.search === current.search && !url.hash;
 }
 
-const CATEGORY_LABEL: Record<string, string> = { matic: 'Motor Matic', adventure: 'Motor Adventure', retro: 'Motor Retro', trail: 'Motor Trail' };
 
 const POSITION_LABEL: Record<string, string> = {
   tank: 'Tank bag',
@@ -71,6 +71,6 @@ export function routeLabel(pathname: string, search = ''): string {
   if (pathname.startsWith('/blog/')) return 'Artikel';
   if (pathname.startsWith('/tentang')) return 'Tentang INZTA';
   const motor = pathname.match(/^\/tas-motor\/([a-z-]+)/);
-  if (motor) return CATEGORY_LABEL[motor[1]] ?? 'Pilih motor';
+  if (motor) return isMotorCategory(motor[1]) ? `Motor ${CATEGORY_LABELS[motor[1]]}` : 'Pilih motor';
   return 'INZTA';
 }

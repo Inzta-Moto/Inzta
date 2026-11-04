@@ -1,5 +1,5 @@
 import type { MotorCategory, ProductAttribute, ProductVariant, Side, SidePickerData } from '@/types';
-import { CATEGORY_SLUGS, normalizeKategoriMotor } from '@/lib/v2/motor-category';
+import { CATEGORY_LABELS, CATEGORY_SLUGS, normalizeKategoriMotor } from '@/lib/v2/motor-category';
 import { SIDES, SIDE_LABEL, sidePicker, sideStructure } from '@/components/v2/product/side';
 
 // Pure state and payload rules of the admin side preset and motor categories (F-016 S4.6, D2). No React imports, so
@@ -29,7 +29,7 @@ export interface FormV2State {
 
 export const CONFIRM_MODE_CHANGE = 'Varian yang ada akan diganti. Perubahan baru berlaku setelah klik Simpan.';
 export const UNEQUAL_PRICES = 'Harga dan harga coret kiri dan kanan harus sama.';
-export const KATEGORI_LABEL: Record<MotorCategory, string> = { matic: 'Matic', adventure: 'Adventure', retro: 'Retro', trail: 'Trail' };
+export const KATEGORI_LABEL: Record<MotorCategory, string> = CATEGORY_LABELS;
 
 const emptyRow = (): SideRow => ({ variationId: '', sku: '', price: '', compareAt: '', stock: '', images: [] });
 const money = (n: number | null | undefined) => (typeof n === 'number' && n > 0 ? n.toLocaleString('id-ID') : '');
