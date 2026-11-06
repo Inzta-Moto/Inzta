@@ -13,10 +13,17 @@ export interface UploadedImage {
   height: number;
 }
 
+/** Reason a file cannot be uploaded (shown to the admin as is), or null when it can. Checked before any upload. */
+export function imageFileError(file: { type: string; size: number }): string | null {
+  if (!file.type.startsWith('image/')) return 'Format harus gambar (JPG, PNG, WebP)';
+  if (file.size > MAX_BYTES) return 'Ukuran maksimal 5MB';
+  return null;
+}
+
 /** Throws an Error whose message can be shown to the admin as is. */
 export async function uploadImage(file: File, onProgress?: (percent: number) => void): Promise<UploadedImage> {
-  if (!file.type.startsWith('image/')) throw new Error('Format harus gambar (JPG, PNG, WebP)');
-  if (file.size > MAX_BYTES) throw new Error('Ukuran maksimal 5MB');
+  const invalid = imageFileError(file);
+  if (invalid) throw new Error(invalid);
 
   let fileToUpload = file;
   try {
