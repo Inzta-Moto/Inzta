@@ -95,6 +95,10 @@ export function validateV2Fields(data: any): ValidationError | null {
 export function validateImageFields(data: any): ValidationError | null {
   const own = validateImageList(data.images, PRODUCT_IMAGE_MAX, 'produk');
   if (own) return own;
+  // imageUrl is stored as is and is the fallback photo when images is missing or empty (review REV-03).
+  const u = data.imageUrl;
+  if (u !== undefined && u !== null && u !== '' && validateImageList([u], 1, 'produk'))
+    return { code: 'INVALID_IMAGES', message: 'Foto utama produk (imageUrl) tidak valid.' };
   const variants: any[] = Array.isArray(data.variants) ? data.variants : [];
   for (const v of variants) {
     const err = validateImageList(v?.images ?? undefined, PRODUCT_IMAGE_MAX, 'variasi');

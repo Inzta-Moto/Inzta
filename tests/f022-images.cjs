@@ -116,8 +116,9 @@ const jsonReq = (method, body) => new Request('http://localhost/api/products', {
     assert.strictEqual(I.validateImageList(photos(50)).code, 'IMAGES_TOO_MANY');
     assert.match(I.validateImageList(photos(2), 1, 'variasi').message, /Maksimal 1 foto variasi/);
   });
-  await check('U-3 validateImageList: non-array and bad entries are INVALID_IMAGES', () => {
-    for (const bad of [null, 'https://x/a.jpg', {}, 5, true]) assert.strictEqual(I.validateImageList(bad).code, 'INVALID_IMAGES', JSON.stringify(bad));
+  await check('U-3 validateImageList: null = no list (older clients); non-array and bad entries are INVALID_IMAGES', () => {
+    assert.strictEqual(I.validateImageList(null), null);
+    for (const bad of ['https://x/a.jpg', {}, 5, true]) assert.strictEqual(I.validateImageList(bad).code, 'INVALID_IMAGES', JSON.stringify(bad));
     for (const bad of [[''], ['  '], [5], [null], [{}], [photos(1)[0], undefined], ['x'.repeat(2049)]])
       assert.strictEqual(I.validateImageList(bad).code, 'INVALID_IMAGES', JSON.stringify(bad).slice(0, 40));
     assert.strictEqual(I.validateImageList(['x'.repeat(2048)]), null);
@@ -190,6 +191,20 @@ const jsonReq = (method, body) => new Request('http://localhost/api/products', {
     const src = read('components/ImageUpload.tsx');
     // Invalid files are filtered before planUpload, so they never use a free slot.
     assert.ok(src.indexOf('imageFileError(file)') < src.indexOf('planUpload(valid'), 'validate before planning');
+  });
+
+  await check('U-12 imageKeys: stable per URL (a move keeps keys), unique for duplicate legacy URLs', () => {
+    assert.deepStrictEqual(I.imageKeys(['a', 'b', 'a']), ['a#0', 'b#0', 'a#1']);
+    const before = I.imageKeys(['a', 'b', 'c']);
+    const after = I.imageKeys(I.moveItem(['a', 'b', 'c'], 1, 2));
+    assert.deepStrictEqual([...after].sort(), [...before].sort());
+    assert.strictEqual(after[2], 'b#0');
+  });
+  await check('U-13 focusAfterMove: keeps the pressed direction, flips at either end', () => {
+    assert.strictEqual(I.focusAfterMove(3, 10, 'kanan'), 'kanan');
+    assert.strictEqual(I.focusAfterMove(9, 10, 'kanan'), 'kiri');
+    assert.strictEqual(I.focusAfterMove(4, 10, 'kiri'), 'kiri');
+    assert.strictEqual(I.focusAfterMove(0, 10, 'kiri'), 'kanan');
   });
 
   // ── API validation ────────────────────────────────────────────────────────
@@ -268,6 +283,22 @@ const jsonReq = (method, body) => new Request('http://localhost/api/products', {
     docs.clear();
     assert.strictEqual((await listRoute.POST(jsonReq('POST', simpleBody({ images: [], imageUrl: '' })))).status, 201);
     assert.deepStrictEqual(docs.get('products/tas-uji-f022').images, []);
+    docs.clear();
+    // images: null from older clients is "no list": falls back to imageUrl like a missing list.
+    assert.strictEqual((await listRoute.POST(jsonReq('POST', simpleBody({ images: null })))).status, 201);
+    assert.deepStrictEqual(docs.get('products/tas-uji-f022').images, [`${CDN}p1.jpg`]);
+  });
+  await check('A-9 imageUrl is validated too (review REV-03): non-string, blank, or over 2048 chars → 400, nothing written', async () => {
+    docs.clear();
+    for (const bad of [5, '   ', 'x'.repeat(2049), { url: 'a' }, ['a']]) {
+      const res = await listRoute.POST(jsonReq('POST', simpleBody({ images: [], imageUrl: bad })));
+      assert.strictEqual(res.status, 400, JSON.stringify(bad).slice(0, 20));
+      assert.strictEqual((await res.json()).code, 'INVALID_IMAGES');
+    }
+    assert.strictEqual(docs.size, 0);
+    for (const ok of [undefined, null, '', `${CDN}p1.jpg`]) assert.strictEqual(H.validateImageFields({ images: [], imageUrl: ok }), null, String(ok));
+    const put = await slugRoute.PUT(jsonReq('PUT', variableBody({ imageUrl: 7 })), { params: { slug: 'x' } });
+    assert.strictEqual(put.status, 400);
   });
 
   // ── Product page gallery (server render) ─────────────────────────────────
@@ -336,27 +367,64 @@ const jsonReq = (method, body) => new Request('http://localhost/api/products', {
     assert.strictEqual((full.match(/class="upload-multi-item/g) || []).length, 10);
     const over = up(photos(11), 10);
     assert.match(over, /role="alert">Melebihi batas 10 foto\. Hapus 1 foto sebelum menyimpan\.<\/p>/);
+    // A legacy variant with 2 photos (max 1) saves fine (F-022 D-2), so no misleading alert there (REV-D2).
+    assert.ok(!up(photos(2), 1).includes('role="alert"'));
   });
   await check('S-4 admin product form: one gallery for both types at PRODUCT_IMAGE_MAX, variants at VARIANT_IMAGE_MAX, client check before save', () => {
     const src = read('app/admin/(panel)/produk/page.tsx');
     assert.ok(!/maks 3|max=\{3\}/.test(src), 'old limit of 3 removed');
-    assert.strictEqual((src.match(/<ImageUpload value=\{fImages\} onChange=\{setFImages\} max=\{PRODUCT_IMAGE_MAX\} \/>/g) || []).length, 1);
+    assert.strictEqual((src.match(/<ImageUpload value=\{fImages\} onChange=\{setFImages\} max=\{PRODUCT_IMAGE_MAX\}[ />]/g) || []).length, 1);
+    assert.strictEqual((src.match(/<ImageUpload value=\{fImages\}/g) || []).length, 1, 'one gallery uploader for both types');
     assert.ok(!/value=\{fImages\}[^>]*max=\{1\}/.test(src), 'variable main image no longer max 1');
     assert.match(src, /Gambar produk \(maks \{PRODUCT_IMAGE_MAX\}\)/);
     assert.match(src, /onChange=\{urls => updateVariant\(v\.variationId, 'images', urls\)\}\s*max=\{VARIANT_IMAGE_MAX\}/);
     assert.match(src, /if \(fImages\.length > PRODUCT_IMAGE_MAX\) \{ setFormError\(/);
     assert.match(src, /images: fImages,\s*imageUrl: fImages\[0\] \|\| ''/);
   });
+  await check('S-4b admin form waits for uploads (review REV-01): gallery and variant uploaders report busy; Save, Back, and submit are locked', () => {
+    const src = read('app/admin/(panel)/produk/page.tsx');
+    assert.match(src, /max=\{PRODUCT_IMAGE_MAX\} onBusyChange=\{trackUpload\} \/>/);
+    assert.match(src, /max=\{VARIANT_IMAGE_MAX\}\s*onBusyChange=\{trackUpload\}/);
+    assert.match(src, /disabled=\{saving \|\| uploadsBusy > 0\}/);
+    assert.match(src, /const cancelForm = \(\) => \{ if \(uploadsBusy > 0\) return;/);
+    assert.match(src, /if \(uploadsBusy > 0\) \{ setFormError\('Tunggu upload foto selesai/);
+    const up = read('components/ImageUpload.tsx');
+    // The batch loop checks the mounted flag before every write to the parent.
+    const loop = up.slice(up.indexOf('for (let i = 0; i < accepted.length; i++)'), up.indexOf('setMessage(uploadSummary({ uploaded'));
+    assert.ok((loop.match(/if \(!aliveRef\.current\) return;/g) || []).length >= 2, 'alive checks in loop');
+    assert.ok(loop.indexOf('if (!aliveRef.current) return;', loop.indexOf('await uploadImage')) < loop.indexOf('onChange(next)'));
+  });
   await check('S-5 other uploader users keep their limits (side preset 1, article images 5) and article API still caps at 5', () => {
     assert.match(read('app/admin/(panel)/produk/_v2/SidePresetCard.tsx'), /images: urls\.slice\(0, 1\) \}\)\} max=\{1\}/);
     assert.match(read('app/admin/(panel)/artikel/_editor/ArticleEditor.tsx'), /onChange=\{urls => set\('images', urls\)\} max=\{5\}/);
     assert.match(read('lib/article-input.ts'), /rawImages\.length > 5/);
   });
-  await check('S-6 styles: admin uploader and v2 gallery classes exist; v2 CSS stays in the .iz- scope', () => {
+  await check('S-6 styles: admin uploader and v2 gallery classes exist; scripts/check-v2-css.mjs passes (v2 .iz- scope)', () => {
+    const out = require('child_process').execFileSync(process.execPath, [path.join(ROOT, 'scripts/check-v2-css.mjs'), path.join(ROOT, 'app/(v2)')], { cwd: ROOT, encoding: 'utf8' });
+    assert.match(out, /check-v2-css: ok/);
     const admin = read('app/admin/admin.css');
     for (const c of ['.upload-multi-move', '.upload-multi-main', '.upload-msg', '.upload-multi-item.is-drop-target', '.upload-area.is-file-over']) assert.ok(admin.includes(c), c);
     const v2 = read('app/(v2)/v2-product.css');
-    for (const c of ['.iz-gallery__count', '.iz-gallery__nav', '.iz-gallery__step']) assert.ok(v2.includes(c), c);
+    for (const c of ['.iz-gallery__count', '.iz-gallery__nav', '.iz-gallery__step', '.iz-gallery__live']) assert.ok(v2.includes(c), c);
+  });
+  await check('S-7 test page /uji-dev/upload-foto: 404 in production and without the fixture; renders the uploader in dev with the fixture', () => {
+    const Page = require(path.join(ROOT, 'app/uji-dev/upload-foto/page.tsx')).default;
+    const env = { NODE_ENV: process.env.NODE_ENV, F016_FIXTURE: process.env.F016_FIXTURE };
+    const set = (k, v) => { if (v === undefined) delete process.env[k]; else process.env[k] = v; };
+    try {
+      for (const [nodeEnv, fixture] of [['production', '/tmp/x.json'], ['development', undefined], ['production', undefined]]) {
+        set('NODE_ENV', nodeEnv); set('F016_FIXTURE', fixture);
+        assert.throws(() => Page(), /NEXT_NOT_FOUND/, `${nodeEnv} ${fixture}`);
+      }
+      set('NODE_ENV', 'development'); set('F016_FIXTURE', '/tmp/x.json');
+      const html = renderToStaticMarkup(Page());
+      assert.match(html, /id="ten"/);
+      assert.match(html, /multiple=""/);
+    } finally { set('NODE_ENV', env.NODE_ENV); set('F016_FIXTURE', env.F016_FIXTURE); }
+  });
+  await check('R-5 gallery live region (review REV-04): present and empty on the server (no hydration change), absent with one photo', () => {
+    assert.match(render(simpleBody()), /<span class="iz-gallery__live" aria-live="polite"><\/span>/);
+    assert.ok(!render(simpleBody({ images: photos(1) })).includes('iz-gallery__live'));
   });
 
   let failed = 0;

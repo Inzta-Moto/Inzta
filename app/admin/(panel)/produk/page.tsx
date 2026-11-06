@@ -42,6 +42,9 @@ export default function ProductsPage() {
   const [formError, setFormError] = useState<string>('');
   const formErrorRef = useRef<HTMLDivElement>(null);
   const [saving, setSaving] = useState<boolean>(false);
+  // F-022 (review REV-01): number of image uploaders with a batch in flight; Save and Back wait for them.
+  const [uploadsBusy, setUploadsBusy] = useState<number>(0);
+  const trackUpload = (busy: boolean) => setUploadsBusy(n => Math.max(0, n + (busy ? 1 : -1)));
   const [currentPage, setCurrentPage] = useState(1);
   const [expandedProducts, setExpandedProducts] = useState<Set<string>>(new Set());
   const [formView, setFormView] = useState<'list' | 'add' | 'edit'>('list');
@@ -160,7 +163,7 @@ export default function ProductsPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const cancelForm = () => setFormView('list');
+  const cancelForm = () => { if (uploadsBusy > 0) return; setFormView('list'); };
   const openDelete = (slug: string, name: string) => setDeleteTarget({ slug, name });
   const closeDelete = () => setDeleteTarget(null);
 
@@ -255,6 +258,7 @@ export default function ProductsPage() {
     setFormError('');
     setSaving(true);
 
+    if (uploadsBusy > 0) { setFormError('Tunggu upload foto selesai, lalu simpan lagi.'); setSaving(false); return; }
     if (!fSlug) { setFormError('Slug kosong, pastikan nama produk diisi.'); setSaving(false); return; }
     if (fImages.length > PRODUCT_IMAGE_MAX) { setFormError(`Maksimal ${PRODUCT_IMAGE_MAX} foto produk (sekarang ${fImages.length}). Hapus sebagian lalu simpan lagi.`); setSaving(false); return; }
     const v2Error = v2.validate();
@@ -340,7 +344,7 @@ export default function ProductsPage() {
     return (
       <div className="prod-form-page">
         <div className="prod-form-topbar">
-          <button className="prod-form-back" onClick={cancelForm}><ArrowLeft size={18} /><span>Kembali</span></button>
+          <button className="prod-form-back" onClick={cancelForm} disabled={uploadsBusy > 0} title={uploadsBusy > 0 ? 'Tunggu upload foto selesai' : undefined}><ArrowLeft size={18} /><span>Kembali</span></button>
           <h1 className="prod-form-title">{formView === 'edit' ? 'Edit Produk' : 'Tambah Produk'}</h1>
           <div style={{ width: 100 }} />
         </div>
@@ -414,7 +418,7 @@ export default function ProductsPage() {
             {/* F-022: both product types carry up to PRODUCT_IMAGE_MAX photos; photo 1 is the main photo. */}
             <div className={`prod-form-card ${fProductType === 'simple' ? 'prod-images-card' : 'prod-main-image-card'}`}>
               <div className="prod-form-card-title">Gambar produk (maks {PRODUCT_IMAGE_MAX})</div>
-              <ImageUpload value={fImages} onChange={setFImages} max={PRODUCT_IMAGE_MAX} />
+              <ImageUpload value={fImages} onChange={setFImages} max={PRODUCT_IMAGE_MAX} onBusyChange={trackUpload} />
               <small className="prod-form-hint">
                 Foto 1 menjadi foto utama di kartu produk, pratinjau link, dan admin. Pilih beberapa foto sekaligus; ubah urutan dengan drag atau tombol panah.
                 {fProductType === 'variable' && ' Foto per variasi diisi di tabel variasi dan ikut tampil di galeri halaman produk.'}
@@ -550,6 +554,7 @@ export default function ProductsPage() {
                                 value={v.images || []}
                                 onChange={urls => updateVariant(v.variationId, 'images', urls)}
                                 max={VARIANT_IMAGE_MAX}
+                                onBusyChange={trackUpload}
                               />
                             </td>
                             <td style={{ padding: '6px 10px', textAlign: 'center' }}>
@@ -753,9 +758,9 @@ export default function ProductsPage() {
             })()}
 
             <div className="prod-form-save-wrap">
-              <button type="submit" className="prod-form-save-btn" disabled={saving}>
+              <button type="submit" className="prod-form-save-btn" disabled={saving || uploadsBusy > 0}>
                 <Save size={16} />
-                {saving ? 'Menyimpan...' : 'Simpan Produk'}
+                {saving ? 'Menyimpan...' : uploadsBusy > 0 ? 'Menunggu upload foto...' : 'Simpan Produk'}
               </button>
             </div>
           </div>

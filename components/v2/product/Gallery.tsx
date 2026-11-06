@@ -122,6 +122,12 @@ export default function Gallery({
             {position.index}/{position.total}
           </span>
         )}
+        {/* Review REV-04: announces the photo after a switch; empty on the server and on load, so no hydration change. */}
+        {many && (
+          <span className="iz-gallery__live" aria-live="polite">
+            {switched && position ? `Foto ${position.index} dari ${position.total}` : ''}
+          </span>
+        )}
         {many && (
           <div className="iz-gallery__nav iz-js-only">
             <button className="iz-iconbtn iz-gallery__step iz-gallery__step--prev" type="button" aria-label="Foto sebelumnya" onClick={() => step(-1)}>

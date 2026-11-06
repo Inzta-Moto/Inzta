@@ -19,11 +19,12 @@ export const IMAGE_URL_MAX_LENGTH = 2048;
 export type ImageListError = { code: 'INVALID_IMAGES' | 'IMAGES_TOO_MANY'; message: string };
 
 /**
- * Validates an `images` value from a request body. `undefined` is valid (the builders then fall back to imageUrl or
- * []), anything else must be an array of at most `max` non-empty strings no longer than IMAGE_URL_MAX_LENGTH.
+ * Validates an `images` value from a request body. `undefined` and `null` are valid (the builders then fall back to
+ * imageUrl or []), anything else must be an array of at most `max` non-empty strings no longer than IMAGE_URL_MAX_LENGTH.
  */
 export function validateImageList(value: unknown, max: number = PRODUCT_IMAGE_MAX, label = 'produk'): ImageListError | null {
-  if (value === undefined) return null;
+  // null is what older clients send for "no photos"; the builders already treat it like a missing list.
+  if (value === undefined || value === null) return null;
   if (!Array.isArray(value))
     return { code: 'INVALID_IMAGES', message: `Daftar foto ${label} tidak valid.` };
   if (value.length > max)
@@ -96,4 +97,26 @@ export function thumbScrollLeft(strip: { scrollLeft: number; clientWidth: number
   if (thumb.left - pad < strip.scrollLeft) return Math.max(0, thumb.left - pad);
   if (thumb.left + thumb.width + pad > strip.scrollLeft + strip.clientWidth) return thumb.left + thumb.width + pad - strip.clientWidth;
   return null;
+}
+
+/**
+ * Stable React keys for an image list: the URL plus its occurrence number, so a moved photo keeps its DOM node (and
+ * the focused arrow button) and duplicate legacy URLs still get unique keys.
+ */
+export function imageKeys(list: readonly string[]): string[] {
+  const seen = new Map<string, number>();
+  return list.map(url => {
+    const n = seen.get(url) ?? 0;
+    seen.set(url, n + 1);
+    return `${url}#${n}`;
+  });
+}
+
+/**
+ * After an arrow-button move to index `to`, the arrow to focus on the moved photo: the same direction while the photo
+ * can still move that way, else the opposite one (the pressed one is disabled at either end).
+ */
+export function focusAfterMove(to: number, length: number, dir: 'kiri' | 'kanan'): 'kiri' | 'kanan' {
+  if (dir === 'kiri') return to > 0 ? 'kiri' : 'kanan';
+  return to < length - 1 ? 'kanan' : 'kiri';
 }
