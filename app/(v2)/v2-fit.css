@@ -182,6 +182,7 @@
   html .iz-page .iz-search__input { font-size: max(13.4px, calc(16 * var(--u))); }
   html .iz-page .iz-pdp-tags__title { font-size: max(12.6px, calc(15 * var(--u))); }
   html .iz-page .iz-more__btn { font-size: max(14.3px, calc(17 * var(--u))); }
+  html .iz-page .iz-gallery__count { font-size: max(11.8px, calc(14 * var(--u))); }
   html .iz-page .iz-thumb__ph { font-size: max(11.8px, calc(14 * var(--u))); }
   html .iz-page .iz-buybox__live { font-size: max(12.6px, calc(15 * var(--u))); }
   html .iz-page .iz-copylink__msg { font-size: max(12.6px, calc(15 * var(--u))); }

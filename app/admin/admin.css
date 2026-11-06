@@ -164,6 +164,24 @@ select.form-input { appearance: none; background-image: url("data:image/svg+xml,
 .upload-area-sm .upload-progress-bar { width: 80% !important; max-width: 32px !important; height: 2px !important; }
 .upload-area-sm .upload-progress-text { font-size: 7px !important; }
 
+/* ── F-022: up to 10 photos, reorder, batch upload message ── */
+.upload-multi-wrap { display: block; min-width: 0; }
+.upload-multi-item--sortable { margin-bottom: 26px !important; cursor: grab !important; }
+.upload-multi-item--sortable:active { cursor: grabbing !important; }
+.upload-multi-item.is-dragging { opacity: 0.4 !important; }
+.upload-multi-item.is-drop-target { outline: 2px solid var(--accent) !important; outline-offset: 2px !important; }
+.upload-multi-main { position: absolute !important; top: 3px !important; left: 3px !important; padding: 1px 5px !important; background: rgba(17, 17, 17, 0.75) !important; color: #FFF !important; border-radius: 4px !important; font-size: 9px !important; font-weight: 700 !important; line-height: 14px !important; pointer-events: none !important; }
+.upload-multi-move { position: absolute !important; left: 14px !important; right: 0 !important; bottom: -26px !important; display: flex !important; justify-content: flex-end !important; gap: 4px !important; }
+.upload-multi-move button { width: 22px !important; height: 20px !important; display: inline-flex !important; align-items: center !important; justify-content: center !important; padding: 0 !important; background: var(--bg-white) !important; border: 1px solid var(--border-light) !important; border-radius: 4px !important; color: var(--text-secondary) !important; font-size: 15px !important; line-height: 1 !important; cursor: pointer !important; }
+.upload-multi-move button:hover:not(:disabled) { border-color: var(--accent) !important; color: var(--accent-hover) !important; }
+.upload-multi-move button:disabled { opacity: 0.35 !important; cursor: default !important; }
+.upload-multi-remove:disabled { opacity: 0.5 !important; cursor: default !important; transform: none !important; }
+.upload-area.is-file-over { border-color: var(--accent) !important; background: var(--accent-light) !important; }
+.upload-area[aria-disabled="true"] { cursor: progress !important; }
+.upload-area-sm .upload-progress-text { white-space: nowrap !important; }
+.upload-msg { margin: 8px 0 0 !important; font-size: 12px !important; line-height: 1.4 !important; color: var(--text-secondary) !important; }
+.upload-msg--error { color: #DC2626 !important; }
+
 
 /* ============================================
    ADMIN DASHBOARD RESPONSIVE COMPONENTS

@@ -22,6 +22,7 @@
     "test:motion": "node tests/f016-motion.cjs",
     "test:seo": "node tests/f005-seo.cjs",
     "test:automation": "node tests/f010-automation.cjs",
+    "test:images": "node tests/f022-images.cjs",
     "check:v2-css": "node scripts/check-v2-css.mjs",
     "gen:v2-fit": "node scripts/gen-v2-fit.mjs",
     "check:v2-fit": "node scripts/gen-v2-fit.mjs --check",

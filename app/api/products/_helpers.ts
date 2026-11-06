@@ -1,6 +1,7 @@
 import { computePriceRange, computeTotalStock } from '@/lib/product-utils';
 import { CATEGORY_SLUGS, isMotorCategory } from '@/lib/v2/motor-category';
 import { hasActiveSidePair } from '@/components/v2/product/side';
+import { PRODUCT_IMAGE_MAX, validateImageList } from '@/lib/product-images';
 
 // Re-export shared normalization helper so existing API route imports keep
 // working. Canonical source lives in `lib/product-utils.ts` karena juga dipakai
@@ -23,7 +24,7 @@ export function validateSimpleProduct(data: any): ValidationError | null {
       return { code: 'INVALID_COMPARE_PRICE', message: 'Harga coret harus lebih besar dari harga jual' };
   }
 
-  return validateV2Fields(data);
+  return validateV2Fields(data) ?? validateImageFields(data);
 }
 
 export function validateVariableProduct(data: any): ValidationError | null {
@@ -70,7 +71,7 @@ export function validateVariableProduct(data: any): ValidationError | null {
   if (new Set(activeSkus).size !== activeSkus.length)
     return { code: 'DUPLICATE_SKU', message: 'SKU tidak boleh duplikat dalam satu produk' };
 
-  return validateV2Fields(data);
+  return validateV2Fields(data) ?? validateImageFields(data);
 }
 
 // F-016 S4.6.7: optional fields of D2 and E3. Checked after the existing rules, so legacy bodies get the same
@@ -86,6 +87,19 @@ export function validateV2Fields(data: any): ValidationError | null {
   if (data.jualPerSisi === true && !hasActiveSidePair(data))
     return { code: 'INVALID_SIDE_VARIANTS', message: 'Produk per sisi harus punya varian Kiri dan Kanan.' };
 
+  return null;
+}
+
+// F-022: at most PRODUCT_IMAGE_MAX product photos, each a non-empty URL string. Variant photos get the same sanity
+// bound only (the admin form keeps one photo per variant), so a legacy variant with an extra photo never blocks a save.
+export function validateImageFields(data: any): ValidationError | null {
+  const own = validateImageList(data.images, PRODUCT_IMAGE_MAX, 'produk');
+  if (own) return own;
+  const variants: any[] = Array.isArray(data.variants) ? data.variants : [];
+  for (const v of variants) {
+    const err = validateImageList(v?.images ?? undefined, PRODUCT_IMAGE_MAX, 'variasi');
+    if (err) return err;
+  }
   return null;
 }
 

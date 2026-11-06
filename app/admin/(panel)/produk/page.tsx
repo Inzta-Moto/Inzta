@@ -5,6 +5,7 @@ import { formatPrice, calcDiscount, optimizeCloudinaryUrl } from '@/lib/utils';
 import { generateVariants, computePriceRange, countCombinations } from '@/lib/product-utils';
 import type { Product, ProductAttribute, ProductVariant } from '@/types';
 import ImageUpload from '@/components/ImageUpload';
+import { PRODUCT_IMAGE_MAX, VARIANT_IMAGE_MAX } from '@/lib/product-images';
 import { toSlug } from '@/lib/slug';
 import { readAdminError } from '@/lib/admin-messages';
 import { Edit2, Trash2, Package, ChevronDown, Tag, Layers, DollarSign, Archive, ArrowLeft, Save, Plus, X } from 'lucide-react';
@@ -255,6 +256,7 @@ export default function ProductsPage() {
     setSaving(true);
 
     if (!fSlug) { setFormError('Slug kosong, pastikan nama produk diisi.'); setSaving(false); return; }
+    if (fImages.length > PRODUCT_IMAGE_MAX) { setFormError(`Maksimal ${PRODUCT_IMAGE_MAX} foto produk (sekarang ${fImages.length}). Hapus sebagian lalu simpan lagi.`); setSaving(false); return; }
     const v2Error = v2.validate();
     if (v2Error) { setFormError(v2Error); setSaving(false); return; }
 
@@ -409,18 +411,15 @@ export default function ProductsPage() {
             </div>
 
             {/* ── Gambar ─────────────────────────────────────────────── */}
-            {fProductType === 'simple' ? (
-              <div className="prod-form-card prod-images-card">
-                <div className="prod-form-card-title">Gambar produk (maks 3)</div>
-                <ImageUpload value={fImages} onChange={setFImages} max={3} />
-              </div>
-            ) : (
-              <div className="prod-form-card prod-main-image-card">
-                <div className="prod-form-card-title">Gambar utama</div>
-                <ImageUpload value={fImages} onChange={setFImages} max={1} />
-                <small className="prod-form-hint">Gambar ini menjadi pratinjau di admin dan gambar utama pada kartu produk di sisi pelanggan.</small>
-              </div>
-            )}
+            {/* F-022: both product types carry up to PRODUCT_IMAGE_MAX photos; photo 1 is the main photo. */}
+            <div className={`prod-form-card ${fProductType === 'simple' ? 'prod-images-card' : 'prod-main-image-card'}`}>
+              <div className="prod-form-card-title">Gambar produk (maks {PRODUCT_IMAGE_MAX})</div>
+              <ImageUpload value={fImages} onChange={setFImages} max={PRODUCT_IMAGE_MAX} />
+              <small className="prod-form-hint">
+                Foto 1 menjadi foto utama di kartu produk, pratinjau link, dan admin. Pilih beberapa foto sekaligus; ubah urutan dengan drag atau tombol panah.
+                {fProductType === 'variable' && ' Foto per variasi diisi di tabel variasi dan ikut tampil di galeri halaman produk.'}
+              </small>
+            </div>
 
             {/* ── Attribute Builder (variable only) ─────────────────── */}
             {fProductType === 'variable' && v2.mode !== 'side' && (
@@ -550,7 +549,7 @@ export default function ProductsPage() {
                               <ImageUpload
                                 value={v.images || []}
                                 onChange={urls => updateVariant(v.variationId, 'images', urls)}
-                                max={1}
+                                max={VARIANT_IMAGE_MAX}
                               />
                             </td>
                             <td style={{ padding: '6px 10px', textAlign: 'center' }}>

@@ -59,6 +59,23 @@ html .iz-page main > .iz-pdp-block { margin-top: max(var(--space-12), var(--spac
   .iz-gallery .iz-thumbs { display: flex; overflow-x: auto; }
   .iz-gallery .iz-thumbs > .iz-thumb { flex: 0 0 calc((100% - 36px) / 4); }
 }
+/* F-022: up to 10 photos. "3/10" counter and previous/next buttons on the main photo; the strip scrolls the active
+   thumbnail into view (Gallery.tsx), so photos past the visible thumbnails are never hidden. */
+.iz-gallery__count { position: absolute; right: 20px; bottom: 20px; z-index: 2; min-width: 44px; padding: 4px 10px; border-radius: var(--radius-pill); background: rgba(26, 24, 19, 0.72); color: var(--c-kertas-terang); font-size: 14px; font-weight: 600; line-height: 20px; text-align: center; font-variant-numeric: tabular-nums; pointer-events: none; }
+.iz-gallery__nav { position: absolute; inset: 0; z-index: 2; display: flex; align-items: center; justify-content: space-between; padding-inline: 12px; pointer-events: none; }
+.iz-gallery__step { pointer-events: auto; background: var(--c-kertas-terang); box-shadow: 0 1px 6px rgba(26, 24, 19, 0.18); color: var(--c-tinta); }
+.iz-gallery__step:focus-visible { outline: 3px solid var(--c-kuning); outline-offset: 2px; }
+@media (hover: hover) and (min-width: 768px) {
+  .iz-gallery__step { opacity: 0; transition: opacity 150ms ease-out; }
+  .iz-gallery__main:hover .iz-gallery__step, .iz-gallery__step:focus-visible { opacity: 1; }
+}
+@media (max-width: 767px) {
+  .iz-gallery__count { right: 20px; bottom: 20px; font-size: 13px; }
+  .iz-gallery__nav { padding-inline: 18px; }
+  .iz-gallery__step { width: 40px; height: 40px; }
+  .iz-gallery__step::after { content: ""; position: absolute; inset: -4px; }
+  .iz-gallery__step { position: relative; }
+}
 /* Dashed side placeholder of produk-sisi.dc.html (inline style there), S4.4.1. */
 .iz-thumb__ph { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 6px; text-align: center; font-size: 14px; font-weight: 600; line-height: 1.2; color: var(--c-batu); border: 1.5px dashed var(--c-garis); border-radius: inherit; }
 .iz-thumb__ph svg { width: 20px; height: 20px; }
