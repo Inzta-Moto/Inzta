@@ -26,8 +26,11 @@ export default function Garasi() {
         <div className="iz-garasi" data-reveal-stagger="">
           {MOTOR_CATEGORIES.map((c, i) => {
             const pressed = category === c.value;
-            // F-018: on phones an odd last tile spans both columns (v2-overrides.css).
+            // F-028: from 768 px three tiles on top and two wider ones below; on phones two columns and an odd last
+            // tile across both (v2-overrides.css). sizes follows those widths (content box at most 1440 px).
+            const lower = i >= 3;
             const wide = i === MOTOR_CATEGORIES.length - 1 && i % 2 === 0;
+            const sizes = `(max-width: 767px) ${wide ? '100vw' : '50vw'}, (max-width: 1023px) ${lower ? '50vw' : '34vw'}, ${lower ? '700px' : '460px'}`;
             return (
               <button
                 key={c.value}
@@ -36,7 +39,7 @@ export default function Garasi() {
                 aria-pressed={pressed}
                 onClick={() => setCategory(c.value)}
               >
-                <Image src={c.image} alt="" width={512} height={384} sizes={wide ? '(max-width: 767px) 100vw, 230px' : '(max-width: 767px) 50vw, 230px'} quality={PHOTO_QUALITY} />
+                <Image src={c.image} alt="" width={512} height={384} sizes={sizes} quality={PHOTO_QUALITY} />
                 <span className="iz-gtile__label">{c.label}</span>
                 {pressed && (
                   <span className="iz-gtile__check">

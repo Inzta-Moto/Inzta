@@ -348,5 +348,26 @@
     "value": "Tas motor untuk perjalanan Anda.",
     "reason": "Beranda H1 changed to 'Carry Your Gear. Create Your Adventure.' at the owner's request (Om Fahrul via Sehan, 2026-11-02); the canvas keeps the old line.",
     "requirement": "S1.1"
+  },
+  {
+    "artboard": "Main",
+    "kind": "heading",
+    "value": "Dibalas manusia",
+    "reason": "F-024: the chat item title is 'Ngobrol langsung dengan tim INZTA' on Beranda and /tentang (2026-11-09, waits for written approval, P-8 in check-f016-release); the canvas keeps the old title.",
+    "requirement": "S1.4"
+  },
+  {
+    "artboard": "Main-flash",
+    "kind": "heading",
+    "value": "Dibalas manusia",
+    "reason": "F-024: the chat item title is 'Ngobrol langsung dengan tim INZTA' on Beranda and /tentang (2026-11-09, waits for written approval, P-8 in check-f016-release); the canvas keeps the old title.",
+    "requirement": "S1.4"
+  },
+  {
+    "artboard": "tentang",
+    "kind": "heading",
+    "value": "Dibalas manusia",
+    "reason": "F-024: the chat item title is 'Ngobrol langsung dengan tim INZTA' on Beranda and /tentang (2026-11-09, waits for written approval, P-8 in check-f016-release); the canvas keeps the old title.",
+    "requirement": "S1.4, S8.3"
   }
 ]
