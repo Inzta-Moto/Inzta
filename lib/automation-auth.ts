@@ -1,8 +1,9 @@
 import { createHash, timingSafeEqual } from 'crypto';
 
-// F-010 (ADR-0020): the inzta-hq pipeline publishes articles with a per-person bearer token instead of an admin
-// session. Each person has one Vercel variable AUTOMATION_TOKEN_<NAME> (for example AUTOMATION_TOKEN_ANGKASA);
-// <NAME> in lower case becomes the actor stored on the article, so one token can be revoked without the others.
+// F-010 (ADR-0020), F-023 (ADR-0033): the inzta-hq pipeline publishes articles and updates product text with a
+// per-person bearer token instead of an admin session. Each person has one Vercel variable AUTOMATION_TOKEN_<NAME>
+// (for example AUTOMATION_TOKEN_ANGKASA); <NAME> in lower case becomes the actor stored on the article and logged for
+// product updates, so one token can be revoked without the others.
 const PREFIX = 'AUTOMATION_TOKEN_';
 const NAME_PATTERN = /^[A-Z][A-Z0-9_]{1,31}$/;
 // 32 characters is the floor for a random token (openssl rand -base64 32 gives 44); shorter values are ignored.
@@ -47,7 +48,7 @@ export function requireAutomationToken(request: Request, env: Env = process.env)
   const tokens = configuredTokens(env);
   if (tokens.length === 0) {
     console.error('Automation route called but no AUTOMATION_TOKEN_<NAME> is configured');
-    return { ok: false, status: 503, error: 'Otomasi artikel belum diaktifkan di server' };
+    return { ok: false, status: 503, error: 'Otomasi belum diaktifkan di server' };
   }
 
   const header = request.headers.get('authorization') || '';

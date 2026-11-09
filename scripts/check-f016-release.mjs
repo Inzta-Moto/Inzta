@@ -18,7 +18,7 @@ const markers = [
 // that cites the written approval (date, who, where); never to silence the check.
 const PENDING = [
   { id: 'P-8', page: '/', what: 'S1.4 item 1 "Jujur soal kecocokan" (values copy, G2)', re: /Jujur soal kecocokan/ },
-  { id: 'P-8', page: '/', what: 'S1.4 item 3 "Dibalas manusia" (values copy, G2)', re: /Dibalas manusia/ },
+  { id: 'P-8', page: '/', what: 'S1.4 item 3 "Ngobrol langsung dengan tim INZTA" (values copy, G2; F-024 title, needs Bang Raja)', re: /Ngobrol langsung dengan tim INZTA/ },
   { id: 'P-8', page: '/', what: 'S1.4 item 4 "Ikut turun ke jalan" (values copy, G2)', re: /Ikut turun ke jalan/ },
   { id: 'P-5', page: '/', what: 'S1.10 pill "Garansi: PLACEHOLDER" (A-023)', re: /Garansi: PLACEHOLDER/ },
   { id: 'P-6', page: '/', what: 'S1.10 pill "Waktu kirim: PLACEHOLDER"', re: /Waktu kirim: PLACEHOLDER/ },
