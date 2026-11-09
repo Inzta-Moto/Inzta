@@ -1,30 +1,47 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { CheckCircle, Clock, AlertTriangle } from 'lucide-react';
-import { formatPrice, formatDate } from '@/lib/utils';
-import { Commission } from '@/types';
+import HeroBand, { DashboardFrame } from '@/components/affiliate/HeroBand';
+import AffiliateLinkCard from '@/components/affiliate/AffiliateLinkCard';
+import VoucherWarning from '@/components/affiliate/VoucherWarning';
+import NoVoucherCard from '@/components/affiliate/NoVoucherCard';
+import RouteSteps, { COMMISSION_STEPS, COMMISSION_STEPS_TITLE } from '@/components/affiliate/RouteSteps';
+import Toast, { useToast } from '@/components/affiliate/Toast';
+import { useCopy } from '@/components/affiliate/useCopy';
+import CommissionsSection from '@/components/affiliate/commissions/CommissionsSection';
+import { affiliateLink, voucherState, type AffCommission, type AffVoucher } from '@/lib/affiliate/dashboard';
+import { WA_NUMBER } from '@/lib/constants';
 
-export default function AffiliateDashboardClient({ 
-  initialCommissions, 
-  initialAffiliateName, 
-  initialVoucherData,
-  ownVoucherCode = ''
-}: { 
-  initialCommissions: Commission[], 
-  initialAffiliateName: string, 
-  initialVoucherData: any,
-  ownVoucherCode?: string
-}) {
+export type AffiliateDashboardProps = {
+  affiliateName: string;
+  ownVoucherCode: string;
+  /** Whitelisted voucher fields from page.tsx, expiresAt in ms; null when the code or its document is missing. */
+  voucher: AffVoucher;
+  /** Sorted newest first, dates in ms. */
+  commissions: AffCommission[];
+  /** Server render time, so the voucher state and the chart match between the server HTML and hydration. */
+  now: number;
+};
+
+/**
+ * "Cara kerja komisi" in place of the summary and transactions when there is no voucher (E8, FR-09b), at every width.
+ * Its own class, not CommissionsSection's .iz-aff-howto, which hides from 1024 px where the band shows the route.
+ */
+function NoVoucherHowItWorks() {
+  return (
+    <div className="iz-aff-container">
+      <section className="iz-aff-card iz-aff-novoucher-howto">
+        <RouteSteps steps={COMMISSION_STEPS} title={COMMISSION_STEPS_TITLE} tone="light" orientation="vertical" headingLevel={2} />
+      </section>
+    </div>
+  );
+}
+
+export default function AffiliateDashboardClient({ affiliateName, ownVoucherCode, voucher, commissions, now }: AffiliateDashboardProps) {
   const router = useRouter();
-  
-  const commissions = initialCommissions;
-  const affiliateName = initialAffiliateName;
-  const voucherData = initialVoucherData;
-
-  const [currentPage, setCurrentPage] = useState(1);
-  const ITEMS_PER_PAGE = 10;
+  const toast = useToast();
+  const { copiedKey, failedKey, copy } = useCopy(toast.show);
 
   // F-021: the session is verified on the server here, so record the affiliate's own code for "Salin link" (also
   // backfills sessions that logged in before F-021 and have no inzta_affiliate_own yet).
@@ -43,134 +60,58 @@ export default function AffiliateDashboardClient({
     return () => window.removeEventListener('focus', onFocus);
   }, [router]);
 
-  const totalPending = commissions.filter(c => !c.isPaid).reduce((s, c) => s + c.commissionAmount, 0);
-  const totalPaid = commissions.filter(c => c.isPaid).reduce((s, c) => s + c.commissionAmount, 0);
-  const totalAll = commissions.reduce((s, c) => s + c.commissionAmount, 0);
+  const state = voucherState(ownVoucherCode, voucher, now);
+  const hasVoucher = state !== 'missing';
+  const code = ownVoucherCode.trim();
 
-  const isVoucherExpired = () => {
-    if (!voucherData || !voucherData.expiresAt) return false;
-    let ms = 0;
-    if (typeof voucherData.expiresAt._seconds === 'number') ms = voucherData.expiresAt._seconds * 1000;
-    else if (typeof voucherData.expiresAt.seconds === 'number') ms = voucherData.expiresAt.seconds * 1000;
-    else if (typeof voucherData.expiresAt === 'string') ms = new Date(voucherData.expiresAt).getTime();
-    return ms > 0 && ms < Date.now();
-  };
-  
-  const expired = isVoucherExpired();
-  const isVoucherInactive = voucherData && !voucherData.isActive;
-  const showWarning = voucherData && (expired || isVoucherInactive);
+  const onCopyLink = useCallback(() => {
+    void copy('link', affiliateLink(code), 'Link disalin');
+  }, [copy, code]);
+  // The empty state's own key keeps the ticket's failure hint out of it: the hint shows next to the button pressed,
+  // and only one alert is announced (REV-04).
+  const onCopyLinkEmpty = useCallback(() => copy('link-empty', affiliateLink(code), 'Link disalin'), [copy, code]);
+  const onCopyCode = useCallback(() => {
+    void copy('code', code, 'Kode disalin');
+  }, [copy, code]);
+  // Returns the outcome, so the transaction detail can show its own failure hint next to the Order ID.
+  const onCopyText = useCallback((text: string, okMessage: string) => copy('text', text, okMessage), [copy]);
+
+  const band = (
+    // Without a voucher the content card already explains the route, so the band does not repeat it on desktop.
+    <HeroBand name={affiliateName} showRoute={hasVoucher}>
+      {hasVoucher ? (
+        <>
+          {(state === 'expired' || state === 'inactive') && <VoucherWarning code={code} state={state} waNumber={WA_NUMBER} />}
+          <AffiliateLinkCard code={code} voucher={voucher} copiedKey={copiedKey} failedKey={failedKey} onCopyLink={onCopyLink} onCopyCode={onCopyCode} />
+        </>
+      ) : (
+        <NoVoucherCard waNumber={WA_NUMBER} />
+      )}
+    </HeroBand>
+  );
 
   return (
     <>
-      <div className="admin-page-header" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 8 }}>
-        {affiliateName && <div style={{ fontSize: 16, color: '#666', fontWeight: 500 }}>Halo, {affiliateName}! 👋</div>}
-        <h1 className="admin-page-title">Dashboard Affiliate</h1>
-      </div>
-
-      {showWarning && (
-        <div style={{ background: '#fff3e0', border: '1px solid #ffcc80', borderRadius: 8, padding: '12px 16px', marginBottom: 24, display: 'flex', alignItems: 'center', gap: 12 }}>
-          <AlertTriangle size={24} color="#e65100" style={{ flexShrink: 0 }} />
-          <div style={{ fontSize: 13, color: '#e65100', lineHeight: 1.5 }}>
-            <strong>Peringatan:</strong> Kode voucher Anda ({voucherData.code}) saat ini sudah 
-            {expired ? ' kadaluarsa' : ' dinonaktifkan'}. Anda tidak akan menerima komisi dari transaksi baru. 
-            Silakan hubungi Admin Inzta untuk memperbarui voucher Anda.
-          </div>
+      <DashboardFrame band={band}>
+        <div className="iz-aff-content">
+          <div className="iz-aff-topo iz-aff-topo--ink iz-aff-topo--fade iz-aff-content__topo" aria-hidden="true" />
+          {/* CommissionsSection brings its own 1200 px container and its closing "Cara kerja komisi" card. */}
+          {hasVoucher ? (
+            <CommissionsSection
+              commissions={commissions}
+              now={now}
+              hasVoucher={hasVoucher}
+              onCopyLink={onCopyLinkEmpty}
+              onCopyText={onCopyText}
+              waNumber={WA_NUMBER}
+              voucherCode={code}
+            />
+          ) : (
+            <NoVoucherHowItWorks />
+          )}
         </div>
-      )}
-
-      <div className="stats-cards" style={{ marginBottom: 24 }}>
-        {[
-          { n: formatPrice(totalAll), l: 'Total Komisi', c: '#1a1a1a' },
-          { n: formatPrice(totalPending), l: 'Belum Cair', c: '#e65100' },
-          { n: formatPrice(totalPaid), l: 'Sudah Cair', c: '#2e7d32' },
-          { n: commissions.filter(c => !c.isPaid).length.toString(), l: 'Transaksi Pending', c: '#1565c0' },
-        ].map((s, i) => (
-          <div className="stat-card" key={i}>
-            <div>
-              <span className="stat-card-number" style={{ color: s.c }}>{s.n}</span>
-              <span className="stat-card-label">{s.l}</span>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="admin-table-wrap">
-        <table className="admin-table">
-          <thead>
-            <tr>
-              <th>Tanggal</th>
-              <th>Produk</th>
-              <th>Harga</th>
-              <th>Komisi</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {commissions.length === 0 ? (
-              <tr><td colSpan={5} className="table-empty">Belum ada data komisi.</td></tr>
-            ) : commissions.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE).map(c => (
-              <tr key={c.id}>
-                <td style={{ fontSize: 11, whiteSpace: 'nowrap' }}>{formatDate(c.createdAt, { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
-                <td style={{ fontSize: 12 }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                    {c.items && c.items.length > 0 ? (
-                      c.items.map((item, i) => (
-                        <div key={i} style={{ lineHeight: '1.2' }}>
-                          <div style={{ fontWeight: 600, color: '#1a1a1a', marginBottom: '2px' }}>{item.productName ?? (item as any).name}</div>
-                          {item.selectedVariantLabel && (
-                            <div style={{ fontSize: '10px', color: '#666', marginBottom: '2px' }}>{item.selectedVariantLabel}</div>
-                          )}
-                          <div style={{ fontSize: '10px', color: '#888' }}>Jumlah: {item.quantity} pcs</div>
-                        </div>
-                      ))
-                    ) : (
-                      <div style={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {c.productName}
-                      </div>
-                    )}
-                  </div>
-                </td>
-                <td style={{ fontSize: 12 }}>{formatPrice(c.productPrice)}</td>
-                <td style={{ fontSize: 12, fontWeight: 700, color: '#2e7d32' }}>{formatPrice(c.commissionAmount)}</td>
-                <td>
-                  {c.isPaid ? (
-                    <span className="table-badge table-badge-active" style={{ background: '#e8f5e9', color: '#2e7d32' }}>
-                      <CheckCircle size={12} /> Cair {formatDate(c.paidAt)}
-                    </span>
-                  ) : (
-                    <span className="table-badge" style={{ background: '#fff3e0', color: '#e65100' }}><Clock size={12} /> Pending</span>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* ✅ BAGIAN PAGINATION YANG SUDAH DIPERBAIKI */}
-      {commissions.length > ITEMS_PER_PAGE && (
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '15px', marginTop: '20px' }}>
-          <button 
-            className="btn btn-ghost" 
-            disabled={currentPage === 1} 
-            onClick={() => setCurrentPage((p: number) => Math.max(1, p - 1))}
-            style={{ fontSize: 13, padding: '6px 12px' }}
-          >
-            Sebelumnya
-          </button>
-          <span style={{ fontSize: 13, color: '#666' }}>
-            Halaman {currentPage} dari {Math.ceil(commissions.length / ITEMS_PER_PAGE)}
-          </span>
-          <button 
-            className="btn btn-ghost" 
-            disabled={currentPage === Math.ceil(commissions.length / ITEMS_PER_PAGE)} 
-            onClick={() => setCurrentPage((p: number) => Math.min(Math.ceil(commissions.length / ITEMS_PER_PAGE), p + 1))}
-            style={{ fontSize: 13, padding: '6px 12px' }}
-          >
-            Selanjutnya
-          </button>
-        </div>
-      )}
+      </DashboardFrame>
+      <Toast message={toast.message} open={toast.open} />
     </>
   );
 }

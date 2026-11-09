@@ -70,6 +70,8 @@ export default function SiteFooter({ waHref, waNumber, currentCategory }: { waHr
             <li><Link href="/blog">Artikel</Link></li>
             <li><Link href="/kebijakan-privasi">Kebijakan Privasi</Link></li>
             <li><Link href="/syarat-ketentuan">Syarat dan Ketentuan</Link></li>
+            {/* F-026: the only public entry to the affiliate login; kept out of the buyer-facing navbar on purpose. */}
+            <li><Link href="/affiliate/login">Masuk affiliate</Link></li>
           </ul>
         </div>
         <div>
