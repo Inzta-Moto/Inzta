@@ -12,7 +12,7 @@ import '@/app/(v2)/v2-store.css';
 // page is ISR like /kebijakan-privasi. v2-about.css carries the route map styles of the card's dark panel.
 export const revalidate = 3600;
 
-// B7: own title, description, canonical, and Open Graph; no Store/LocalBusiness JSON-LD (ADR-0038 point 6).
+// B7: own title, description, canonical, and Open Graph; no Store/LocalBusiness JSON-LD (ADR-0036 point 6).
 export const metadata = sectionMetadata('toko');
 
 export default async function TokoPage() {
