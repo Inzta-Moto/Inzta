@@ -24,8 +24,8 @@ export interface ProductTextPatch {
   name?: string;
   description?: string;
   kategoriMotor?: MotorCategory[];
-  // The version returned by a dry run (Firestore update time). When present, the write is refused if the product
-  // changed since, so an admin edit made between the preview and the send is never overwritten.
+  // The version returned by a dry run (Firestore update time). Required on a write (review REV-06): the write is
+  // refused if the product changed since, so an admin edit made between the preview and the send is never overwritten.
   expectedVersion?: string | null;
 }
 
@@ -113,6 +113,10 @@ export function parseProductPatchBody(body: unknown): ParsedProductPatch {
   for (let i = 0; i < body.items.length; i++) {
     const parsed = parseItem(body.items[i], i);
     if (!parsed.ok) return parsed;
+    // Review REV-06: a write must name the version it was previewed against, so no client can write blind.
+    if (!dryRun && parsed.value.expectedVersion === undefined) {
+      return { ok: false, error: `items[${i}].expectedVersion: wajib saat menulis (ambil dari pratinjau)` };
+    }
     if (seen.has(parsed.value.slug)) return { ok: false, error: `items[${i}].slug: "${parsed.value.slug}" muncul dua kali` };
     seen.add(parsed.value.slug);
     items.push(parsed.value);

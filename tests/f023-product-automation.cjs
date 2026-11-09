@@ -26,6 +26,7 @@ function docRef(col, id) {
       counters.reads++;
       return { exists: docs.has(key), id, data: () => docs.get(key), updateTime: updateTimeOf(key) };
     },
+    set: async (value) => { counters.writes++; docs.set(key, value); bump(key); },
   };
 }
 function batch() {
@@ -62,6 +63,8 @@ const stubs = {
   'next/headers': { cookies: () => ({ get: () => undefined, set: () => {}, delete: () => {} }) },
   'next/cache': { revalidatePath: (p) => { revalidated.push(p); } },
   [path.join(ROOT, 'lib/firebaseAdmin')]: { getAdminDb: () => fakeDb, getAdminAuth: () => ({}), hasAdminCredentials: () => true },
+  // Admin PUT (review REV-03): the session check itself is covered by tests/f000-auth.cjs.
+  [path.join(ROOT, 'lib/auth')]: { requireAdmin: async () => ({ ok: true }) },
 };
 
 const origResolve = Module._resolveFilename;
@@ -86,6 +89,7 @@ require.extensions['.ts'] = function (m, filename) {
 };
 
 const route = require(path.join(ROOT, 'app/api/automation/products/route.ts'));
+const adminProduct = require(path.join(ROOT, 'app/api/products/[slug]/route.ts'));
 const automationAuth = require(path.join(ROOT, 'lib/automation-auth.ts'));
 const rules = require(path.join(ROOT, 'lib/product-automation.ts'));
 
@@ -137,7 +141,10 @@ function seed() {
 const stored = (slug) => docs.get('products/' + slug);
 const NEW_DESC = 'INZTA Tourmax 30L\nTail bag.\r\n\r\nSpesifikasi:\n- Bahan luar: Cordura 600D\n\n';
 const tourmax = (extra = {}) => ({ slug: 'tail-bag-inzta-tourmax-30', description: NEW_DESC, kategoriMotor: ['adventure', 'matic'], ...extra });
-const write = (items) => ({ dryRun: false, items });
+// A real client takes expectedVersion from its dry run; here it is read from the fake store (null for a missing slug).
+const versionNow = (slug) => rules.versionOf(updateTimeOf('products/' + slug));
+const write = (items) => ({ dryRun: false, items: items.map(i => ('expectedVersion' in i ? i : { ...i, expectedVersion: versionNow(i.slug) })) });
+const writeRaw = (items) => ({ dryRun: false, items });
 
 (async () => {
   setTokens({ AUTOMATION_TOKEN_ANGKASA: TOKEN_A, AUTOMATION_TOKEN_SEHAN: TOKEN_S });
@@ -215,6 +222,10 @@ const write = (items) => ({ dryRun: false, items });
   await check('unknown motor category -> 400', async () => { await bad(write([tourmax({ kategoriMotor: ['matic', 'bebek'] })]), /kategoriMotor/); });
   await check('duplicate motor category -> 400', async () => { await bad(write([tourmax({ kategoriMotor: ['matic', 'matic'] })]), /kategoriMotor/); });
   await check('expectedVersion not a string -> 400', async () => { await bad(write([tourmax({ expectedVersion: 5 })]), /expectedVersion/); });
+  await check('REV-06: a write without expectedVersion -> 400 before any read; a dry run does not need it', async () => {
+    await bad(writeRaw([tourmax()]), /expectedVersion: wajib saat menulis/);
+    assert.strictEqual((await call({ items: [tourmax()] })).status, 200);
+  });
 
   // ── Dry run ────────────────────────────────────────────────────────────────
   await check('missing dryRun means dry run: values returned, nothing written or revalidated', async () => {
@@ -238,7 +249,8 @@ const write = (items) => ({ dryRun: false, items });
   });
   await check('one missing slug -> 404 listing it, nothing written (dry run and write)', async () => {
     for (const dryRun of [true, false]) {
-      const r = await call({ dryRun, items: [tourmax(), { slug: 'tidak-ada', description: 'x' }] });
+      const items = [tourmax(), { slug: 'tidak-ada', description: 'x' }];
+      const r = await call(dryRun ? { dryRun, items } : write(items));
       assert.strictEqual(r.status, 404);
       assert.deepStrictEqual(r.json.missing, ['tidak-ada']);
     }
@@ -334,6 +346,43 @@ const write = (items) => ({ dryRun: false, items });
     const r = await call(write([tourmax()]));
     assert.strictEqual(r.status, 500);
     assert.strictEqual(revalidated.length, 0);
+  });
+
+  // ── Admin PUT after an automated update (review REV-03) ──────────────────────
+  const adminBody = (extra = {}) => ({ ...SCRAMBAG, name: 'Side bag Inzta XSR Srcrambag', description: 'Lama', stock: 9, ...extra });
+  const adminPut = async (body) => {
+    const r = await quiet(() => adminProduct.PUT(new Request('http://localhost/api/products/side-bag-inzta-xsr-srcrambag', { method: 'PUT', body: JSON.stringify(body), headers: { 'content-type': 'application/json' } }), { params: { slug: 'side-bag-inzta-xsr-srcrambag' } }));
+    return { status: r.status, json: await r.json() };
+  };
+  await check('REV-03: an admin form loaded before an automated update gets 409 and does not write the old text back', async () => {
+    const loaded = stored('side-bag-inzta-xsr-srcrambag').updatedAt ?? null;
+    await call(write([{ slug: 'side-bag-inzta-xsr-srcrambag', description: 'Baru dari otomasi', name: 'Side bag Inzta XSR Scrambag' }]));
+    const r = await adminPut(adminBody({ expectedUpdatedAt: loaded }));
+    assert.strictEqual(r.status, 409);
+    assert.strictEqual(r.json.code, 'PRODUCT_CHANGED');
+    assert.strictEqual(stored('side-bag-inzta-xsr-srcrambag').description, 'Baru dari otomasi');
+    assert.strictEqual(stored('side-bag-inzta-xsr-srcrambag').stock, 2);
+  });
+  await check('REV-03: an admin form loaded after the update saves normally and keeps the automated categories', async () => {
+    await call(write([{ slug: 'side-bag-inzta-xsr-srcrambag', description: 'Baru dari otomasi', kategoriMotor: ['retro'] }]));
+    const fresh = stored('side-bag-inzta-xsr-srcrambag');
+    const r = await adminPut(adminBody({ description: fresh.description, expectedUpdatedAt: fresh.updatedAt }));
+    assert.strictEqual(r.status, 200, JSON.stringify(r.json));
+    assert.strictEqual(stored('side-bag-inzta-xsr-srcrambag').stock, 9);
+    assert.deepStrictEqual(stored('side-bag-inzta-xsr-srcrambag').kategoriMotor, ['retro']);
+    assert.strictEqual('expectedUpdatedAt' in stored('side-bag-inzta-xsr-srcrambag'), false);
+  });
+  await check('REV-03: a legacy product without updatedAt matches expectedUpdatedAt null; a body without the key is not checked', async () => {
+    assert.strictEqual((await adminPut(adminBody({ expectedUpdatedAt: null }))).status, 200);
+    assert.strictEqual((await adminPut(adminBody({ expectedUpdatedAt: '2020-01-01T00:00:00.000Z' }))).status, 409);
+    assert.strictEqual((await adminPut(adminBody())).status, 200);
+  });
+  await check('REV-03: a stored Firestore Timestamp compares equal to its JSON form from the admin list', async () => {
+    const helpers = require(path.join(ROOT, 'app/api/products/_helpers.ts'));
+    class Timestamp { constructor() { this._seconds = 1762000000; this._nanoseconds = 7; } }
+    const sent = JSON.parse(JSON.stringify({ updatedAt: new Timestamp() })).updatedAt;
+    assert.strictEqual(helpers.changedSinceLoaded({ updatedAt: new Timestamp() }, { expectedUpdatedAt: sent }), false);
+    assert.strictEqual(helpers.changedSinceLoaded({ updatedAt: '2026-11-09T00:00:00.000Z' }, { expectedUpdatedAt: sent }), true);
   });
 
   // ── Pure rules ─────────────────────────────────────────────────────────────

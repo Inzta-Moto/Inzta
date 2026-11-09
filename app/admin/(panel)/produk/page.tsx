@@ -296,6 +296,11 @@ export default function ProductsPage() {
       data = { ...data, attributes: fAttributes, variants: fVariants };
     }
     data = v2.apply(data);
+    // Review REV-03 (F-023): PUT refuses with 409 when the product changed since this list was loaded, instead of
+    // writing old text back over an automated update or another admin's save.
+    if (formView === 'edit' && editSlug === fSlug) {
+      data.expectedUpdatedAt = (products.find(p => p.slug === editSlug) as any)?.updatedAt ?? null;
+    }
 
     try {
       let url = '/api/products';

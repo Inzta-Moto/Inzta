@@ -9,6 +9,8 @@ import {
   validateVariableProduct,
   buildSimplePayload,
   buildVariablePayload,
+  changedSinceLoaded,
+  PRODUCT_CHANGED_MESSAGE,
 } from '../_helpers';
 
 // F-014: an anonymous GET never touches cookies(), so without this Next caches the response per slug
@@ -70,6 +72,9 @@ export async function PUT(
     const currentSnap = await productRef.get();
     if (!currentSnap.exists)
       return NextResponse.json({ error: 'Product not found' }, { status: 404 });
+
+    if (changedSinceLoaded(currentSnap.data(), data))
+      return NextResponse.json({ code: 'PRODUCT_CHANGED', message: PRODUCT_CHANGED_MESSAGE }, { status: 409 });
 
     // ── Validasi variant removal ────────────────────────────────────────────
     // Variant yang pernah muncul di order tidak boleh dihapus permanen
