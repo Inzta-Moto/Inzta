@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { BUSINESS_ADDRESS, BUSINESS_EMAIL, BUSINESS_NAME, WA_NUMBER } from '@/lib/constants';
 import { PARTNER_STORES, STORE_COPY } from '@/lib/v2/partner-stores';
 import { formatWaDisplay } from '@/lib/v2/home-data';
-import { WhatsApp } from '@/components/v2/icons';
+import { ArrowRight, WhatsApp } from '@/components/v2/icons';
 import AboutMap from '@/components/v2/about/AboutMap';
 import { INSTAGRAM, TOKOPEDIA_URL } from '@/components/v2/about/about-content';
 
@@ -81,7 +81,8 @@ export default function ContactCard() {
                 </svg>
               </span>
               {STORE_COPY.contactRow}
-              <External />
+              {/* Internal page, so the plain arrow instead of the external-link arrow of the shop rows. */}
+              <ArrowRight size={20} />
             </Link>
           )}
           <div className="iz-channel iz-channel--plain">
