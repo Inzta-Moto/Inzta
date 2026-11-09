@@ -24,6 +24,7 @@
     "test:automation": "node tests/f010-automation.cjs",
     "test:images": "node tests/f022-images.cjs",
     "test:images-browser": "node tests/f022-browser.cjs",
+    "test:affiliate": "node tests/f023-affiliate.cjs",
     "check:v2-css": "node scripts/check-v2-css.mjs",
     "gen:v2-fit": "node scripts/gen-v2-fit.mjs",
     "check:v2-fit": "node scripts/gen-v2-fit.mjs --check",
