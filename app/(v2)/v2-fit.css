@@ -192,4 +192,10 @@
   html .iz-page .iz-legal h3 { font-size: max(16.8px, calc(20 * var(--u))); }
   html .iz-page .iz-legal__updated { font-size: max(12.6px, calc(15 * var(--u))); }
   html .iz-page .iz-legal__see { font-size: max(13.4px, calc(16 * var(--u))); }
+  html .iz-page .iz-store__kind { font-size: max(14.3px, calc(17 * var(--u))); }
+  html .iz-page .iz-store__address { font-size: max(14.3px, calc(17 * var(--u))); }
+  html .iz-page .iz-store__notes > li { font-size: max(14.3px, calc(17 * var(--u))); }
+  html .iz-page .iz-store__label { font-size: max(12.6px, calc(15 * var(--u))); }
+  html .iz-page .iz-store-close p { font-size: max(15.1px, calc(18 * var(--u))); }
+  html .iz-page .iz-storeteaser__area { font-size: max(14.3px, calc(17 * var(--u))); }
 }

@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import type { Product, PublicArticle } from '@/types';
 import { SITE_ORIGIN, DEFAULT_AUTHOR } from '@/lib/constants';
 import { extractBodyImages, formatOf, isAllowedImageUrl, publicDate } from '@/lib/article-format';
+import { STORE_COPY } from '@/lib/v2/partner-stores';
 
 /** canonicalUrl() -> 'https://inzta.id/', canonicalUrl('blog', slug) -> 'https://inzta.id/blog/{slug}'. Never a query or fragment. */
 export function canonicalUrl(...segments: string[]): string {
@@ -46,6 +47,9 @@ export const PAGE_TEXT = {
     title: 'Syarat dan Ketentuan',
     description: 'Ketentuan pesan di inzta.id: harga dan stok, pembayaran lewat WhatsApp admin, voucher, pengiriman dari Jakarta Barat, retur, dan garansi.',
   },
+  // F-027: the text lives with the rest of the shop copy, so an edit to copy.md changes one file. Not part of the
+  // 2026-10-29 approval above: checked by the inzta-hq editor, released to main only after INZTA approves (A-088).
+  toko: STORE_COPY.meta,
 } as const;
 
 export const DEFAULT_OG_IMAGE = { url: `${SITE_ORIGIN}/logo-mtg.png`, width: 842, height: 842, alt: SITE_NAME };
@@ -60,7 +64,7 @@ export function openGraph(o: { url: string; title: string; description: string; 
   return { type: o.type ?? 'website', locale: 'id_ID', siteName: SITE_NAME, url: o.url, title: o.title, description: o.description, images: o.images ?? [DEFAULT_OG_IMAGE] };
 }
 
-/** Metadata for `/`, `/produk`, `/blog`, and the legal pages: unique title and description, canonical, og, and twitter (6.1, 6.5). */
+/** Metadata for `/`, `/produk`, `/blog`, `/toko`, and the legal pages: unique title and description, canonical, og, and twitter (6.1, 6.5). */
 export function sectionMetadata(page: keyof typeof PAGE_TEXT): Metadata {
   const { title, description } = PAGE_TEXT[page];
   const url = page === 'home' ? canonicalUrl() : canonicalUrl(page);

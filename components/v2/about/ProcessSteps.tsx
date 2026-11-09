@@ -20,7 +20,7 @@ export default function ProcessSteps() {
             <h2 className="t-h2-landing">
               Dari pola sampai paket <span className="iz-tone2">di tangan Anda.</span>
             </h2>
-            <p className="t-body iz-muted">Desain dan produksi dikerjakan sendiri, lalu dikirim dari gudang INZTA.</p>
+            <p className="t-body iz-muted">Desain dan produksi dikerjakan sendiri.</p>
           </div>
         </div>
         <StepsRegion label="Cara kami membuat tas">

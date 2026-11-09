@@ -15,6 +15,7 @@ import Community from '@/components/v2/home/Community';
 import Guides from '@/components/v2/home/Guides';
 import Reviews from '@/components/v2/home/Reviews';
 import HowToOrder from '@/components/v2/home/HowToOrder';
+import StoreTeaser from '@/components/v2/store/StoreTeaser';
 import Closing from '@/components/v2/Closing';
 import '@/app/(v2)/v2-home.css';
 
@@ -40,6 +41,8 @@ export default function HomeV2({ data, products }: { data: HomeData; products: P
         <Guides guides={data.guides} />
         <Reviews products={products} />
         <HowToOrder />
+        {/* F-027 B5: seeing the bags in a shop sits between ordering online and the closing chat panel. */}
+        <StoreTeaser />
         <Closing waHref={waHref} />
       </main>
       <SiteFooter waHref={waHref} waNumber={WA_NUMBER} />

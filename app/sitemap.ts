@@ -2,6 +2,7 @@ import { MetadataRoute } from 'next';
 import { getActiveProducts, getArticles, newestDate } from '@/lib/public-content';
 import { CATEGORY_SLUGS, categoryHref } from '@/lib/v2/motor-category';
 import { categoryIndexable } from '@/components/v2/motor/motor-page';
+import { PARTNER_STORES } from '@/lib/v2/partner-stores';
 
 // ISR like the pages it lists; article and product writes call revalidatePath('/sitemap.xml').
 export const revalidate = 3600;
@@ -45,6 +46,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // Legal pages (Google Ads destination requirements, 2026-11-02): static, so no lastModified.
     { url: `${baseUrl}/kebijakan-privasi`, changeFrequency: 'yearly', priority: 0.3 },
     { url: `${baseUrl}/syarat-ketentuan`, changeFrequency: 'yearly', priority: 0.3 },
+    // F-027 B7: static shop data, so no lastModified; /toko 404s while the list is empty, so it is listed only then.
+    ...(PARTNER_STORES.length > 0 ? [{ url: `${baseUrl}/toko`, changeFrequency: 'monthly' as const, priority: 0.5 }] : []),
   ];
 
   // Halaman dinamis produk
