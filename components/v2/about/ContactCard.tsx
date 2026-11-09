@@ -85,16 +85,6 @@ export default function ContactCard() {
               <ArrowRight size={20} />
             </Link>
           )}
-          <div className="iz-channel iz-channel--plain">
-            <span className="iz-iconbtn">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2M15 18H9M19 18h2a1 1 0 0 0 1-1v-3.6a1 1 0 0 0-.2-.6l-3.5-4.4A1 1 0 0 0 17.5 8H14" />
-                <circle cx="17" cy="18" r="2" />
-                <circle cx="7" cy="18" r="2" />
-              </svg>
-            </span>
-            Dikirim dari gudang INZTA
-          </div>
           {/* Email and business address (Google Ads destination requirements; confirmed by Angkasa, 2026-11-02). */}
           <a className="iz-channel" href={`mailto:${BUSINESS_EMAIL}`}>
             <span className="iz-iconbtn">

@@ -64,7 +64,7 @@ export const STORE_COPY = {
     regionLabel: (name: string) => `Foto ${name}`,
   },
   closing: {
-    text: 'Kalau tidak bisa ke Depok, pesan lewat WhatsApp dan tas dikirim dari gudang INZTA.',
+    text: 'Kalau tidak bisa ke Depok, pesan lewat WhatsApp dan tas dikirim.',
     link: 'Lihat semua tas',
   },
   teaser: {

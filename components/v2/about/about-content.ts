@@ -39,7 +39,7 @@ export const PROCESS_STEPS: readonly ProcessStep[] = [
   { title: 'Potong', text: 'Bahan dipotong sesuai pola.', image: '/images/v2/contoh/potong-kain-unsplash-SgLpZDf4P_c.webp', crop: null, landscape: true, source: 'atelierbyvineeth, https://unsplash.com/photos/SgLpZDf4P_c, Unsplash License (CONTENT.md)' },
   { title: 'Jahit', text: 'Dijahit oleh tim produksi INZTA.', image: '/images/v2/contoh/workshop-unsplash-5zg-ZDesJAk.webp', crop: null, landscape: false, source: 'alex jhonson, https://unsplash.com/photos/5zg-ZDesJAk, Unsplash License, checked 2026-10-27 (CONTENT.md)' },
   { title: 'Cek', text: 'Pesanan dikonfirmasi admin INZTA di WhatsApp.', image: '/images/v2/foto/proses-cek.webp', crop: null, landscape: false, source: 'INZTA product photo (photo catalog row 105, Sidebag Florez 15 lifestyle, rain cover being fitted)' },
-  { title: 'Kirim', text: 'Dikemas dan dikirim dari gudang INZTA.', image: '/images/v2/contoh/kirim-paket-unsplash-MGaFENpDCsw.webp', crop: null, landscape: true, source: 'Bench Accounting, https://unsplash.com/photos/MGaFENpDCsw, Unsplash License (CONTENT.md)' },
+  { title: 'Kirim', text: 'Dikemas, lalu dikirim.', image: '/images/v2/contoh/kirim-paket-unsplash-MGaFENpDCsw.webp', crop: null, landscape: true, source: 'Bench Accounting, https://unsplash.com/photos/MGaFENpDCsw, Unsplash License (CONTENT.md)' },
 ];
 
 // Tourmax (sharp, shown below its size) instead of Cangar (1280 px, enlarged about 1.5 times in this box); the empty

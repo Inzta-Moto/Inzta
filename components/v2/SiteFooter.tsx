@@ -30,8 +30,7 @@ export default function SiteFooter({ waHref, waNumber, currentCategory }: { waHr
           <p className="iz-footer__tag">Brand tas motor lokal sejak 2023.</p>
           {/* Copy reused from the Tentang hero and the Beranda "Mengapa pilih INZTA" list, so it adds no new claim (Sehan, 2026-10-29). */}
           <p className="iz-footer__about">
-            Tank bag, side bag, tail bag, dan aksesori touring untuk rider Indonesia. Dirancang dan diproduksi sendiri, lalu
-            dikirim dari gudang INZTA.
+            Tank bag, side bag, tail bag, dan aksesori touring untuk rider Indonesia. Dirancang dan diproduksi sendiri.
           </p>
           <p className="iz-footer__about">Pertanyaan dan pesanan dijawab admin INZTA lewat WhatsApp.</p>
           {/* Business identity for Google Ads destination requirements (address confirmed by Angkasa, 2026-11-02). */}
