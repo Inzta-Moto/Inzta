@@ -8,7 +8,7 @@ import StoreGallery from '@/components/v2/store/StoreGallery';
 // One shop (F-027 B2, B3): the dark panel carries the facts already checked (name, kind, address, Maps link) over the
 // /tentang route map, so the card has weight without a stand-in photo; the light panel says what to check before the
 // trip and hands questions to the INZTA admin. Hours, products, and the gallery render only when their data exists.
-// Link to the listing, no embedded map (ADR-0036 point 7).
+// Link to the listing, no embedded map (ADR-0038 point 7).
 export default function StoreCard({ store, products = [] }: { store: PartnerStore; products?: { slug: string; name: string }[] }) {
   const nameId = `toko-${store.slug}`;
   const waHref = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(store.waText)}`;
