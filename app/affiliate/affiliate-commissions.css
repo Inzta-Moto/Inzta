@@ -96,7 +96,8 @@
 .iz-aff-chart__pill-text { font-size: 12px; font-weight: 700; fill: var(--c-kertas); font-variant-numeric: tabular-nums; }
 .iz-aff-chart__empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; min-height: 200px; padding: 20px; text-align: center; background: var(--c-kertas); border: 1px dashed var(--c-garis); border-radius: 14px; }
 .iz-aff-chart__empty-title { font-size: 14px; font-weight: 600; line-height: 1.4; color: var(--c-batu); }
-.iz-aff-chart__empty-sub { font-size: 13px; line-height: 1.4; color: var(--c-batu-muda); }
+/* --c-batu, not --c-batu-muda: on --c-kertas batu-muda is 4.28:1, below E17's 4.5:1 (REV-03); batu is 6.53:1. */
+.iz-aff-chart__empty-sub { font-size: 13px; line-height: 1.4; color: var(--c-batu); }
 
 /* E11 transactions card. */
 .iz-aff-card.iz-aff-tx { display: flex; flex-direction: column; gap: 14px; padding: 20px 20px 12px; }
@@ -115,7 +116,7 @@
 .iz-aff-toolbar__search-icon { position: absolute; left: 16px; top: 50%; width: 18px; height: 18px; translate: 0 -50%; color: var(--c-batu); pointer-events: none; }
 /* 16 px text: iOS zooms the page into inputs below 16 px. */
 .iz-aff-toolbar__input { width: 100%; height: 48px; padding: 0 16px 0 44px; border: 1px solid var(--aff-btn-line); border-radius: var(--radius-pill); background: var(--c-kertas); color: var(--c-tinta); font-size: 16px; line-height: 1.2; -webkit-appearance: none; appearance: none; }
-.iz-aff-toolbar__input::placeholder { color: var(--c-batu-muda); opacity: 1; }
+.iz-aff-toolbar__input::placeholder { color: var(--c-batu); opacity: 1; }
 .iz-aff-toolbar__month { grid-area: month; position: relative; display: none; }
 .iz-aff-toolbar__select { height: 48px; padding: 0 44px 0 18px; border: 1px solid var(--aff-btn-line); border-radius: var(--radius-pill); background: var(--c-kertas-terang); color: var(--c-tinta); font: inherit; font-size: 15px; font-weight: 600; line-height: 1.2; cursor: pointer; -webkit-appearance: none; appearance: none; }
 .iz-aff-toolbar__chevron { position: absolute; right: 16px; top: 50%; width: 18px; height: 18px; translate: 0 -50%; color: var(--c-batu); pointer-events: none; }
@@ -236,6 +237,11 @@
 @media (min-width: 768px) {
   .iz-aff-btn.iz-aff-empty__copy { width: auto; align-self: flex-start; }
 }
+/* Failed copy (REV-04): the link to select by hand, framed like the ticket's failed link, and the hint below it. */
+.iz-aff-empty__fail { display: flex; flex-direction: column; gap: 8px; margin-top: -6px; }
+.iz-aff-empty__link { display: block; min-width: 0; padding: 11px 15px; border: 2px solid var(--c-kuning); border-radius: 14px; background: var(--c-kertas); color: var(--c-tinta); font-size: 15px; font-weight: 600; line-height: 1.4; overflow-wrap: anywhere; user-select: all; -webkit-user-select: all; }
+.iz-aff-empty__fail-text { display: flex; align-items: flex-start; gap: 8px; font-size: 14px; font-weight: 600; line-height: 1.45; color: var(--c-kuning-tua); }
+.iz-aff-empty__fail-text svg { flex: none; width: 18px; height: 18px; margin-top: 1px; }
 
 /* "Cara kerja komisi" closing card below 1024 px; from 1024 px the band shows the route (E7). */
 @media (min-width: 1024px) {
@@ -327,4 +333,5 @@
   .iz-aff-seg__btn[aria-checked="true"] { outline: 2px solid CanvasText; }
   .iz-aff-opt--on .iz-aff-opt__mark { forced-color-adjust: none; }
   .iz-aff-modal__panel { border: 1px solid CanvasText; }
+  .iz-aff-empty__link { border-color: CanvasText; }
 }

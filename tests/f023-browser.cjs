@@ -456,6 +456,41 @@ async function detailAndFilters(browser, state) {
   }
 }
 
+// REV-04: a failed "Salin link affiliate" in the empty state shows its own hint and selectable link next to the
+// button, not only on the ticket at the top. Both copy paths are made to fail in the page (no real clipboard state).
+async function copyFailEmpty(browser, state) {
+  const ctx = await newContext(browser, 390, { storageState: state });
+  await ctx.addInitScript(() => {
+    if (navigator.clipboard) navigator.clipboard.writeText = () => Promise.reject(new Error('blocked for test'));
+    document.execCommand = () => false;
+  });
+  const page = await ctx.newPage();
+  const errs = trackConsole(page);
+  await page.goto(`${BASE}/affiliate/dashboard`);
+  await page.waitForSelector('h1.iz-aff-hero__title', { timeout: 120000 });
+  await hydrated(page, '.iz-aff-header__btn');
+  await settle(page);
+  await check('copy fail 390 (empty state): hint and selectable link next to the button, ticket stays quiet', async () => {
+    const code = (await page.locator('.iz-aff-ticket__code').textContent()).trim();
+    await page.locator('.iz-aff-empty__copy').scrollIntoViewIfNeeded();
+    await page.click('.iz-aff-empty__copy');
+    const alert = page.locator('.iz-aff-empty__fail[role="alert"]');
+    await alert.waitFor({ state: 'visible' });
+    const text = (await alert.textContent()).replace(/\s+/g, ' ').trim();
+    expect(text.includes(`inzta.id/?aff=${code}`), `link in hint "${text}"`);
+    expect(text.includes('Gagal menyalin. Tekan lama link ini, lalu salin manual.'), `hint "${text}"`);
+    expect((await page.locator('.iz-aff-ticket__fail').count()) === 0, 'ticket shows no failure for the empty-state button');
+    const sel = await page.evaluate(() => String(window.getSelection()));
+    expect(sel.trim() === `inzta.id/?aff=${code}`, `selection "${sel}"`);
+    await page.waitForTimeout(400); // scrollIntoView may be smooth (html scroll-behavior); 1 px slack for sub-pixel layout below
+    const box = await alert.boundingBox();
+    expect(box && box.y >= 0 && box.y + box.height <= 844 + 1, `hint in view ${JSON.stringify(box)}`);
+    await shot(page, 'dashboard-kosong-salin-gagal-390', { full: false });
+  });
+  consoleCheck(errs, 'copy fail 390');
+  await ctx.close();
+}
+
 async function copyToastAndMotion(browser, state) {
   {
     const { ctx, page, errs } = await openDashboard(browser, state, 390, { permissions: ['clipboard-read', 'clipboard-write'] });
@@ -586,6 +621,7 @@ async function errorScreens(browser, state) {
       await dashboardScreens(browser, states);
       await detailAndFilters(browser, states.berisi);
       await copyToastAndMotion(browser, states.berisi);
+      await copyFailEmpty(browser, states.kosong);
       await logoutCheck(browser, states.kosong);
       stopServer(server);
       server = null;

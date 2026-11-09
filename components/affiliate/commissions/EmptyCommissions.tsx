@@ -1,4 +1,7 @@
-import { Copy } from 'lucide-react';
+'use client';
+
+import { useEffect, useRef, useState } from 'react';
+import { AlertTriangle, Copy } from 'lucide-react';
 import RouteSteps, { COMMISSION_STEPS, COMMISSION_STEPS_TITLE } from '@/components/affiliate/RouteSteps';
 
 /**
@@ -10,11 +13,38 @@ export default function EmptyCommissions({
   headingId,
   onCopyLink,
   canCopy,
+  link = '',
 }: {
   headingId: string;
-  onCopyLink: () => void;
+  /** May resolve to the copy outcome, so a failure is shown here instead of only on the ticket far above (REV-04). */
+  onCopyLink: () => void | Promise<boolean>;
   canCopy: boolean;
+  /** The link as displayed on the ticket (displayLink), shown for manual copying after a failed copy. */
+  link?: string;
 }) {
+  const [failed, setFailed] = useState(false);
+  const linkRef = useRef<HTMLSpanElement>(null);
+  const failRef = useRef<HTMLDivElement>(null);
+
+  const onCopy = async () => {
+    const result = onCopyLink();
+    if (!result || typeof (result as Promise<boolean>).then !== 'function') return;
+    const ok = await (result as Promise<boolean>).catch(() => false);
+    setFailed(!ok);
+  };
+
+  // Same as the ticket: the link is pre-selected, so a long press or Ctrl+C is all that is left to do. The button often
+  // sits at the bottom of a phone screen, so the hint below it is scrolled just into view.
+  useEffect(() => {
+    if (!failed || !linkRef.current) return;
+    failRef.current?.scrollIntoView({ block: 'nearest' });
+    try {
+      window.getSelection()?.selectAllChildren(linkRef.current);
+    } catch {
+      // Selection is a convenience only.
+    }
+  }, [failed]);
+
   return (
     <section className="iz-aff-card iz-aff-tx iz-aff-tx--empty" aria-labelledby={headingId}>
       <h2 id={headingId} className="iz-aff-tx__title">
@@ -26,10 +56,21 @@ export default function EmptyCommissions({
       </div>
       <RouteSteps steps={COMMISSION_STEPS} orientation="vertical" tone="light" title={COMMISSION_STEPS_TITLE} headingLevel={3} />
       {canCopy && (
-        <button type="button" className="iz-aff-btn iz-aff-btn--primary iz-aff-empty__copy" onClick={onCopyLink}>
+        <button type="button" className="iz-aff-btn iz-aff-btn--primary iz-aff-empty__copy" onClick={onCopy}>
           <Copy aria-hidden="true" />
           Salin link affiliate
         </button>
+      )}
+      {canCopy && failed && link && (
+        <div ref={failRef} className="iz-aff-empty__fail" role="alert">
+          <span ref={linkRef} className="iz-aff-empty__link" translate="no">
+            {link}
+          </span>
+          <p className="iz-aff-empty__fail-text">
+            <AlertTriangle aria-hidden="true" />
+            <span>Gagal menyalin. Tekan lama link ini, lalu salin manual.</span>
+          </p>
+        </div>
       )}
     </section>
   );

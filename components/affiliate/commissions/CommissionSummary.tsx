@@ -46,7 +46,7 @@ export default function CommissionSummary({ summary }: { summary: Summary }) {
             <Clock className="iz-aff-sum__clock" aria-hidden="true" />
             <span>
               Transaksi pending
-              <span className="iz-aff-sum__sub">Menunggu dicek admin</span>
+              <span className="iz-aff-sum__sub">Menunggu dicairkan</span>
             </span>
           </dt>
           <dd className="iz-aff-num">{summary.pendingCount}</dd>
@@ -60,7 +60,7 @@ export default function CommissionSummary({ summary }: { summary: Summary }) {
         </span>
         <p>
           <strong className="iz-aff-num">{`${summary.pendingCount} transaksi pending`}</strong>
-          <span className="iz-aff-sum__sub">Menunggu dicek admin</span>
+          <span className="iz-aff-sum__sub">Menunggu dicairkan</span>
         </p>
       </div>
     </div>

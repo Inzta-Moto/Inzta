@@ -5,6 +5,7 @@ import { useCallback, useId, useMemo, useState } from 'react';
 import {
   EMPTY_FILTERS,
   PAGE_SIZE,
+  displayLink,
   filterCommissions,
   groupByMonth,
   isFiltered,
@@ -33,8 +34,8 @@ export type CommissionsSectionProps = {
   now: number;
   /** The page renders this section only with a voucher (E8); false also hides "Salin link affiliate" in E14. */
   hasVoucher: boolean;
-  /** "Salin link affiliate" in the empty state (E14); the page copies and shows the toast. */
-  onCopyLink: () => void;
+  /** "Salin link affiliate" in the empty state (E14); the page copies and shows the toast. May resolve to the outcome. */
+  onCopyLink: () => void | Promise<boolean>;
   /** Order ID copy in the detail (D-10). May return a promise of success for the in-dialog confirmation. */
   onCopyText: CopyText;
   /** WhatsApp number for "Tanya admin soal transaksi ini" (E12). */
@@ -70,7 +71,7 @@ export default function CommissionsSection({ commissions, now, hasVoucher, onCop
       </section>
 
       {empty ? (
-        <EmptyCommissions headingId={`${id}-tx`} onCopyLink={onCopyLink} canCopy={hasVoucher} />
+        <EmptyCommissions headingId={`${id}-tx`} onCopyLink={onCopyLink} canCopy={hasVoucher} link={displayLink(voucherCode)} />
       ) : (
         <>
           <Transactions headingId={`${id}-tx`} commissions={commissions} onCopyText={onCopyText} waNumber={waNumber} voucherCode={voucherCode} />
@@ -138,7 +139,7 @@ function Transactions({
         <h2 id={headingId} className="iz-aff-tx__title">
           Transaksi
         </h2>
-        <p className="iz-aff-tx__legend">Pending: menunggu dicek admin. Cair: komisi sudah dibayar.</p>
+        <p className="iz-aff-tx__legend">Pending: komisi tercatat, menunggu dicairkan admin. Cair: komisi sudah dibayar.</p>
       </div>
 
       <CommissionToolbar

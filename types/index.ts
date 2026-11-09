@@ -296,6 +296,44 @@ export interface Commission {
   createdAt: any;
 }
 
+// F-023 affiliate dashboard: whitelisted Commission and Voucher fields sent to the client (dates as epoch ms), plus the
+// view types of lib/affiliate/dashboard.ts, which re-exports them.
+export type AffCommissionItem = {
+  productName?: string;
+  name?: string;
+  selectedVariantLabel?: string | null;
+  quantity?: number;
+};
+
+export type AffCommission = {
+  id: string;
+  productName?: string;
+  items?: AffCommissionItem[];
+  productPrice?: number;
+  commissionAmount?: number;
+  isPaid?: boolean;
+  paidAt?: number | null;
+  createdAt?: number | null;
+  orderId?: string;
+};
+
+export type AffVoucher = {
+  code?: string;
+  type?: 'percentage' | 'fixed' | string;
+  value?: number;
+  /** Cap of a percentage voucher in rupiah (0 or missing: no cap). */
+  maxDiscount?: number;
+  isActive?: boolean;
+  expiresAt?: number | string | null;
+} | null;
+
+export type StatusFilter = 'all' | 'pending' | 'paid';
+export type VoucherState = 'active' | 'expired' | 'inactive' | 'missing';
+export type Summary = { total: number; paid: number; pending: number; pendingCount: number; count: number; firstMonthKey: string | null };
+export type MonthBar = { key: string; label: string; paid: number; pending: number; isCurrent: boolean };
+export type Filters = { query: string; status: StatusFilter; month: string /* 'all' | 'YYYY-MM' | 'tanpa-tanggal' */ };
+export type MonthGroup = { key: string; label: string; subtotal: number; items: AffCommission[] };
+
 // F-016 landing page v2. Motor categories follow ADR-0019 and ADR-0022 (inzta-hq), positions are where a bag sits,
 // not the Firestore `category` field (hardcase/softcase/tank).
 export type MotorCategory = 'matic' | 'adventure' | 'retro' | 'trail' | 'sport';

@@ -67,6 +67,9 @@ export default function AffiliateDashboardClient({ affiliateName, ownVoucherCode
   const onCopyLink = useCallback(() => {
     void copy('link', affiliateLink(code), 'Link disalin');
   }, [copy, code]);
+  // The empty state's own key keeps the ticket's failure hint out of it: the hint shows next to the button pressed,
+  // and only one alert is announced (REV-04).
+  const onCopyLinkEmpty = useCallback(() => copy('link-empty', affiliateLink(code), 'Link disalin'), [copy, code]);
   const onCopyCode = useCallback(() => {
     void copy('code', code, 'Kode disalin');
   }, [copy, code]);
@@ -98,7 +101,7 @@ export default function AffiliateDashboardClient({ affiliateName, ownVoucherCode
               commissions={commissions}
               now={now}
               hasVoucher={hasVoucher}
-              onCopyLink={onCopyLink}
+              onCopyLink={onCopyLinkEmpty}
               onCopyText={onCopyText}
               waNumber={WA_NUMBER}
               voucherCode={code}

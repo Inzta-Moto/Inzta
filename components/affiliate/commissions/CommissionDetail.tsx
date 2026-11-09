@@ -28,7 +28,7 @@ export type CopyText = (text: string, okMessage: string) => void | Promise<boole
 /**
  * Transaction detail (E12, D-10): every item of the order, Harga, Komisi Anda, Tanggal, the Order ID with a small copy
  * button, a three-stop timeline, and "Tanya admin soal transaksi ini" on WhatsApp. "Dicek admin" has no time because
- * the system does not record one. Harga is productPrice as stored, which for multi-item orders is the first item's
+ * the system does not record one; a pending commission waits at "Komisi cair". Harga is productPrice as stored, which for multi-item orders is the first item's
  * price (data note from the helpers task). No payout schedule (Q-6).
  */
 export default function CommissionDetail({
@@ -93,8 +93,9 @@ function DetailBody({ c, onCopyText }: { c: AffCommission; onCopyText: CopyText 
   const orderId = typeof c.orderId === 'string' ? c.orderId.trim() : '';
   const stops: { state: StopState; title: string; sub: string }[] = [
     { state: 'done', title: 'Pesanan tercatat', sub: created || 'Tanggal tidak tercatat' },
-    { state: paid ? 'done' : 'current', title: 'Dicek admin', sub: 'Dari Order ID di WhatsApp' },
-    { state: paid ? 'done' : 'todo', title: 'Komisi cair', sub: paid ? formatDateShort(c.paidAt) || 'Tanggal tidak tercatat' : 'Belum' },
+    // Always done: a commission document is only written when the admin completes the order (REV-02).
+    { state: 'done', title: 'Dicek admin', sub: 'Dari Order ID di WhatsApp' },
+    { state: paid ? 'done' : 'current', title: 'Komisi cair', sub: paid ? formatDateShort(c.paidAt) || 'Tanggal tidak tercatat' : 'Menunggu dicairkan' },
   ];
 
   return (

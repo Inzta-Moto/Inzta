@@ -7,6 +7,9 @@ import AffiliateDashboardClient from './AffiliateDashboardClient';
 
 export const dynamic = 'force-dynamic';
 
+/** Clears affiliate_session, then 307 to /affiliate/login (app/affiliate/sesi-habis/route.ts). */
+const SESSION_ENDED_URL = '/affiliate/sesi-habis';
+
 type DashboardData = { affiliateName: string; ownVoucherCode: string; voucher: AffVoucher; commissions: AffCommission[] };
 
 function str(v: unknown): string | undefined {
@@ -94,10 +97,12 @@ function errorCode(err: unknown): string {
   return 'unknown';
 }
 
-// F-023 E16: a missing or invalid session, or a uid without an affiliate document, goes back to the login page as
-// before (F-017). Any other failure (Firestore, network, Admin SDK setup) is thrown to error.tsx, so a failed read
-// no longer looks like a logout. redirect() throws NEXT_REDIRECT, so it is never called inside a try that would
-// swallow it.
+// F-023 E16: a missing session goes to the login page as before (F-017). An invalid session, or a uid without an
+// affiliate document, goes to /affiliate/sesi-habis, which clears the cookie and then opens the login page (REV-01:
+// loading.tsx turns this redirect into a 200 meta refresh, and the middleware bounces /affiliate/login back here for
+// as long as the cookie exists, so the loop would never end). Any other failure (Firestore, network, Admin SDK setup)
+// is thrown to error.tsx, so a failed read no longer looks like a logout. redirect() throws NEXT_REDIRECT, so it is
+// never called inside a try that would swallow it.
 export default async function AffiliateDashboardPage() {
   const sessionCookie = cookies().get('affiliate_session')?.value;
   if (!sessionCookie) redirect('/affiliate/login');
@@ -106,7 +111,7 @@ export default async function AffiliateDashboardPage() {
   try {
     uid = (await getAdminAuth().verifySessionCookie(sessionCookie, true)).uid;
   } catch (err) {
-    if (isSessionError(err)) redirect('/affiliate/login');
+    if (isSessionError(err)) redirect(SESSION_ENDED_URL);
     console.error('[affiliate/dashboard] session check failed:', errorCode(err));
     throw err;
   }
@@ -123,7 +128,7 @@ export default async function AffiliateDashboardPage() {
     console.error('[affiliate/dashboard] data load failed:', errorCode(err));
     throw err;
   }
-  if (!data) redirect('/affiliate/login');
+  if (!data) redirect(SESSION_ENDED_URL);
 
   return (
     <AffiliateDashboardClient

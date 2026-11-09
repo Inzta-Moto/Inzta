@@ -3,36 +3,21 @@
 // epoch ms; every calendar computation uses a fixed WIB offset (UTC+7, no DST) instead of the machine zone, so the
 // server (UTC on Vercel) and the buyer's phone print the same day and month.
 
-export type AffCommissionItem = {
-  productName?: string;
-  name?: string;
-  selectedVariantLabel?: string | null;
-  quantity?: number;
-};
+import type {
+  AffCommission,
+  AffCommissionItem,
+  AffVoucher,
+  Filters,
+  MonthBar,
+  MonthGroup,
+  StatusFilter,
+  Summary,
+  VoucherState,
+} from '@/types';
 
-export type AffCommission = {
-  id: string;
-  productName?: string;
-  items?: AffCommissionItem[];
-  productPrice?: number;
-  commissionAmount?: number;
-  isPaid?: boolean;
-  paidAt?: number | null;
-  createdAt?: number | null;
-  orderId?: string;
-};
-
-export type AffVoucher = {
-  code?: string;
-  type?: 'percentage' | 'fixed' | string;
-  value?: number;
-  /** Cap of a percentage voucher in rupiah (0 or missing: no cap). */
-  maxDiscount?: number;
-  isActive?: boolean;
-  expiresAt?: number | string | null;
-} | null;
-
-export type StatusFilter = 'all' | 'pending' | 'paid';
+// The types live in types/index.ts (house rule); re-exported so every existing import from this module keeps working.
+// Type-only, so the transpiled module (tests/f023-affiliate.cjs) still has no runtime import.
+export type { AffCommission, AffCommissionItem, AffVoucher, Filters, MonthBar, MonthGroup, StatusFilter, Summary, VoucherState } from '@/types';
 
 export const SITE_ORIGIN = 'https://inzta.id';
 export const PAGE_SIZE = 20;
@@ -202,8 +187,6 @@ export function voucherExpiryLabel(v: AffVoucher): string | null {
   return `Berlaku s.d. ${formatDateShort(ms)}`;
 }
 
-export type VoucherState = 'active' | 'expired' | 'inactive' | 'missing';
-
 /**
  * Matches the old isVoucherExpired()/isActive check, plus numeric expiresAt (page.tsx converts Timestamps to ms,
  * which the old check silently treated as "not expired"). A missing isActive counts as inactive, like the old
@@ -216,8 +199,6 @@ export function voucherState(ownCode: string, v: AffVoucher, now: number): Vouch
   if (!v.isActive) return 'inactive';
   return 'active';
 }
-
-export type Summary = { total: number; paid: number; pending: number; pendingCount: number; count: number; firstMonthKey: string | null };
 
 /** Same arithmetic as the pre-F-023 dashboard (totalAll, totalPaid, totalPending, pending count). */
 export function summarize(list: AffCommission[]): Summary {
@@ -253,8 +234,6 @@ export function splitRatio(s: Summary): { paid: number; pending: number } {
   if (total <= 0) return { paid: 0, pending: 0 };
   return { paid: paid / total, pending: pending / total };
 }
-
-export type MonthBar = { key: string; label: string; paid: number; pending: number; isCurrent: boolean };
 
 /**
  * One bar per WIB month from the first dated commission up to the current month, empty months kept as 0, at most the
@@ -429,7 +408,6 @@ export function statusCounts(list: AffCommission[]): { all: number; pending: num
   return { all, pending: all - paid, paid };
 }
 
-export type Filters = { query: string; status: StatusFilter; month: string /* 'all' | 'YYYY-MM' | 'tanpa-tanggal' */ };
 export const EMPTY_FILTERS: Filters = Object.freeze({ query: '', status: 'all', month: 'all' }) as Filters;
 
 function commissionMonthKey(c: AffCommission): string {
@@ -470,8 +448,6 @@ export function monthOptions(list: AffCommission[]): { key: string; label: strin
     .sort((a, b) => (a[0] < b[0] ? 1 : a[0] > b[0] ? -1 : 0))
     .map(([key, count]) => ({ key, label: formatMonthLong(key), count }));
 }
-
-export type MonthGroup = { key: string; label: string; subtotal: number; items: AffCommission[] };
 
 /** Rows grouped by WIB month with a commission subtotal, newest month first; undated rows last under 'Tanpa tanggal'. */
 export function groupByMonth(list: AffCommission[]): MonthGroup[] {

@@ -399,6 +399,51 @@ check('isSessionError: Firebase Auth errors redirect to login; Firestore, networ
   assert.strictEqual(D.isSessionError('auth/session-cookie-expired'), false);
 });
 
+// REV-01: with loading.tsx a redirect from the dashboard is a 200 meta refresh, and the middleware sends
+// /affiliate/login back to the dashboard while affiliate_session exists. So once the cookie is known to exist, the
+// page must leave through /affiliate/sesi-habis, which clears it. Static check of the source files.
+const read = (rel) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
+const stripComments = (src) => src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
+
+check('REV-01 sesi-habis route: GET, dynamic, clears affiliate_session on path / and redirects to /affiliate/login', () => {
+  const rel = 'app/affiliate/sesi-habis/route.ts';
+  assert.ok(fs.existsSync(path.join(ROOT, rel)), `${rel} is missing`);
+  const src = stripComments(read(rel));
+  assert.match(src, /export\s+(async\s+)?function\s+GET\s*\(/);
+  assert.match(src, /export\s+const\s+dynamic\s*=\s*'force-dynamic'/);
+  assert.match(src, /NextResponse\.redirect\(\s*new URL\(\s*'\/affiliate\/login'\s*,\s*request\.url\s*\)\s*\)/);
+  assert.match(src, /cookies\.set\(\s*'affiliate_session'\s*,\s*''\s*,\s*\{[^}]*maxAge:\s*0[^}]*path:\s*'\/'/);
+  assert.doesNotMatch(src, /firebase|firestore|getAdmin/i, 'the route must not touch Firebase');
+});
+
+check('REV-01 dashboard page: /affiliate/login only when there is no cookie; invalid session and unknown uid go to sesi-habis', () => {
+  const src = stripComments(read('app/affiliate/(panel)/dashboard/page.tsx'));
+  const loginRedirects = src.match(/redirect\(\s*'\/affiliate\/login'\s*\)/g) || [];
+  assert.strictEqual(loginRedirects.length, 1, 'exactly one redirect to /affiliate/login');
+  assert.match(src, /if\s*\(\s*!sessionCookie\s*\)\s*redirect\(\s*'\/affiliate\/login'\s*\)/, 'the login redirect sits on the no-cookie branch');
+  assert.match(src, /SESSION_ENDED_URL\s*=\s*'\/affiliate\/sesi-habis'/);
+  assert.match(src, /if\s*\(\s*isSessionError\(err\)\s*\)\s*redirect\(\s*SESSION_ENDED_URL\s*\)/);
+  assert.match(src, /if\s*\(\s*!data\s*\)\s*redirect\(\s*SESSION_ENDED_URL\s*\)/);
+  const redirects = src.match(/redirect\(/g) || [];
+  assert.strictEqual(redirects.length, 3, 'no other redirect paths');
+});
+
+check('REV-01 middleware unchanged in shape: /affiliate/sesi-habis is not the login path, so it passes with a cookie', () => {
+  const src = read('middleware.ts');
+  assert.match(src, /pathname === '\/affiliate\/login'/);
+  assert.ok(!src.includes('sesi-habis'), 'middleware needs no special case for sesi-habis');
+});
+
+// REV-02: a commission document is only written when the admin completes the order, so pending means "not paid out".
+check('REV-02 status texts: no "menunggu dicek admin"; "Dicek admin" is always done in the detail timeline', () => {
+  const files = ['CommissionsSection.tsx', 'CommissionSummary.tsx', 'CommissionDetail.tsx'].map((f) => read(`components/affiliate/commissions/${f}`));
+  for (const src of files) assert.doesNotMatch(src, /menunggu dicek admin/i);
+  assert.ok(files[0].includes('Pending: komisi tercatat, menunggu dicairkan admin. Cair: komisi sudah dibayar.'));
+  assert.strictEqual((files[1].match(/Menunggu dicairkan/g) || []).length, 2);
+  assert.match(files[2], /\{\s*state:\s*'done',\s*title:\s*'Dicek admin'/);
+  assert.match(files[2], /title:\s*'Komisi cair'[^\n]*'Menunggu dicairkan'/);
+});
+
 let failed = 0;
 for (const [s, n] of results) {
   if (s === 'FAIL') failed++;
