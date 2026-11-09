@@ -198,5 +198,6 @@
   html .iz-page .iz-store__notes > li { font-size: max(14.3px, calc(17 * var(--u))); }
   html .iz-page .iz-store__label { font-size: max(12.6px, calc(15 * var(--u))); }
   html .iz-page .iz-store-close p { font-size: max(15.1px, calc(18 * var(--u))); }
-  html .iz-page .iz-storeteaser__area { font-size: max(14.3px, calc(17 * var(--u))); }
+  html .iz-page .iz-storeband__facts dt { font-size: max(12.6px, calc(15 * var(--u))); }
+  html .iz-page .iz-storeband__facts dd { font-size: max(14.3px, calc(17 * var(--u))); }
 }
