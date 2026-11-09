@@ -1,12 +1,25 @@
 import Link from 'next/link';
 import { HIRES } from '@/lib/v2/home-content';
 import SmartImage from '@/components/v2/ui/SmartImage';
-import { ArrowRight, Chat, CircleCheck, Road, Scissors } from '@/components/v2/icons';
+import { ArrowRight } from '@/components/v2/icons';
 import '@/app/(v2)/v2-why.css';
 
 // The 1200 px square photo fills a portrait panel, so object-fit: cover renders it as wide as the panel is tall (about
 // 1.4x the panel width); the sizes hint stays generous so 2x screens get the full source.
 const PANEL_SIZES = '(max-width: 767px) 170vw, 70vw';
+
+// F-024: 3D icons from Figma AI (style A, chosen by Sehan 9 Nov), krem background removed to alpha so no box shows on
+// the section. They repeat the heading next to them, so they are decorative (alt=""). 144 px serves the 72 px phone
+// size at 2x, 192 px the 96 px desktop size.
+const ICON_SIZES = '(max-width: 767px) 72px, 96px';
+function WhyIcon({ name }: { name: string }) {
+  const base = `/images/v2/ikon/${name}`;
+  return (
+    <span className="iz-why__icon">
+      <img src={`${base}-192.webp`} srcSet={`${base}-144.webp 144w, ${base}-192.webp 192w`} sizes={ICON_SIZES} width={96} height={96} alt="" loading="lazy" decoding="async" />
+    </span>
+  );
+}
 
 // "Mengapa pilih INZTA" (F-016 S1.4). Items 1, 3, 4 are team copy waiting for INZTA's G2 approval (P-8, listed by
 // check:f016-release, S1.4.3); "sejak 2023" waits for P-10. The photo sits on the dark panel, so it uses the dark
@@ -30,9 +43,9 @@ export default function WhyInzta({ gasberHref, waHref }: { gasberHref: string; w
           <span className="iz-eyebrow">Mengapa pilih INZTA</span>
           <h2 className="t-h2-landing">Dibuat di Indonesia. Dipakai di jalan Indonesia.</h2>
         </div>
-        <ul className="iz-why__list iz-why__list--tiles" data-reveal-stagger="">
+        <ul className="iz-why__list iz-why__list--ikon" data-reveal-stagger="">
           <li className="iz-why__item">
-            <span className="iz-why__icon"><CircleCheck /></span>
+            <WhyIcon name="kecocokan" />
             <h3>Jujur soal kecocokan</h3>
             <p>Kami tandai tas yang dibuat untuk motor tertentu, dan bilang terus terang bila belum yakin.</p>
             <div className="iz-why__proof">
@@ -41,7 +54,7 @@ export default function WhyInzta({ gasberHref, waHref }: { gasberHref: string; w
             </div>
           </li>
           <li className="iz-why__item">
-            <span className="iz-why__icon"><Scissors /></span>
+            <WhyIcon name="jahit" />
             <h3>Dibuat sendiri sejak 2023</h3>
             <p>Kami merancang dan memproduksi sendiri, lalu mengirim dari gudang INZTA.</p>
             <div className="iz-why__proof">
@@ -51,8 +64,8 @@ export default function WhyInzta({ gasberHref, waHref }: { gasberHref: string; w
             </div>
           </li>
           <li className="iz-why__item">
-            <span className="iz-why__icon"><Chat /></span>
-            <h3>Dibalas manusia</h3>
+            <WhyIcon name="chat" />
+            <h3>Ngobrol langsung dengan tim INZTA</h3>
             <p>Pesanan dan pertanyaan dijawab admin INZTA lewat WhatsApp.</p>
             <div className="iz-why__proof">
               <a className="iz-link" href={waHref} target="_blank" rel="noopener noreferrer">
@@ -61,7 +74,7 @@ export default function WhyInzta({ gasberHref, waHref }: { gasberHref: string; w
             </div>
           </li>
           <li className="iz-why__item">
-            <span className="iz-why__icon"><Road /></span>
+            <WhyIcon name="ride-bareng" />
             <h3>Ikut turun ke jalan</h3>
             <p>Kami ikut ride bersama komunitas, bukan hanya berjualan.</p>
             <div className="iz-why__proof">
