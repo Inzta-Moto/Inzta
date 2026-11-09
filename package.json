@@ -22,6 +22,7 @@
     "test:motion": "node tests/f016-motion.cjs",
     "test:seo": "node tests/f005-seo.cjs",
     "test:automation": "node tests/f010-automation.cjs",
+    "test:product-automation": "node tests/f023-product-automation.cjs",
     "test:images": "node tests/f022-images.cjs",
     "test:images-browser": "node tests/f022-browser.cjs",
     "check:v2-css": "node scripts/check-v2-css.mjs",
