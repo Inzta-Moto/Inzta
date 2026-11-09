@@ -27,15 +27,26 @@ export const PARTNER_STORES: PartnerStore[] = [
     addressLines: ['Grand Depok City, Cluster Azalea No.38-40 Blok W1', 'Jatimulya, Kec. Cilodong', 'Kota Depok, Jawa Barat 16413'],
     area: 'Grand Depok City, Cilodong',
     mapsUrl: 'https://maps.google.com/?cid=12517936582616688079',
-    // hours, products, and photos stay empty until INZTA confirms them (inzta-hq A-089 to A-093); empty fields render nothing.
+    // Hours and photos confirmed by INZTA on 2026-11-09 (inzta-hq A-097, A-101); the photos are the shop's own, sent with
+    // its permission. Products on display stay empty until confirmed (A-098); empty fields render nothing.
+    hours: [
+      { days: 'Senin–Sabtu', time: '10.00–19.00' },
+      { days: 'Minggu', time: '08.00–16.00' },
+    ],
+    photos: [
+      { src: '/images/v2/toko/bikerjowo-depok/tampak-depan.webp', alt: 'Tampak depan toko Bikerjowo Depok pada siang hari, motor terparkir dekat etalase', credit: 'Foto: Bikerjowo' },
+      { src: '/images/v2/toko/bikerjowo-depok/pintu-masuk-malam.webp', alt: 'Pintu masuk toko pada malam hari dengan deretan motor di depannya', credit: 'Foto: Bikerjowo' },
+      { src: '/images/v2/toko/bikerjowo-depok/kaca-etalase.webp', alt: 'Kaca etalase toko bertuliskan "Work is just something we do between rides"', credit: 'Foto: Bikerjowo' },
+      { src: '/images/v2/toko/bikerjowo-depok/etalase-dalam.webp', alt: 'Etalase di dalam toko berisi helm dan jaket', credit: 'Foto: Bikerjowo' },
+    ],
     waText: 'Halo admin INZTA, saya ingin tahu tas apa saja yang bisa dilihat di Bikerjowo Depok.',
   },
 ];
 
 // Every new F-027 string in one place (inzta-hq docs/specs/F-027-toko-partner/copy.md, final editor text), so edited
 // copy is swapped here without touching the components. The page head and the channel labels name the one shop
-// listed today and need rewording when a second shop is added. No "partner"/"resmi" wording until INZTA allows it
-// (ADR-0036, A-088). hoursLabel, productsLabel, and gallery.regionLabel are not in copy.md yet; they render only once
+// listed today and need rewording when a second shop is added. "Official partner" is the term INZTA allowed on
+// 2026-11-09 (inzta-hq ADR-0038, A-096); the shop logo is not confirmed yet. hoursLabel, productsLabel, and gallery.regionLabel are not in copy.md yet; they render only once
 // hours, products, or photos are filled in, so they need editor text before that data lands.
 export const STORE_COPY = {
   meta: {
@@ -45,8 +56,8 @@ export const STORE_COPY = {
   },
   page: {
     eyebrow: 'Offline',
-    title: 'Tas INZTA di Depok.',
-    lead: 'Tasnya bisa dilihat langsung di Bikerjowo Depok, Cilodong. Sebelum datang, tanyakan tas yang Anda cari ke admin INZTA.',
+    title: 'Official partner INZTA di Depok.',
+    lead: 'Tas INZTA bisa dilihat langsung di Bikerjowo Depok, Cilodong. Sebelum datang, tanyakan tas yang Anda cari ke admin INZTA.',
   },
   card: {
     addressLabel: 'Alamat',
@@ -68,7 +79,7 @@ export const STORE_COPY = {
     link: 'Lihat semua tas',
   },
   teaser: {
-    eyebrow: 'Offline',
+    eyebrow: 'Official partner',
     title: 'Tas INZTA bisa dilihat langsung di Bikerjowo Depok.',
     link: 'Cek lokasi toko',
   },
