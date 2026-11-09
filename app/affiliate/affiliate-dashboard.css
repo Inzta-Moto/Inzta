@@ -1,6 +1,6 @@
-/* F-023 dashboard band, ticket, voucher states, content frame, loading skeleton, and error card (E7, E8, E15, E16).
+/* F-025 dashboard band, ticket, voucher states, content frame, loading skeleton, and error card (E7, E8, E15, E16).
    Loaded by components/affiliate/HeroBand.tsx on top of affiliate.css; every selector sits under an iz-aff- class.
-   Sizes come from the design script (docs/specs/F-023-redesign-affiliate/build-figcraft.mjs: hero, ticket,
+   Sizes come from the design script (docs/specs/F-025-redesign-affiliate/build-figcraft.mjs: hero, ticket,
    voucherWarning, dashboard). Colours go through v2 tokens or the --aff-* variables; the two new ones are below. */
 
 .iz-aff {

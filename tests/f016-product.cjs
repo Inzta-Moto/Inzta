@@ -709,7 +709,7 @@ function mockFetch(table) {
   await check('F-021 E4: login and dashboard record the own code; logout clears it first', () => {
     const login = fs.readFileSync(path.join(ROOT, 'app/affiliate/(public)/login/page.tsx'), 'utf8');
     assert.match(login, /localStorage\.setItem\('inzta_affiliate_own', data\.voucherCode \|\| ''\)/);
-    // F-023 moved the logout from the panel layout to components/affiliate/logout.ts (header and error.tsx share it).
+    // F-025 moved the logout from the panel layout to components/affiliate/logout.ts (header and error.tsx share it).
     const logout = fs.readFileSync(path.join(ROOT, 'components/affiliate/logout.ts'), 'utf8');
     const keys = logout.match(/AFFILIATE_STORAGE_KEYS\s*=\s*\[([^\]]*)\]/);
     assert.ok(keys, 'AFFILIATE_STORAGE_KEYS list');

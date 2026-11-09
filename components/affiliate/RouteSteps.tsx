@@ -1,5 +1,5 @@
 /**
- * "Cara kerja komisi" steps, word for word from the F-023 design (build-figcraft.mjs STEPS). Login, the dashboard band,
+ * "Cara kerja komisi" steps, word for word from the F-025 design (build-figcraft.mjs STEPS). Login, the dashboard band,
  * the no-voucher card, and the empty state all render this list, so the wording stays in one place. It only describes
  * the flow that already runs; payout rules and schedules wait for INZTA (Q-6).
  */
@@ -26,7 +26,7 @@ export type RouteStepsProps = {
 const ORIENTATION_CLASS = { horizontal: 'iz-aff-route--h', vertical: 'iz-aff-route--v', auto: 'iz-aff-route--auto' } as const;
 
 /**
- * Numbered kuning stops joined by a dashed line (F-023 E1, E7, E14). No client code, so it renders on the server or
+ * Numbered kuning stops joined by a dashed line (F-025 E1, E7, E14). No client code, so it renders on the server or
  * inside client components alike. The wrapper is a CSS container and takes the full width of its parent; inside a
  * flex row give it a width (or flex: 1), otherwise inline-size containment collapses it.
  */

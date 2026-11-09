@@ -296,7 +296,7 @@ export interface Commission {
   createdAt: any;
 }
 
-// F-023 affiliate dashboard: whitelisted Commission and Voucher fields sent to the client (dates as epoch ms), plus the
+// F-025 affiliate dashboard: whitelisted Commission and Voucher fields sent to the client (dates as epoch ms), plus the
 // view types of lib/affiliate/dashboard.ts, which re-exports them.
 export type AffCommissionItem = {
   productName?: string;

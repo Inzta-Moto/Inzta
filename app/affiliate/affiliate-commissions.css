@@ -1,6 +1,6 @@
-/* F-023 commissions: summary (E9), monthly chart (E10), toolbar, list and table (E11), detail and filter modals (E12,
+/* F-025 commissions: summary (E9), monthly chart (E10), toolbar, list and table (E11), detail and filter modals (E12,
    E13), empty state (E14). Imported by components/affiliate/commissions/CommissionsSection.tsx. Numbers come from
-   docs/specs/F-023-redesign-affiliate/build-figcraft.mjs. Rules that refine a foundation class (.iz-aff-card,
+   docs/specs/F-025-redesign-affiliate/build-figcraft.mjs. Rules that refine a foundation class (.iz-aff-card,
    .iz-aff-iconbtn) use two classes, because the load order against affiliate.css is not guaranteed. */
 
 .iz-aff-comm { display: flex; flex-direction: column; gap: 16px; }

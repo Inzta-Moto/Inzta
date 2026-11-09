@@ -1,6 +1,6 @@
-/* F-023 affiliate login (E1-E5). Imported by app/affiliate/(public)/login/page.tsx after AffiliateShell has loaded the
+/* F-025 affiliate login (E1-E5). Imported by app/affiliate/(public)/login/page.tsx after AffiliateShell has loaded the
    v2 tokens and affiliate.css; every selector sits under .iz-aff-login. Numbers come from the design script
-   (docs/specs/F-023-redesign-affiliate/build-figcraft.mjs, login() and loginCard()). No raw colours: tokens and the
+   (docs/specs/F-025-redesign-affiliate/build-figcraft.mjs, login() and loginCard()). No raw colours: tokens and the
    --aff-* variables of affiliate.css only. Phones first; the two-panel layout starts at 1024 px. */
 
 /* Phones and tablets: one dark page. The photo, scrim, and contours are positioned against <main>, the copy flows.

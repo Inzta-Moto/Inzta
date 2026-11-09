@@ -3,7 +3,7 @@ import HeroBand, { DashboardFrame } from './HeroBand';
 const ROWS = [0, 1, 2, 3];
 
 /**
- * Loading state of the dashboard (F-023 E15, FR-07): the dark band with a ticket outline, then the summary block(s)
+ * Loading state of the dashboard (F-025 E15, FR-07): the dark band with a ticket outline, then the summary block(s)
  * and a transaction card outline. No spinner or counting numbers; the sheen stops under reduced motion. Screen
  * readers get aria-busy on <main> plus one hidden sentence.
  */

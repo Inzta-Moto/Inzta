@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
-// F-023 REV-01: where the dashboard sends a session cookie it no longer accepts. The dashboard cannot clear the cookie
+// F-025 REV-01: where the dashboard sends a session cookie it no longer accepts. The dashboard cannot clear the cookie
 // itself (Server Components cannot write cookies), and with loading.tsx its redirect arrives as a 200 meta refresh,
 // which the browser does not count as a redirect. Sent straight to /affiliate/login, the middleware would bounce the
 // still-present cookie back to the dashboard forever. Clearing it here breaks that loop without touching the

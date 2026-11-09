@@ -8,7 +8,7 @@ const TOAST_MS = 2500;
 const FADE_MS = 200;
 
 /**
- * State for one Toast: `show(msg)` displays the message for 2.5 s (F-023 E8). Calling it again restarts the timer.
+ * State for one Toast: `show(msg)` displays the message for 2.5 s (F-025 E8). Calling it again restarts the timer.
  */
 export function useToast(duration: number = TOAST_MS) {
   const [message, setMessage] = useState('');

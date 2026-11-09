@@ -7,7 +7,7 @@ import { whatsappUrl } from '@/lib/affiliate/dashboard';
 import { WA_NUMBER } from '@/lib/constants';
 
 /**
- * Error state of the dashboard (F-023 E16, FR-08): the session is still valid but the data read failed, so the band
+ * Error state of the dashboard (F-025 E16, FR-08): the session is still valid but the data read failed, so the band
  * and "Keluar" stay and the card offers a retry and the admin chat. Focus moves to the card title so screen readers
  * hear what happened.
  */

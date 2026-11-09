@@ -1,4 +1,4 @@
-// F-023 browser tests (Playwright): affiliate login and dashboard. Starts `next dev` twice: once normally (login,
+// F-025 browser tests (Playwright): affiliate login and dashboard. Starts `next dev` twice: once normally (login,
 // dashboard states, interactions), once with the dev-only error switch (F016_FIXTURE + F016_STATE=error, see
 // app/affiliate/(panel)/dashboard/page.tsx) for the error state. Logs in through the real form against the Firebase
 // project in .env.local (inzta-dev); it only reads Firestore. Never point it at inzta.id.

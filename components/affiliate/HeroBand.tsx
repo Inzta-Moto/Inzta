@@ -36,7 +36,7 @@ export type HeroBandProps = {
 };
 
 /**
- * Dark band at the top of the dashboard (F-023 E7): contours with a calm side behind the copy, one kuning glow, and
+ * Dark band at the top of the dashboard (F-025 E7): contours with a calm side behind the copy, one kuning glow, and
  * from 1024 px a dashed kuning road in the right margin. Phones stack greeting, heading, then the card slot; from
  * 1024 px the copy and route sit left and a 560 px card column sits right.
  */

@@ -1,4 +1,4 @@
-// F-023: pure helpers for the affiliate dashboard (link, voucher, summary, monthly chart, transaction filters). No
+// F-025: pure helpers for the affiliate dashboard (link, voucher, summary, monthly chart, transaction filters). No
 // React, Firebase, or window, so the server page, client components, and tests share one implementation. Dates are
 // epoch ms; every calendar computation uses a fixed WIB offset (UTC+7, no DST) instead of the machine zone, so the
 // server (UTC on Vercel) and the buyer's phone print the same day and month.
@@ -200,7 +200,7 @@ export function voucherState(ownCode: string, v: AffVoucher, now: number): Vouch
   return 'active';
 }
 
-/** Same arithmetic as the pre-F-023 dashboard (totalAll, totalPaid, totalPending, pending count). */
+/** Same arithmetic as the pre-F-025 dashboard (totalAll, totalPaid, totalPending, pending count). */
 export function summarize(list: AffCommission[]): Summary {
   let total = 0;
   let paid = 0;

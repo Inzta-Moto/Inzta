@@ -1,6 +1,6 @@
-/* F-023 affiliate foundation: tokens, card and button recipes, the dark band with contours and glow, RouteSteps, and
+/* F-025 affiliate foundation: tokens, card and button recipes, the dark band with contours and glow, RouteSteps, and
    Toast. Loaded by AffiliateShell after the v2 tokens; every selector sits under .iz-aff so nothing reaches the shop
-   or admin pages. Values come from the design script (docs/specs/F-023-redesign-affiliate/build-figcraft.mjs). Colours
+   or admin pages. Values come from the design script (docs/specs/F-025-redesign-affiliate/build-figcraft.mjs). Colours
    without a v2 token are defined once here as --aff-* (M-6); components use the variables, never raw colours. */
 
 .iz-aff {

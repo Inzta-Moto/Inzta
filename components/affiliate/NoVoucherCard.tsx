@@ -2,7 +2,7 @@ import { MessageCircle, Ticket } from 'lucide-react';
 import { whatsappUrl } from '@/lib/affiliate/dashboard';
 
 /**
- * Replaces the ticket when the affiliate has no voucher code, or the code's voucher document is gone (F-023 E8,
+ * Replaces the ticket when the affiliate has no voucher code, or the code's voucher document is gone (F-025 E8,
  * FR-09b). The link is built from the code, so without one there is nothing to share yet.
  */
 export default function NoVoucherCard({ waNumber }: { waNumber: string }) {

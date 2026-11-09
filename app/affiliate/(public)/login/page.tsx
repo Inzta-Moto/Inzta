@@ -19,7 +19,7 @@ const ERROR_TEXT: Record<Exclude<LoginError, null>, string> = {
   session: 'Gagal membuat sesi. Coba lagi.',
 };
 
-// Same message as the pre-F-023 "Gabung sekarang" link, so the admin gets the request they already know.
+// Same message as the pre-F-025 "Gabung sekarang" link, so the admin gets the request they already know.
 const JOIN_URL = whatsappUrl(WA_NUMBER, 'Halo, saya ingin mendaftar jadi affiliate Inzta');
 const FORGOT_URL = whatsappUrl(
   WA_NUMBER,
@@ -29,7 +29,7 @@ const FORGOT_URL = whatsappUrl(
 const ERROR_ID = 'aff-login-error';
 
 /**
- * Affiliate login (F-023 E1-E6). Phones: photo strip with the title, light form card below. From 1024 px: photo panel
+ * Affiliate login (F-025 E1-E6). Phones: photo strip with the title, light form card below. From 1024 px: photo panel
  * with the commission route on the left, form card on a krem panel on the right. The data flow is the F-017/F-021 one,
  * unchanged: Firebase Auth, then /api/auth/session with role affiliate, then the localStorage keys, then the dashboard.
  */

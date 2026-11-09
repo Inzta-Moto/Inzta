@@ -16,7 +16,7 @@ export type AffiliateLinkCardProps = {
 };
 
 /**
- * Ticket-shaped affiliate card on the dark band (F-023 E8): link half, perforation with two notches, voucher half.
+ * Ticket-shaped affiliate card on the dark band (F-025 E8): link half, perforation with two notches, voucher half.
  * The link is shown without https:// and copied in full. "Bagikan" only renders when the browser has a share sheet,
  * checked after mount so the server HTML and the first client render match.
  */

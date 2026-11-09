@@ -48,7 +48,7 @@ export async function copyText(text: string): Promise<boolean> {
 }
 
 /**
- * Copy state shared by the ticket buttons and the copy callbacks handed to CommissionsSection (F-023 E8). `key`
+ * Copy state shared by the ticket buttons and the copy callbacks handed to CommissionsSection (F-025 E8). `key`
  * names the control ('link', 'code', ...): a success marks it as copied for 2.5 s and reports the message (the toast);
  * a failure marks it as failed until the next attempt, so the ticket can show the manual-copy hint.
  */

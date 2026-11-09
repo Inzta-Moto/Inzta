@@ -21,7 +21,7 @@ export function AffiliateBrand({ size = 'md' }: { size?: 'md' | 'lg' }) {
 }
 
 /**
- * Header inside the dark band (F-023 D-6, E7): brand, "Kembali ke toko", "Keluar". From 768 px the actions show their
+ * Header inside the dark band (F-025 D-6, E7): brand, "Kembali ke toko", "Keluar". From 768 px the actions show their
  * text; below that they are 44 px icon buttons whose label stays in the DOM for screen readers.
  */
 export default function AffiliateHeader() {

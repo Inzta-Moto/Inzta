@@ -1,4 +1,4 @@
-// F-023 E10-E12: small pure helpers for the commission components (status wording, row meta, chart geometry). Kept out
+// F-025 E10-E12: small pure helpers for the commission components (status wording, row meta, chart geometry). Kept out
 // of lib/affiliate/dashboard.ts, which the helpers task owns; no React, Firebase, or window here either.
 import {
   chartScale,

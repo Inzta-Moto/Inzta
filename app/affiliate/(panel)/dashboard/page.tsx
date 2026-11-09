@@ -26,7 +26,7 @@ function compact<T extends Record<string, unknown>>(o: T): T {
   return o;
 }
 
-// F-023 E15: only the fields the dashboard shows cross into the client, never the whole Firestore document (the
+// F-025 E15: only the fields the dashboard shows cross into the client, never the whole Firestore document (the
 // commission and voucher documents carry admin-side fields the affiliate has no use for).
 function toCommission(id: string, d: Record<string, unknown>): AffCommission {
   const items = Array.isArray(d.items)
@@ -60,7 +60,7 @@ function toVoucher(d: Record<string, unknown>): NonNullable<AffVoucher> {
   });
 }
 
-/** The three reads the dashboard has always made (Spark quota, F-023 brief). Null when no affiliate has this uid. */
+/** The three reads the dashboard has always made (Spark quota, F-025 brief). Null when no affiliate has this uid. */
 async function loadDashboard(uid: string): Promise<DashboardData | null> {
   const db = getAdminDb();
   // RUL-02 / FB-01: match by uid only. The old email fallback trusted unverified emails and rewrote
@@ -97,7 +97,7 @@ function errorCode(err: unknown): string {
   return 'unknown';
 }
 
-// F-023 E16: a missing session goes to the login page as before (F-017). An invalid session, or a uid without an
+// F-025 E16: a missing session goes to the login page as before (F-017). An invalid session, or a uid without an
 // affiliate document, goes to /affiliate/sesi-habis, which clears the cookie and then opens the login page (REV-01:
 // loading.tsx turns this redirect into a 200 meta refresh, and the middleware bounces /affiliate/login back here for
 // as long as the cookie exists, so the loop would never end). Any other failure (Firestore, network, Admin SDK setup)

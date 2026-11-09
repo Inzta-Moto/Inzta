@@ -45,7 +45,7 @@ export type CommissionsSectionProps = {
 };
 
 /**
- * Commission summary, monthly chart, and transactions of the affiliate dashboard (F-023 E9-E14), inside one 1200 px
+ * Commission summary, monthly chart, and transactions of the affiliate dashboard (F-025 E9-E14), inside one 1200 px
  * content column. Below 768 px summary and chart are two cards; from 768 px they share one card with a vertical rule.
  * Below 1024 px a "Cara kerja komisi" card closes the page (from 1024 px the band shows that route). Everything here
  * works on the commissions already loaded by page.tsx: no extra Firestore reads.

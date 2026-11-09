@@ -1,5 +1,5 @@
-// F-023 task T6: pure helpers of the affiliate dashboard (lib/affiliate/dashboard.ts). Link format, voucher chips and
-// state, summary (same arithmetic as the pre-F-023 dashboard), monthly chart series and scale in WIB, transaction
+// F-025 task T6: pure helpers of the affiliate dashboard (lib/affiliate/dashboard.ts). Link format, voucher chips and
+// state, summary (same arithmetic as the pre-F-025 dashboard), monthly chart series and scale in WIB, transaction
 // titles, filters, grouping, and the redirect-versus-error decision (E16). Example data only (INZ-CONTOH, "(contoh)").
 // Usage: npm run test:affiliate  (or: node tests/f023-affiliate.cjs <repo-root>)
 const path = require('path');
@@ -51,7 +51,7 @@ const SAMPLE = [
   { id: 'c7', productName: 'Side bag sepasang (contoh)', items: [item('Side bag sepasang (contoh)')], productPrice: 390000, commissionAmount: 39000, isPaid: true, paidAt: wib(2026, 8, 25), createdAt: wib(2026, 8, 18, 13, 15) },
 ];
 
-// The pre-F-023 formulas from AffiliateDashboardClient.tsx, copied verbatim.
+// The pre-F-025 formulas from AffiliateDashboardClient.tsx, copied verbatim.
 function oldSummary(commissions) {
   const totalPending = commissions.filter(c => !c.isPaid).reduce((s, c) => s + c.commissionAmount, 0);
   const totalPaid = commissions.filter(c => c.isPaid).reduce((s, c) => s + c.commissionAmount, 0);
@@ -159,7 +159,7 @@ check('voucherState: active, expired, inactive, missing, expired wins over inact
   assert.strictEqual(D.voucherState('INZ-CONTOH', null, NOW), 'missing');
 });
 
-check('summarize: same totals as the pre-F-023 dashboard on the example list', () => {
+check('summarize: same totals as the pre-F-025 dashboard on the example list', () => {
   const s = D.summarize(SAMPLE);
   const old = oldSummary(SAMPLE);
   assert.strictEqual(s.total, old.totalAll);
