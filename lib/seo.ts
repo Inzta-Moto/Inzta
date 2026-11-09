@@ -48,7 +48,7 @@ export const PAGE_TEXT = {
     description: 'Ketentuan pesan di inzta.id: harga dan stok, pembayaran lewat WhatsApp admin, voucher, pengiriman dari Jakarta Barat, retur, dan garansi.',
   },
   // F-027: the text lives with the rest of the shop copy, so an edit to copy.md changes one file. Not part of the
-  // 2026-10-29 approval above: checked by the inzta-hq editor, released to main only after INZTA approves (A-088).
+  // 2026-10-29 approval above: checked by the inzta-hq editor, released to main only after INZTA approves (A-096).
   toko: STORE_COPY.meta,
 } as const;
 

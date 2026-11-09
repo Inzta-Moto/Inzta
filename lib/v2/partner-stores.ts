@@ -27,7 +27,7 @@ export const PARTNER_STORES: PartnerStore[] = [
     addressLines: ['Grand Depok City, Cluster Azalea No.38-40 Blok W1', 'Jatimulya, Kec. Cilodong', 'Kota Depok, Jawa Barat 16413'],
     area: 'Grand Depok City, Cilodong',
     mapsUrl: 'https://maps.google.com/?cid=12517936582616688079',
-    // hours, products, and photos stay empty until INZTA confirms them (inzta-hq A-089 to A-093); empty fields render nothing.
+    // hours, products, and photos stay empty until INZTA confirms them (inzta-hq A-097 to A-101); empty fields render nothing.
     waText: 'Halo admin INZTA, saya ingin tahu tas apa saja yang bisa dilihat di Bikerjowo Depok.',
   },
 ];
@@ -35,7 +35,7 @@ export const PARTNER_STORES: PartnerStore[] = [
 // Every new F-027 string in one place (inzta-hq docs/specs/F-027-toko-partner/copy.md, final editor text), so edited
 // copy is swapped here without touching the components. The page head and the channel labels name the one shop
 // listed today and need rewording when a second shop is added. No "partner"/"resmi" wording until INZTA allows it
-// (ADR-0036, A-088). hoursLabel, productsLabel, and gallery.regionLabel are not in copy.md yet; they render only once
+// (ADR-0038, A-096). hoursLabel, productsLabel, and gallery.regionLabel are not in copy.md yet; they render only once
 // hours, products, or photos are filled in, so they need editor text before that data lands.
 export const STORE_COPY = {
   meta: {
