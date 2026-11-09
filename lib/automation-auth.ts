@@ -1,6 +1,6 @@
 import { createHash, timingSafeEqual } from 'crypto';
 
-// F-010 (ADR-0020), F-023 (ADR-0030): the inzta-hq pipeline publishes articles and updates product text with a
+// F-010 (ADR-0020), F-023 (ADR-0032): the inzta-hq pipeline publishes articles and updates product text with a
 // per-person bearer token instead of an admin session. Each person has one Vercel variable AUTOMATION_TOKEN_<NAME>
 // (for example AUTOMATION_TOKEN_ANGKASA); <NAME> in lower case becomes the actor stored on the article and logged for
 // product updates, so one token can be revoked without the others.
