@@ -203,6 +203,22 @@ export function buildVariablePayload(data: any, stored?: Record<string, any> | n
   };
 }
 
+// ── Concurrency ────────────────────────────────────────────────────────────────
+
+// Review REV-03 (F-023): the admin form loads the product list once, and PUT writes the whole document. Without this
+// check, a form opened before an automated text update (or another admin's save) would silently write the old name,
+// description, and categories back. The form sends the `updatedAt` it loaded as `expectedUpdatedAt`; a stored value
+// that differs means the product changed since the page was opened. Compared as JSON because legacy documents hold a
+// Firestore Timestamp, which reaches the browser as {_seconds, _nanoseconds}. A body without the key (old clients,
+// scripts) is not checked.
+export function changedSinceLoaded(stored: Record<string, any> | null | undefined, data: any): boolean {
+  if (!data || data.expectedUpdatedAt === undefined) return false;
+  return JSON.stringify(stored?.updatedAt ?? null) !== JSON.stringify(data.expectedUpdatedAt ?? null);
+}
+
+export const PRODUCT_CHANGED_MESSAGE =
+  'Produk ini sudah diubah sejak halaman dibuka (oleh admin lain atau otomasi teks produk). Muat ulang halaman, buka produknya lagi, lalu ulangi perubahan Anda. Belum ada yang tersimpan.';
+
 // ── Read Normalization ─────────────────────────────────────────────────────────
 // `normalizeProduct` dipindah ke `lib/product-utils.ts` dan di-re-export di atas
 // supaya Server Pages & API route pakai helper yang sama. Lihat komen di
