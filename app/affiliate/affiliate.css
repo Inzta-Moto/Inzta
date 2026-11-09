@@ -1,0 +1,225 @@
+/* F-025 affiliate foundation: tokens, card and button recipes, the dark band with contours and glow, RouteSteps, and
+   Toast. Loaded by AffiliateShell after the v2 tokens; every selector sits under .iz-aff so nothing reaches the shop
+   or admin pages. Values come from the design script (docs/specs/F-025-redesign-affiliate/build-figcraft.mjs). Colours
+   without a v2 token are defined once here as --aff-* (M-6); components use the variables, never raw colours. */
+
+.iz-aff {
+  /* Dark band: the website's closing panel language (D-4). */
+  --aff-band: var(--c-aspal);
+  --aff-band-ink: var(--c-krem);
+  --aff-band-sub: var(--c-pasir);
+  --aff-band-line: rgba(255, 255, 255, 0.12);
+  --aff-band-soft: rgba(255, 255, 255, 0.07);
+  --aff-band-btn-line: rgba(255, 255, 255, 0.2);
+  --aff-band-hover: rgba(255, 255, 255, 0.08);
+  --aff-band-skel: rgba(255, 255, 255, 0.08);
+  /* Ticket on the band (E8). */
+  --aff-tile: #1b1b1b;
+  --aff-tile-line: rgba(255, 255, 255, 0.09);
+  --aff-tile-field: rgba(255, 255, 255, 0.05);
+  --aff-tile-chip: rgba(255, 255, 255, 0.08);
+  --aff-tile-shadow: 0 24px 48px rgba(0, 0, 0, 0.4);
+  /* Kuning text and chips on dark: #f59e0b is too dim for 14 px text on #1b1b1b, the design lightens it. */
+  --aff-kuning-on-dark: #f5b544;
+  --aff-kuning-chip: rgba(245, 158, 11, 0.15);
+  /* Voucher warning on the band (E8) and the light warning panel (login error, pending tiles). */
+  --aff-warn-dark-bg: #2e2412;
+  --aff-warn-dark-line: #6b4a12;
+  --aff-warn-bg: #fcefd6;
+  --aff-warn-line: #f3cf8c;
+  /* Light surfaces. */
+  --aff-field: #ffffff;
+  --aff-btn-line: #cfc8ba;
+  --aff-skel: #e9e3d8;
+  --aff-card-shadow: 0 1px 2px rgba(17, 17, 17, 0.06), 0 12px 32px rgba(17, 17, 17, 0.07);
+  /* Raised segment of the segmented control (design: #1111111f, 0 1 3). */
+  --aff-seg-shadow: 0 1px 3px rgba(17, 17, 17, 0.12);
+  /* Modal recipe (D-7): the dashboard stays visible behind a dimmed scrim. */
+  --aff-scrim: rgba(17, 17, 17, 0.65);
+  --aff-modal-shadow: 0 24px 64px rgba(0, 0, 0, 0.33);
+  --aff-toast-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+  /* Page gutter: 16 px phones, 32 px tablets, 48 px from 1024 (the design's pad()). */
+  --aff-gutter: 16px;
+  --aff-card-pad: 20px;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+@media (min-width: 768px) {
+  .iz-aff { --aff-gutter: 32px; --aff-card-pad: 28px; }
+}
+@media (min-width: 1024px) {
+  .iz-aff { --aff-gutter: 48px; }
+}
+
+/* Focus: 2 px ring in kuning-tua on light surfaces, kuning on the dark band (E17). */
+.iz-aff :focus-visible { outline: 2px solid var(--c-focus); outline-offset: 2px; }
+.iz-aff .iz-aff-band :focus-visible, .iz-aff .iz-aff-on-dark :focus-visible { outline-color: var(--c-kuning); }
+
+.iz-aff-num { font-variant-numeric: tabular-nums; }
+.iz-aff-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+
+/* Content column: 1200 px of content at most, gutter outside it. */
+.iz-aff-container { width: 100%; max-width: calc(var(--size-content) + 2 * var(--aff-gutter)); margin-inline: auto; padding-inline: var(--aff-gutter); }
+
+/* Card recipe D-7: one radius, one line, one light two-layer shadow, one padding for every card. */
+.iz-aff-card { background: var(--c-kertas-terang); color: var(--c-tinta); border: 1px solid var(--c-garis); border-radius: var(--radius-tile); box-shadow: var(--aff-card-shadow); padding: var(--aff-card-pad); min-width: 0; }
+
+/* Buttons. Default 52 px like the design; --sm 44 (header), --md 48, --lg 56 (login "Masuk", E3). */
+.iz-aff-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 52px; padding: 0 22px; border: 1.5px solid transparent; border-radius: var(--radius-pill); font-family: var(--font-sans); font-size: 16px; font-weight: 700; line-height: 1.2; text-align: center; white-space: nowrap; transition: background-color 0.15s ease, filter 0.15s ease, transform 0.15s ease; }
+.iz-aff-btn svg { flex: none; width: 20px; height: 20px; }
+.iz-aff-btn:active:not(:disabled):not([aria-disabled="true"]) { transform: scale(0.98); }
+.iz-aff-btn--sm { min-height: 44px; padding: 0 16px; font-size: 15px; }
+.iz-aff-btn--md { min-height: 48px; }
+.iz-aff-btn--lg { min-height: 56px; font-size: 17px; }
+.iz-aff-btn--block { display: flex; width: 100%; }
+.iz-aff-btn--primary { background: var(--c-kuning); color: var(--c-on-kuning); }
+.iz-aff-btn--primary:hover:not(:disabled):not([aria-disabled="true"]) { filter: brightness(1.05); }
+.iz-aff-btn--ghost { background: transparent; color: var(--c-tinta); border-color: var(--aff-btn-line); }
+.iz-aff-btn--ghost:hover:not(:disabled):not([aria-disabled="true"]) { background: var(--c-pasir-muda); }
+/* Outline button on the band or the ticket. */
+.iz-aff-btn--on-dark { background: transparent; color: var(--aff-band-ink); border-color: var(--aff-band-btn-line); }
+.iz-aff-btn--on-dark:hover:not(:disabled):not([aria-disabled="true"]) { background: var(--aff-band-hover); }
+.iz-aff-btn:disabled, .iz-aff-btn[aria-disabled="true"] { opacity: 0.65; cursor: not-allowed; }
+
+/* Round icon buttons, 44 px (header) or 48 px (--lg, "Salin kode"); the accessible name goes in aria-label. */
+.iz-aff-iconbtn { display: inline-grid; place-items: center; flex: none; width: 44px; height: 44px; border: 1.5px solid var(--aff-btn-line); border-radius: 50%; color: var(--c-tinta); background: transparent; transition: background-color 0.15s ease; }
+.iz-aff-iconbtn svg { width: 20px; height: 20px; }
+.iz-aff-iconbtn--lg { width: 48px; height: 48px; }
+.iz-aff-iconbtn:hover:not(:disabled) { background: var(--c-pasir-muda); }
+.iz-aff-iconbtn--on-dark { color: var(--aff-band-ink); border-color: var(--aff-band-btn-line); }
+.iz-aff-iconbtn--on-dark:hover:not(:disabled) { background: var(--aff-band-hover); }
+.iz-aff-iconbtn:disabled { opacity: 0.65; cursor: not-allowed; }
+
+/* Spinning icon for busy buttons (E3); stands still under reduced motion, the label still says "Memproses…". */
+.iz-aff-spin { animation: iz-aff-spin 0.9s linear infinite; }
+@keyframes iz-aff-spin { to { transform: rotate(360deg); } }
+
+/* Dark band (E7). The band is its own stacking context, so decor layers at z-index -1 paint over its background and
+   under its content without positioning every child. */
+.iz-aff-band { position: relative; isolation: isolate; overflow: hidden; background: var(--aff-band); color: var(--aff-band-ink); }
+
+/* Topographic contours, the mask technique of v2-closing.css: a tinted layer shows only through the contour tile and
+   a second gradient mask. --aff-topo-calm is that gradient; the default calms the left side where the copy sits. */
+.iz-aff-topo {
+  --aff-topo-tile: url("/images/v2/topo-contours.svg");
+  --aff-topo-calm: linear-gradient(90deg, rgba(0, 0, 0, 0.2) 0 35%, #000 75%);
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: rgba(243, 239, 230, 0.18);
+  -webkit-mask-image: var(--aff-topo-tile), var(--aff-topo-calm);
+  -webkit-mask-size: 640px 600px, 100% 100%;
+  -webkit-mask-repeat: repeat, no-repeat;
+  -webkit-mask-composite: source-in;
+  mask-image: var(--aff-topo-tile), var(--aff-topo-calm);
+  mask-size: 640px 600px, 100% 100%;
+  mask-repeat: repeat, no-repeat;
+  mask-composite: intersect;
+}
+/* Ink contours at 6% for krem surfaces (login form side, content area); no calm side by default. */
+.iz-aff-topo--ink { background: rgba(23, 23, 23, 0.06); --aff-topo-calm: linear-gradient(#000, #000); }
+/* Round 2b: contours fade in from the top, so the layer never shows a hard upper edge. */
+.iz-aff-topo--fade { --aff-topo-calm: linear-gradient(180deg, transparent 0, #000 35%); }
+
+/* One kuning glow, top right by default; move or resize it with the three custom properties. Kuning at low alpha over
+   #111111, never a brown tint (round 1 note). */
+.iz-aff-glow {
+  --aff-glow-x: calc(100% - 40px);
+  --aff-glow-y: 60px;
+  --aff-glow-size: 420px;
+  position: absolute;
+  left: var(--aff-glow-x);
+  top: var(--aff-glow-y);
+  z-index: -1;
+  width: var(--aff-glow-size);
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  border-radius: 50%;
+  pointer-events: none;
+  background: radial-gradient(closest-side, rgba(245, 158, 11, 0.22), rgba(245, 158, 11, 0.06) 55%, rgba(245, 158, 11, 0));
+}
+@media (min-width: 1024px) {
+  .iz-aff-glow { --aff-glow-x: 80%; --aff-glow-y: 120px; --aff-glow-size: 760px; }
+}
+
+/* Header on the band (D-6, E7): text buttons from 768 px, two 44 px icon buttons below. */
+.iz-aff-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 64px; color: var(--aff-band-ink); }
+.iz-aff-brand { display: inline-flex; align-items: center; gap: 8px; min-width: 0; color: var(--aff-band-ink); }
+.iz-aff-brand__mark { display: block; flex: none; width: auto; height: 28px; }
+.iz-aff-brand__name { font-family: var(--font-display); font-size: 22px; font-weight: 800; line-height: 1; letter-spacing: 0; }
+.iz-aff-brand__tag { font-size: 14px; font-weight: 600; line-height: 1; color: var(--aff-band-sub); }
+.iz-aff-brand--lg { gap: 9px; }
+.iz-aff-brand--lg .iz-aff-brand__mark { height: 30px; }
+.iz-aff-brand--lg .iz-aff-brand__name { font-size: 24px; }
+.iz-aff-brand--lg .iz-aff-brand__tag { font-size: 15px; }
+@media (min-width: 1024px) {
+  .iz-aff-brand--lg { gap: 10px; }
+  .iz-aff-brand--lg .iz-aff-brand__mark { height: 34px; }
+  .iz-aff-brand--lg .iz-aff-brand__name { font-size: 26px; }
+}
+.iz-aff-header__actions { display: flex; align-items: center; gap: 8px; flex: none; }
+.iz-aff-header__btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 44px; height: 44px; padding: 0; border: 1.5px solid var(--aff-band-line); border-radius: var(--radius-pill); color: var(--aff-band-ink); font-size: 15px; font-weight: 700; line-height: 1; white-space: nowrap; transition: background-color 0.15s ease; }
+.iz-aff-header__btn svg { flex: none; width: 20px; height: 20px; }
+.iz-aff-header__btn:hover:not(:disabled) { background: var(--aff-band-hover); }
+.iz-aff-header__btn:disabled { opacity: 0.65; cursor: progress; }
+.iz-aff-header__label { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
+@media (min-width: 768px) {
+  .iz-aff-header__btn { width: auto; padding: 0 18px; }
+  .iz-aff-header__btn--plain { padding: 0 12px; border-color: transparent; }
+  .iz-aff-header__label { position: static; width: auto; height: auto; margin: 0; overflow: visible; clip: auto; }
+}
+
+/* RouteSteps: numbered kuning stops joined by a dashed line, the route language of components/v2/Closing.tsx. The
+   wrapper is a container, so "auto" turns horizontal once the column itself is 520 px wide (E7), whatever the page
+   width. Vertical is the base layout; horizontal rules are repeated for --h and inside the container query. */
+.iz-aff-route { --aff-route-n: 32px; --aff-route-gap: 18px; container: aff-route / inline-size; width: 100%; min-width: 0; display: flex; flex-direction: column; gap: 16px; }
+.iz-aff-route__title { margin: 0; font-family: var(--font-sans); font-size: 18px; font-weight: 700; line-height: 1.3; color: var(--c-tinta); }
+.iz-aff-route--dark .iz-aff-route__title { font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--aff-band-sub); }
+.iz-aff-route__list { display: flex; flex-direction: column; gap: var(--aff-route-gap); }
+.iz-aff-route__step { position: relative; display: flex; flex-direction: row; align-items: flex-start; gap: 14px; min-width: 0; }
+.iz-aff-route__n { position: relative; z-index: 1; display: grid; place-items: center; flex: none; width: var(--aff-route-n); height: var(--aff-route-n); border-radius: 50%; background: var(--c-kuning); color: var(--c-on-kuning); font-family: var(--font-display); font-size: 16px; font-weight: 800; line-height: 1; }
+.iz-aff-route__text { min-width: 0; padding-top: calc((var(--aff-route-n) - 1.45em) / 2); font-size: 15px; font-weight: 400; line-height: 1.45; color: var(--c-tinta); text-wrap: pretty; }
+.iz-aff-route--dark .iz-aff-route__text { color: var(--aff-band-ink); }
+/* The dash runs from under each stop to the top of the next one, so the line reaches stop 3 (round 2b). */
+.iz-aff-route__step:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  left: calc(var(--aff-route-n) / 2 - 1px);
+  top: calc(var(--aff-route-n) + 2px);
+  bottom: calc(2px - var(--aff-route-gap));
+  width: 2px;
+  background: repeating-linear-gradient(180deg, color-mix(in srgb, var(--c-kuning) 80%, transparent) 0 7px, transparent 7px 13px);
+}
+.iz-aff-route--h { gap: 14px; }
+.iz-aff-route--h .iz-aff-route__list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+.iz-aff-route--h .iz-aff-route__step { flex-direction: column; gap: 10px; }
+.iz-aff-route--h .iz-aff-route__text { padding-top: 0; font-size: 14px; }
+.iz-aff-route--h .iz-aff-route__step:not(:last-child)::after { left: calc(var(--aff-route-n) + 6px); right: calc(6px - 20px); top: calc(var(--aff-route-n) / 2 - 1px); bottom: auto; width: auto; height: 2px; background: repeating-linear-gradient(90deg, color-mix(in srgb, var(--c-kuning) 70%, transparent) 0 8px, transparent 8px 15px); }
+@container aff-route (min-width: 520px) {
+  .iz-aff-route--auto .iz-aff-route__list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+  .iz-aff-route--auto .iz-aff-route__step { flex-direction: column; gap: 10px; }
+  .iz-aff-route--auto .iz-aff-route__text { padding-top: 0; font-size: 14px; }
+  .iz-aff-route--auto .iz-aff-route__step:not(:last-child)::after { left: calc(var(--aff-route-n) + 6px); right: calc(6px - 20px); top: calc(var(--aff-route-n) / 2 - 1px); bottom: auto; width: auto; height: 2px; background: repeating-linear-gradient(90deg, color-mix(in srgb, var(--c-kuning) 70%, transparent) 0 8px, transparent 8px 15px); }
+}
+
+/* Toast: a krem pill centred at the bottom of the screen. The live region stays in the DOM; only the text changes, so
+   screen readers announce it (E8). The pill hugs its text and wraps on narrow phones instead of overflowing. */
+.iz-aff-toast { position: fixed; left: 0; right: 0; bottom: calc(40px + env(safe-area-inset-bottom, 0px)); z-index: 90; display: flex; justify-content: center; padding-inline: 16px; pointer-events: none; }
+.iz-aff-toast__pill { display: inline-flex; align-items: center; gap: 10px; max-width: 100%; padding: 10px 20px 10px 10px; border-radius: var(--radius-pill); background: var(--c-krem); color: var(--c-tinta); box-shadow: var(--aff-toast-shadow); font-size: 15px; font-weight: 700; line-height: 1.3; opacity: 0; visibility: hidden; transform: translateY(8px); transition: opacity 0.2s ease, transform 0.2s ease, visibility 0s linear 0.2s; }
+.iz-aff-toast__pill[data-open="true"] { opacity: 1; visibility: visible; transform: none; transition: opacity 0.2s ease, transform 0.2s ease, visibility 0s; }
+.iz-aff-toast__icon { display: grid; place-items: center; flex: none; width: 28px; height: 28px; border-radius: 50%; background: var(--c-fit); color: var(--c-kertas-terang); }
+.iz-aff-toast__icon svg { width: 16px; height: 16px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .iz-aff-btn, .iz-aff-iconbtn, .iz-aff-header__btn { transition: none; }
+  .iz-aff-btn:active:not(:disabled):not([aria-disabled="true"]) { transform: none; }
+  .iz-aff-spin { animation: none; }
+  .iz-aff-toast__pill, .iz-aff-toast__pill[data-open="true"] { transform: none; transition: none; }
+}
+
+@media (forced-colors: active) {
+  .iz-aff-topo, .iz-aff-glow { display: none; }
+  .iz-aff-card, .iz-aff-toast__pill { border: 1px solid CanvasText; }
+  .iz-aff-route__n { forced-color-adjust: none; }
+}
