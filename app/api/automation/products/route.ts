@@ -13,7 +13,7 @@ import {
   type ProductTextValues,
 } from '@/lib/product-automation';
 
-// F-023 (ADR-0032): `node scripts/update-produk.mjs` in inzta-hq updates the name, description, and motor categories
+// F-023 (ADR-0033): `node scripts/update-produk.mjs` in inzta-hq updates the name, description, and motor categories
 // of existing products here. One request carries every product of a run and is written in one Firestore batch, so a
 // run is applied completely or not at all. A dry run (the default) only reads and returns the stored values.
 // Nothing here creates or deletes a product, or touches price, stock, variants, photos, or status.

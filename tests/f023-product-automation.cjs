@@ -1,4 +1,4 @@
-// F-023 (ADR-0032): PATCH /api/automation/products, the token route inzta-hq updates product text through.
+// F-023 (ADR-0033): PATCH /api/automation/products, the token route inzta-hq updates product text through.
 // Same harness as tests/f010-automation.cjs: the real route handler with an in-memory Firestore (getAll, batch with
 // lastUpdateTime preconditions, all-or-nothing commit) and stubbed Next.js APIs.
 // Usage: npm run test:product-automation  (or: node tests/f023-product-automation.cjs <repo-root>)

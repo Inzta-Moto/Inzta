@@ -2,7 +2,7 @@ import type { MotorCategory } from '@/types';
 import { CATEGORY_SLUGS, isMotorCategory, normalizeKategoriMotor } from '@/lib/v2/motor-category';
 import { isValidSlug } from '@/lib/slug';
 
-// F-023 (ADR-0032): pure rules of PATCH /api/automation/products. No Firebase or Next imports, so the tests load it
+// F-023 (ADR-0033): pure rules of PATCH /api/automation/products. No Firebase or Next imports, so the tests load it
 // directly. The route may change three text fields of existing products and nothing else: price, stock, variants,
 // photos, status, and slug stay with the admin form.
 
