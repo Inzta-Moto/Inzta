@@ -1,0 +1,70 @@
+/* F-027 shops where INZTA bags can be seen offline: /toko (StorePage, StoreCard, StoreGallery) and the Beranda row
+   (StoreTeaser). v2 tokens only; no gradients, colour lines, or new motion. The dark panel reuses the /tentang route
+   map (AboutMap variant "contact", styled in v2-about.css, which /toko imports). */
+
+.iz-store-list { display: flex; flex-direction: column; gap: var(--space-12); }
+.iz-store { display: flex; flex-direction: column; gap: var(--space-8); }
+
+/* Two panels side by side from 1024 px, stacked below. Each panel rounds its own outer corners instead of the card
+   clipping them, so focus rings on the buttons are never cut off. */
+.iz-store__card { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); }
+.iz-store__main { position: relative; isolation: isolate; display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-4); padding: var(--space-12); border-radius: var(--radius-band) 0 0 var(--radius-band); }
+.iz-store__name { overflow-wrap: anywhere; }
+.iz-store__kind { margin-top: calc(var(--space-2) * -1); color: var(--c-pasir); font-size: 17px; font-weight: 600; }
+.iz-store__where { display: flex; flex-direction: column; gap: var(--space-2); margin-top: var(--space-2); }
+.iz-store__address { font-style: normal; font-size: 17px; line-height: 1.55; color: var(--c-krem); }
+.iz-store__address > span { display: block; }
+.iz-store__maps { margin-top: var(--space-4); }
+.iz-store__maps svg { width: 18px; height: 18px; }
+
+.iz-store__side { display: flex; flex-direction: column; gap: var(--space-6); padding: var(--space-12) var(--space-10); background: var(--c-kertas-terang); border: 1px solid var(--c-garis); border-left: 0; border-radius: 0 var(--radius-band) var(--radius-band) 0; }
+.iz-store__notes { display: flex; flex-direction: column; }
+.iz-store__notes > li { padding-block: var(--space-4); border-top: 1px solid var(--c-garis); font-size: 17px; line-height: 1.55; color: var(--c-batu); }
+.iz-store__notes > li:first-child { padding-top: 0; border-top: 0; }
+.iz-store__label { display: block; margin-bottom: var(--space-2); font-size: 15px; font-weight: 700; color: var(--c-tinta); }
+.iz-store__hours > div { display: flex; justify-content: space-between; gap: var(--space-4); }
+.iz-store__hours dd { color: var(--c-tinta); font-variant-numeric: tabular-nums; }
+.iz-store__products { display: flex; flex-direction: column; }
+.iz-store__wa { margin-top: auto; }
+
+.iz-store-close { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-2); max-width: 640px; margin-top: var(--space-12); }
+.iz-store-close p { font-size: 18px; line-height: 1.6; color: var(--c-batu); }
+
+/* Gallery (B4): a scroll-snap region below 1024 px, the first photo large and the rest in a grid from 1024 px. */
+.iz-storegallery { display: flex; flex-direction: column; gap: var(--space-4); }
+.iz-storegallery__grid { display: flex; gap: var(--space-3); overflow-x: auto; scrollbar-width: none; scroll-snap-type: x mandatory; }
+.iz-storegallery__grid:focus-visible { outline: 3px solid var(--c-focus); outline-offset: 4px; border-radius: var(--radius-tile); }
+.iz-storegallery__item { flex: none; width: 82%; aspect-ratio: 4 / 3; scroll-snap-align: start; }
+.iz-storegallery__item:only-child { width: 100%; }
+.iz-storegallery__item > .iz-smartimg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.iz-storegallery__item > .iz-tag { z-index: 1; }
+
+/* Beranda row (B5): one light card the width of the content, link on the right; stacked on phones. */
+.iz-storeteaser { display: flex; align-items: center; gap: var(--space-6); padding: var(--space-6) var(--space-8); background: var(--c-kertas-terang); border: 1px solid var(--c-garis); border-radius: var(--radius-panel); }
+.iz-storeteaser__photo { flex: none; width: 120px; aspect-ratio: 1 / 1; border-radius: var(--radius-tile); }
+.iz-storeteaser__photo > .iz-smartimg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.iz-storeteaser__body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--space-2); }
+.iz-storeteaser__body h2 { text-wrap: balance; }
+.iz-storeteaser__area { font-size: 17px; color: var(--c-batu); }
+.iz-storeteaser > .iz-link { flex: none; }
+
+@media (min-width: 1024px) {
+  .iz-storegallery__grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-auto-rows: 220px; overflow: visible; scroll-snap-type: none; }
+  .iz-storegallery__item { width: auto; aspect-ratio: auto; }
+  .iz-storegallery__item:first-child { grid-column: span 2; grid-row: span 2; }
+  .iz-storegallery__item:only-child { grid-column: 1 / -1; }
+}
+@media (max-width: 1023px) {
+  .iz-store__card { grid-template-columns: minmax(0, 1fr); }
+  .iz-store__main { border-radius: var(--radius-band) var(--radius-band) 0 0; }
+  .iz-store__side { border-left: 1px solid var(--c-garis); border-top: 0; border-radius: 0 0 var(--radius-band) var(--radius-band); }
+}
+@media (max-width: 767px) {
+  .iz-store-list { gap: var(--space-10); }
+  .iz-store__main { padding: var(--space-8) var(--space-6); border-radius: var(--radius-panel) var(--radius-panel) 0 0; }
+  .iz-store__side { padding: var(--space-6); border-radius: 0 0 var(--radius-panel) var(--radius-panel); }
+  .iz-store__maps, .iz-store__wa, .iz-store__wa .iz-btn { width: 100%; }
+  .iz-store-close { margin-top: var(--space-10); }
+  .iz-storeteaser { flex-direction: column; align-items: flex-start; gap: var(--space-4); padding: var(--space-6) var(--space-5); }
+  .iz-storeteaser__photo { width: 100%; aspect-ratio: 16 / 9; }
+}

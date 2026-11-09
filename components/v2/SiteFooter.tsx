@@ -5,6 +5,7 @@ import type { MotorCategory } from '@/types';
 import CategoryLink from '@/components/v2/CategoryLink';
 import { ArrowUpRight } from '@/components/v2/icons';
 import { BUSINESS_ADDRESS, BUSINESS_EMAIL, BUSINESS_NAME } from '@/lib/constants';
+import { PARTNER_STORES, STORE_COPY } from '@/lib/v2/partner-stores';
 
 // F-016 S0.7: position keys shared with the catalog filter (S2.2).
 const PRODUCT_LINKS = [
@@ -102,6 +103,8 @@ export default function SiteFooter({ waHref, waNumber, currentCategory }: { waHr
                 <span key={s.label}>{s.label}</span>
               ),
             )}
+            {/* F-027: internal link to /toko, same pill as the shops; worded "Lihat langsung" because buying in the shop is not confirmed. */}
+            {PARTNER_STORES.length > 0 && <Link href="/toko">{STORE_COPY.footerLink}</Link>}
           </div>
         </div>
         <p className="iz-footer__bottom">© 2026 PT Inzta Gear Indonesia</p>
