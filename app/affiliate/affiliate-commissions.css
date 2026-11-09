@@ -3,11 +3,6 @@
    docs/specs/F-023-redesign-affiliate/build-figcraft.mjs. Rules that refine a foundation class (.iz-aff-card,
    .iz-aff-iconbtn) use two classes, because the load order against affiliate.css is not guaranteed. */
 
-.iz-aff {
-  /* Raised segment of the segmented control (design: #1111111f, 0 1 3). */
-  --aff-seg-shadow: 0 1px 3px rgba(17, 17, 17, 0.12);
-}
-
 .iz-aff-comm { display: flex; flex-direction: column; gap: 16px; }
 @media (min-width: 768px) {
   .iz-aff-comm { gap: 24px; }
@@ -161,11 +156,13 @@
 .iz-aff-chip--pending { background: var(--aff-warn-bg); color: var(--c-kuning-tua); }
 
 /* Phone and tablet list (below 1024 px). */
-.iz-aff-txlist__month { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 4px 0 6px; }
-.iz-aff-txlist__group + .iz-aff-txlist__group .iz-aff-txlist__month { padding-top: 14px; }
+/* The design stacks month labels and rows in the card with a 16 px gap on top of their own padding (FR-04, FR-12-768),
+   so rows and labels get 4-8 px more per side than the component numbers. */
+.iz-aff-txlist__month { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 8px 0 4px; }
+.iz-aff-txlist__group + .iz-aff-txlist__group .iz-aff-txlist__month { padding-top: 26px; }
 .iz-aff-txlist__month-name { font-size: 13px; font-weight: 700; line-height: 1.4; letter-spacing: 0.05em; text-transform: uppercase; color: var(--c-batu); }
 .iz-aff-txlist__subtotal { flex: none; font-size: 13px; font-weight: 700; line-height: 1.4; color: var(--c-batu); }
-.iz-aff-row { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 64px; padding: 12px 0; border-bottom: 1px solid var(--c-garis); text-align: left; color: var(--c-tinta); }
+.iz-aff-row { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 64px; padding: 18px 0; border-bottom: 1px solid var(--c-garis); text-align: left; color: var(--c-tinta); }
 .iz-aff-txlist__rows > li:last-child .iz-aff-row { border-bottom: 0; }
 .iz-aff-row__main { display: flex; flex: 1 1 auto; flex-direction: column; gap: 3px; min-width: 0; }
 .iz-aff-row__title { font-size: 15px; font-weight: 600; line-height: 1.3; color: var(--c-tinta); overflow-wrap: break-word; }
@@ -202,10 +199,12 @@
 .iz-aff-table thead th:first-child { border-radius: 12px 0 0 12px; }
 .iz-aff-table thead th:last-child { border-radius: 0 12px 12px 0; }
 .iz-aff-table .iz-aff-table__num { text-align: right; }
-.iz-aff-table__group th { padding: 18px 20px 6px; font-size: 13px; font-weight: 700; line-height: 1.4; color: var(--c-batu-muda); }
+/* FR-05 rhythm: the design stacks rows in a card with a 16 px gap on top of their 14 px padding, so the drawn rows are
+   about 85 px apart and the month label sits 34 px under the row above. */
+.iz-aff-table__group th { padding: 32px 20px 12px; font-size: 13px; font-weight: 700; line-height: 1.4; color: var(--c-batu-muda); }
 .iz-aff-table__group-row { display: flex; justify-content: space-between; gap: 12px; }
 .iz-aff-table__group-row > :first-child { letter-spacing: 0.05em; text-transform: uppercase; }
-.iz-aff-table__row td { border-bottom: 1px solid var(--c-garis); }
+.iz-aff-table__row td { padding-block: 22px; border-bottom: 1px solid var(--c-garis); }
 .iz-aff-table tbody .iz-aff-table__row:last-child td { border-bottom: 0; }
 .iz-aff-table__row { cursor: pointer; }
 @media (hover: hover) {

@@ -14,6 +14,9 @@
 .iz-aff-dash { position: relative; }
 .iz-aff-dash__top { position: absolute; top: 0; left: 0; right: 0; z-index: 2; }
 .iz-aff-dash__main { display: block; }
+/* v2-overrides.css puts a section margin between siblings of `.iz-page main`; the band and the content already carry
+   their own spacing (design: 20 px phones, 32 px from 768), so the extra 72-120 px gap is cancelled here. */
+.iz-page.iz-aff .iz-aff-dash__main > * + * { margin-top: 0; }
 
 /* Hero band (E7). Phones: greeting, heading, then the card slot. From 1024 px: copy and route left, 560 px card right. */
 .iz-aff-hero { padding-top: 64px; }
@@ -155,7 +158,9 @@
 .iz-aff-error__tile { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 16px; background: var(--aff-warn-bg); color: var(--c-kuning-tua); }
 .iz-aff-error__tile svg { width: 26px; height: 26px; }
 .iz-aff-error__title { font-size: 20px; font-weight: 700; line-height: 1.3; color: var(--c-tinta); }
-.iz-aff-error__title:focus:not(:focus-visible) { outline: none; }
+/* The heading takes focus on mount only so screen readers start at the message (E16). It is not a control, and Chrome
+   counts focus after a page load as :focus-visible, so a ring would sit on the title on every load. */
+.iz-aff .iz-aff-error__title:focus { outline: none; }
 .iz-aff-error__text { font-size: 16px; line-height: 1.5; color: var(--c-batu); }
 .iz-aff-error__actions { display: flex; flex-direction: column; gap: 10px; align-self: stretch; }
 @media (min-width: 768px) {

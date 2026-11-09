@@ -709,14 +709,21 @@ function mockFetch(table) {
   await check('F-021 E4: login and dashboard record the own code; logout clears it first', () => {
     const login = fs.readFileSync(path.join(ROOT, 'app/affiliate/(public)/login/page.tsx'), 'utf8');
     assert.match(login, /localStorage\.setItem\('inzta_affiliate_own', data\.voucherCode \|\| ''\)/);
-    const logout = fs.readFileSync(path.join(ROOT, 'app/affiliate/(panel)/layout.tsx'), 'utf8');
-    assert.match(logout, /localStorage\.removeItem\('inzta_affiliate_own'\)/);
+    // F-023 moved the logout from the panel layout to components/affiliate/logout.ts (header and error.tsx share it).
+    const logout = fs.readFileSync(path.join(ROOT, 'components/affiliate/logout.ts'), 'utf8');
+    const keys = logout.match(/AFFILIATE_STORAGE_KEYS\s*=\s*\[([^\]]*)\]/);
+    assert.ok(keys, 'AFFILIATE_STORAGE_KEYS list');
+    for (const k of ['inzta_affiliate', 'is_affiliate_logged_in', 'inzta_affiliate_own']) assert.ok(keys[1].includes(`'${k}'`), k);
+    const fn = logout.slice(logout.indexOf('export async function logoutAffiliate'));
+    const clear = fn.search(/for \(const key of AFFILIATE_STORAGE_KEYS\) localStorage\.removeItem\(key\)/);
+    assert.ok(clear >= 0, 'logout clears every key');
     // REV-02: keys are cleared before the network calls of the logout.
-    assert.ok(logout.indexOf("removeItem('inzta_affiliate_own')") < logout.indexOf('await signOut(auth)'));
+    assert.ok(fn.indexOf('signOut(') > clear, 'cleared before signOut');
+    assert.ok(fn.indexOf('fetch(') > clear, 'cleared before fetch');
     // Dashboard (server-verified session) backfills the own code for sessions that logged in before F-021.
     const dash = fs.readFileSync(path.join(ROOT, 'app/affiliate/(panel)/dashboard/AffiliateDashboardClient.tsx'), 'utf8');
     assert.match(dash, /localStorage\.setItem\('inzta_affiliate_own', ownVoucherCode\)/);
-    assert.match(fs.readFileSync(path.join(ROOT, 'app/affiliate/(panel)/dashboard/page.tsx'), 'utf8'), /ownVoucherCode=\{ownVoucherCode\}/);
+    assert.match(fs.readFileSync(path.join(ROOT, 'app/affiliate/(panel)/dashboard/page.tsx'), 'utf8'), /ownVoucherCode=\{(data\.)?ownVoucherCode\}/);
     const utils = fs.readFileSync(path.join(ROOT, 'lib/utils.ts'), 'utf8');
     assert.match(utils, /clearAffiliateSession[\s\S]*?removeItem\('inzta_affiliate_own'\)/);
   });

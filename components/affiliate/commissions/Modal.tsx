@@ -63,8 +63,12 @@ function ModalDialog({ onClose, title, children, footer, returnFocusTo }: ModalP
       e.preventDefault();
       onCloseRef.current();
     };
-    // Some browsers still close the dialog on a repeated Escape despite preventDefault; follow along.
-    const onNativeClose = () => onCloseRef.current();
+    // Some browsers still close the dialog on a repeated Escape despite preventDefault; follow along. The close event
+    // is queued as a task, so one left over from a cleanup that already reopened the dialog (an effect re-run, e.g.
+    // React Strict Mode in dev) arrives while it is open again and must not close it.
+    const onNativeClose = () => {
+      if (!dialog.open) onCloseRef.current();
+    };
     dialog.addEventListener('cancel', onCancel);
     dialog.addEventListener('close', onNativeClose);
 

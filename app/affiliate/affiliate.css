@@ -32,6 +32,8 @@
   --aff-btn-line: #cfc8ba;
   --aff-skel: #e9e3d8;
   --aff-card-shadow: 0 1px 2px rgba(17, 17, 17, 0.06), 0 12px 32px rgba(17, 17, 17, 0.07);
+  /* Raised segment of the segmented control (design: #1111111f, 0 1 3). */
+  --aff-seg-shadow: 0 1px 3px rgba(17, 17, 17, 0.12);
   /* Modal recipe (D-7): the dashboard stays visible behind a dimmed scrim. */
   --aff-scrim: rgba(17, 17, 17, 0.65);
   --aff-modal-shadow: 0 24px 64px rgba(0, 0, 0, 0.33);

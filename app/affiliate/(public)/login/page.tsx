@@ -175,11 +175,13 @@ export default function AffiliateLogin() {
                       aria-invalid={credentialsWrong || undefined}
                       aria-describedby={credentialsWrong ? ERROR_ID : undefined}
                     />
+                    {/* Toggle button pattern: a fixed name plus aria-pressed, so screen readers announce the state change
+                        instead of a different button after every press. */}
                     <button
                       type="button"
                       className="iz-aff-login__eye"
                       onClick={() => setShowPassword((v) => !v)}
-                      aria-label={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}
+                      aria-label="Tampilkan password"
                       aria-pressed={showPassword}
                       aria-controls="aff-login-password"
                     >

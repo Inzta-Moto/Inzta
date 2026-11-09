@@ -2,6 +2,7 @@ import { getAdminDb, getAdminAuth } from '@/lib/firebaseAdmin';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { isSessionError, toMillis, type AffCommission, type AffCommissionItem, type AffVoucher } from '@/lib/affiliate/dashboard';
+import { devFixtureEnabled } from '@/lib/v2/dev-fixture';
 import AffiliateDashboardClient from './AffiliateDashboardClient';
 
 export const dynamic = 'force-dynamic';
@@ -113,6 +114,11 @@ export default async function AffiliateDashboardPage() {
   let data: DashboardData | null;
   try {
     data = await loadDashboard(uid);
+    // Dev-only switch (F016_FIXTURE set, never in a production build): a real Firestore read failure cannot be
+    // produced on demand, so the error state (E16, FR-08) is reviewed by failing here after a verified session.
+    if (data && devFixtureEnabled() && process.env.F016_STATE === 'error') {
+      throw new Error('[dev-fixture] affiliate dashboard: forced error (F016_STATE=error)');
+    }
   } catch (err) {
     console.error('[affiliate/dashboard] data load failed:', errorCode(err));
     throw err;
