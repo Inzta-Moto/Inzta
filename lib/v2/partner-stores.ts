@@ -33,11 +33,13 @@ export const PARTNER_STORES: PartnerStore[] = [
       { days: 'Senin–Sabtu', time: '10.00–19.00' },
       { days: 'Minggu', time: '08.00–16.00' },
     ],
+    // Order matters: the first three make the Beranda collage, and the shop window photo has a text overlay at the
+    // bottom that crops badly, so it comes last.
     photos: [
       { src: '/images/v2/toko/bikerjowo-depok/tampak-depan.webp', alt: 'Tampak depan toko Bikerjowo Depok pada siang hari, motor terparkir dekat etalase', credit: 'Foto: Bikerjowo' },
       { src: '/images/v2/toko/bikerjowo-depok/pintu-masuk-malam.webp', alt: 'Pintu masuk toko pada malam hari dengan deretan motor di depannya', credit: 'Foto: Bikerjowo' },
-      { src: '/images/v2/toko/bikerjowo-depok/kaca-etalase.webp', alt: 'Kaca etalase toko bertuliskan "Work is just something we do between rides"', credit: 'Foto: Bikerjowo' },
       { src: '/images/v2/toko/bikerjowo-depok/etalase-dalam.webp', alt: 'Etalase di dalam toko berisi helm dan jaket', credit: 'Foto: Bikerjowo' },
+      { src: '/images/v2/toko/bikerjowo-depok/kaca-etalase.webp', alt: 'Kaca etalase toko bertuliskan "Work is just something we do between rides"', credit: 'Foto: Bikerjowo' },
     ],
     waText: 'Halo admin INZTA, saya ingin tahu tas apa saja yang bisa dilihat di Bikerjowo Depok.',
   },
