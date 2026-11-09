@@ -1,0 +1,331 @@
+/* F-023 commissions: summary (E9), monthly chart (E10), toolbar, list and table (E11), detail and filter modals (E12,
+   E13), empty state (E14). Imported by components/affiliate/commissions/CommissionsSection.tsx. Numbers come from
+   docs/specs/F-023-redesign-affiliate/build-figcraft.mjs. Rules that refine a foundation class (.iz-aff-card,
+   .iz-aff-iconbtn) use two classes, because the load order against affiliate.css is not guaranteed. */
+
+.iz-aff {
+  /* Raised segment of the segmented control (design: #1111111f, 0 1 3). */
+  --aff-seg-shadow: 0 1px 3px rgba(17, 17, 17, 0.12);
+}
+
+.iz-aff-comm { display: flex; flex-direction: column; gap: 16px; }
+@media (min-width: 768px) {
+  .iz-aff-comm { gap: 24px; }
+}
+
+/* Summary and chart: two cards on phones, one combined card with a vertical rule from 768 px (FR-05, FR-12-768). */
+.iz-aff-overview { display: flex; flex-direction: column; gap: 16px; }
+.iz-aff-overview__rule { display: none; }
+@media (min-width: 768px) {
+  .iz-aff-overview { display: grid; grid-template-columns: minmax(0, 1fr) 1px minmax(0, 1fr); column-gap: 28px; align-items: start; padding: var(--aff-card-pad); background: var(--c-kertas-terang); border: 1px solid var(--c-garis); border-radius: var(--radius-tile); box-shadow: var(--aff-card-shadow); }
+  .iz-aff-overview > .iz-aff-card { padding: 0; background: none; border: 0; border-radius: 0; box-shadow: none; }
+  .iz-aff-overview__rule { display: block; align-self: stretch; background: var(--c-garis); }
+}
+@media (min-width: 1024px) {
+  .iz-aff-overview { grid-template-columns: minmax(0, 420px) 1px minmax(0, 1fr); column-gap: 40px; }
+}
+
+/* E9 summary. The total scales with its own column so long amounts never break mid-number. */
+.iz-aff-sum { container: aff-sum / inline-size; display: flex; flex-direction: column; gap: 18px; color: var(--c-tinta); }
+.iz-aff-sum__head { display: flex; flex-direction: column; gap: 6px; }
+.iz-aff-sum__label { font-size: 14px; font-weight: 600; line-height: 1.4; color: var(--c-batu); }
+.iz-aff-sum__total { font-family: var(--font-display); font-size: clamp(30px, 14cqi, 44px); font-weight: 800; line-height: 1; letter-spacing: -0.01em; overflow-wrap: anywhere; }
+.iz-aff-sum__caption { font-size: 14px; line-height: 1.4; color: var(--c-batu-muda); }
+@media (min-width: 768px) {
+  .iz-aff-sum__total { font-size: clamp(30px, 14cqi, 48px); }
+}
+
+.iz-aff-split { display: flex; gap: 4px; width: 100%; height: 12px; }
+.iz-aff-split > span { flex: 0 1 0; min-width: 6px; height: 100%; }
+.iz-aff-split__paid { background: var(--c-fit); border-radius: 999px 4px 4px 999px; }
+.iz-aff-split__pending { background: var(--c-kuning); border-radius: 4px 999px 999px 4px; }
+.iz-aff-split > span:only-child { border-radius: 999px; }
+.iz-aff-split--empty { background: var(--c-pasir-muda); border-radius: 999px; }
+
+/* Phones: paid and unpaid side by side, the pending sentence underneath (FR-04). */
+.iz-aff-sum__list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.iz-aff-sum__item { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.iz-aff-sum__item dt { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; line-height: 1.4; color: var(--c-batu); }
+.iz-aff-sum__item dd { font-size: 18px; font-weight: 700; line-height: 1.2; color: var(--c-tinta); overflow-wrap: anywhere; }
+.iz-aff-sum__key { flex: none; width: 10px; height: 10px; border-radius: 3px; }
+.iz-aff-sum__item--paid .iz-aff-sum__key { background: var(--c-fit); }
+.iz-aff-sum__item--pending .iz-aff-sum__key { background: var(--c-kuning); }
+.iz-aff-sum__list .iz-aff-sum__wide { display: none; }
+.iz-aff-sum__sub { display: block; font-size: 13px; font-weight: 400; line-height: 1.4; color: var(--c-batu-muda); }
+.iz-aff-sum__pending { display: flex; align-items: center; gap: 10px; padding-top: 14px; border-top: 1px solid var(--c-garis); }
+.iz-aff-sum__pending p { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.iz-aff-sum__pending strong { font-size: 15px; font-weight: 700; line-height: 1.35; }
+.iz-aff-sum__ptile { display: grid; place-items: center; flex: none; width: 36px; height: 36px; border-radius: 10px; background: var(--aff-warn-bg); color: var(--c-kuning-tua); }
+.iz-aff-sum__ptile svg { width: 18px; height: 18px; }
+.iz-aff-sum__clock { flex: none; width: 16px; height: 16px; color: var(--c-kuning-tua); }
+
+/* From 768 px: one ruled list, label left and amount right (FR-05). */
+@media (min-width: 768px) {
+  .iz-aff-sum__list { display: flex; flex-direction: column; gap: 0; }
+  .iz-aff-sum__item { flex-direction: row; align-items: center; gap: 12px; padding: 14px 0; border-top: 1px solid var(--c-garis); }
+  .iz-aff-sum__item dt { flex: 1 1 auto; min-width: 0; gap: 10px; font-size: 15px; color: var(--c-tinta); }
+  .iz-aff-sum__item dd { flex: none; font-size: 16px; text-align: right; }
+  .iz-aff-sum__list .iz-aff-sum__wide { display: flex; }
+  .iz-aff-sum .iz-aff-sum__narrow { display: none; }
+}
+
+/* E10 chart. The card is a container: below 320 px of chart the legend stacks under the title (design narrowChart). */
+.iz-aff-chart { container: aff-chart / inline-size; display: flex; flex-direction: column; gap: 16px; min-width: 0; color: var(--c-tinta); }
+.iz-aff-chart__head { display: flex; flex-direction: column; gap: 10px; }
+.iz-aff-chart__titles { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.iz-aff-chart__title { font-size: 20px; font-weight: 700; line-height: 1.25; }
+.iz-aff-chart__range { font-size: 14px; line-height: 1.4; color: var(--c-batu); }
+.iz-aff-chart__legend { display: flex; flex-wrap: wrap; gap: 12px; font-size: 13px; line-height: 1.4; color: var(--c-batu); }
+.iz-aff-chart__legend li { display: inline-flex; align-items: center; gap: 6px; }
+.iz-aff-chart__key { width: 10px; height: 10px; border-radius: 3px; }
+.iz-aff-chart__key--paid { background: var(--c-fit); }
+.iz-aff-chart__key--pending { background: var(--c-kuning); }
+@container aff-chart (min-width: 320px) {
+  .iz-aff-chart__head { flex-direction: row; align-items: flex-start; justify-content: space-between; gap: 12px; }
+  .iz-aff-chart__legend { flex: none; padding-top: 2px; }
+}
+.iz-aff-chart__headline { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; }
+.iz-aff-chart__amount { font-family: var(--font-display); font-size: 28px; font-weight: 800; line-height: 1; letter-spacing: -0.01em; }
+.iz-aff-chart__note { font-size: 14px; line-height: 1.4; color: var(--c-batu); }
+.iz-aff-chart__plot { position: relative; width: 100%; min-width: 0; }
+.iz-aff-chart__svg { display: block; overflow: visible; }
+.iz-aff-chart__axis { font-size: 12px; font-weight: 600; fill: var(--c-batu-muda); font-variant-numeric: tabular-nums; }
+.iz-aff-chart__grid { stroke: var(--c-garis); stroke-width: 1; stroke-dasharray: 4 5; }
+.iz-aff-chart__base { stroke: var(--aff-btn-line); stroke-width: 1; }
+.iz-aff-chart__bar-paid { fill: var(--c-fit); }
+.iz-aff-chart__bar--past { opacity: 0.88; }
+.iz-aff-chart__bar-pending { fill: var(--c-kuning); }
+.iz-aff-chart__month { font-size: 13px; font-weight: 500; fill: var(--c-batu); }
+.iz-aff-chart__month--current { font-weight: 700; fill: var(--c-tinta); }
+.iz-aff-chart__pill { fill: var(--c-tinta); }
+.iz-aff-chart__pill-text { font-size: 12px; font-weight: 700; fill: var(--c-kertas); font-variant-numeric: tabular-nums; }
+.iz-aff-chart__empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; min-height: 200px; padding: 20px; text-align: center; background: var(--c-kertas); border: 1px dashed var(--c-garis); border-radius: 14px; }
+.iz-aff-chart__empty-title { font-size: 14px; font-weight: 600; line-height: 1.4; color: var(--c-batu); }
+.iz-aff-chart__empty-sub { font-size: 13px; line-height: 1.4; color: var(--c-batu-muda); }
+
+/* E11 transactions card. */
+.iz-aff-card.iz-aff-tx { display: flex; flex-direction: column; gap: 14px; padding: 20px 20px 12px; }
+.iz-aff-card.iz-aff-tx--empty { gap: 18px; padding: var(--aff-card-pad); }
+@media (min-width: 768px) {
+  .iz-aff-card.iz-aff-tx { gap: 16px; padding: var(--aff-card-pad); }
+  .iz-aff-card.iz-aff-tx--empty { gap: 18px; }
+}
+.iz-aff-tx__head { display: flex; flex-direction: column; gap: 4px; }
+.iz-aff-tx__title { font-size: 20px; font-weight: 700; line-height: 1.25; color: var(--c-tinta); }
+.iz-aff-tx__legend { font-size: 14px; line-height: 1.4; color: var(--c-batu); }
+
+/* Toolbar: phones and tablets search + filter button with the segments underneath; one row from 1024 px. */
+.iz-aff-toolbar { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "search filter" "seg seg"; gap: 14px 10px; align-items: center; }
+.iz-aff-toolbar__search { grid-area: search; position: relative; min-width: 0; }
+.iz-aff-toolbar__search-icon { position: absolute; left: 16px; top: 50%; width: 18px; height: 18px; translate: 0 -50%; color: var(--c-batu); pointer-events: none; }
+/* 16 px text: iOS zooms the page into inputs below 16 px. */
+.iz-aff-toolbar__input { width: 100%; height: 48px; padding: 0 16px 0 44px; border: 1px solid var(--aff-btn-line); border-radius: var(--radius-pill); background: var(--c-kertas); color: var(--c-tinta); font-size: 16px; line-height: 1.2; -webkit-appearance: none; appearance: none; }
+.iz-aff-toolbar__input::placeholder { color: var(--c-batu-muda); opacity: 1; }
+.iz-aff-toolbar__month { grid-area: month; position: relative; display: none; }
+.iz-aff-toolbar__select { height: 48px; padding: 0 44px 0 18px; border: 1px solid var(--aff-btn-line); border-radius: var(--radius-pill); background: var(--c-kertas-terang); color: var(--c-tinta); font: inherit; font-size: 15px; font-weight: 600; line-height: 1.2; cursor: pointer; -webkit-appearance: none; appearance: none; }
+.iz-aff-toolbar__chevron { position: absolute; right: 16px; top: 50%; width: 18px; height: 18px; translate: 0 -50%; color: var(--c-batu); pointer-events: none; }
+.iz-aff-toolbar .iz-aff-toolbar__filter { grid-area: filter; position: relative; }
+.iz-aff-toolbar__badge { position: absolute; top: -3px; right: -3px; display: grid; place-items: center; min-width: 20px; height: 20px; padding: 0 5px; border: 2px solid var(--c-kertas-terang); border-radius: var(--radius-pill); background: var(--c-kuning); color: var(--c-on-kuning); font-size: 11px; font-weight: 800; line-height: 1; }
+.iz-aff-toolbar__seg { grid-area: seg; min-width: 0; }
+@media (min-width: 1024px) {
+  .iz-aff-toolbar { grid-template-columns: 320px auto minmax(0, 1fr) auto; grid-template-areas: "search month . seg"; gap: 12px; }
+  .iz-aff-toolbar__month { display: block; }
+  .iz-aff-toolbar .iz-aff-toolbar__filter { display: none; }
+  .iz-aff-toolbar .iz-aff-seg--stretch { display: inline-flex; width: auto; }
+  .iz-aff-toolbar .iz-aff-seg--stretch .iz-aff-seg__btn { flex: none; padding: 0 14px; }
+}
+
+/* Segmented control (E11, E13). The visible pill is 40 px; the hit area grows to 48 px (E17). */
+.iz-aff-seg { display: inline-flex; gap: 4px; max-width: 100%; padding: 4px; border-radius: var(--radius-pill); background: var(--c-pasir-muda); }
+.iz-aff-seg--stretch { display: flex; width: 100%; }
+.iz-aff-seg__btn { position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 40px; padding: 0 14px; border-radius: var(--radius-pill); color: var(--c-batu); font-size: 14px; font-weight: 700; line-height: 1; white-space: nowrap; transition: background-color 0.15s ease, box-shadow 0.15s ease, color 0.15s ease; }
+.iz-aff-seg--stretch .iz-aff-seg__btn { flex: 1 1 0; min-width: 0; padding: 0 8px; }
+.iz-aff-seg__btn::before { content: ""; position: absolute; inset: -4px 0; }
+.iz-aff-seg__count { font-size: 13px; color: var(--c-batu); }
+.iz-aff-seg__btn[aria-checked="true"] { background: var(--c-kertas-terang); color: var(--c-tinta); box-shadow: var(--aff-seg-shadow); }
+.iz-aff-seg__btn[aria-checked="true"] .iz-aff-seg__count { color: var(--c-kuning-tua); }
+@media (hover: hover) {
+  .iz-aff-seg__btn[aria-checked="false"]:hover { color: var(--c-tinta); }
+}
+
+/* Status tile and chip. */
+.iz-aff-tile { display: grid; place-items: center; flex: none; width: 40px; height: 40px; border-radius: 12px; }
+.iz-aff-tile svg { width: 18px; height: 18px; }
+.iz-aff-tile--paid { background: var(--c-fit-bg); color: var(--c-fit); }
+.iz-aff-tile--pending { background: var(--aff-warn-bg); color: var(--c-kuning-tua); }
+.iz-aff-tile--lg { width: 48px; height: 48px; border-radius: 14px; }
+.iz-aff-tile--lg svg { width: 20px; height: 20px; }
+.iz-aff-chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: var(--radius-pill); font-size: 13px; font-weight: 700; line-height: 1; white-space: nowrap; }
+.iz-aff-chip svg { flex: none; width: 14px; height: 14px; }
+.iz-aff-chip--paid { background: var(--c-fit-bg); color: var(--c-fit); }
+.iz-aff-chip--pending { background: var(--aff-warn-bg); color: var(--c-kuning-tua); }
+
+/* Phone and tablet list (below 1024 px). */
+.iz-aff-txlist__month { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 4px 0 6px; }
+.iz-aff-txlist__group + .iz-aff-txlist__group .iz-aff-txlist__month { padding-top: 14px; }
+.iz-aff-txlist__month-name { font-size: 13px; font-weight: 700; line-height: 1.4; letter-spacing: 0.05em; text-transform: uppercase; color: var(--c-batu); }
+.iz-aff-txlist__subtotal { flex: none; font-size: 13px; font-weight: 700; line-height: 1.4; color: var(--c-batu); }
+.iz-aff-row { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 64px; padding: 12px 0; border-bottom: 1px solid var(--c-garis); text-align: left; color: var(--c-tinta); }
+.iz-aff-txlist__rows > li:last-child .iz-aff-row { border-bottom: 0; }
+.iz-aff-row__main { display: flex; flex: 1 1 auto; flex-direction: column; gap: 3px; min-width: 0; }
+.iz-aff-row__title { font-size: 15px; font-weight: 600; line-height: 1.3; color: var(--c-tinta); overflow-wrap: break-word; }
+.iz-aff-row__meta { font-size: 13px; line-height: 1.4; color: var(--c-batu); }
+.iz-aff-row__side { display: flex; flex: none; flex-direction: column; align-items: flex-end; gap: 3px; text-align: right; }
+.iz-aff-row__amount { font-size: 15px; font-weight: 700; line-height: 1.3; }
+.iz-aff-row__status { font-size: 13px; font-weight: 700; line-height: 1.3; white-space: nowrap; }
+.iz-aff-row__status--paid { color: var(--c-fit); }
+.iz-aff-row__status--pending { color: var(--c-kuning-tua); }
+.iz-aff-row__arrow { flex: none; width: 18px; height: 18px; color: var(--c-batu-muda); transition: transform 0.15s ease, color 0.15s ease; }
+@media (hover: hover) {
+  .iz-aff-row:hover .iz-aff-row__arrow { color: var(--c-tinta); transform: translateX(2px); }
+}
+@media (max-width: 359.98px) {
+  .iz-aff-row__arrow { display: none; }
+}
+
+/* Table from 1024 px. Fixed layout: the four data columns have set widths, Produk takes the rest, so a product name
+   wraps between words and never letter by letter (round 2b note). Widths include the cell padding. */
+.iz-aff-txtable { display: none; }
+@media (min-width: 1024px) {
+  .iz-aff-txlist { display: none; }
+  .iz-aff-txtable { display: block; }
+}
+.iz-aff-table { width: 100%; table-layout: fixed; border-collapse: separate; border-spacing: 0; color: var(--c-tinta); }
+.iz-aff-table__col-price { width: 120px; }
+.iz-aff-table__col-amount { width: 116px; }
+.iz-aff-table__col-status { width: 152px; }
+.iz-aff-table__col-date { width: 178px; }
+.iz-aff-table th, .iz-aff-table td { padding: 14px 8px; text-align: left; vertical-align: middle; }
+.iz-aff-table th:first-child, .iz-aff-table td:first-child { padding-left: 20px; }
+.iz-aff-table th:last-child, .iz-aff-table td:last-child { padding-right: 20px; }
+.iz-aff-table thead th { padding-top: 12px; padding-bottom: 12px; background: var(--c-pasir-muda); font-size: 13px; font-weight: 700; line-height: 1.3; letter-spacing: 0.05em; text-transform: uppercase; color: var(--c-batu); }
+.iz-aff-table thead th:first-child { border-radius: 12px 0 0 12px; }
+.iz-aff-table thead th:last-child { border-radius: 0 12px 12px 0; }
+.iz-aff-table .iz-aff-table__num { text-align: right; }
+.iz-aff-table__group th { padding: 18px 20px 6px; font-size: 13px; font-weight: 700; line-height: 1.4; color: var(--c-batu-muda); }
+.iz-aff-table__group-row { display: flex; justify-content: space-between; gap: 12px; }
+.iz-aff-table__group-row > :first-child { letter-spacing: 0.05em; text-transform: uppercase; }
+.iz-aff-table__row td { border-bottom: 1px solid var(--c-garis); }
+.iz-aff-table tbody .iz-aff-table__row:last-child td { border-bottom: 0; }
+.iz-aff-table__row { cursor: pointer; }
+@media (hover: hover) {
+  .iz-aff-table__row:hover td { background: var(--c-kertas); }
+}
+.iz-aff-table__open { display: flex; align-items: center; gap: 14px; width: 100%; min-height: 44px; text-align: left; color: var(--c-tinta); }
+.iz-aff-table__price { font-size: 15px; color: var(--c-batu); }
+.iz-aff-table__amount { font-size: 15px; font-weight: 700; }
+.iz-aff-table__date { font-size: 14px; color: var(--c-batu); }
+@media (min-width: 1200px) {
+  .iz-aff-table__col-price { width: 174px; }
+  .iz-aff-table__col-amount { width: 164px; }
+  .iz-aff-table__col-status { width: 194px; }
+  .iz-aff-table__col-date { width: 222px; }
+  .iz-aff-table th, .iz-aff-table td { padding-inline: 12px; }
+  .iz-aff-table th:first-child, .iz-aff-table td:first-child { padding-left: 20px; }
+  .iz-aff-table th:last-child, .iz-aff-table td:last-child { padding-right: 20px; }
+}
+
+.iz-aff-nomatch { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; padding: 8px 0 12px; }
+.iz-aff-nomatch__text { font-size: 15px; line-height: 1.5; color: var(--c-batu); }
+.iz-aff-more { display: flex; justify-content: center; padding: 4px 0 8px; }
+
+/* E14 empty transactions. */
+.iz-aff-empty { display: flex; flex-direction: column; gap: 8px; }
+.iz-aff-empty__title { font-size: 18px; font-weight: 700; line-height: 1.3; color: var(--c-tinta); }
+.iz-aff-empty__text { font-size: 15px; line-height: 1.5; color: var(--c-batu); }
+.iz-aff-btn.iz-aff-empty__copy { width: 100%; }
+@media (min-width: 768px) {
+  .iz-aff-btn.iz-aff-empty__copy { width: auto; align-self: flex-start; }
+}
+
+/* "Cara kerja komisi" closing card below 1024 px; from 1024 px the band shows the route (E7). */
+@media (min-width: 1024px) {
+  .iz-aff-card.iz-aff-howto { display: none; }
+}
+
+/* Modal recipe D-7. The <dialog> covers the viewport and draws its own scrim, so a tap on the scrim closes it. */
+.iz-aff-modal { position: fixed; inset: 0; width: 100%; height: 100%; max-width: none; max-height: none; margin: 0; padding: 0; border: 0; overflow: hidden; background: transparent; color: var(--c-tinta); }
+.iz-aff-modal[open] { display: flex; flex-direction: column; justify-content: flex-end; }
+.iz-aff-modal::backdrop { background: transparent; }
+.iz-aff-modal__scrim { position: absolute; inset: 0; background: var(--aff-scrim); animation: iz-aff-fade 0.18s ease-out; }
+.iz-aff-modal__panel { position: relative; display: flex; flex-direction: column; gap: 20px; width: 100%; max-height: calc(100% - 24px); padding: 10px 24px calc(28px + env(safe-area-inset-bottom, 0px)); overflow-y: auto; overscroll-behavior: contain; background: var(--c-kertas-terang); border-radius: 20px 20px 0 0; animation: iz-aff-sheet-in 0.24s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.iz-aff-modal__grabber { flex: none; align-self: center; width: 40px; height: 5px; border-radius: var(--radius-pill); background: var(--aff-btn-line); }
+.iz-aff-modal__head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.iz-aff-modal__title { min-width: 0; font-size: 20px; font-weight: 700; line-height: 1.3; }
+.iz-aff-modal__body { min-width: 0; }
+@media (min-width: 768px) {
+  .iz-aff-modal[open] { align-items: center; justify-content: center; padding: 24px; }
+  .iz-aff-modal__panel { width: min(520px, 100%); max-height: 100%; padding: 24px; border-radius: 20px; box-shadow: var(--aff-modal-shadow); animation-name: iz-aff-dialog-in; animation-duration: 0.2s; }
+  .iz-aff-modal__grabber { display: none; }
+}
+@keyframes iz-aff-fade { from { opacity: 0; } }
+@keyframes iz-aff-sheet-in { from { opacity: 0; transform: translateY(32px); } }
+@keyframes iz-aff-dialog-in { from { opacity: 0; transform: translateY(8px) scale(0.98); } }
+
+/* E12 detail. */
+.iz-aff-detail { display: flex; flex-direction: column; gap: 20px; }
+.iz-aff-detail__product { display: flex; align-items: center; gap: 14px; }
+.iz-aff-detail__items { display: flex; flex: 1 1 auto; flex-direction: column; gap: 10px; min-width: 0; }
+.iz-aff-detail__items > li { display: flex; flex-direction: column; gap: 3px; }
+.iz-aff-detail__name { font-size: 17px; font-weight: 700; line-height: 1.3; overflow-wrap: break-word; }
+.iz-aff-detail__meta { font-size: 14px; line-height: 1.4; color: var(--c-batu); }
+.iz-aff-detail__facts > div { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; padding: 10px 0; border-bottom: 1px solid var(--c-garis); }
+.iz-aff-detail__facts dt { flex: none; font-size: 15px; line-height: 1.4; color: var(--c-batu); }
+.iz-aff-detail__facts dd { min-width: 0; font-size: 15px; font-weight: 600; line-height: 1.4; text-align: right; color: var(--c-tinta); }
+.iz-aff-detail__strong dd { font-size: 17px; font-weight: 700; }
+.iz-aff-detail__order dd { display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
+.iz-aff-detail__order-id { overflow-wrap: anywhere; -webkit-user-select: all; user-select: all; }
+/* 32 px visible, 44 px to the finger. */
+.iz-aff-detail__copy { position: relative; display: grid; place-items: center; flex: none; width: 32px; height: 32px; border: 1.5px solid var(--aff-btn-line); border-radius: 50%; color: var(--c-tinta); transition: background-color 0.15s ease; }
+.iz-aff-detail__copy::before { content: ""; position: absolute; inset: -6px; }
+.iz-aff-detail__copy svg { width: 16px; height: 16px; }
+@media (hover: hover) {
+  .iz-aff-detail__copy:hover { background: var(--c-pasir-muda); }
+}
+.iz-aff-detail__copied { margin-top: -12px; font-size: 13px; font-weight: 600; line-height: 1.4; text-align: right; color: var(--c-fit); }
+.iz-aff-detail__copied--fail { color: var(--c-kuning-tua); text-align: left; }
+.iz-aff-detail__copied:empty { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); }
+.iz-aff-detail__status { display: flex; flex-direction: column; gap: 14px; }
+.iz-aff-detail__eyebrow { font-size: 13px; font-weight: 700; line-height: 1.3; letter-spacing: 0.05em; text-transform: uppercase; color: var(--c-batu); }
+.iz-aff-timeline { display: flex; flex-direction: column; gap: 16px; }
+.iz-aff-timeline__stop { position: relative; display: flex; align-items: flex-start; gap: 14px; }
+.iz-aff-timeline__stop:not(:last-child)::after { content: ""; position: absolute; left: 13px; top: 30px; bottom: -14px; width: 2px; background: repeating-linear-gradient(180deg, color-mix(in srgb, var(--c-kuning) 80%, transparent) 0 6px, transparent 6px 12px); }
+.iz-aff-timeline__dot { display: grid; place-items: center; flex: none; width: 28px; height: 28px; border-radius: 50%; }
+.iz-aff-timeline__dot svg { width: 16px; height: 16px; }
+.iz-aff-timeline__stop--done .iz-aff-timeline__dot { background: var(--c-kuning); color: var(--c-on-kuning); }
+.iz-aff-timeline__stop--current .iz-aff-timeline__dot { background: var(--aff-warn-bg); border: 2px solid var(--c-kuning); color: var(--c-kuning-tua); }
+.iz-aff-timeline__stop--current .iz-aff-timeline__dot svg { width: 14px; height: 14px; }
+.iz-aff-timeline__stop--todo .iz-aff-timeline__dot { background: var(--c-pasir-muda); }
+.iz-aff-timeline__text { display: flex; flex-direction: column; gap: 2px; min-width: 0; padding-top: 3px; }
+.iz-aff-timeline__title { font-size: 15px; font-weight: 700; line-height: 1.35; color: var(--c-tinta); }
+.iz-aff-timeline__stop--todo .iz-aff-timeline__title { color: var(--c-batu-muda); }
+.iz-aff-timeline__sub { font-size: 13px; line-height: 1.4; color: var(--c-batu); }
+
+/* E13 filter sheet. */
+.iz-aff-sheet { display: flex; flex-direction: column; gap: 20px; }
+.iz-aff-sheet__group { display: flex; flex-direction: column; gap: 10px; min-width: 0; margin: 0; padding: 0; border: 0; }
+.iz-aff-sheet__months { gap: 4px; }
+.iz-aff-sheet__actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.iz-aff-opt { position: relative; display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 12px 0; border-bottom: 1px solid var(--c-garis); cursor: pointer; }
+.iz-aff-opt__input { position: absolute; width: 1px; height: 1px; margin: 0; opacity: 0; pointer-events: none; }
+.iz-aff-opt:has(.iz-aff-opt__input:focus-visible) { outline: 2px solid var(--c-focus); outline-offset: 2px; border-radius: 8px; }
+.iz-aff-opt__label { flex: 1 1 auto; min-width: 0; font-size: 16px; font-weight: 500; line-height: 1.35; color: var(--c-tinta); }
+.iz-aff-opt--on .iz-aff-opt__label { font-weight: 700; }
+.iz-aff-opt__count { flex: none; font-size: 14px; color: var(--c-batu); }
+.iz-aff-opt__mark { display: grid; place-items: center; flex: none; width: 24px; height: 24px; border: 1.5px solid var(--aff-btn-line); border-radius: 50%; }
+.iz-aff-opt--on .iz-aff-opt__mark { background: var(--c-kuning); border-color: var(--c-kuning); color: var(--c-on-kuning); }
+.iz-aff-opt__mark svg { width: 14px; height: 14px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .iz-aff-modal__scrim, .iz-aff-modal__panel { animation: none; }
+  .iz-aff-seg__btn, .iz-aff-row__arrow, .iz-aff-detail__copy { transition: none; }
+  .iz-aff-row:hover .iz-aff-row__arrow { transform: none; }
+}
+
+@media (forced-colors: active) {
+  /* Keep the paid/unpaid colours: they carry meaning, and every number is also written out in text. */
+  .iz-aff-chart__svg, .iz-aff-split, .iz-aff-sum__key, .iz-aff-chart__key { forced-color-adjust: none; }
+  .iz-aff-seg__btn[aria-checked="true"] { outline: 2px solid CanvasText; }
+  .iz-aff-opt--on .iz-aff-opt__mark { forced-color-adjust: none; }
+  .iz-aff-modal__panel { border: 1px solid CanvasText; }
+}

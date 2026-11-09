@@ -1,0 +1,211 @@
+/* F-023 dashboard band, ticket, voucher states, content frame, loading skeleton, and error card (E7, E8, E15, E16).
+   Loaded by components/affiliate/HeroBand.tsx on top of affiliate.css; every selector sits under an iz-aff- class.
+   Sizes come from the design script (docs/specs/F-023-redesign-affiliate/build-figcraft.mjs: hero, ticket,
+   voucherWarning, dashboard). Colours go through v2 tokens or the --aff-* variables; the two new ones are below. */
+
+.iz-aff {
+  /* Skeleton sheen on krem surfaces and on the band (E15). */
+  --aff-skel-sheen: rgba(253, 252, 249, 0.55);
+  --aff-band-skel-sheen: rgba(255, 255, 255, 0.06);
+}
+
+/* Frame: the header is a sibling before <main> (banner, then main) and is laid over the band, which reserves its
+   64 px, so contours and glow run behind it as one panel. */
+.iz-aff-dash { position: relative; }
+.iz-aff-dash__top { position: absolute; top: 0; left: 0; right: 0; z-index: 2; }
+.iz-aff-dash__main { display: block; }
+
+/* Hero band (E7). Phones: greeting, heading, then the card slot. From 1024 px: copy and route left, 560 px card right. */
+.iz-aff-hero { padding-top: 64px; }
+.iz-aff-hero__body { display: flex; flex-direction: column; gap: 20px; padding: 20px 0 28px; }
+.iz-aff-hero__left { display: flex; flex-direction: column; gap: 36px; min-width: 0; }
+.iz-aff-hero__right { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+.iz-aff-hero__intro { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.iz-aff-hero__hello { font-size: 16px; font-weight: 500; line-height: 1.4; color: var(--aff-band-sub); overflow-wrap: anywhere; }
+.iz-aff-hero__title { font-family: var(--font-display); font-size: 34px; font-weight: 800; line-height: 1; letter-spacing: -0.02em; color: var(--aff-band-ink); text-wrap: balance; }
+.iz-aff-hero__lead { display: none; font-size: 18px; line-height: 1.4; color: var(--aff-band-sub); }
+.iz-aff-hero .iz-aff-hero__route { display: none; }
+@media (max-width: 359.98px) {
+  .iz-aff-hero__title { font-size: 30px; }
+}
+@media (min-width: 1024px) {
+  .iz-aff-hero__body { flex-direction: row; align-items: flex-start; gap: 64px; padding: 40px 0 64px; }
+  .iz-aff-hero__left { flex: 1 1 0; }
+  .iz-aff-hero__right { flex: none; width: 560px; gap: 16px; }
+  .iz-aff-hero__title { font-size: 56px; }
+  .iz-aff-hero__lead { display: block; margin-top: 4px; }
+  /* RouteSteps "auto" turns horizontal once this column is 520 px wide (1440), vertical in the 304 px of 1024. */
+  .iz-aff-hero .iz-aff-hero__route { display: flex; }
+}
+
+/* Dashed kuning road in the right margin from 1024 px (E7). The SVG spans the real margin (gutter or the space
+   beside the 1200 px column, capped at 160 px) plus 40 px past the edge, where the band clips it. */
+.iz-aff-hero__road { display: none; }
+@media (min-width: 1024px) {
+  .iz-aff-hero__road {
+    --aff-road-m: clamp(var(--aff-gutter), (100% - var(--size-content)) / 2, 160px);
+    display: block;
+    position: absolute;
+    z-index: -1;
+    top: 0;
+    right: -40px;
+    width: calc(var(--aff-road-m) + 40px);
+    height: 480px;
+    overflow: visible;
+    pointer-events: none;
+  }
+  .iz-aff-hero__road path { fill: none; stroke: var(--c-kuning); stroke-opacity: 0.55; stroke-width: 2; stroke-dasharray: 9 8; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+}
+
+/* Ticket (E8): #1b1b1b tile, 9% white line, link half, perforation, voucher half. No overflow clipping, so the
+   notches can cover the card's own border. The ticket is a container for the narrow-phone button rule. */
+.iz-aff-ticket {
+  --aff-ticket-pad: 20px;
+  container: aff-ticket / inline-size;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: var(--aff-tile);
+  color: var(--aff-band-ink);
+  border: 1px solid var(--aff-tile-line);
+  border-radius: var(--radius-tile);
+  box-shadow: var(--aff-tile-shadow);
+}
+@media (min-width: 1024px) {
+  .iz-aff-ticket { --aff-ticket-pad: 28px; }
+}
+.iz-aff-ticket__top { display: flex; flex-direction: column; gap: 14px; padding: var(--aff-ticket-pad) var(--aff-ticket-pad) 18px; }
+.iz-aff-ticket__head { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.iz-aff-ticket__tile { display: grid; place-items: center; flex: none; width: 44px; height: 44px; border-radius: 14px; background: var(--c-kuning); color: var(--c-on-kuning); }
+.iz-aff-ticket__tile svg { width: 22px; height: 22px; }
+.iz-aff-ticket__tile--muted { background: var(--aff-tile-chip); color: var(--aff-band-ink); }
+.iz-aff-ticket__heading { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.iz-aff-ticket__title { font-family: var(--font-sans); font-size: 17px; font-weight: 700; line-height: 1.35; color: var(--aff-band-ink); }
+.iz-aff-ticket__title--lg { font-size: 18px; line-height: 1.3; }
+.iz-aff-ticket__sub { font-size: 14px; line-height: 1.4; color: var(--aff-band-sub); }
+.iz-aff-ticket__text { font-size: 15px; line-height: 1.5; color: var(--aff-band-sub); }
+
+/* Link box: shown without https://, selectable in one press so a manual copy still works after a failure. */
+.iz-aff-ticket__link { display: flex; align-items: center; min-width: 0; min-height: 52px; padding: 12px 16px; border: 1px solid var(--aff-tile-line); border-radius: 14px; background: var(--aff-tile-field); }
+.iz-aff-ticket__link[data-failed] { padding: 11px 15px; border: 2px solid var(--c-kuning); }
+.iz-aff-ticket__linktext { min-width: 0; font-size: 16px; font-weight: 600; line-height: 1.25; color: var(--aff-band-ink); overflow-wrap: anywhere; -webkit-user-select: all; user-select: all; }
+
+.iz-aff-ticket__actions { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+.iz-aff-ticket__actions[data-share] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.iz-aff-ticket__actions .iz-aff-btn { min-width: 0; padding-inline: 14px; }
+/* 320 px phones: two buttons share 248 px, so they trim padding and type instead of overflowing. */
+@container aff-ticket (max-width: 300px) {
+  .iz-aff-ticket__actions .iz-aff-btn { gap: 6px; padding-inline: 8px; font-size: 15px; }
+}
+
+.iz-aff-ticket__fail { display: flex; align-items: flex-start; gap: 8px; font-size: 14px; font-weight: 600; line-height: 1.45; color: var(--aff-kuning-on-dark); }
+.iz-aff-ticket__fail svg { flex: none; width: 18px; height: 18px; margin-top: 1px; }
+
+/* Perforation: a dashed tear line with a band-coloured half circle at each edge. The circles start 1 px further
+   out, so they also hide the card border at the notch. */
+.iz-aff-ticket__perf {
+  position: relative;
+  flex: none;
+  height: 24px;
+  background: repeating-linear-gradient(90deg, var(--aff-band-btn-line) 0 6px, transparent 6px 12px) 20px 50% / calc(100% - 40px) 1.5px no-repeat;
+}
+.iz-aff-ticket__perf::before, .iz-aff-ticket__perf::after { content: ""; position: absolute; top: 0; width: 24px; height: 24px; border-radius: 50%; background: var(--aff-band); }
+.iz-aff-ticket__perf::before { left: -13px; }
+.iz-aff-ticket__perf::after { right: -13px; }
+
+.iz-aff-ticket__bottom { display: flex; flex-direction: column; gap: 12px; padding: 16px var(--aff-ticket-pad) var(--aff-ticket-pad); }
+.iz-aff-ticket__label { font-size: 13px; font-weight: 600; line-height: 1.4; letter-spacing: 0.06em; text-transform: uppercase; color: var(--aff-band-sub); }
+.iz-aff-ticket__coderow { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.iz-aff-ticket__code { min-width: 0; font-family: var(--font-display); font-size: 30px; font-weight: 800; line-height: 1.05; letter-spacing: -0.02em; color: var(--aff-band-ink); overflow-wrap: anywhere; -webkit-user-select: all; user-select: all; }
+@media (min-width: 1024px) {
+  .iz-aff-ticket__code { font-size: 36px; }
+}
+.iz-aff-ticket__chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.iz-aff-ticket__chip { display: inline-flex; align-items: center; max-width: 100%; padding: 7px 12px; border-radius: var(--radius-pill); background: var(--aff-tile-chip); color: var(--aff-band-ink); font-size: 13px; font-weight: 700; line-height: 1.25; }
+.iz-aff-ticket__chip--accent { background: var(--aff-kuning-chip); color: var(--aff-kuning-on-dark); }
+
+/* No voucher (FR-09b): one padded block instead of the two ticket halves. */
+.iz-aff-ticket--none { gap: 14px; padding: var(--aff-ticket-pad); }
+.iz-aff-ticket__cta { width: 100%; }
+@media (min-width: 1024px) {
+  .iz-aff-ticket__cta { width: auto; align-self: flex-start; }
+}
+
+/* Voucher warning above the ticket (E8, FR-09a). */
+.iz-aff-warn { display: flex; align-items: flex-start; gap: 12px; padding: 16px; border: 1px solid var(--aff-warn-dark-line); border-radius: 16px; background: var(--aff-warn-dark-bg); color: var(--aff-band-ink); }
+.iz-aff-warn__icon { flex: none; width: 22px; height: 22px; color: var(--aff-kuning-on-dark); }
+.iz-aff-warn__body { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.iz-aff-warn__title { font-size: 16px; font-weight: 700; line-height: 1.4; overflow-wrap: anywhere; }
+.iz-aff-warn__text { font-size: 14px; line-height: 1.5; color: var(--aff-band-sub); }
+.iz-aff-warn__link { color: var(--aff-kuning-on-dark); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+
+/* Content area under the band: krem page, ink contours fading in from the top from 768 px (round 2b). */
+.iz-aff-content { position: relative; isolation: isolate; padding: 20px 0 40px; }
+.iz-aff-content__stack { display: flex; flex-direction: column; gap: 16px; }
+.iz-aff-content .iz-aff-content__topo { display: none; }
+@media (min-width: 768px) {
+  .iz-aff-content { padding: 32px 0 72px; }
+  .iz-aff-content__stack { gap: 24px; }
+  .iz-aff-content .iz-aff-content__topo { display: block; }
+}
+
+/* Error card (E16, FR-08). */
+.iz-aff-error { display: flex; flex-direction: column; align-items: flex-start; gap: 14px; }
+.iz-aff-error__tile { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 16px; background: var(--aff-warn-bg); color: var(--c-kuning-tua); }
+.iz-aff-error__tile svg { width: 26px; height: 26px; }
+.iz-aff-error__title { font-size: 20px; font-weight: 700; line-height: 1.3; color: var(--c-tinta); }
+.iz-aff-error__title:focus:not(:focus-visible) { outline: none; }
+.iz-aff-error__text { font-size: 16px; line-height: 1.5; color: var(--c-batu); }
+.iz-aff-error__actions { display: flex; flex-direction: column; gap: 10px; align-self: stretch; }
+@media (min-width: 768px) {
+  .iz-aff-error__actions { flex-direction: row; flex-wrap: wrap; align-self: flex-start; }
+}
+
+/* Loading skeleton (E15, FR-07): plain blocks with one slow sheen, none under reduced motion. */
+.iz-aff-skel { position: relative; display: block; flex: none; max-width: 100%; overflow: hidden; border-radius: 6px; background: var(--aff-skel); }
+.iz-aff-skel::after { content: ""; position: absolute; inset: 0; transform: translateX(-100%); background: linear-gradient(90deg, transparent, var(--aff-skel-sheen), transparent); animation: iz-aff-shimmer 1.4s ease-in-out infinite; }
+.iz-aff-skel--band { background: var(--aff-band-skel); }
+.iz-aff-skel--band::after { background: linear-gradient(90deg, transparent, var(--aff-band-skel-sheen), transparent); }
+@keyframes iz-aff-shimmer { to { transform: translateX(100%); } }
+
+.iz-aff-skel--hello { width: 150px; height: 14px; }
+.iz-aff-skel--title { width: 250px; height: 34px; border-radius: 8px; }
+.iz-aff-skel--tile { width: 44px; height: 44px; border-radius: 14px; }
+.iz-aff-skel--line { width: 140px; height: 16px; }
+.iz-aff-skel--field { width: 100%; height: 52px; border-radius: 14px; }
+.iz-aff-skel--btn { width: 100%; height: 52px; border-radius: var(--radius-pill); }
+.iz-aff-skel--code { width: 200px; height: 30px; border-radius: 8px; }
+.iz-aff-ticket--skel { gap: 14px; padding: var(--aff-ticket-pad); }
+
+.iz-aff-skel-summary { display: flex; flex-direction: column; gap: 16px; }
+.iz-aff-skel--block { width: 100%; height: 300px; border-radius: var(--radius-tile); }
+.iz-aff-skel-list { display: flex; flex-direction: column; gap: 14px; }
+.iz-aff-skel--heading { width: 120px; height: 18px; }
+.iz-aff-skel--search { width: 100%; height: 48px; border-radius: var(--radius-pill); }
+.iz-aff-skel-row { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.iz-aff-skel-row__text { display: flex; flex: 1 1 auto; flex-direction: column; gap: 8px; min-width: 0; }
+.iz-aff-skel--rowtile { width: 40px; height: 40px; border-radius: 12px; }
+.iz-aff-skel--rowname { width: 160px; height: 14px; }
+.iz-aff-skel--rowmeta { width: 100px; height: 12px; }
+.iz-aff-skel--rowamount { width: 70px; height: 14px; }
+@media (min-width: 768px) {
+  .iz-aff-skel--block { height: 400px; }
+  .iz-aff-skel-summary .iz-aff-skel--phone-only { display: none; }
+  .iz-aff-skel--rowname { width: 320px; }
+}
+@media (min-width: 1024px) {
+  .iz-aff-skel--title { width: 420px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .iz-aff-skel::after { display: none; animation: none; }
+}
+
+@media (forced-colors: active) {
+  .iz-aff-hero__road { display: none; }
+  .iz-aff-ticket__perf { border-top: 1px dashed CanvasText; background: none; height: 0; margin-block: 12px; }
+  .iz-aff-ticket__perf::before, .iz-aff-ticket__perf::after { display: none; }
+  .iz-aff-warn, .iz-aff-ticket__link, .iz-aff-ticket__chip { border: 1px solid CanvasText; }
+  .iz-aff-skel { border: 1px solid CanvasText; }
+}
