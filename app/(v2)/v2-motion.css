@@ -267,8 +267,8 @@ html[data-iz-tier="minimal"] .iz-msheet__row:active, html[data-iz-tier="minimal"
 /* Phone swipe rows: a progress line under the filmstrip that follows the swipe (engine swipe()). */
 html.iz-motion .iz-film-scene.is-swipe .iz-film__progress { display: block; width: 120px; height: 3px; margin: var(--space-5) auto 0; border-radius: var(--radius-pill); background: var(--c-garis); overflow: hidden; }
 html.iz-motion .iz-film-scene.is-swipe .iz-film__progress > span { display: block; height: 100%; background: var(--c-kuning); transform: scaleX(0); transform-origin: left center; }
-/* Desktop in the lite tier keeps the filmstrip as a swipe row (no pin); a mouse without a trackpad needs a scrollbar
-   to reach the last photos. */
+/* Under 1024 px the filmstrip is a swipe row in every tier (from 1024 px it pins, lite included since F-028); in the
+   lite tier a mouse without a trackpad gets a thin scrollbar to reach the last photos. */
 @media (hover: hover) and (pointer: fine) {
   html[data-iz-tier="lite"].iz-motion .iz-film-scene.is-swipe .iz-film { scrollbar-width: thin; }
 }
@@ -349,9 +349,10 @@ html.iz-motion .iz-film-scene.is-swipe .iz-film__progress > span { display: bloc
   .iz-motorchip--set { padding: 0 12px 0 5px; }
 }
 
-/* Garasi: the chosen tile steps forward a little. The scale property composes with the tilt transform. */
-.iz-gtile { transition: background-color 0.15s ease, box-shadow 0.3s ease, scale 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
-.iz-gtile[aria-pressed="true"] { scale: 1.05; z-index: 1; box-shadow: 0 0 0 3px var(--c-kuning), 0 24px 40px -24px rgba(17, 17, 17, 0.45); }
+/* Garasi: the chosen tile steps forward a little. The scale property composes with the tilt transform. The tiles are
+   large since F-028, so 2% is enough to read as a step and stays inside the 16 px gap. */
+.iz-gtile { transition: box-shadow 0.3s ease, scale 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
+.iz-gtile[aria-pressed="true"] { scale: 1.02; z-index: 1; box-shadow: 0 0 0 3px var(--c-kertas), 0 0 0 6px var(--c-kuning), 0 24px 40px -24px rgba(17, 17, 17, 0.45); }
 @media (prefers-reduced-motion: reduce) { .iz-gtile[aria-pressed="true"] { scale: 1; } }
 
 /* Horizontal card rows clip in both axes (overflow-x: auto forces overflow-y too), which cut hover shadows. The row
