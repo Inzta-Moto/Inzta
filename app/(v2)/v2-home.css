@@ -13,8 +13,8 @@
    bag in view. */
 .iz-why__photo .iz-why__img { object-position: 40% 50%; }
 
-/* Garasi: choice ring and background in 150 ms (S1.2.4, MOTION.md §1); photo zoom on fine pointers only (§2). */
-.iz-gtile { transition: background-color .15s ease, box-shadow .15s ease; }
+/* Garasi: choice ring in 150 ms (S1.2.4, MOTION.md §1); photo zoom on fine pointers only (§2). */
+.iz-gtile { transition: box-shadow .15s ease; }
 .iz-gtile img { transition: transform .15s ease; }
 
 /* The Garasi button keeps one width for every category label, so a choice after mount moves nothing (S1.2.3). */

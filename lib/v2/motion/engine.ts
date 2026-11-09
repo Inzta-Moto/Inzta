@@ -52,7 +52,7 @@ function backdrop(el: Element): string {
  * In the lite tier (lib/v2/motion/tier.ts) every effect keeps its intent with a cheaper technique: text splits into
  * words or lines instead of letters, single elements and photos use CSS transitions on transform and opacity (.iz-rise,
  * .iz-zoom, .iz-wipe in v2-motion.css) instead of per-frame tweens, scrubbed insets play once on enter, loops end, and
- * the filmstrip stays a native swipe row. The tier is read again at each setup step, so a downgrade from the frame probe
+ * the pinned filmstrip moves only its track, without the photo drift. The tier is read again at each setup step, so a downgrade from the frame probe
  * reaches the blocks that are set up later.
  */
 export function initPage(root: HTMLElement, kit: MotionKit, mode: PageMode, options: PageOptions = {}): PageMotion {
@@ -664,12 +664,13 @@ export function initPage(root: HTMLElement, kit: MotionKit, mode: PageMode, opti
       const track = section?.querySelector<HTMLElement>('.iz-film');
       if (!section || !track || !mine(section)) return;
       const photosIn = Array.from(track.children) as HTMLElement[];
-      // Lite keeps the native swipe row on desktop too: no pin, no scrubbed strip.
-      if (!desktop || lite) {
+      // The tier when the strip was set up, so the pin and the entrance always use the same technique.
+      const lit = lite;
+      if (!desktop) {
         // Phones keep the native swipe (a vertical scroll that moves things sideways feels wrong on touch); a
         // progress line follows the swipe.
-        if (lite) {
-          prepareRise(photosIn, [], desktop ? 60 : 40, false);
+        if (lit) {
+          prepareRise(photosIn, [], 40, false);
           onEnter(track, riseTimeline(photosIn, [], 80, 0, 3));
         } else {
           const tl = gsap.timeline({ paused: true });
@@ -700,9 +701,19 @@ export function initPage(root: HTMLElement, kit: MotionKit, mode: PageMode, opti
         after?.classList.remove('iz-after-pin');
       });
       const distance = () => Math.max(0, track.scrollWidth - window.innerWidth);
-      if (distance() <= 0) return;
-      const bar = section.querySelector<HTMLElement>('.iz-film__progress > span');
-      const imgs = photosIn.map(ph => ph.querySelector('img')).filter((img): img is HTMLImageElement => !!img);
+      const progress = section.querySelector<HTMLElement>('.iz-film__progress');
+      if (distance() <= 0) {
+        // Every photo fits (very wide screens): nothing to scroll, so no progress line that never moves.
+        if (progress) progress.hidden = true;
+        undo.push(() => progress && (progress.hidden = false));
+        return;
+      }
+      const bar = progress?.querySelector<HTMLElement>(':scope > span') ?? null;
+      // Lite pins the strip as well (F-028). It used to fall back to the native swipe row with a thin scrollbar on
+      // desktop: the wheel then scrolled past the photos and the progress line stayed still, which read as broken, and
+      // the frame probe puts ordinary laptops in lite for 14 days. Lite moves only the track (one composited
+      // transform) and follows the scroll directly; the photo drift and the scrub smoothing stay in full.
+      const imgs = lit ? [] : photosIn.map(ph => ph.querySelector('img')).filter((img): img is HTMLImageElement => !!img);
       // One scrubbed timeline drives the strip and the photo drift together. Per-photo containerAnimation triggers
       // left the pinned section offset by the full scroll distance in a fresh load (headless QA), so they are avoided.
       const move = gsap.timeline({
@@ -711,7 +722,7 @@ export function initPage(root: HTMLElement, kit: MotionKit, mode: PageMode, opti
           start: 'top top',
           end: () => `+=${distance()}`,
           pin: true,
-          scrub: 0.9,
+          scrub: lit ? true : 0.9,
           invalidateOnRefresh: true,
           onUpdate: self => {
             if (bar) bar.style.transform = `scaleX(${self.progress.toFixed(4)})`;
@@ -720,6 +731,11 @@ export function initPage(root: HTMLElement, kit: MotionKit, mode: PageMode, opti
       });
       move.to(track, { x: () => -distance(), ease: 'none' }, 0);
       if (imgs.length) move.fromTo(imgs, { xPercent: -8, scale: 1.2 }, { xPercent: 8, ease: 'none' }, 0);
+      if (lit) {
+        prepareRise(photosIn, [], 60, false);
+        onEnter(section, riseTimeline(photosIn, [], 80, 0, 3), 'top 70%');
+        return;
+      }
       const tl = gsap.timeline({ paused: true });
       tl.fromTo(photosIn, { y: 90, opacity: 0 }, { y: 0, opacity: 1, duration: 1.2, ease: 'expo.out', stagger: 0.07 });
       onEnter(section, tl, 'top 70%');

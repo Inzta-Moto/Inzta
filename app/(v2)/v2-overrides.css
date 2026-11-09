@@ -26,20 +26,36 @@
 }
 html[data-iz-tier="lite"] .iz-nav--dark { background: rgba(17, 17, 17, 0.95); }
 
-/* F-018: five motor categories. From 1024 px one row of five; on tablets five columns cut the labels ("Adventure"),
-   so three tiles sit on top and two wider ones below; on phones the fifth tile spans both columns as a wide strip, so
-   the grids never end with an empty cell. The tablet rule counts on exactly five tiles. */
-.iz-garasi { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+/* F-018: five motor categories. On tablets five columns cut the labels ("Adventure"), so three tiles sit on top and
+   two wider ones below; on phones the fifth tile spans both columns as a wide strip, so the grids never end with an
+   empty cell. The 3 + 2 rule counts on exactly five tiles.
+   F-028: the Beranda Garasi keeps the 3 + 2 grid on desktop too. One row of five left each photo about 180 px wide at
+   1440 px, far smaller than every other photo on the page (owner feedback, 2026-11-09); 3 + 2 makes each about 370 x 280 px.
+   The proportions sit on the grid children, so the loading skeleton (LoadingV2) takes the same shape.
+   The photo fills the whole tile instead of sitting inset in a cream frame, where it read as a thumbnail; the sand
+   background only shows while the photo loads. The pressed ring sits outside a strip of page colour (v2-motion.css),
+   so it stays visible against any photo edge. */
+.iz-gtile img { inset: 0; width: 100%; height: 100%; border-radius: 0; }
+.iz-gtile:hover, .iz-gtile[aria-pressed="true"] { background: var(--c-pasir-muda); }
+.iz-garasi > .iz-skel { height: auto; border-radius: var(--radius-tile-lg); }
 .iz-grid-5 { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--space-4); }
+@media (min-width: 768px) {
+  .iz-garasi { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--space-4); }
+  .iz-garasi > * { grid-column: span 2; aspect-ratio: 4 / 3; }
+  .iz-garasi > :nth-child(n+4) { grid-column: span 3; aspect-ratio: 2 / 1; }
+  .iz-gtile__label { font-size: 20px; padding: 10px 14px; }
+}
 @media (min-width: 768px) and (max-width: 1023.98px) {
-  .iz-garasi, .iz-grid-5 { grid-template-columns: repeat(6, minmax(0, 1fr)); }
-  .iz-garasi > *, .iz-grid-5 > * { grid-column: span 2; }
-  .iz-garasi > :nth-child(n+4), .iz-grid-5 > :nth-child(n+4) { grid-column: span 3; aspect-ratio: 2 / 1; }
+  .iz-grid-5 { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .iz-grid-5 > * { grid-column: span 2; }
+  .iz-grid-5 > :nth-child(n+4) { grid-column: span 3; aspect-ratio: 2 / 1; }
 }
 @media (max-width: 767px) {
   .iz-garasi, .iz-grid-5 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .iz-garasi > * { aspect-ratio: 4 / 5; }
   .iz-grid-5 > .iz-mtile { aspect-ratio: 1 / 1; }
-  .iz-garasi > :last-child:nth-child(odd), .iz-grid-5 > :last-child:nth-child(odd) { grid-column: 1 / -1; aspect-ratio: 2 / 1; }
+  .iz-garasi > :last-child:nth-child(odd) { grid-column: 1 / -1; aspect-ratio: 16 / 9; }
+  .iz-grid-5 > :last-child:nth-child(odd) { grid-column: 1 / -1; aspect-ratio: 2 / 1; }
 }
 
 /* Section headings must not hide under the sticky navbar (4.10). */
