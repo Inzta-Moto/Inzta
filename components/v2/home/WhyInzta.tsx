@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { HIRES } from '@/lib/v2/home-content';
 import SmartImage from '@/components/v2/ui/SmartImage';
-import { ArrowRight, Chat, CircleCheck, Road, Scissors } from '@/components/v2/icons';
+import { ArrowRight, ChatDots, Motorcycle, Needle, PuzzlePiece } from '@/components/v2/icons';
 import '@/app/(v2)/v2-why.css';
 
 // The 1200 px square photo fills a portrait panel, so object-fit: cover renders it as wide as the panel is tall (about
@@ -32,7 +32,7 @@ export default function WhyInzta({ gasberHref, waHref }: { gasberHref: string; w
         </div>
         <ul className="iz-why__list iz-why__list--tiles" data-reveal-stagger="">
           <li className="iz-why__item">
-            <span className="iz-why__icon"><CircleCheck /></span>
+            <span className="iz-why__icon"><PuzzlePiece /></span>
             <h3>Jujur soal kecocokan</h3>
             <p>Kami tandai tas yang dibuat untuk motor tertentu, dan bilang terus terang bila belum yakin.</p>
             <div className="iz-why__proof">
@@ -41,7 +41,7 @@ export default function WhyInzta({ gasberHref, waHref }: { gasberHref: string; w
             </div>
           </li>
           <li className="iz-why__item">
-            <span className="iz-why__icon"><Scissors /></span>
+            <span className="iz-why__icon"><Needle /></span>
             <h3>Dibuat sendiri sejak 2023</h3>
             <p>Kami merancang dan memproduksi sendiri, lalu mengirim dari gudang INZTA.</p>
             <div className="iz-why__proof">
@@ -51,7 +51,7 @@ export default function WhyInzta({ gasberHref, waHref }: { gasberHref: string; w
             </div>
           </li>
           <li className="iz-why__item">
-            <span className="iz-why__icon"><Chat /></span>
+            <span className="iz-why__icon"><ChatDots /></span>
             <h3>Dibalas manusia</h3>
             <p>Pesanan dan pertanyaan dijawab admin INZTA lewat WhatsApp.</p>
             <div className="iz-why__proof">
@@ -61,7 +61,7 @@ export default function WhyInzta({ gasberHref, waHref }: { gasberHref: string; w
             </div>
           </li>
           <li className="iz-why__item">
-            <span className="iz-why__icon"><Road /></span>
+            <span className="iz-why__icon"><Motorcycle /></span>
             <h3>Ikut turun ke jalan</h3>
             <p>Kami ikut ride bersama komunitas, bukan hanya berjualan.</p>
             <div className="iz-why__proof">
