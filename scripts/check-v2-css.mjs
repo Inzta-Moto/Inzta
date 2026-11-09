@@ -45,7 +45,8 @@ function selectors(css) {
         k++;
       }
       const body = s.slice(open + 1, k - 1);
-      if (head.startsWith('@media') || head.startsWith('@supports')) walk(body, base);
+      // Conditional group rules: their selectors are checked like top-level ones.
+      if (head.startsWith('@media') || head.startsWith('@supports') || head.startsWith('@container')) walk(body, base);
       else if (head.startsWith('@property')) {
         // A registered custom property is global, so only the v2 prefix keeps it out of other pages' way.
         if (!/^@property --iz-[\w-]+$/.test(head)) out.push({ sel: head, at: base + j });
