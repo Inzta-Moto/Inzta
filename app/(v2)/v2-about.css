@@ -76,7 +76,7 @@
 .iz-channel--address:hover { border-color: var(--c-garis); }
 .iz-channel__line { display: block; font-size: 15px; font-weight: 400; }
 
-/* S8.5.1, S8.6.6: anchors from the footer and "Hubungi admin" land with the H2 below the floating navbar. */
+/* S8.5.1, S8.6.6: anchors from the footer and "Chat admin" in "Yang kami pegang." land with the H2 below the floating navbar. */
 .iz-page #cara-pesan,
 .iz-page #kontak { scroll-margin-top: calc(var(--size-nav) + var(--space-4) + var(--space-6)); }
 
