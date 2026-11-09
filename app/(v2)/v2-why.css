@@ -62,3 +62,17 @@
   .iz-why__list--tiles .iz-why__icon::before,
   .iz-why__list--tiles .iz-why__icon::after { display: none; }
 }
+
+/* F-024 (home only): 3D icon images instead of the aspal tiles (Sehan 2026-11-09, style A after the Phosphor tiles were
+   turned down by Bang Raja). The images carry their own soft shadow on a transparent background, so the box has no
+   fill, radius, or border. The size is fixed on the box and on the img (width/height attributes too), so nothing
+   shifts when the lazy image arrives. /tentang keeps the --tiles list above. */
+.iz-why__list--ikon .iz-why__item { grid-template-columns: 96px minmax(0, 1fr); column-gap: var(--space-6); }
+.iz-why__list--ikon .iz-why__item h3 { text-wrap: balance; }
+.iz-why__list--ikon .iz-why__icon { display: block; width: 96px; height: 96px; border-radius: 0; background: none; }
+.iz-why__list--ikon .iz-why__icon img { display: block; width: 100%; height: 100%; }
+
+@media (max-width: 767px) {
+  .iz-why__list--ikon .iz-why__item { grid-template-columns: 72px minmax(0, 1fr); column-gap: var(--space-4); }
+  .iz-why__list--ikon .iz-why__icon { width: 72px; height: 72px; }
+}
