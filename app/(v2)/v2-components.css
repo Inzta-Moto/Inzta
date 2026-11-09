@@ -193,7 +193,9 @@ img.iz-crop-half { height: 200% !important; object-position: 35% 0% !important; 
 .iz-footer li a, .iz-footer li { font-size: 15px; color: var(--c-pasir); min-height: 36px; display: flex; align-items: center; }
 .iz-footer li a:hover { color: var(--c-krem); }
 .iz-footer__shops { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; margin-top: 12px; }
-.iz-footer__shops a { display: inline-flex; align-items: center; min-height: 40px; padding: 4px 14px; border-radius: var(--radius-pill); border: 1px solid var(--c-line-on-dark); color: var(--c-krem); font-size: 15px; }
+/* Radius 20 px (half the 40 px pill) instead of a full pill, so a label that wraps on a 320 px phone is not clipped by
+   the rounded ends (F-027 review REV-01). */
+.iz-footer__shops a { display: inline-flex; align-items: center; min-height: 40px; padding: 4px 14px; border-radius: var(--radius-tile); border: 1px solid var(--c-line-on-dark); color: var(--c-krem); font-size: 15px; }
 .iz-footer__bottom { grid-column: 1 / -1; border-top: 1px solid var(--c-line-on-dark); padding-top: var(--space-6); font-size: 15px; color: var(--c-pasir); }
 .iz-filters { position: relative; z-index: 20; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding-block: var(--space-4); background: var(--c-kertas); }
 .iz-fchip { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 var(--space-4); border-radius: var(--radius-pill); border: 1px solid var(--c-garis); background: var(--c-kertas-terang); font-size: 15px; font-weight: 600; white-space: nowrap; }

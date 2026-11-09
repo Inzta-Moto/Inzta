@@ -76,7 +76,7 @@ html.iz-v2[data-iz-tier="minimal"] { scroll-behavior: auto; }
 .iz-sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 
 /* Shop names render as text until their URLs are known (16.4); same pill as the design's links. */
-.iz-footer__shops span { display: inline-flex; align-items: center; min-height: 40px; padding: 4px 14px; border-radius: var(--radius-pill); border: 1px solid var(--c-line-on-dark); color: var(--c-krem); font-size: 15px; }
+.iz-footer__shops span { display: inline-flex; align-items: center; min-height: 40px; padding: 4px 14px; border-radius: var(--radius-tile); border: 1px solid var(--c-line-on-dark); color: var(--c-krem); font-size: 15px; }
 
 /* Placeholder text ("Foto produk: PLACEHOLDER"), same rule as bundle.css line 25 of the design source. */
 .iz-placeholder { font-weight: 600; }
