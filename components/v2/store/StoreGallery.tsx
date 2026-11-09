@@ -7,7 +7,8 @@ const WIDTHS = [480, 640, 960, 1280];
 
 // Shop photos (F-027 B4): any number, alt from the data. Below 1024 px a focusable, labelled scroll region with
 // scroll-snap, so keyboard users scroll it with the arrow keys (same pattern as the Beranda film strip); from 1024 px
-// the first photo is large and the rest fill a grid (v2-store.css). Only photos sent through INZTA (ADR-0036 point 5);
+// the first photo is large and the rest fill a grid laid out per photo count (data-count, v2-store.css), so 2 to 5
+// photos leave no empty cell. Only photos sent through INZTA (ADR-0036 point 5);
 // without photos nothing renders.
 export default function StoreGallery({ store }: { store: PartnerStore }) {
   const photos = store.photos ?? [];
@@ -15,7 +16,7 @@ export default function StoreGallery({ store }: { store: PartnerStore }) {
   return (
     <div className="iz-storegallery">
       <h3 className="t-h3">{STORE_COPY.gallery.title(store.name)}</h3>
-      <div className="iz-storegallery__grid" tabIndex={0} role="region" aria-label={STORE_COPY.gallery.regionLabel(store.name)}>
+      <div className="iz-storegallery__grid" data-count={photos.length > 5 ? 'many' : photos.length} tabIndex={0} role="region" aria-label={STORE_COPY.gallery.regionLabel(store.name)}>
         {photos.map((photo, i) => (
           <div key={photo.src} className="iz-photo iz-storegallery__item">
             <SmartImage src={photo.src} alt={photo.alt} sizes={SIZES} widths={WIDTHS} width={i === 0 ? 960 : 640} />
