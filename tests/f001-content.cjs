@@ -235,7 +235,7 @@ function seed() {
   const asAdmin = () => { jar.clear(); jar.set('admin_session', 'cookie-admin'); };
   const articlePaths = (slug) => ['/', '/blog', `/blog/${slug}`, '/sitemap.xml', '/blog/[slug]', '/tas-motor/[kategori]', '/tentang'];  // F-013 C4 (K-10): every article page; F-016: category pages and /tentang
   // F-016 design.md §2: every v2 page shows navbar starting prices, so product and stock writes purge them all.
-  const productPaths = ['/', '/sitemap.xml', '/blog/[slug]', '/produk', '/produk/[slug]', '/tas-motor/[kategori]', '/blog', '/tentang'];
+  const productPaths = ['/', '/sitemap.xml', '/blog/[slug]', '/produk', '/produk/[slug]', '/tas-motor/[kategori]', '/blog', '/tentang', '/keranjang'];  // F-030: /keranjang re-checks prices and stock
 
   // F-012: creating or editing a draft changes no public page, so only public changes revalidate.
   await check('revalidate: editing a published (legacy) article revalidates its paths', async () => {

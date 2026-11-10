@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, type RefObject } from 'react';
-import { WhatsApp } from '@/components/v2/icons';
+import { Cart, WhatsApp } from '@/components/v2/icons';
 import { cldWebp } from '@/lib/v2/image';
 import { barWouldCover } from '@/components/v2/product/mbar';
 
@@ -20,6 +20,7 @@ export default function MobileOrderBar({
   disabled,
   ariaDisabled,
   onActivate,
+  cart,
 }: {
   target: RefObject<HTMLElement>;
   image: string | null;
@@ -29,6 +30,8 @@ export default function MobileOrderBar({
   disabled: boolean;
   ariaDisabled: boolean;
   onActivate: () => void;
+  // F-030 E2: icon button "Tambah ke keranjang" left of "Pesan".
+  cart?: { disabled: boolean; ariaDisabled: boolean; onAdd: () => void };
 }) {
   const [mainOut, setMainOut] = useState(false);
   const [avoid, setAvoid] = useState(false);
@@ -87,6 +90,18 @@ export default function MobileOrderBar({
           <span>{price}</span>
         </div>
       </div>
+      {cart && (
+        <button
+          type="button"
+          className="iz-mbar__cart"
+          aria-label="Tambah ke keranjang"
+          disabled={cart.disabled}
+          aria-disabled={cart.ariaDisabled ? true : undefined}
+          onClick={cart.onAdd}
+        >
+          <Cart width={22} height={22} />
+        </button>
+      )}
       <button
         type="button"
         className="iz-btn iz-btn--primary iz-btn--wa"

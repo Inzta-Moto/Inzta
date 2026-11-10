@@ -1,0 +1,197 @@
+/* F-030 cart: navbar link and badge, buy box button, phone bar button, confirmation panel, toast, and /keranjang.
+   Tokens only; every selector is an iz- class (S0.1.1). Imported by components/v2/V2Page.tsx on every v2 page. */
+
+/* Navbar link: same 40 px chip as the menu button, 48 px hit area (G-A2). */
+.iz-navcart { position: relative; flex: none; width: var(--size-chip); height: var(--size-chip); border-radius: 50%; background: var(--c-pasir-muda); color: var(--c-tinta); display: grid; place-items: center; transition: background-color .15s ease; }
+.iz-navcart::after { content: ""; position: absolute; inset: -4px; }
+.iz-navcart:hover { background: var(--c-pasir-hover); }
+.iz-navcart:focus-visible { outline: 3px solid var(--c-focus); outline-offset: 2px; }
+.iz-navcart[aria-current="page"] { box-shadow: 0 0 0 2px var(--c-kuning); }
+.iz-nav--dark .iz-navcart { background: var(--c-arang-naik); color: var(--c-krem); border: 1px solid var(--c-line-on-dark); }
+.iz-nav--dark .iz-navcart:focus-visible { outline-color: var(--c-kuning); }
+.iz-navcart svg { width: 20px; height: 20px; }
+.iz-navcart__badge { position: absolute; top: -6px; right: -6px; min-width: 22px; height: 22px; padding: 0 6px; border-radius: var(--radius-pill); background: var(--c-kuning); color: var(--c-on-kuning); box-shadow: 0 0 0 2px var(--c-kertas-terang); font-size: 13px; font-weight: 800; line-height: 22px; text-align: center; font-variant-numeric: tabular-nums; }
+.iz-nav--dark .iz-navcart__badge { box-shadow: 0 0 0 2px var(--c-aspal); }
+.iz-navcart__badge[data-bump="true"] { animation: iz-cart-bump 360ms ease-out; }
+@keyframes iz-cart-bump { 40% { transform: scale(1.25); } }
+
+/* Buy box: secondary button under the WhatsApp control (D-5), and the "already in cart" line. */
+.iz-addcart { display: flex; flex-direction: column; gap: 8px; margin-top: calc(var(--space-2) - var(--space-5)); }
+.iz-addcart__btn { width: 100%; min-height: 52px; gap: 10px; }
+.iz-addcart__btn svg { width: 20px; height: 20px; }
+.iz-addcart__btn:disabled { border-color: var(--c-garis); }
+.iz-addcart__btn[aria-disabled="true"] { border-color: var(--c-garis); }
+.iz-addcart__btn:focus-visible { outline: 3px solid var(--c-focus); outline-offset: 2px; }
+.iz-addcart__note { margin: 0; font-size: 15px; color: var(--c-batu); text-align: center; }
+.iz-addcart__note a { color: var(--c-kuning-tua); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+
+/* Phone order bar: 48 px icon button left of "Pesan" (E2). */
+.iz-mbar__cart { position: relative; flex: none; width: 48px; height: 48px; border-radius: 50%; background: var(--c-pasir-muda); color: var(--c-tinta); display: grid; place-items: center; }
+.iz-mbar__cart:hover { background: var(--c-pasir-hover); }
+.iz-mbar__cart:disabled { opacity: .45; cursor: not-allowed; }
+.iz-mbar__cart[aria-disabled="true"] { color: var(--c-batu); }
+.iz-mbar__cart:focus-visible { outline: 3px solid var(--c-focus); outline-offset: 2px; }
+
+/* Confirmation panel (E4): bottom right on desktop, full width above the phone bar. Non-modal; no backdrop. */
+.iz-addedzone { position: fixed; z-index: 60; right: var(--space-6); bottom: var(--space-6); width: min(380px, calc(100vw - 32px)); pointer-events: none; }
+.iz-added { pointer-events: auto; display: flex; flex-direction: column; gap: 14px; padding: 16px; border-radius: var(--radius-tile-lg); background: var(--c-kertas-terang); border: 1px solid var(--c-garis); box-shadow: var(--shadow-float); color: var(--c-tinta); animation: iz-cart-in 200ms ease-out; }
+.iz-added__head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.iz-added__title { display: inline-flex; align-items: center; gap: 8px; font-size: 17px; font-weight: 700; color: var(--c-fit); }
+.iz-added__title svg { width: 20px; height: 20px; }
+.iz-added__close, .iz-toast__close { position: relative; flex: none; width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: var(--c-pasir-muda); color: var(--c-tinta); }
+.iz-added__close::after, .iz-toast__close::after { content: ""; position: absolute; inset: -6px; }
+.iz-added__close:focus-visible, .iz-toast__close:focus-visible, .iz-toast__action:focus-visible { outline: 3px solid var(--c-focus); outline-offset: 2px; }
+.iz-added__item { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.iz-added__item img, .iz-added__ph { width: 56px; height: 56px; flex: none; border-radius: 12px; object-fit: cover; background: var(--c-pasir-muda); border: 1px solid var(--c-garis); }
+.iz-added__item > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.iz-added__item b { font-size: 16px; font-weight: 700; line-height: 1.3; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.iz-added__item span { font-size: 15px; color: var(--c-batu); font-variant-numeric: tabular-nums; }
+.iz-added__note { margin: 0; font-size: 15px; color: var(--c-batu); }
+.iz-added__actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.iz-added__actions .iz-btn { min-height: 48px; padding: 0 12px; font-size: 15px; }
+@keyframes iz-cart-in { from { opacity: 0; transform: translateY(12px); } }
+
+/* Toast (E3, E5, D-9). */
+.iz-toastzone { position: fixed; z-index: 61; left: 50%; bottom: var(--space-6); transform: translateX(-50%); width: max-content; max-width: calc(100vw - 32px); pointer-events: none; }
+.iz-toast { pointer-events: auto; display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 8px 8px 8px 20px; border-radius: var(--radius-pill); background: var(--c-aspal); color: var(--c-krem); box-shadow: var(--shadow-float); animation: iz-cart-in 200ms ease-out; }
+.iz-toast p { margin: 0; font-size: 15px; font-weight: 500; line-height: 1.35; }
+.iz-toast__action { flex: none; min-height: 40px; padding: 0 14px; border-radius: var(--radius-pill); background: var(--c-kuning); color: var(--c-on-kuning); font-size: 15px; font-weight: 700; }
+.iz-toast__close { background: var(--c-arang-naik); color: var(--c-krem); }
+
+/* /keranjang. Head padding and gaps follow the product page (v2-product.css). */
+.iz-cart { padding-top: 128px; }
+.iz-cart .iz-crumb { margin-bottom: var(--space-4); }
+.iz-cart__title { margin: 0 0 var(--space-8); }
+.iz-cart__count { color: var(--c-batu); font-weight: 600; }
+.iz-cart__grid { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: var(--space-8); align-items: start; }
+.iz-cart__main { display: flex; flex-direction: column; gap: var(--space-6); min-width: 0; }
+.iz-cart__notice { margin: 0; padding: 12px 16px; border-radius: var(--radius-thumb); background: var(--c-pasir-muda); font-size: 15px; color: var(--c-tinta); }
+.iz-cart__device { margin: 0; font-size: 15px; color: var(--c-batu); }
+.iz-cart__loading { display: flex; flex-direction: column; gap: var(--space-4); }
+.iz-cart__skel { height: 128px; border-radius: var(--radius-tile-lg); background: var(--c-pasir-muda); }
+
+.iz-cartlist { background: var(--c-kertas-terang); border: 1px solid var(--c-garis); border-radius: var(--radius-tile-lg); }
+.iz-cartlist__head { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 64px; padding: 8px 16px; border-bottom: 1px solid var(--c-garis); }
+.iz-cartlist__title { margin: 0; font-size: 17px; font-weight: 700; }
+.iz-cartlist__clear { min-height: 48px; padding: 0 4px; font-size: 15px; font-weight: 600; color: var(--c-kuning-tua); }
+.iz-cartlist__clear:hover { text-decoration: underline; text-underline-offset: 3px; }
+.iz-cartlist__clear:focus-visible { outline: 3px solid var(--c-focus); outline-offset: 2px; border-radius: 4px; }
+.iz-cartlist__rows { margin: 0; padding: 0; list-style: none; }
+
+/* Checkbox: native input, 22 px box in a 48 px target. */
+.iz-cbox { display: inline-flex; align-items: center; gap: 12px; min-height: 48px; font-size: 17px; font-weight: 600; cursor: pointer; }
+.iz-cbox input, .iz-cline__check input { width: 22px; height: 22px; margin: 0; accent-color: var(--c-tinta); cursor: pointer; }
+.iz-cbox input:focus-visible, .iz-cline__check input:focus-visible { outline: 3px solid var(--c-focus); outline-offset: 2px; }
+
+.iz-cline { display: grid; grid-template-columns: 48px 96px minmax(0, 1fr) auto; gap: 16px; align-items: center; padding: 16px; border-bottom: 1px solid var(--c-garis); }
+.iz-cline:last-child { border-bottom: 0; }
+.iz-cline__check { display: grid; place-items: center; width: 48px; height: 48px; cursor: pointer; }
+.iz-cline__img { display: block; width: 96px; height: 96px; border-radius: var(--radius-thumb); overflow: hidden; background: var(--c-pasir-muda); border: 1px solid var(--c-garis); }
+.iz-cline__img img, .iz-cline__img span { display: block; width: 100%; height: 100%; object-fit: cover; }
+.iz-cline__info { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0; }
+.iz-cline__name { font-size: 17px; font-weight: 600; line-height: 1.35; color: var(--c-tinta); }
+.iz-cline__name:hover { color: var(--c-kuning-tua); }
+.iz-cline__name:focus-visible { outline: 3px solid var(--c-focus); outline-offset: 2px; border-radius: 4px; }
+.iz-cline__opt { display: inline-flex; align-items: center; min-height: 26px; padding: 2px 10px; border-radius: var(--radius-pill); background: var(--c-pasir-muda); font-size: 14px; font-weight: 600; }
+.iz-cline__price { font-size: 16px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.iz-cline__price small { display: block; font-size: 14px; font-weight: 500; color: var(--c-kuning-tua); }
+.iz-cline__reason { display: inline-flex; min-height: 26px; align-items: center; padding: 2px 10px; border-radius: var(--radius-pill); background: var(--c-aspal); color: var(--c-krem); font-size: 14px; font-weight: 600; }
+.iz-cline__hint { font-size: 14px; color: var(--c-kuning-tua); font-weight: 600; }
+.iz-cline__side { display: flex; align-items: center; gap: 16px; }
+.iz-cline__sub { min-width: 112px; text-align: right; font-size: 17px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.iz-cline__del { position: relative; flex: none; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; color: var(--c-batu); background: transparent; }
+.iz-cline__del::after { content: ""; position: absolute; inset: -4px; }
+.iz-cline__del:hover { background: var(--c-pasir-muda); color: var(--c-tinta); }
+.iz-cline__del:focus-visible { outline: 3px solid var(--c-focus); outline-offset: 2px; }
+.iz-cline .iz-stepper { height: 44px; }
+.iz-cline .iz-stepper button { width: 36px; height: 36px; position: relative; }
+.iz-cline .iz-stepper button::after { content: ""; position: absolute; inset: -6px; }
+.iz-cline .iz-stepper output { min-width: 32px; }
+.iz-cline--off .iz-cline__img, .iz-cline--off .iz-cline__name, .iz-cline--off .iz-cline__opt, .iz-cline--off .iz-cline__price { opacity: .55; }
+
+.iz-cartsum { position: sticky; top: calc(var(--size-nav) + var(--space-4) + var(--space-6)); display: flex; flex-direction: column; gap: var(--space-4); padding: var(--space-6); background: var(--c-kertas-terang); border: 1px solid var(--c-garis); border-radius: var(--radius-tile-lg); }
+.iz-cartsum h2 { margin: 0; }
+.iz-cartsum__rows { display: flex; flex-direction: column; gap: 8px; margin: 0; }
+.iz-cartsum__rows > div { display: flex; justify-content: space-between; gap: 12px; font-size: 16px; }
+.iz-cartsum__rows dt { color: var(--c-batu); }
+.iz-cartsum__rows dd { margin: 0; font-weight: 600; font-variant-numeric: tabular-nums; }
+.iz-cartsum__live { display: flex; flex-direction: column; gap: 8px; font-size: 15px; line-height: 1.45; }
+.iz-cartsum__live:empty { display: none; }
+.iz-cartsum__total { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding-top: var(--space-4); border-top: 1px solid var(--c-garis); }
+.iz-cartsum__total span { font-size: 17px; font-weight: 700; }
+.iz-cartsum__total b { font-size: 26px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.iz-cartsum__ship { margin: calc(-1 * var(--space-3)) 0 0; font-size: 15px; color: var(--c-batu); text-align: right; }
+.iz-cartsum__pay { width: 100%; }
+.iz-cartsum__pay .iz-btn--wa { width: 100%; justify-content: flex-start; }
+.iz-cartsum__pay .iz-btn--wa span:last-child { margin-inline: auto; }
+
+.iz-cartempty { display: flex; flex-direction: column; align-items: center; gap: var(--space-4); max-width: 560px; margin: 0 auto; padding: var(--space-12) var(--space-6); text-align: center; background: var(--c-kertas-terang); border: 1px solid var(--c-garis); border-radius: var(--radius-tile-lg); }
+.iz-cartempty__icon { width: 72px; height: 72px; border-radius: 50%; background: var(--c-pasir-muda); display: grid; place-items: center; color: var(--c-tinta); }
+.iz-cartempty__icon svg { width: 32px; height: 32px; }
+.iz-cartempty h2 { margin: 0; }
+.iz-cartempty p { margin: 0; max-width: 420px; font-size: 17px; color: var(--c-batu); }
+.iz-cartempty__actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: var(--space-4) var(--space-6); margin-top: var(--space-2); }
+
+/* Phone bar (E11), hidden from 768 px by .iz-only-mob. */
+.iz-cartbar { position: fixed; z-index: 40; left: 12px; right: 12px; bottom: 12px; display: flex; align-items: center; gap: 10px; min-height: 68px; padding: 10px 10px 10px 8px; border-radius: var(--radius-tile-lg); background: var(--c-nav-light); border: 1px solid var(--c-garis); box-shadow: var(--shadow-float); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+html[data-iz-tier="lite"] .iz-cartbar { background: rgba(253, 252, 249, 0.95); -webkit-backdrop-filter: none; backdrop-filter: none; }
+.iz-cbox--compact { gap: 8px; padding-left: 4px; font-size: 15px; }
+.iz-cartbar__total { display: flex; flex-direction: column; flex: 1 1 auto; min-width: 0; line-height: 1.2; }
+.iz-cartbar__total span { font-size: 14px; color: var(--c-batu); }
+.iz-cartbar__total b { font-size: 17px; font-weight: 800; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.iz-cartbar .iz-btn { flex: none; min-height: 48px; padding: 0 16px 0 6px; font-size: 15px; gap: 8px; }
+.iz-cartbar .iz-btn__icon { width: 36px; height: 36px; }
+.iz-cartbar .iz-btn__icon svg { width: 18px; height: 18px; }
+
+@media (max-width: 1023px) {
+  .iz-cart__grid { grid-template-columns: minmax(0, 1fr); }
+  .iz-cartsum { position: static; }
+}
+@media (max-width: 767px) {
+  .iz-cart { padding-top: 104px; }
+  .iz-cart--bar { padding-bottom: 96px; }
+  .iz-cart__title { margin-bottom: var(--space-5); }
+  .iz-cart__grid { gap: var(--space-6); }
+  .iz-cartlist__head { padding: 4px 12px; }
+  /* Row: check, photo, details; quantity, subtotal, and delete wrap to a second line under the details. */
+  .iz-cline { grid-template-columns: 40px 72px minmax(0, 1fr); gap: 4px 12px; padding: 14px 12px; align-items: start; }
+  .iz-cline__check { width: 40px; height: 48px; margin-top: 12px; }
+  .iz-cline__img { width: 72px; height: 72px; }
+  .iz-cline__name { font-size: 16px; }
+  .iz-cline__side { grid-column: 2 / -1; justify-content: space-between; gap: 8px; margin-top: 8px; }
+  .iz-cline__sub { min-width: 0; margin-left: auto; font-size: 16px; }
+  .iz-cline__del { width: 44px; height: 44px; }
+  .iz-cartsum { padding: var(--space-5); }
+  .iz-cartsum__pay { display: none; }
+  .iz-cartempty { padding: var(--space-10) var(--space-5); }
+  .iz-cartempty__actions .iz-btn { width: 100%; }
+  /* Above the phone order bar of the product page (96 px zone, mbar.ts). */
+  .iz-addedzone { left: 12px; right: 12px; bottom: 96px; width: auto; }
+  .iz-toastzone { bottom: 96px; }
+  .iz-toast { border-radius: var(--radius-tile); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .iz-navcart__badge[data-bump="true"], .iz-added, .iz-toast { animation: none; }
+}
+html[data-iz-tier="minimal"] .iz-navcart__badge[data-bump="true"], html[data-iz-tier="minimal"] .iz-added, html[data-iz-tier="minimal"] .iz-toast { animation: none; }
+@media (max-width: 767px) {
+  /* Unavailable rows only carry the delete button; keep it at the row's end like the other rows. */
+  .iz-cline--off .iz-cline__side { justify-content: flex-end; margin-top: 0; }
+}
+
+/* 768-1023 px keeps the desktop navbar without the fit scale, and it was already full before F-030 (F-029 notes:
+   "Pilih motor" and "Chat admin" wrapped). The cart link needs 52 px, so here the motor chip shows its icon or photo
+   only; its label stays in the accessibility tree (visually hidden, not display: none). */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .iz-motorchip { gap: 0; padding: 0 11px; }
+  .iz-motorchip--set { padding: 0 6px; }
+  .iz-motorchip > .iz-only-desk:not(.iz-motorchip__swap) { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+  .iz-motorchip__swap { display: none; }
+}
+/* Same reason on narrow phones: with a chosen category the chip's name plus the cart link pushed the menu button out
+   of the capsule (60 px at 320, 20 px at 360). Below 400 px the chosen chip shows its photo only. */
+@media (max-width: 399px) {
+  .iz-motorchip--set { padding: 0 6px; gap: 0; }
+  .iz-motorchip--set > .iz-only-mob { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+}
