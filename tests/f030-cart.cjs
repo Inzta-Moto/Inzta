@@ -34,7 +34,7 @@ require.extensions['.tsx'] = compile;
 const C = require(path.join(ROOT, 'lib/cart/cart-core.ts'));
 const T = require(path.join(ROOT, 'lib/cart/types.ts'));
 const { toCartCatalog } = require(path.join(ROOT, 'lib/cart/catalog.ts'));
-const { checkoutCart } = require(path.join(ROOT, 'lib/cart/checkout.ts'));
+const { checkoutCart, MSG_NETWORK, MSG_SERVER } = require(path.join(ROOT, 'lib/cart/checkout.ts'));
 
 const results = [];
 const pending = [];
@@ -324,24 +324,29 @@ function orderFetch(calls, answer) {
   };
 }
 
-check('U-7 checkout hand-off: body for POST /api/orders, voucher + affiliateId + UTM + buyer, WhatsApp text has every item', async () => {
+// Mimics app/api/orders/route.ts on PRODUCTS: items in request order, server prices, label = attribute values,
+// voucher percentage on the server subtotal. Only what the WhatsApp text reads.
+function fakeOrderServer(body, voucherPct = 0) {
+  const items = body.items.map(it => {
+    const p = PRODUCTS.find(x => x.slug === it.productSlug);
+    const v = it.variationId ? p.variants.find(x => x.variationId === it.variationId) : null;
+    const price = v ? v.price : p.price;
+    return { productName: p.name, selectedVariantLabel: v ? Object.values(v.attributes).join(', ') : null, sku: v ? v.sku : null, quantity: it.quantity, price, subtotal: price * it.quantity };
+  });
+  const totalPrice = items.reduce((s, i) => s + i.subtotal, 0);
+  const discountAmount = Math.round((totalPrice * voucherPct) / 100);
+  return { status: 201, body: { orderId: 'ORD-CONTOH', status: 'success', items, totalPrice, discountAmount, voucherCode: voucherPct ? body.voucherCode : null, finalPrice: totalPrice - discountAmount } };
+}
+const waText = href => decodeURIComponent(href.split('?text=')[1]);
+const cartLines = s => C.checkoutLines(C.reconcileCart(s, CATALOG));
+
+check('U-7 checkout hand-off: body for POST /api/orders, voucher + affiliateId + UTM + buyer; numbered WhatsApp entry per cart line', async () => {
   let s = add(add(C.emptyCart(), simple({ quantity: 2 })).state, pair()).state;
-  const lines = C.checkoutLines(C.reconcileCart(s, CATALOG));
+  const lines = cartLines(s);
   const voucher = { code: 'INZ-CONTOH', type: 'percentage', value: 10, minPurchase: 0, maxDiscount: 0, affiliateId: 'aff-contoh', affiliateName: null, isActive: true, usageCount: 0, maxUsage: null, expiresAt: null, createdAt: null };
   const utm = { source: 'instagram', medium: 'social' };
   const calls = [];
-  const r = await checkoutCart({ lines, voucher, buyerUID: null, utm }, orderFetch(calls, () => ({
-    status: 201,
-    body: {
-      orderId: 'ORD-CONTOH',
-      items: [
-        { productName: 'Tail bag (contoh)', selectedVariantLabel: null, sku: null, quantity: 2, price: 520000, subtotal: 1040000 },
-        { productName: 'Side bag (contoh)', selectedVariantLabel: 'Kiri', sku: 'K', quantity: 1, price: 150000, subtotal: 150000 },
-        { productName: 'Side bag (contoh)', selectedVariantLabel: 'Kanan', sku: 'N', quantity: 1, price: 150000, subtotal: 150000 },
-      ],
-      totalPrice: 1340000, discountAmount: 134000, voucherCode: 'INZ-CONTOH', finalPrice: 1206000,
-    },
-  })));
+  const r = await checkoutCart({ lines, voucher, buyerUID: null, utm }, orderFetch(calls, b => fakeOrderServer(b, 10)));
   assert.strictEqual(calls.length, 1);
   assert.strictEqual(calls[0].url, '/api/orders');
   assert.deepStrictEqual(calls[0].body, {
@@ -356,17 +361,106 @@ check('U-7 checkout hand-off: body for POST /api/orders, voucher + affiliateId +
   assert.strictEqual(r.orderId, 'ORD-CONTOH');
   assert.strictEqual(r.value, 1206000);
   assert.ok(r.href.startsWith('https://wa.me/'));
-  const text = decodeURIComponent(r.href.split('?text=')[1]);
-  for (const part of ['Order ID: #ORD-CONTOH', 'Side bag (contoh): Sepasang (kiri + kanan), 1 pasang', 'Tail bag (contoh)', 'Side bag (contoh) — Kiri', 'Side bag (contoh) — Kanan', 'Voucher: INZ-CONTOH', 'Total Bayar']) {
-    assert.ok(text.includes(part), `WhatsApp text misses "${part}"`);
-  }
+  assert.strictEqual(waText(r.href), [
+    'PESANAN PRODUK',
+    'Order ID: #ORD-CONTOH',
+    'Dari keranjang: 2 produk',
+    '',
+    '1. Side bag (contoh) — Sepasang (kiri + kanan) (SKU: K + N)',
+    'Jumlah: 1 pasang × Rp 300.000 = Rp 300.000',
+    '',
+    '2. Tail bag (contoh)',
+    'Jumlah: 2 × Rp 520.000 = Rp 1.040.000',
+    '',
+    'Subtotal: Rp 1.340.000',
+    'Voucher: INZ-CONTOH',
+    'Diskon: -Rp 134.000',
+    'Total Bayar: Rp 1.206.000',
+    '',
+    'Data Pemesan:', 'Nama: ', 'No. HP: ', 'Alamat: ', '', 'Terima kasih!',
+  ].join('\n'));
 });
 
-check('U-7 checkout hand-off: server errors pass through; no lines never calls the server', async () => {
-  const lines = C.checkoutLines(C.reconcileCart(add(C.emptyCart(), simple()).state, CATALOG));
+check('U-7 WhatsApp: Kiri and Sepasang of one product stay two entries although the server merges the Kiri item', async () => {
+  let s = add(add(C.emptyCart(), pair({ quantity: 2 })).state, { ...pair(), pair: null, variationId: 'v-kiri', optionLabel: 'Kiri', quantity: 1 }).state;
+  s = add(s, variant()).state;
   const calls = [];
-  const r = await checkoutCart({ lines, voucher: null, buyerUID: 'uid-contoh', utm: null }, orderFetch(calls, () => ({ status: 400, body: { code: 'INSUFFICIENT_STOCK', message: 'Stok produk "Tail bag (contoh)" tidak mencukupi' } })));
-  assert.deepStrictEqual(r, { ok: false, message: 'Gagal membuat pesanan: Stok produk "Tail bag (contoh)" tidak mencukupi' });
+  const r = await checkoutCart({ lines: cartLines(s), voucher: null, buyerUID: null, utm: null }, orderFetch(calls, b => fakeOrderServer(b)));
+  assert.deepStrictEqual(calls[0].body.items.find(i => i.variationId === 'v-kiri'), { productSlug: 'side-bag-contoh', variationId: 'v-kiri', quantity: 3 });
+  const text = waText(r.href);
+  for (const part of [
+    'Dari keranjang: 3 produk',
+    '1. Tank bag (contoh) — Hitam (SKU: S1)\nJumlah: 1 × Rp 400.000 = Rp 400.000',
+    '2. Side bag (contoh) — Kiri (SKU: K)\nJumlah: 1 × Rp 150.000 = Rp 150.000',
+    '3. Side bag (contoh) — Sepasang (kiri + kanan) (SKU: K + N)\nJumlah: 2 pasang × Rp 300.000 = Rp 600.000',
+    'Total Bayar: Rp 1.150.000',
+  ]) assert.ok(text.includes(part), `WhatsApp text misses "${part}"`);
+  assert.ok(!text.includes('Subtotal:'), 'no Subtotal line without a discount (same as the buy box)');
+});
+
+check('U-7 WhatsApp: a response that does not line up with the request falls back to the buy box text', async () => {
+  const s = add(add(C.emptyCart(), simple()).state, pair()).state;
+  const lines = cartLines(s);
+  const odd = b => { const a = fakeOrderServer(b); a.body.items = a.body.items.slice(1); a.body.totalPrice -= 150000; a.body.finalPrice -= 150000; return a; };
+  const r = await checkoutCart({ lines, voucher: null, buyerUID: null, utm: null }, orderFetch([], odd));
+  assert.strictEqual(r.ok, true);
+  const text = waText(r.href);
+  assert.ok(text.includes('Side bag (contoh): Sepasang (kiri + kanan), 1 pasang'), 'old Sepasang line kept');
+  assert.ok(!text.includes('Dari keranjang'), 'not the numbered format');
+  // Prices that do not add up to the server subtotal also fall back.
+  const off = b => { const a = fakeOrderServer(b); a.body.totalPrice += 1; return a; };
+  const r2 = await checkoutCart({ lines, voucher: null, buyerUID: null, utm: null }, orderFetch([], off));
+  assert.ok(!waText(r2.href).includes('Dari keranjang'));
+});
+
+check('U-7 WhatsApp: 30 lines all appear; link length logged', async () => {
+  const many = Array.from({ length: 30 }, (_, i) => ({ productSlug: 'tail-bag-contoh', variationId: null, pair: null, quantity: 1, name: 'Tail bag (contoh)', optionLabel: null, unitPrice: 520000 }));
+  // 30 distinct lines are not possible on one product; give each its own slug and answer per item.
+  many.forEach((l, i) => { l.productSlug = `produk-contoh-${i}`; l.name = `Side bag touring tahan air ukuran besar (contoh) ${i + 1}`; l.optionLabel = 'Hitam, Kiri'; l.variationId = `v-${i}`; });
+  const answer = b => {
+    const items = b.items.map((it, i) => ({ productName: many[i].name, selectedVariantLabel: 'Hitam, Kiri', sku: `SKU-CONTOH-${i}`, quantity: it.quantity, price: 1250000, subtotal: 1250000 * it.quantity }));
+    const total = items.reduce((s, i) => s + i.subtotal, 0);
+    return { status: 201, body: { orderId: 'ORD-CONTOH', items, totalPrice: total, discountAmount: 0, voucherCode: null, finalPrice: total } };
+  };
+  const r = await checkoutCart({ lines: many, voucher: null, buyerUID: null, utm: null }, orderFetch([], answer));
+  const text = waText(r.href);
+  for (let i = 1; i <= 30; i++) assert.ok(text.includes(`\n${i}. Side bag touring`), `entry ${i} missing`);
+  console.log(`INFO  30-line WhatsApp link: ${r.href.length} characters, text ${text.length} characters`);
+});
+
+check('U-7 errors: messages name the item when they can and say what to do; the cart is never cleared', async () => {
+  const run = async (lines, answer) => checkoutCart({ lines, voucher: null, buyerUID: 'uid-contoh', utm: null }, orderFetch([], () => answer));
+  const one = cartLines(add(C.emptyCart(), simple()).state);
+  const withVariant = cartLines(add(add(C.emptyCart(), simple()).state, variant()).state);
+  const twoVariants = cartLines(add(add(C.emptyCart(), variant()).state, pair()).state);
+
+  assert.deepStrictEqual(await run(one, { status: 400, body: { code: 'INSUFFICIENT_STOCK', message: 'Stok produk "Tail bag (contoh)" tidak mencukupi' } }),
+    { ok: false, message: 'Stok produk "Tail bag (contoh)" tidak mencukupi. Kurangi jumlahnya, lalu pesan lagi.' });
+  assert.strictEqual((await run(withVariant, { status: 400, body: { code: 'INSUFFICIENT_STOCK', message: 'Stok variasi tidak mencukupi' } })).message,
+    'Stok Tank bag (contoh) (Hitam) tidak mencukupi. Kurangi jumlahnya, lalu pesan lagi.');
+  assert.strictEqual((await run(twoVariants, { status: 400, body: { code: 'INSUFFICIENT_STOCK', message: 'Stok variasi tidak mencukupi' } })).message,
+    'Stok salah satu barang tidak mencukupi. Muat ulang halaman untuk melihat stok dan status terbaru.');
+  assert.strictEqual((await run(withVariant, { status: 400, body: { code: 'VARIANT_INACTIVE', message: 'Variasi ini sudah tidak tersedia' } })).message,
+    'Pilihan Tank bag (contoh) (Hitam) sudah tidak tersedia. Muat ulang halaman untuk melihat stok dan status terbaru.');
+  assert.strictEqual((await run(twoVariants, { status: 400, body: { code: 'VARIANT_NOT_FOUND', message: 'Variasi tidak ditemukan' } })).message,
+    'Salah satu pilihan varian sudah tidak tersedia. Muat ulang halaman untuk melihat stok dan status terbaru.');
+  assert.strictEqual((await run(one, { status: 404, body: { code: 'PRODUCT_NOT_FOUND', message: 'Produk tidak ditemukan' } })).message,
+    'Tail bag (contoh) sudah tidak dijual. Muat ulang halaman untuk melihat stok dan status terbaru.');
+  assert.strictEqual((await run(withVariant, { status: 400, body: { code: 'PRODUCT_INACTIVE', message: 'Produk "Tank bag (contoh)" sedang tidak aktif' } })).message,
+    'Produk "Tank bag (contoh)" sedang tidak aktif. Hapus centangnya, lalu pesan lagi.');
+  assert.strictEqual((await run(withVariant, { status: 400, body: { code: 'VARIATION_REQUIRED', message: 'Variasi belum dipilih untuk produk "Tail bag (contoh)"' } })).message,
+    'Data Tail bag (contoh) di keranjang tidak cocok dengan produk terbaru. Hapus barang itu, lalu tambahkan lagi dari halaman produk.');
+  assert.strictEqual((await run(one, { status: 400, body: { error: 'Gagal menggunakan voucher: Voucher kadaluarsa' } })).message,
+    'Gagal menggunakan voucher: Voucher kadaluarsa. Lepas atau ganti vouchernya, lalu pesan lagi.');
+  assert.strictEqual((await run(one, { status: 500, body: { error: 'Gagal membuat pesanan' } })).message, MSG_SERVER);
+  assert.strictEqual((await run(one, { status: 502, body: null })).message, MSG_SERVER);
+  const offline = await checkoutCart({ lines: one, voucher: null, buyerUID: null, utm: null }, async () => { throw new Error('offline'); });
+  assert.deepStrictEqual(offline, { ok: false, message: MSG_NETWORK });
+  const broken = await checkoutCart({ lines: one, voucher: null, buyerUID: null, utm: null }, async () => ({ ok: true, status: 201, json: async () => { throw new Error('bad json'); } }));
+  assert.deepStrictEqual(broken, { ok: false, message: MSG_SERVER });
+
+  const calls = [];
+  await checkoutCart({ lines: one, voucher: null, buyerUID: 'uid-contoh', utm: null }, orderFetch(calls, () => ({ status: 400, body: {} })));
   assert.strictEqual(calls[0].body.buyerUID, 'uid-contoh');
   assert.strictEqual(calls[0].body.voucherCode, null);
   const none = [];
