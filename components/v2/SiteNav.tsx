@@ -289,6 +289,10 @@ export default function SiteNav({
           <Link href="/tentang" {...page('tentang')}>
             <span className="iz-roll"><span>Tentang</span></span>
           </Link>
+          {/* F-029: affiliate entry the owner could not find in the footer; no aria-current because /affiliate pages render AffiliateHeader, not this nav. */}
+          <Link href="/affiliate/login">
+            <span className="iz-roll"><span>Affiliate</span></span>
+          </Link>
         </div>
 
         <div className="iz-nav__actions">
@@ -377,6 +381,10 @@ export default function SiteNav({
             </Link>
             <Link href="/tentang" onClick={() => setSheetOpen(false)} {...page('tentang')}>
               <span>Tentang</span>
+              <ArrowRight width={18} height={18} />
+            </Link>
+            <Link href="/affiliate/login" onClick={() => setSheetOpen(false)}>
+              <span>Affiliate</span>
               <ArrowRight width={18} height={18} />
             </Link>
           </div>
