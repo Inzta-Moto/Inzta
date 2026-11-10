@@ -199,6 +199,13 @@ html:not(.js-nav) .iz-navdd:focus-within .iz-navdd__btn svg { transform: rotate(
   .iz-page .iz-head--split .iz-link::after { content: ""; position: absolute; inset: -10px 0; }
 }
 
+/* F-029: an odd last link in the phone menu's two-column grid takes the full row, like the Garasi tiles, so no empty cell. */
+.iz-msheet__links > a:last-child:nth-child(odd) { grid-column: 1 / -1; }
+/* F-029: 768-1023 px has neither fit scaling nor the phone menu; a fifth link there pushed "Chat admin" out of the capsule, so Affiliate stays in the footer at that width. */
+@media (min-width: 768px) and (max-width: 1023.98px) {
+  .iz-nav__links > a[href="/affiliate/login"] { display: none; }
+}
+
 /* F-026: footer text links get a 44 px touch target on phones (36 px in the ported canvas). Two classes so this wins
    over v2-components.css whatever order the stylesheets load in. */
 @media (max-width: 767px) {
