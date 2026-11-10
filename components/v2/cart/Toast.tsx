@@ -19,6 +19,8 @@ export default function Toast({ message, onClose, duration = 6000 }: { message: 
   const closeRef = useRef(onClose);
   closeRef.current = onClose;
 
+  useEffect(() => setPaused(false), [message?.id]);
+
   useEffect(() => {
     if (!message || paused) return;
     const t = window.setTimeout(() => closeRef.current(), duration);

@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Close, CircleCheck } from '@/components/v2/icons';
 import { cldWebp } from '@/lib/v2/image';
 import { formatRupiah } from '@/lib/v2/home-data';
@@ -22,19 +22,26 @@ export interface AddedInfo {
  * focus; the line is announced through the live region and Escape closes it.
  */
 export default function AddedPanel({ info, onClose }: { info: AddedInfo | null; onClose: () => void }) {
+  const panel = useRef<HTMLElement>(null);
   useEffect(() => {
     if (!info) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key !== 'Escape') return;
+      const at = document.activeElement;
+      if (!at || at === document.body || panel.current?.contains(at)) onClose();
     };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, [info, onClose]);
 
   return (
-    <div className="iz-addedzone" role="status" aria-live="polite">
+    <>
+      <p className="iz-sr" role="status" aria-live="polite">
+        {info ? `${info.name}${info.optionLabel ? `, ${info.optionLabel}` : ''} masuk keranjang.${info.note ? ` ${info.note}` : ''}` : ''}
+      </p>
+      <div className="iz-addedzone">
       {info && (
-        <section key={info.id} className="iz-added" aria-label="Masuk keranjang">
+        <section ref={panel} key={info.id} className="iz-added" aria-label="Masuk keranjang">
           <div className="iz-added__head">
             <span className="iz-added__title">
               <CircleCheck width={20} height={20} />
@@ -65,6 +72,7 @@ export default function AddedPanel({ info, onClose }: { info: AddedInfo | null; 
           </div>
         </section>
       )}
-    </div>
+      </div>
+    </>
   );
 }

@@ -291,7 +291,8 @@ export default function ProductPdp({ product, images, positionLabel, badge, fit,
           // The total sits once, beside the name; "Pesan · Rp…" in the button left the name a single letter at 320–390 px
           // (Sehan, 2026-11-04).
           price={button === 'ready' ? formatRupiah(order.total) : view.priceRow.kind === 'single' ? formatRupiah(view.priceRow.price) : `${formatRupiah(view.priceRow.low)} – ${formatRupiah(view.priceRow.high)}`}
-          label={button === 'ready' ? 'Pesan' : buttonText}
+          // F-030: the short incomplete label fits the half-width bar button on two lines at 320 px.
+          label={button === 'ready' ? 'Pesan' : button === 'incomplete' ? (side ? 'Pilih sisi dulu' : 'Pilih variasi dulu') : buttonText}
           disabled={button === 'processing' || button === 'soldout' || button === 'missing'}
           ariaDisabled={button === 'incomplete'}
           onActivate={activate}

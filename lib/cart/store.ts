@@ -11,6 +11,8 @@ import { CART_STORAGE_KEY, type CartState } from '@/lib/cart/types';
 const SERVER: CartState = emptyCart();
 let state: CartState = SERVER;
 let loaded = false;
+// Raw value last read or written, so an update re-parses storage only when another tab changed it.
+let lastRaw: string | null | undefined;
 const listeners = new Set<() => void>();
 
 function storage(): Storage | null {
@@ -25,9 +27,24 @@ function load() {
   if (loaded || typeof window === 'undefined') return;
   loaded = true;
   try {
-    state = parseCart(storage()?.getItem(CART_STORAGE_KEY));
+    lastRaw = storage()?.getItem(CART_STORAGE_KEY);
+    state = parseCart(lastRaw);
   } catch {
     state = emptyCart();
+  }
+}
+
+// Review D-01: before applying an update, pick up a newer cart written by another tab (a storage event can be missed
+// by a page restored from the back-forward cache), so the update never overwrites it with stale data.
+function refresh() {
+  try {
+    const raw = storage()?.getItem(CART_STORAGE_KEY);
+    if (raw !== lastRaw) {
+      lastRaw = raw;
+      state = parseCart(raw);
+    }
+  } catch {
+    // Unreadable storage: keep the in-memory cart.
   }
 }
 
@@ -38,6 +55,7 @@ function emit() {
 function onStorage(e: StorageEvent) {
   // Another tab changed the cart (E8); a cleared storage (key null) empties it too.
   if (e.key !== CART_STORAGE_KEY && e.key !== null) return;
+  lastRaw = e.newValue;
   state = parseCart(e.newValue);
   emit();
 }
@@ -66,11 +84,14 @@ export function readCart(): CartState {
 // Applies a pure update from cart-core; identical state means nothing to write or announce.
 export function updateCart(fn: (s: CartState) => CartState): CartState {
   load();
+  refresh();
   const next = fn(state);
   if (next === state) return state;
   state = next;
   try {
-    storage()?.setItem(CART_STORAGE_KEY, serializeCart(next));
+    const raw = serializeCart(next);
+    storage()?.setItem(CART_STORAGE_KEY, raw);
+    lastRaw = raw;
   } catch {
     // Quota or blocked storage: keep the in-memory cart for this page view.
   }

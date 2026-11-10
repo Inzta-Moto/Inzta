@@ -274,6 +274,21 @@ check('U-5 reconcile: catalog unavailable (null) keeps snapshot lines orderable'
   assert.strictEqual(C.applyReconcile(s, [v]), s);
 });
 
+check('U-5 shared stock (review REV-07): Kiri + Sepasang above Kiri stock are flagged; unselecting one clears it', () => {
+  const cat = toCartCatalog([{ ...PRODUCTS[2], variants: PRODUCTS[2].variants.map(x => (x.variationId === 'v-kiri' ? { ...x, stock: 3 } : { ...x, stock: 5 })) }]);
+  let s = add(C.emptyCart(), { ...pair(), quantity: 2, stock: 3 }).state;
+  s = add(s, { ...pair(), pair: null, variationId: 'v-kiri', optionLabel: 'Kiri', quantity: 3, stock: 3 }).state;
+  let views = C.reconcileCart(s, cat);
+  assert.ok(views.every(v => v.status === 'ok' && v.sharedOver === 3), JSON.stringify(views.map(v => [v.key, v.sharedOver])));
+  assert.strictEqual(C.hasSharedConflict(views), true);
+  s = C.setLineQuantity(s, C.lineKey({ productSlug: 'side-bag-contoh', variationId: 'v-kiri', pair: null }), 1, 3);
+  assert.strictEqual(C.hasSharedConflict(C.reconcileCart(s, cat)), false, '2 pairs + 1 Kiri = 3 Kiri');
+  s = C.setLineQuantity(s, C.lineKey({ productSlug: 'side-bag-contoh', variationId: 'v-kiri', pair: null }), 3, 3);
+  s = C.setSelected(s, [C.lineKey(pair())], false);
+  assert.strictEqual(C.hasSharedConflict(C.reconcileCart(s, cat)), false, 'an unselected line does not count');
+  assert.strictEqual(C.hasSharedConflict(C.reconcileCart(s, null)), false, 'unknown catalog: no flag');
+});
+
 check('U-6 totals and badge: only selected orderable lines count; badge = pieces, "99+" above 99', () => {
   let s = add(add(add(C.emptyCart(), simple({ quantity: 2 })).state, variant()).state, pair({ quantity: 2 })).state;
   s = C.setSelected(s, [C.lineKey(variant())], false);

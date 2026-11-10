@@ -462,19 +462,20 @@ function mockFetch(table) {
   await check('S3.9 mobile bar: steps aside while a data-mbar-avoid control is in its bottom zone (bug Angkasa, 2026-11-04)', () => {
     const M = require(path.join(ROOT, 'components/v2/product/mbar.ts'));
     const vh = 760;
-    assert.strictEqual(M.MBAR_ZONE_PX, 96);
+    // F-030: two-row bar (product row, then Keranjang + order buttons), so the zone grew from 96 to 140 px.
+    assert.strictEqual(M.MBAR_ZONE_PX, 140);
     assert.strictEqual(M.barWouldCover([{ top: 690, bottom: 738 }], vh), true, '"Lihat selengkapnya" under the bar');
-    assert.strictEqual(M.barWouldCover([{ top: 640, bottom: 664 }], vh), false, 'just above the zone');
+    assert.strictEqual(M.barWouldCover([{ top: 580, bottom: 604 }], vh), false, 'just above the zone');
     assert.strictEqual(M.barWouldCover([{ top: 760, bottom: 808 }], vh), false, 'below the viewport');
     assert.strictEqual(M.barWouldCover([{ top: 600, bottom: 680 }], vh), true, 'straddling the zone edge');
     assert.strictEqual(M.barWouldCover([], vh), false);
     const css = fs.readFileSync(path.join(ROOT, 'app/(v2)/v2-product.css'), 'utf8');
-    assert.match(css, /\.iz-page--mbar \{ padding-bottom: 96px; \}/);
-    assert.match(css, /html\.iz-v2\.iz-mbar-on \{ scroll-padding-bottom: 96px; \}/);
+    assert.match(css, /\.iz-page--mbar \{ padding-bottom: calc\(140px \+ env\(safe-area-inset-bottom, 0px\)\); \}/);
+    assert.match(css, /html\.iz-v2\.iz-mbar-on \{ scroll-padding-bottom: calc\(140px \+ env\(safe-area-inset-bottom, 0px\)\); \}/);
     const bar = fs.readFileSync(path.join(ROOT, 'components/v2/product/MobileOrderBar.tsx'), 'utf8');
     assert.ok(bar.includes('[data-mbar-avoid]') && bar.includes('mainOut && !avoid'), 'bar hides for avoided controls');
     const pdp = fs.readFileSync(path.join(ROOT, 'components/v2/product/ProductPdp.tsx'), 'utf8');
-    assert.ok(pdp.includes("label={button === 'ready' ? 'Pesan' : buttonText}"), 'bar button keeps the total out, so the name has room at 320 px');
+    assert.ok(pdp.includes("label={button === 'ready' ? 'Pesan' : button === 'incomplete' ? (side ? 'Pilih sisi dulu' : 'Pilih variasi dulu') : buttonText}"), 'bar button keeps the total out and a short incomplete label (F-030)');
     assert.match(css, /\.iz-mbar__item \{ flex: 1 1 auto; min-width: 40%; \}/);
   });
   await check('S3.3.9: generic picker = one fieldset per attribute, native radios, unavailable values disabled, no SKU line', () => {

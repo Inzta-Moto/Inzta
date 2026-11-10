@@ -26,9 +26,12 @@ export default async function KeranjangPage() {
     console.error('[keranjang] products read failed:', e);
     products = null;
   }
+  // Review REV-10: an empty list means the read gave nothing (no Admin credentials outside production); a running
+  // shop always has active products, so it is treated as unknown instead of marking every line unavailable.
+  const catalog = products && products.length > 0 ? toCartCatalog(products) : null;
   return (
     <V2Layout current="keranjang" products={products ?? []}>
-      <CartPage catalog={products ? toCartCatalog(products) : null} waHref={`https://wa.me/${WA_NUMBER}`} />
+      <CartPage catalog={catalog} waHref={`https://wa.me/${WA_NUMBER}`} />
     </V2Layout>
   );
 }

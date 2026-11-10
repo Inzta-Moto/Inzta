@@ -9,7 +9,9 @@ import Toast, { type ToastMessage } from '@/components/v2/cart/Toast';
 import { useCartVoucher } from '@/components/v2/cart/useCartVoucher';
 import {
   applyReconcile,
+  badgeCount,
   cartTotals,
+  hasSharedConflict,
   checkoutLines,
   isOrderable,
   reconcileCart,
@@ -19,7 +21,7 @@ import {
   setSelected,
 } from '@/lib/cart/cart-core';
 import { checkoutCart } from '@/lib/cart/checkout';
-import { updateCart, useCart, useHydrated } from '@/lib/cart/store';
+import { readCart, updateCart, useCart, useHydrated } from '@/lib/cart/store';
 import type { CartCatalogEntry, CartLineView } from '@/lib/cart/types';
 import { CART_MAX_QTY } from '@/lib/cart/types';
 import { cldWebp } from '@/lib/v2/image';
@@ -49,16 +51,48 @@ export default function CartPage({ catalog, waHref }: { catalog: CartCatalogEntr
   const [error, setError] = useState<string | null>(null);
   const busy = useRef(false);
   const viewed = useRef(false);
+  const reconciledFor = useRef<CartCatalogEntry[] | null | undefined>(undefined);
+  const errorRef = useRef<HTMLParagraphElement>(null);
+  const conflict = hasSharedConflict(views);
 
   // E13/E14: notes are captured from the first comparison, then the new prices and quantities are saved, so the note
-  // shows once for this visit and not on the next one.
+  // shows once for this visit and not on the next one. Once per catalog, not on every cart change: two tabs opened
+  // before and after a price change would otherwise keep writing their own price over each other (review REV-01).
   useEffect(() => {
-    if (!hydrated) return;
+    if (!hydrated || reconciledFor.current === catalog) return;
+    reconciledFor.current = catalog;
     const fresh: Notes = {};
-    for (const v of views) if (v.priceWas !== null || v.clamped) fresh[v.key] = { priceWas: v.priceWas, clamped: v.clamped };
+    for (const v of reconcileCart(readCart(), catalog)) if (v.priceWas !== null || v.clamped) fresh[v.key] = { priceWas: v.priceWas, clamped: v.clamped };
     if (Object.keys(fresh).length) setNotes(n => ({ ...n, ...fresh }));
     updateCart(s => applyReconcile(s, reconcileCart(s, catalog)));
-  }, [hydrated, views, catalog]);
+  }, [hydrated, catalog]);
+
+  // REV-02: a page restored from the back-forward cache after WhatsApp opened must not keep the button in "Memproses...".
+  useEffect(() => {
+    const onShow = (e: PageTransitionEvent) => {
+      if (!e.persisted) return;
+      busy.current = false;
+      setProcessing(false);
+    };
+    window.addEventListener('pageshow', onShow);
+    return () => window.removeEventListener('pageshow', onShow);
+  }, []);
+
+  // REV-04: on phones the summary with the message is below the list; bring the message into view next to the action.
+  useEffect(() => {
+    if (!error || !window.matchMedia('(max-width: 767px)').matches) return;
+    errorRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    errorRef.current?.focus({ preventScroll: true });
+  }, [error]);
+
+  // D-03 of the review: the fixed phone bar needs room under the footer's last line too, so the padding sits on the page.
+  const hasBar = hydrated && views.length > 0;
+  useEffect(() => {
+    if (!hasBar) return;
+    const page = document.querySelector('.iz-page');
+    page?.classList.add('iz-page--cartbar');
+    return () => page?.classList.remove('iz-page--cartbar');
+  }, [hasBar]);
 
   useEffect(() => {
     if (!hydrated || viewed.current) return;
@@ -91,7 +125,7 @@ export default function CartPage({ catalog, waHref }: { catalog: CartCatalogEntr
   const toggleAll = () => updateCart(s => setSelected(s, allKeys, !allSelected));
 
   const submit = async () => {
-    if (busy.current) return;
+    if (busy.current || conflict) return;
     const lines = checkoutLines(views);
     if (!lines.length) return;
     busy.current = true;
@@ -108,6 +142,10 @@ export default function CartPage({ catalog, waHref }: { catalog: CartCatalogEntr
       // D-11: the ordered lines leave the cart before WhatsApp opens; unselected lines stay.
       updateCart(s => removeLines(s, chosen.map(v => v.key)).state);
       window.location.href = r.href;
+      // Same as useOrder: released after the navigation starts, so a return to this tab (WhatsApp app took the link)
+      // finds a usable button for the lines left in the cart.
+      busy.current = false;
+      setProcessing(false);
       return;
     }
     setError(r.message);
@@ -118,7 +156,7 @@ export default function CartPage({ catalog, waHref }: { catalog: CartCatalogEntr
   // The count on the buttons is the same piece count as "Subtotal (n barang)" (editor review).
   const count = totals.quantity;
   const payLabel = processing ? 'Memproses...' : `Pesan via WhatsApp (${count})`;
-  const canPay = count > 0 && !processing;
+  const canPay = count > 0 && !processing && !conflict;
 
   let body: React.ReactNode;
   if (!hydrated) {
@@ -212,7 +250,12 @@ export default function CartPage({ catalog, waHref }: { catalog: CartCatalogEntr
               </div>
             )}
             {voucher.voucherMessage && <p className={`iz-formmsg iz-formmsg--${voucher.voucherMessage.kind}`}>{voucher.voucherMessage.text}</p>}
-            {error && <p className="iz-formmsg iz-formmsg--error">{error}</p>}
+            {conflict && <p className="iz-formmsg iz-formmsg--error">Jumlah beberapa pilihan melebihi stok. Kurangi jumlah yang ditandai dulu.</p>}
+            {error && (
+              <p ref={errorRef} tabIndex={-1} className="iz-formmsg iz-formmsg--error">
+                {error}
+              </p>
+            )}
           </div>
           <div className="iz-cartsum__total">
             <span>Total</span>
@@ -231,18 +274,19 @@ export default function CartPage({ catalog, waHref }: { catalog: CartCatalogEntr
         </aside>
 
         {/* E11: phone bar with the same total and order button; the full summary stays above it. */}
+        {/* "Pilih semua" stays at the top of the list: with a checkbox here the total had about 36 px at 320 px. */}
         <div className="iz-cartbar iz-only-mob">
-          {orderable.length > 0 && (
-            <label className="iz-cbox iz-cbox--compact">
-              <input type="checkbox" aria-label="Pilih semua barang" checked={allSelected} ref={el => { if (el) el.indeterminate = someSelected && !allSelected; }} onChange={toggleAll} />
-              <span>Semua</span>
-            </label>
-          )}
           <div className="iz-cartbar__total">
             <span>Total</span>
             <b>{formatRupiah(voucher.total)}</b>
           </div>
-          <button type="button" className="iz-btn iz-btn--primary iz-btn--wa" disabled={!canPay} onClick={submit} aria-label={count ? `Pesan ${count} barang via WhatsApp` : undefined}>
+          <button
+            type="button"
+            className="iz-btn iz-btn--primary iz-btn--wa"
+            disabled={!canPay}
+            onClick={submit}
+            aria-label={processing ? 'Memproses pesanan' : count ? `Pesan ${count} barang via WhatsApp` : undefined}
+          >
             <span className="iz-btn__icon">
               <WhatsApp />
             </span>
@@ -253,16 +297,17 @@ export default function CartPage({ catalog, waHref }: { catalog: CartCatalogEntr
     );
   }
 
-  const hasItems = hydrated && views.length > 0;
+  // The title counts pieces like the navbar badge (D-7).
+  const pieces = badgeCount(cart);
   return (
-    <section className={`iz-cart iz-wrap${hasItems ? ' iz-cart--bar' : ''}`}>
+    <section className="iz-cart iz-wrap">
       <nav className="iz-crumb" aria-label="Breadcrumb">
         <Link href="/">Beranda</Link>
         <span aria-hidden="true">/</span>
         <span aria-current="page">Keranjang</span>
       </nav>
       <h1 className="t-h1-product iz-cart__title">
-        Keranjang{hasItems && <span className="iz-cart__count"> ({views.length})</span>}
+        Keranjang{hasBar && <span className="iz-cart__count"> ({pieces})</span>}
       </h1>
       {body}
       <Toast message={toast} onClose={closeToast} duration={8000} />
@@ -299,6 +344,7 @@ function CartRow({ view: v, note, onRemove }: { view: CartLineView; note?: { pri
         </span>
         {reason && <span className="iz-cline__reason">{reason}</span>}
         {ok && note?.clamped && <span className="iz-cline__hint">Jumlah disesuaikan dengan stok</span>}
+        {v.sharedOver !== null && <span className="iz-cline__hint">Jumlah dengan pilihan lain melebihi stok ({v.sharedOver})</span>}
       </div>
       <div className="iz-cline__side">
         {ok && (

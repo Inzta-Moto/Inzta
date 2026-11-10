@@ -88,6 +88,10 @@ export interface CartLineView {
   priceWas: number | null;
   // The stored quantity was above the stock and has been lowered (E14).
   clamped: boolean;
+  // Review REV-07: selected lines sharing one variant (Kiri and Sepasang) ask for more than its stock together; the
+  // value is that variant's stock. Checkout waits until the buyer lowers a quantity, because the server would reject
+  // the whole order.
+  sharedOver: number | null;
 }
 
 // Hand-off contract of the checkout (spec F-030, "Kontrak titik serah"). The cart UI only calls checkoutCart() with

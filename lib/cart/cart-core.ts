@@ -203,7 +203,7 @@ export function setSelected(state: CartState, keys: readonly string[], selected:
  */
 export function reconcileCart(state: CartState, catalog: readonly CartCatalogEntry[] | null): CartLineView[] {
   const bySlug = catalog ? new Map(catalog.map(e => [e.slug, e])) : null;
-  return state.lines.map(line => {
+  const views = state.lines.map((line): CartLineView => {
     const key = lineKey(line);
     const base: CartLineView = {
       key,
@@ -217,6 +217,7 @@ export function reconcileCart(state: CartState, catalog: readonly CartCatalogEnt
       quantity: line.quantity,
       priceWas: null,
       clamped: false,
+      sharedOver: null,
     };
     if (!bySlug) return base;
     const entry = bySlug.get(line.productSlug);
@@ -263,7 +264,34 @@ export function reconcileCart(state: CartState, catalog: readonly CartCatalogEnt
     const max = Math.min(stock, CART_MAX_QTY);
     return line.quantity > max ? { ...view, quantity: max, clamped: true } : view;
   });
+  return bySlug ? markSharedStock(views, bySlug) : views;
 }
+
+const variantsOf = (l: CartLine): string[] => (l.pair ? [l.pair.kiri, l.pair.kanan] : l.variationId ? [l.variationId] : []);
+
+// REV-07: a Kiri line and a Sepasang line of the same product both take Kiri stock. Each passes its own clamp, but the
+// order merges them (cartToOrderItems), so their selected total is checked against the variant's stock here.
+function markSharedStock(views: CartLineView[], bySlug: Map<string, CartCatalogEntry>): CartLineView[] {
+  const used = new Map<string, number>();
+  for (const v of views) {
+    if (!isOrderable(v) || !v.line.selected) continue;
+    for (const id of variantsOf(v.line)) {
+      const k = `${v.line.productSlug}|${id}`;
+      used.set(k, (used.get(k) ?? 0) + v.quantity);
+    }
+  }
+  return views.map(v => {
+    if (!isOrderable(v) || !v.line.selected) return v;
+    const entry = bySlug.get(v.line.productSlug);
+    for (const id of variantsOf(v.line)) {
+      const stock = Math.max(0, Math.floor(entry?.variants.find(x => x.variationId === id)?.stock ?? 0));
+      if ((used.get(`${v.line.productSlug}|${id}`) ?? 0) > stock) return { ...v, sharedOver: stock };
+    }
+    return v;
+  });
+}
+
+export const hasSharedConflict = (views: readonly CartLineView[]) => views.some(v => v.sharedOver !== null);
 
 // Persists what the buyer has now seen: current name, option, photo, and price, and quantities lowered to the stock.
 // Unavailable lines keep their snapshot so they still show what was added.

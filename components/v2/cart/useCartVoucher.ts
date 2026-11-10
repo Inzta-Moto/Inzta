@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Voucher } from '@/types';
 import { checkVoucher, landingAffiliateCode, recalcVoucher, resolveAffiliateVoucher, type FetchLike } from '@/components/v2/product/order-core';
 import type { FormMessage } from '@/components/v2/product/useOrder';
@@ -20,6 +20,10 @@ export function useCartVoucher(subtotal: number, active: boolean) {
   const [checking, setChecking] = useState(false);
   const [voucherMessage, setVoucherMessage] = useState<FormMessage>(null);
   const [buyerUID, setBuyerUID] = useState<string | null>(null);
+  // The applied voucher came from the affiliate auto-apply, not from the field.
+  const fromAffiliate = useRef(false);
+  // Highest subtotal the affiliate voucher was tried at without success: a lower one cannot meet its minimum either.
+  const triedUpTo = useRef(0);
 
   // Same as useOrder: the Auth SDK loads only for a logged-in affiliate.
   useEffect(() => {
@@ -52,12 +56,15 @@ export function useCartVoucher(subtotal: number, active: boolean) {
     setVoucher(null);
     setVoucherMessage(null);
     setDiscount(0);
+    fromAffiliate.current = false;
   }, []);
 
   useEffect(() => {
     // Nothing selected: no voucher request (the subtotal 0 would fail every minimum purchase).
     if (!active || subtotal <= 0) return;
-    if (!voucher && !voucherMessage && !voucherInput) {
+    // A released affiliate voucher leaves its message but may be tried again (review REV-03).
+    const released = voucherMessage?.kind === 'info';
+    if (!voucher && !voucherInput && (!voucherMessage || released) && subtotal > triedUpTo.current) {
       let storage: Storage | null = null;
       try {
         storage = window.localStorage;
@@ -71,7 +78,13 @@ export function useCartVoucher(subtotal: number, active: boolean) {
       resolveAffiliateVoucher(affiliateId, subtotal, browserFetch).then(r => {
         if (cancelled) return;
         setChecking(false);
-        if (!r) return;
+        if (!r) {
+          triedUpTo.current = subtotal;
+          return;
+        }
+        fromAffiliate.current = true;
+        triedUpTo.current = 0;
+        setVoucherMessage(null);
         setVoucherInput(r.voucher.code);
         setVoucher(r.voucher);
         setDiscount(r.discount);
@@ -84,8 +97,12 @@ export function useCartVoucher(subtotal: number, active: boolean) {
     if (voucher) {
       const r = recalcVoucher(voucher, subtotal);
       if (r.released) {
+        const auto = fromAffiliate.current;
         removeVoucher();
-        setVoucherMessage({ kind: 'error', text: r.message });
+        // An auto-applied affiliate voucher is shown as information and returns at the minimum; a typed one stays
+        // released with the buy box's error, as before.
+        if (auto) triedUpTo.current = subtotal;
+        setVoucherMessage({ kind: auto ? 'info' : 'error', text: r.message });
       } else {
         setDiscount(r.discount);
       }
