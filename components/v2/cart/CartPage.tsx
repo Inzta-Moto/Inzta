@@ -115,7 +115,8 @@ export default function CartPage({ catalog, waHref }: { catalog: CartCatalogEntr
     setProcessing(false);
   };
 
-  const count = totals.lines;
+  // The count on the buttons is the same piece count as "Subtotal (n barang)" (editor review).
+  const count = totals.quantity;
   const payLabel = processing ? 'Memproses...' : `Pesan via WhatsApp (${count})`;
   const canPay = count > 0 && !processing;
 
@@ -135,7 +136,7 @@ export default function CartPage({ catalog, waHref }: { catalog: CartCatalogEntr
           <Cart width={32} height={32} />
         </span>
         <h2 className="t-h2-shop">Keranjang masih kosong</h2>
-        <p>Tas yang Anda tambahkan dari halaman produk akan muncul di sini.</p>
+        <p>Barang yang ditambahkan dari halaman produk akan muncul di sini.</p>
         <div className="iz-cartempty__actions">
           <Link className="iz-btn iz-btn--primary" href="/produk">
             Lihat produk <ArrowRight width={18} height={18} />
@@ -172,7 +173,7 @@ export default function CartPage({ catalog, waHref }: { catalog: CartCatalogEntr
             <section className="iz-cartlist iz-cartlist--off" aria-labelledby="iz-cart-off">
               <div className="iz-cartlist__head">
                 <h2 id="iz-cart-off" className="iz-cartlist__title">Tidak bisa dipesan ({blocked.length})</h2>
-                <button type="button" className="iz-cartlist__clear" onClick={() => remove(blocked.map(v => v.key), `${blocked.length} barang dihapus dari keranjang.`)}>
+                <button type="button" className="iz-cartlist__clear" aria-label="Hapus semua barang yang tidak bisa dipesan" onClick={() => remove(blocked.map(v => v.key), `${blocked.length} jenis barang dihapus dari keranjang.`)}>
                   Hapus semua
                 </button>
               </div>
@@ -183,7 +184,7 @@ export default function CartPage({ catalog, waHref }: { catalog: CartCatalogEntr
               </ul>
             </section>
           )}
-          <p className="iz-cart__device">Isi keranjang hanya tersimpan di browser ini.</p>
+          <p className="iz-cart__device">Isi keranjang tersimpan di browser ini saja, tidak ikut ke HP atau laptop lain.</p>
         </div>
 
         <aside className="iz-cartsum" aria-label="Ringkasan pesanan">
@@ -233,7 +234,7 @@ export default function CartPage({ catalog, waHref }: { catalog: CartCatalogEntr
         <div className="iz-cartbar iz-only-mob">
           {orderable.length > 0 && (
             <label className="iz-cbox iz-cbox--compact">
-              <input type="checkbox" checked={allSelected} ref={el => { if (el) el.indeterminate = someSelected && !allSelected; }} onChange={toggleAll} />
+              <input type="checkbox" aria-label="Pilih semua barang" checked={allSelected} ref={el => { if (el) el.indeterminate = someSelected && !allSelected; }} onChange={toggleAll} />
               <span>Semua</span>
             </label>
           )}
@@ -274,7 +275,7 @@ function CartRow({ view: v, note, onRemove }: { view: CartLineView; note?: { pri
   const max = Math.min(v.stock ?? CART_MAX_QTY, CART_MAX_QTY);
   const qtyId = `iz-qty-${v.key.replace(/[^a-z0-9]/gi, '-')}`;
   const setQty = (q: number) => updateCart(s => setLineQuantity(s, v.key, q, max));
-  const reason = v.status === 'soldout' ? 'Stok habis' : v.status === 'unavailable' ? 'Tidak tersedia lagi' : null;
+  const reason = v.status === 'soldout' ? 'Stok habis' : v.status === 'unavailable' ? 'Sedang tidak tersedia' : null;
   return (
     <li className={`iz-cline${ok ? '' : ' iz-cline--off'}`}>
       {ok ? (

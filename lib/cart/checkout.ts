@@ -12,7 +12,7 @@ import type { CartCheckoutRequest, CartCheckoutResult } from '@/lib/cart/types';
  * voucher, affiliateId, UTM) and buildWaLink, which already writes one line per item.
  */
 export async function checkoutCart(req: CartCheckoutRequest, fetchFn: FetchLike): Promise<CartCheckoutResult> {
-  if (!req.lines.length) return { ok: false, message: 'Pilih barang yang mau dipesan dulu.' };
+  if (!req.lines.length) return { ok: false, message: 'Pilih barang yang ingin dipesan dulu.' };
   const body = buildOrderBody(cartToOrderItems(req.lines), req.voucher, req.buyerUID, req.utm);
   return submitOrder(body, fetchFn, pairLines(req.lines));
 }

@@ -12,7 +12,7 @@ export const revalidate = 3600;
 // The cart lives in the visitor's browser, so the page has nothing to index; links on it are still followed.
 export const metadata: Metadata = {
   title: 'Keranjang',
-  description: 'Barang yang Anda pilih untuk dipesan lewat WhatsApp.',
+  description: 'Daftar barang pilihan untuk dipesan via WhatsApp.',
   robots: { index: false, follow: true },
 };
 
