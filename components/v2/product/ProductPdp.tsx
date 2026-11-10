@@ -206,7 +206,7 @@ export default function ProductPdp({ product, images, positionLabel, badge, fit,
     }
     setAdded(null);
     if (o.kind === 'atStock') setToast({ id: Date.now(), text: `Jumlah di keranjang sudah sama dengan stok (${o.stock}).` });
-    else if (o.kind === 'full') setToast({ id: Date.now(), text: `Keranjang penuh (maksimal ${o.max} jenis barang). Hapus barang lain dulu.` });
+    else if (o.kind === 'full') setToast({ id: Date.now(), text: `Keranjang penuh (maksimal ${o.max} produk). Hapus produk lain dulu.` });
   }, [cartState, cartInput, focusFirstOption, side]);
 
   const onSelectAttr = (attribute: string, value: string) => {

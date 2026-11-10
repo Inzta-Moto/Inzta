@@ -289,14 +289,14 @@ check('U-5 shared stock (review REV-07): Kiri + Sepasang above Kiri stock are fl
   assert.strictEqual(C.hasSharedConflict(C.reconcileCart(s, null)), false, 'unknown catalog: no flag');
 });
 
-check('U-6 totals and badge: only selected orderable lines count; badge = pieces, "99+" above 99', () => {
+check('U-6 totals and badge: only selected orderable lines count; badge = products (lines), "99+" above 99', () => {
   let s = add(add(add(C.emptyCart(), simple({ quantity: 2 })).state, variant()).state, pair({ quantity: 2 })).state;
   s = C.setSelected(s, [C.lineKey(variant())], false);
   const views = C.reconcileCart(s, CATALOG);
   assert.deepStrictEqual(C.cartTotals(views), { lines: 2, quantity: 4, subtotal: 2 * 520000 + 2 * 300000 });
   const sold = C.reconcileCart(s, toCartCatalog([{ ...PRODUCTS[0], stock: 0 }, PRODUCTS[1], PRODUCTS[2]]));
   assert.deepStrictEqual(C.cartTotals(sold), { lines: 1, quantity: 2, subtotal: 600000 });
-  assert.strictEqual(C.badgeCount(s), 5);
+  assert.strictEqual(C.badgeCount(s), 3);
   assert.strictEqual(C.badgeText(5), '5');
   assert.strictEqual(C.badgeText(100), '99+');
   assert.strictEqual(C.badgeCount(C.emptyCart()), 0);

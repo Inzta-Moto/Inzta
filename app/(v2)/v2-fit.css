@@ -230,7 +230,8 @@
   html .iz-page .iz-cartsum__total b { font-size: max(21.8px, calc(26 * var(--u))); }
   html .iz-page .iz-cartsum__ship { font-size: max(12.6px, calc(15 * var(--u))); }
   html .iz-page .iz-cartempty p { font-size: max(14.3px, calc(17 * var(--u))); }
-  html .iz-page .iz-cartbar__total span { font-size: max(11.8px, calc(14 * var(--u))); }
-  html .iz-page .iz-cartbar__total b { font-size: max(14.3px, calc(17 * var(--u))); }
+  html .iz-page .iz-cartbar .iz-cbox { font-size: max(11.8px, calc(14 * var(--u))); }
+  html .iz-page .iz-cartbar__total span { font-size: max(10.9px, calc(13 * var(--u))); }
+  html .iz-page .iz-cartbar__total b { font-size: max(13.4px, calc(16 * var(--u))); }
   html .iz-page .iz-cartbar .iz-btn { font-size: max(12.6px, calc(15 * var(--u))); }
 }

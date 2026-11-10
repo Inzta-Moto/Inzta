@@ -323,9 +323,10 @@ export function cartTotals(views: readonly CartLineView[]): { lines: number; qua
   return { lines, quantity, subtotal };
 }
 
-// D-7: the navbar badge counts pieces, so every add changes the number the buyer sees (research F-030, NN/g).
+// D-7 (Sehan, 2026-11-10): the navbar badge counts products (lines), like Shopee, so it matches the page title,
+// "Pilih semua (n)", and "Pesan (n)". Adding more of a product already in the cart does not change it.
 export function badgeCount(state: CartState): number {
-  return state.lines.reduce((n, l) => n + l.quantity, 0);
+  return state.lines.length;
 }
 
 export function badgeText(count: number): string {

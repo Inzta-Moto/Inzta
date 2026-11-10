@@ -53,6 +53,7 @@ export default function CartPage({ catalog, waHref }: { catalog: CartCatalogEntr
   const viewed = useRef(false);
   const reconciledFor = useRef<CartCatalogEntry[] | null | undefined>(undefined);
   const errorRef = useRef<HTMLParagraphElement>(null);
+  const barRef = useRef<HTMLDivElement>(null);
   const conflict = hasSharedConflict(views);
 
   // E13/E14: notes are captured from the first comparison, then the new prices and quantities are saved, so the note
@@ -89,9 +90,17 @@ export default function CartPage({ catalog, waHref }: { catalog: CartCatalogEntr
   const hasBar = hydrated && views.length > 0;
   useEffect(() => {
     if (!hasBar) return;
-    const page = document.querySelector('.iz-page');
+    const page = document.querySelector<HTMLElement>('.iz-page');
     page?.classList.add('iz-page--cartbar');
-    return () => page?.classList.remove('iz-page--cartbar');
+    // The bar is one or two lines tall (a long total wraps the button); the page padding follows its real height.
+    const bar = barRef.current;
+    const ro = bar && page && typeof ResizeObserver !== 'undefined' ? new ResizeObserver(() => page.style.setProperty('--iz-cartbar-h', `${bar.offsetHeight}px`)) : null;
+    if (ro && bar) ro.observe(bar);
+    return () => {
+      ro?.disconnect();
+      page?.classList.remove('iz-page--cartbar');
+      page?.style.removeProperty('--iz-cartbar-h');
+    };
   }, [hasBar]);
 
   useEffect(() => {
@@ -153,8 +162,8 @@ export default function CartPage({ catalog, waHref }: { catalog: CartCatalogEntr
     setProcessing(false);
   };
 
-  // The count on the buttons is the same piece count as "Subtotal (n barang)" (editor review).
-  const count = totals.quantity;
+  // Every count on this page is products (lines), like the navbar badge (D-7, Sehan 2026-11-10).
+  const count = totals.lines;
   const payLabel = processing ? 'Memproses...' : `Pesan via WhatsApp (${count})`;
   const canPay = count > 0 && !processing && !conflict;
 
@@ -202,7 +211,7 @@ export default function CartPage({ catalog, waHref }: { catalog: CartCatalogEntr
               </div>
               <ul className="iz-cartlist__rows">
                 {orderable.map(v => (
-                  <CartRow key={v.key} view={v} note={notes[v.key]} onRemove={() => remove([v.key], 'Barang dihapus dari keranjang.')} />
+                  <CartRow key={v.key} view={v} note={notes[v.key]} onRemove={() => remove([v.key], 'Produk dihapus dari keranjang.')} />
                 ))}
               </ul>
             </section>
@@ -211,13 +220,13 @@ export default function CartPage({ catalog, waHref }: { catalog: CartCatalogEntr
             <section className="iz-cartlist iz-cartlist--off" aria-labelledby="iz-cart-off">
               <div className="iz-cartlist__head">
                 <h2 id="iz-cart-off" className="iz-cartlist__title">Tidak bisa dipesan ({blocked.length})</h2>
-                <button type="button" className="iz-cartlist__clear" aria-label="Hapus semua barang yang tidak bisa dipesan" onClick={() => remove(blocked.map(v => v.key), `${blocked.length} jenis barang dihapus dari keranjang.`)}>
+                <button type="button" className="iz-cartlist__clear" aria-label="Hapus semua produk yang tidak bisa dipesan" onClick={() => remove(blocked.map(v => v.key), `${blocked.length} produk dihapus dari keranjang.`)}>
                   Hapus semua
                 </button>
               </div>
               <ul className="iz-cartlist__rows">
                 {blocked.map(v => (
-                  <CartRow key={v.key} view={v} onRemove={() => remove([v.key], 'Barang dihapus dari keranjang.')} />
+                  <CartRow key={v.key} view={v} onRemove={() => remove([v.key], 'Produk dihapus dari keranjang.')} />
                 ))}
               </ul>
             </section>
@@ -229,7 +238,7 @@ export default function CartPage({ catalog, waHref }: { catalog: CartCatalogEntr
           <h2 className="t-h3">Ringkasan</h2>
           <dl className="iz-cartsum__rows">
             <div>
-              <dt>Subtotal ({totals.quantity} barang)</dt>
+              <dt>Subtotal ({totals.lines} produk)</dt>
               <dd>{formatRupiah(totals.subtotal)}</dd>
             </div>
             {voucher.voucher && voucher.discount > 0 && (
@@ -274,8 +283,15 @@ export default function CartPage({ catalog, waHref }: { catalog: CartCatalogEntr
         </aside>
 
         {/* E11: phone bar with the same total and order button; the full summary stays above it. */}
-        {/* "Pilih semua" stays at the top of the list: with a checkbox here the total had about 36 px at 320 px. */}
-        <div className="iz-cartbar iz-only-mob">
+        {/* E11: "Semua", total, and order button. The total keeps its full width; when it does not fit, the button moves
+            to a second line (flex-wrap) instead of covering it. */}
+        <div className="iz-cartbar iz-only-mob" ref={barRef}>
+          {orderable.length > 0 && (
+            <label className="iz-cbox">
+              <input type="checkbox" aria-label="Pilih semua produk" checked={allSelected} ref={el => { if (el) el.indeterminate = someSelected && !allSelected; }} onChange={toggleAll} />
+              <span aria-hidden="true">Semua</span>
+            </label>
+          )}
           <div className="iz-cartbar__total">
             <span>Total</span>
             <b>{formatRupiah(voucher.total)}</b>
@@ -285,7 +301,7 @@ export default function CartPage({ catalog, waHref }: { catalog: CartCatalogEntr
             className="iz-btn iz-btn--primary iz-btn--wa"
             disabled={!canPay}
             onClick={submit}
-            aria-label={processing ? 'Memproses pesanan' : count ? `Pesan ${count} barang via WhatsApp` : undefined}
+            aria-label={processing ? 'Memproses pesanan' : count ? `Pesan ${count} produk via WhatsApp` : undefined}
           >
             <span className="iz-btn__icon">
               <WhatsApp />
@@ -297,8 +313,6 @@ export default function CartPage({ catalog, waHref }: { catalog: CartCatalogEntr
     );
   }
 
-  // The title counts pieces like the navbar badge (D-7).
-  const pieces = badgeCount(cart);
   return (
     <section className="iz-cart iz-wrap">
       <nav className="iz-crumb" aria-label="Breadcrumb">
@@ -307,7 +321,7 @@ export default function CartPage({ catalog, waHref }: { catalog: CartCatalogEntr
         <span aria-current="page">Keranjang</span>
       </nav>
       <h1 className="t-h1-product iz-cart__title">
-        Keranjang{hasBar && <span className="iz-cart__count"> ({pieces})</span>}
+        Keranjang{hasBar && <span className="iz-cart__count"> ({badgeCount(cart)})</span>}
       </h1>
       {body}
       <Toast message={toast} onClose={closeToast} duration={8000} />
