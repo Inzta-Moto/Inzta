@@ -435,11 +435,11 @@ check('U-7 errors: messages name the item when they can and say what to do; the 
   const twoVariants = cartLines(add(add(C.emptyCart(), variant()).state, pair()).state);
 
   assert.deepStrictEqual(await run(one, { status: 400, body: { code: 'INSUFFICIENT_STOCK', message: 'Stok produk "Tail bag (contoh)" tidak mencukupi' } }),
-    { ok: false, message: 'Stok produk "Tail bag (contoh)" tidak mencukupi. Kurangi jumlahnya, lalu pesan lagi.' });
+    { ok: false, message: 'Stok produk "Tail bag (contoh)" tidak mencukupi. Muat ulang halaman untuk melihat stok terbaru, lalu sesuaikan jumlahnya.' });
   assert.strictEqual((await run(withVariant, { status: 400, body: { code: 'INSUFFICIENT_STOCK', message: 'Stok variasi tidak mencukupi' } })).message,
-    'Stok Tank bag (contoh) (Hitam) tidak mencukupi. Kurangi jumlahnya, lalu pesan lagi.');
+    'Stok Tank bag (contoh) (Hitam) tidak mencukupi. Muat ulang halaman untuk melihat stok terbaru, lalu sesuaikan jumlahnya.');
   assert.strictEqual((await run(twoVariants, { status: 400, body: { code: 'INSUFFICIENT_STOCK', message: 'Stok variasi tidak mencukupi' } })).message,
-    'Stok salah satu barang tidak mencukupi. Muat ulang halaman untuk melihat stok dan status terbaru.');
+    'Stok salah satu barang tidak mencukupi. Muat ulang halaman untuk melihat stok terbaru, lalu sesuaikan jumlahnya.');
   assert.strictEqual((await run(withVariant, { status: 400, body: { code: 'VARIANT_INACTIVE', message: 'Variasi ini sudah tidak tersedia' } })).message,
     'Pilihan Tank bag (contoh) (Hitam) sudah tidak tersedia. Muat ulang halaman untuk melihat stok dan status terbaru.');
   assert.strictEqual((await run(twoVariants, { status: 400, body: { code: 'VARIANT_NOT_FOUND', message: 'Variasi tidak ditemukan' } })).message,

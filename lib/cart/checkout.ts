@@ -170,6 +170,7 @@ export function cartWaLink(lines: readonly CartCheckoutLine[], requested: readon
 export const MSG_NETWORK = 'Pesanan belum terkirim. Periksa koneksi internet, lalu coba lagi.';
 export const MSG_SERVER = 'Pesanan belum terkirim karena gangguan di server. Coba lagi sebentar lagi, atau chat admin.';
 const RELOAD = 'Muat ulang halaman untuk melihat stok dan status terbaru.';
+const STOCK_NEXT = 'Muat ulang halaman untuk melihat stok terbaru, lalu sesuaikan jumlahnya.';
 
 const describe = (l: CartCheckoutLine) => (l.optionLabel ? `${l.name} (${l.optionLabel})` : l.name);
 
@@ -196,11 +197,11 @@ export function cartOrderError(status: number, data: ErrorResponse | null, lines
 
   switch (code) {
     case 'INSUFFICIENT_STOCK': {
-      if (namesProduct(text)) return `${sentence(text)} Kurangi jumlahnya, lalu pesan lagi.`;
+      // The server does not say how many are left (0 or fewer than asked), so the reload shows it: lowered, or moved
+      // to "Tidak bisa dipesan" when sold out (E14).
+      if (namesProduct(text)) return `${sentence(text)} ${STOCK_NEXT}`;
       const who = onlyCandidate(lines.filter(hasVariant));
-      return who
-        ? `Stok ${who} tidak mencukupi. Kurangi jumlahnya, lalu pesan lagi.`
-        : `Stok salah satu barang tidak mencukupi. ${RELOAD}`;
+      return who ? `Stok ${who} tidak mencukupi. ${STOCK_NEXT}` : `Stok salah satu barang tidak mencukupi. ${STOCK_NEXT}`;
     }
     case 'PRODUCT_INACTIVE':
       return `${sentence(text || 'Salah satu produk sedang tidak aktif')} Hapus centangnya, lalu pesan lagi.`;
