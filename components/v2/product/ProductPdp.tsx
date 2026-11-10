@@ -19,6 +19,14 @@ import {
   sideSummary,
 } from '@/components/v2/product/side';
 import type { SummaryRow } from '@/components/v2/product/OrderSummary';
+import { SIDE_LABEL } from '@/components/v2/product/side';
+import AddedPanel, { type AddedInfo } from '@/components/v2/cart/AddedPanel';
+import Toast, { type ToastMessage } from '@/components/v2/cart/Toast';
+import { PAIR_LABEL, addToCart, lineKey } from '@/lib/cart/cart-core';
+import { updateCart, useCart } from '@/lib/cart/store';
+import type { CartAddInput } from '@/lib/cart/types';
+import { generateLabel } from '@/lib/product-utils';
+import { trackAddToCart } from '@/lib/tracking';
 
 export interface PdpProps {
   product: Product;
@@ -120,6 +128,87 @@ export default function ProductPdp({ product, images, positionLabel, badge, fit,
     else if (button === 'ready') void order.submit();
   }, [button, focusFirstOption, order]);
 
+  // F-030: the cart line for the current choice (null while the choice is incomplete or not orderable).
+  const cartInput = useMemo<CartAddInput | null>(() => {
+    const photo = images[0] ?? null;
+    if (side) {
+      if (!choice || !sideOption || sideOption.disabled) return null;
+      const pair = choice === 'sepasang' ? { kiri: side.variants.kiri.variationId, kanan: side.variants.kanan.variationId } : null;
+      return {
+        productSlug: product.slug,
+        variationId: pair ? null : side.variants[choice as 'kiri' | 'kanan'].variationId,
+        pair,
+        quantity: order.quantity,
+        name: product.name,
+        optionLabel: pair ? PAIR_LABEL : SIDE_LABEL[choice as 'kiri' | 'kanan'],
+        image: pair ? photo : firstPhotoOf(side.variants[choice as 'kiri' | 'kanan']) ?? photo,
+        unitPrice: sideOption.price,
+        stock: sideMaxQty,
+      };
+    }
+    const g = generic!;
+    if (!g.canOrder) return null;
+    return {
+      productSlug: product.slug,
+      variationId: g.selected?.variationId ?? null,
+      pair: null,
+      quantity: order.quantity,
+      name: product.name,
+      optionLabel: g.selected ? generateLabel(g.selected.attributes ?? {}) || null : null,
+      image: firstPhotoOf(g.selected ?? undefined) ?? photo,
+      unitPrice: g.unitPrice,
+      stock: g.stock,
+    };
+  }, [side, choice, sideOption, sideMaxQty, generic, product.slug, product.name, images, order.quantity]);
+
+  const cart = useCart();
+  const inCart = cartInput ? cart.lines.find(l => lineKey(l) === lineKey(cartInput))?.quantity ?? 0 : 0;
+  const [added, setAdded] = useState<AddedInfo | null>(null);
+  const [toast, setToast] = useState<ToastMessage | null>(null);
+  const closeAdded = useCallback(() => setAdded(null), []);
+  const closeToast = useCallback(() => setToast(null), []);
+
+  // E3: incomplete keeps the control focusable and leads to the options; sold out or missing disables it.
+  const cartState: 'ready' | 'incomplete' | 'disabled' =
+    button === 'incomplete' ? 'incomplete' : cartInput && button !== 'processing' ? 'ready' : 'disabled';
+
+  const addCurrentToCart = useCallback(() => {
+    if (cartState === 'incomplete') {
+      focusFirstOption();
+      setAdded(null);
+      setToast({ id: Date.now(), text: side ? 'Pilih sisi dulu.' : 'Pilih variasi dulu.' });
+      return;
+    }
+    if (cartState !== 'ready' || !cartInput) return;
+    let before = 0;
+    let outcome: ReturnType<typeof addToCart>['outcome'] = { kind: 'invalid' };
+    updateCart(s => {
+      before = s.lines.find(l => lineKey(l) === lineKey(cartInput))?.quantity ?? 0;
+      const r = addToCart(s, cartInput, Date.now());
+      outcome = r.outcome;
+      return r.state;
+    });
+    const o = outcome as ReturnType<typeof addToCart>['outcome'];
+    if (o.kind === 'added' || o.kind === 'clamped') {
+      const delta = o.quantity - before;
+      trackAddToCart({ slug: cartInput.productSlug, name: cartInput.name, variant: cartInput.optionLabel, price: cartInput.unitPrice, quantity: delta });
+      setToast(null);
+      setAdded({
+        id: Date.now(),
+        name: cartInput.name,
+        optionLabel: cartInput.optionLabel,
+        image: cartInput.image,
+        quantity: delta,
+        unitPrice: cartInput.unitPrice,
+        note: o.kind === 'clamped' ? `Jumlah di keranjang disesuaikan dengan stok (${o.stock}).` : before > 0 ? `Sekarang ${o.quantity} di keranjang.` : null,
+      });
+      return;
+    }
+    setAdded(null);
+    if (o.kind === 'atStock') setToast({ id: Date.now(), text: `Jumlah di keranjang sudah sama dengan stok (${o.stock}).` });
+    else if (o.kind === 'full') setToast({ id: Date.now(), text: `Keranjang penuh (maksimal ${o.max} produk). Hapus produk lain dulu.` });
+  }, [cartState, cartInput, focusFirstOption, side]);
+
   const onSelectAttr = (attribute: string, value: string) => {
     const next = { ...selection, [attribute]: value };
     setSelection(next);
@@ -192,6 +281,7 @@ export default function ProductPdp({ product, images, positionLabel, badge, fit,
         optionsRef={optionsRef}
         waRef={waRef}
         onActivate={activate}
+        cart={{ state: cartState, inCart, onAdd: addCurrentToCart }}
       />
       {order.mounted && (
         <MobileOrderBar
@@ -201,12 +291,16 @@ export default function ProductPdp({ product, images, positionLabel, badge, fit,
           // The total sits once, beside the name; "Pesan · Rp…" in the button left the name a single letter at 320–390 px
           // (Sehan, 2026-11-04).
           price={button === 'ready' ? formatRupiah(order.total) : view.priceRow.kind === 'single' ? formatRupiah(view.priceRow.price) : `${formatRupiah(view.priceRow.low)} – ${formatRupiah(view.priceRow.high)}`}
-          label={button === 'ready' ? 'Pesan' : buttonText}
+          // F-030: the short incomplete label fits the half-width bar button on two lines at 320 px.
+          label={button === 'ready' ? 'Pesan' : button === 'incomplete' ? (side ? 'Pilih sisi dulu' : 'Pilih variasi dulu') : buttonText}
           disabled={button === 'processing' || button === 'soldout' || button === 'missing'}
           ariaDisabled={button === 'incomplete'}
           onActivate={activate}
+          cart={{ disabled: cartState === 'disabled', ariaDisabled: cartState === 'incomplete', onAdd: addCurrentToCart }}
         />
       )}
+      <AddedPanel info={added} onClose={closeAdded} />
+      <Toast message={toast} onClose={closeToast} duration={4000} />
     </section>
   );
 }

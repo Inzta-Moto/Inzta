@@ -1,8 +1,11 @@
 import type { OrderApi } from '@/components/v2/product/useOrder';
 
+// F-030: the cart page passes its own voucher state with the same fields, so the field takes only what it reads.
+export type VoucherFieldApi = Pick<OrderApi, 'voucher' | 'voucherInput' | 'changeVoucherInput' | 'applyVoucher' | 'removeVoucher' | 'checking'>;
+
 // Voucher field `.iz-voucher` (F-016 S3.3.1): uppercases, applies on "Pakai" or Enter, "Hapus" once applied. Its
 // messages are rendered by the buy box live region. Hidden without JavaScript (S3.3.8).
-export default function VoucherField({ order, id }: { order: OrderApi; id: string }) {
+export default function VoucherField({ order, id }: { order: VoucherFieldApi; id: string }) {
   const applied = !!order.voucher;
   return (
     <label className="iz-voucher iz-js-only" htmlFor={id}>

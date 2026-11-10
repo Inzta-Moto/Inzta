@@ -84,7 +84,7 @@ export function trackViewItem(p: { slug: string; name: string; price: number }):
  */
 export function trackLead(
   lead: { orderId: string; value: number; slugs: string[] },
-  leadSource: 'product' | 'product_list',
+  leadSource: 'product' | 'product_list' | 'cart',
 ): void {
   if (!allowedHere()) return;
   // eventID = Order ID, untuk dedup dengan Conversions API di tahap 2.
@@ -95,4 +95,42 @@ export function trackLead(
     { eventID: lead.orderId },
   );
   gtagSafe('event', 'generate_lead', { currency: 'IDR', value: lead.value, lead_source: leadSource });
+}
+
+// F-030: GA4 ecommerce events of the cart, same gate and no-op rules as above. `items` use the product slug as
+// item_id and the chosen option as item_variant.
+export interface CartTrackItem {
+  slug: string;
+  name: string;
+  variant: string | null;
+  price: number;
+  quantity: number;
+}
+
+function gaItems(items: readonly CartTrackItem[]) {
+  return items.map(i => ({ item_id: i.slug, item_name: i.name, ...(i.variant ? { item_variant: i.variant } : {}), price: i.price, quantity: i.quantity }));
+}
+
+const valueOf = (items: readonly CartTrackItem[]) => items.reduce((n, i) => n + i.price * i.quantity, 0);
+
+export function trackAddToCart(item: CartTrackItem): void {
+  if (!allowedHere()) return;
+  gtagSafe('event', 'add_to_cart', { currency: 'IDR', value: valueOf([item]), items: gaItems([item]) });
+  fbqSafe('track', 'AddToCart', { content_ids: [item.slug], content_type: 'product', value: valueOf([item]), currency: 'IDR' });
+}
+
+export function trackRemoveFromCart(items: readonly CartTrackItem[]): void {
+  if (!allowedHere() || !items.length) return;
+  gtagSafe('event', 'remove_from_cart', { currency: 'IDR', value: valueOf(items), items: gaItems(items) });
+}
+
+export function trackViewCart(items: readonly CartTrackItem[]): void {
+  if (!allowedHere() || !items.length) return;
+  gtagSafe('event', 'view_cart', { currency: 'IDR', value: valueOf(items), items: gaItems(items) });
+}
+
+export function trackBeginCheckout(items: readonly CartTrackItem[], coupon: string | null): void {
+  if (!allowedHere() || !items.length) return;
+  gtagSafe('event', 'begin_checkout', { currency: 'IDR', value: valueOf(items), ...(coupon ? { coupon } : {}), items: gaItems(items) });
+  fbqSafe('track', 'InitiateCheckout', { content_ids: items.map(i => i.slug), content_type: 'product', value: valueOf(items), num_items: items.length, currency: 'IDR' });
 }
