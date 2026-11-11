@@ -12,7 +12,7 @@ import { ChipGroup, Field, describedBy, focusFirstError, submitJson, useCopy, us
 import { UploadError, uploadWarrantyPhoto } from '@/components/v2/warranty/photo-upload';
 
 // F-031 claim form (requirements 2.2–2.8): client checks with the same rules as the server, photos compressed and
-// uploaded one by one with a signature, submit locked while an upload runs, errors next to the field with focus on the
+// uploaded in parallel, each with its own signature, submit locked while an upload runs, errors next to the field with focus on the
 // first, a text draft in sessionStorage, and the success panel with the ticket and the WhatsApp video button.
 
 const C = WARRANTY_COPY.claim;
