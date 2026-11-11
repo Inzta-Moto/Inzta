@@ -10,12 +10,13 @@ import { MOTOR_CATEGORIES, POSITION_ITEMS, categoryLabel } from '@/lib/v2/home-c
 import { useMotorCategory } from '@/components/v2/MotorCategory';
 import CategoryLink from '@/components/v2/CategoryLink';
 import CartNavButton from '@/components/v2/cart/CartNavButton';
-import { ArrowRight, ChevronDown, Motorcycle, WhatsApp } from '@/components/v2/icons';
+import { ArrowRight, ChevronDown, Motorcycle, Shield, WhatsApp } from '@/components/v2/icons';
 import Bounce from '@/components/v2/motion/Bounce';
 import { motionOn, motionTier } from '@/lib/v2/motion/runtime';
+import { WARRANTY_COPY } from '@/lib/warranty/copy';
 
 type OpenMenu = 'produk' | 'motor' | null;
-export type NavTab = 'produk' | 'motor' | 'artikel' | 'tentang' | 'keranjang';
+export type NavTab = 'produk' | 'motor' | 'artikel' | 'tentang' | 'keranjang' | 'garansi';
 
 function thumb(src: string): string {
   return src.includes('res.cloudinary.com') ? cldWebp(src, 96, 96) : src;
@@ -216,11 +217,19 @@ export default function SiteNav({
         if (!e.currentTarget.contains(e.relatedTarget as Node | null)) focusInside.current = false;
       }}
     >
-      <nav ref={navRef} className={`iz-nav${dark ? ' iz-nav--dark' : ''}`} aria-label="Utama">
-        <Link className="iz-brand" href="/">
-          <img src="/logo-inzta.png" alt="" width={32} height={32} />
-          <span>INZTA</span>
-        </Link>
+      <nav ref={navRef} className={`iz-nav${dark ? ' iz-nav--dark' : ''}${chosen ? ' iz-nav--motor' : ''}`} aria-label="Utama">
+        <div className="iz-nav__start">
+          <Link className="iz-brand" href="/">
+            <img src="/logo-inzta.png" alt="" width={32} height={32} />
+            <span>INZTA</span>
+          </Link>
+          {/* F-031 1.2, D-W2: warranty entry after the logo; replaces the menu link from 1024 px, icon alone on small phones. */}
+          <Link className="iz-navgaransi" href="/garansi" {...page('garansi')}>
+            <Shield width={16} height={16} aria-hidden="true" />
+            <span className="iz-navgaransi__long">{WARRANTY_COPY.entry.navSlot}</span>
+            <span className="iz-navgaransi__short">{WARRANTY_COPY.entry.navSlotShort}</span>
+          </Link>
+        </div>
 
         <div className="iz-nav__links">
           <div className="iz-navdd" data-open={open === 'produk' ? '' : undefined} onBlur={onMenuBlur}>
@@ -288,6 +297,9 @@ export default function SiteNav({
           </Link>
           <Link href="/tentang" {...page('tentang')}>
             <span className="iz-roll"><span>Tentang</span></span>
+          </Link>
+          <Link href="/garansi" {...page('garansi')}>
+            <span className="iz-roll"><span>{WARRANTY_COPY.entry.navItem}</span></span>
           </Link>
           {/* F-029: affiliate entry the owner could not find in the footer; no aria-current because /affiliate pages render AffiliateHeader, not this nav. */}
           <Link href="/affiliate/login">
@@ -381,6 +393,10 @@ export default function SiteNav({
             </Link>
             <Link href="/tentang" onClick={() => setSheetOpen(false)} {...page('tentang')}>
               <span>Tentang</span>
+              <ArrowRight width={18} height={18} />
+            </Link>
+            <Link href="/garansi" onClick={() => setSheetOpen(false)} {...page('garansi')}>
+              <span>{WARRANTY_COPY.entry.navItem}</span>
               <ArrowRight width={18} height={18} />
             </Link>
             <Link href="/affiliate/login" onClick={() => setSheetOpen(false)}>

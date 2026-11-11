@@ -211,3 +211,83 @@ html:not(.js-nav) .iz-navdd:focus-within .iz-navdd__btn svg { transform: rotate(
 @media (max-width: 767px) {
   .iz-footer.iz-dark li a, .iz-footer.iz-dark li { min-height: 44px; }
 }
+
+/* F-031 1.2 (A-152) and D-W2 (Sehan, 2026-11-11, "Tombol + ikon, keranjang tetap"): warranty entry right after the logo.
+   Outlined, never yellow (the yellow "Chat admin" stays the only coloured CTA, F-029 D-1). From 1024 px it replaces the
+   plain "Garansi" link of the menu row, so the entry is not shown twice; 768-1023 px and the phone menu keep the link;
+   small phones get the shield icon alone. A chosen motor widens the motor chip (.iz-nav--motor), so the entry takes its
+   shorter form there. Every width measured 2026-11-11 so no label wraps and the logo keeps its size. */
+.iz-nav__start { display: flex; align-items: center; gap: var(--space-4); min-width: 0; }
+.iz-navgaransi { position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 0 14px; border-radius: var(--radius-pill); border: 1px solid var(--c-garis); font-size: 15px; font-weight: 600; white-space: nowrap; color: inherit; transition: background-color .15s ease, border-color .15s ease; }
+.iz-navgaransi:hover { background: var(--c-pasir-muda); border-color: var(--c-batu-muda); }
+.iz-navgaransi:focus-visible { outline: 3px solid var(--c-focus); outline-offset: 2px; }
+.iz-navgaransi[aria-current="page"] { border-color: var(--c-kuning-tua); }
+.iz-navgaransi svg { flex: none; }
+.iz-nav--dark .iz-navgaransi { border-color: var(--c-line-on-dark); }
+.iz-nav--dark .iz-navgaransi:hover { background: var(--c-arang-naik); border-color: var(--c-pasir); }
+.iz-nav--dark .iz-navgaransi:focus-visible { outline-color: var(--c-kuning); }
+.iz-navgaransi__short { display: none; }
+@media (min-width: 1024px) {
+  .iz-nav__links > a[href="/garansi"] { display: none; }
+}
+@media (max-width: 1439.98px) {
+  .iz-navgaransi__long { display: none; }
+  .iz-navgaransi__short { display: inline; }
+}
+@media (min-width: 1440px) and (max-width: 1599.98px) {
+  .iz-nav--motor .iz-navgaransi__long { display: none; }
+  .iz-nav--motor .iz-navgaransi__short { display: inline; }
+}
+@media (min-width: 768px) and (max-width: 1023.98px) {
+  .iz-navgaransi { display: none; }
+}
+/* 768-1023 px shows five menu links again (no fit scale, F-029) and 1024-1199 px adds the entry, so up to 1199 px the
+   links sit closer and the labels keep the room they had before F-031. */
+@media (min-width: 768px) and (max-width: 1199.98px) {
+  .iz-nav__links { gap: 12px; }
+}
+@media (min-width: 1024px) and (max-width: 1199.98px) {
+  .iz-navgaransi { padding: 0 10px; }
+}
+@media (min-width: 1024px) and (max-width: 1439.98px) {
+  .iz-nav--motor .iz-nav__start { gap: 10px; }
+  .iz-nav--motor .iz-navgaransi { padding: 0 8px; }
+}
+@media (min-width: 1200px) and (max-width: 1439.98px) {
+  .iz-nav--motor .iz-nav__links { gap: 12px; }
+}
+@media (max-width: 767px) {
+  .iz-navgaransi { padding: 0 12px; font-size: 14px; }
+}
+@media (max-width: 459.98px) {
+  .iz-nav { padding-left: 10px; }
+}
+/* Shield icon alone: 40 px like the motor chip and the cart, with a 44 px touch area, the word kept for screen readers.
+   Below 460 px always; with a chosen motor (its chip shows the name) also at 460-559 px and 1024-1199 px. */
+@media (max-width: 459.98px) {
+  .iz-nav__start { gap: 6px; }
+  .iz-navgaransi { width: 40px; height: 40px; min-height: 0; padding: 0; border-radius: 50%; }
+  .iz-navgaransi::after { content: ""; position: absolute; inset: -2px; }
+  .iz-navgaransi svg { width: 18px; height: 18px; }
+  .iz-navgaransi__short { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+}
+@media (min-width: 460px) and (max-width: 559.98px), (min-width: 1024px) and (max-width: 1199.98px) {
+  .iz-nav--motor .iz-nav__start { gap: 6px; }
+  .iz-nav--motor .iz-navgaransi { width: 40px; height: 40px; min-height: 0; padding: 0; border-radius: 50%; }
+  .iz-nav--motor .iz-navgaransi::after { content: ""; position: absolute; inset: -2px; }
+  .iz-nav--motor .iz-navgaransi svg { width: 18px; height: 18px; }
+  .iz-nav--motor .iz-navgaransi__short { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+}
+@media (max-width: 359.98px) {
+  .iz-navgaransi { display: none; }
+}
+/* From 400 px a chosen motor chip shows its name (F-030, v2-cart.css), which leaves no room for the icon below 460 px;
+   the phone menu keeps the Garansi link. */
+@media (min-width: 400px) and (max-width: 459.98px) {
+  .iz-nav--motor .iz-navgaransi { display: none; }
+}
+
+/* F-031 1.4: the warranty pill in the buy box and the "Cara pesan" panel is a link to /garansi. */
+.iz-infopill--link { color: var(--c-tinta); text-decoration: underline; text-decoration-color: var(--c-garis); text-underline-offset: 3px; min-height: 44px; }
+.iz-infopill--link:hover { background: var(--c-pasir-muda); text-decoration-color: currentColor; }
+.iz-infopill--link:focus-visible { outline: 3px solid var(--c-focus); outline-offset: 2px; }

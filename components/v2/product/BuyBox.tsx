@@ -12,6 +12,7 @@ import VoucherField from '@/components/v2/product/VoucherField';
 import VoucherNotice from '@/components/v2/product/VoucherNotice';
 import { isZeroVoucher } from '@/components/v2/product/voucher-notice';
 import OrderSummary, { type SummaryRow } from '@/components/v2/product/OrderSummary';
+import { WARRANTY_COPY } from '@/lib/warranty/copy';
 import type { OrderApi } from '@/components/v2/product/useOrder';
 import type { ButtonState } from '@/components/v2/product/order-core';
 import CopyLinkButton from '@/components/v2/product/CopyLinkButton';
@@ -205,7 +206,10 @@ export default function BuyBox({
 
       <div className="iz-buybox__info">
         <span className="iz-infopill">Dibalas admin INZTA</span>
-        <span className="iz-infopill">Garansi: tanya admin</span>
+        {/* F-031 1.4: replaces the "Garansi: tanya admin" pill; length only, no coverage until A-145. */}
+        <Link className="iz-infopill iz-infopill--link" href="/garansi">
+          {WARRANTY_COPY.entry.buyBox}
+        </Link>
         <span className="iz-infopill">Ongkir dikonfirmasi admin</span>
       </div>
     </div>

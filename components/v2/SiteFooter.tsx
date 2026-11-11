@@ -6,6 +6,7 @@ import CategoryLink from '@/components/v2/CategoryLink';
 import { ArrowUpRight } from '@/components/v2/icons';
 import { BUSINESS_ADDRESS, BUSINESS_EMAIL, BUSINESS_NAME } from '@/lib/constants';
 import { PARTNER_STORES, STORE_COPY } from '@/lib/v2/partner-stores';
+import { WARRANTY_COPY } from '@/lib/warranty/copy';
 
 // F-016 S0.7: position keys shared with the catalog filter (S2.2).
 const PRODUCT_LINKS = [
@@ -66,6 +67,9 @@ export default function SiteFooter({ waHref, waNumber, currentCategory }: { waHr
           <ul>
             <li><Link href="/tentang">Tentang INZTA</Link></li>
             <li><Link href="/tentang#cara-pesan">Cara pesan</Link></li>
+            {/* F-031 1.1, 10.1: warranty claim and feedback, both on /garansi. */}
+            <li><Link href="/garansi">{WARRANTY_COPY.entry.footerClaim}</Link></li>
+            <li><Link href="/garansi#masukan">{WARRANTY_COPY.entry.footerFeedback}</Link></li>
             <li><Link href="/blog">Artikel</Link></li>
             <li><Link href="/kebijakan-privasi">Kebijakan Privasi</Link></li>
             <li><Link href="/syarat-ketentuan">Syarat dan Ketentuan</Link></li>

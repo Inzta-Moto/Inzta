@@ -1,4 +1,6 @@
 import type { ComponentType, CSSProperties } from 'react';
+import Link from 'next/link';
+import { WARRANTY_COPY } from '@/lib/warranty/copy';
 import { BadgeCheck, Bag, Chat, Shield, Truck } from '@/components/v2/icons';
 import HowToStage from '@/components/v2/home/HowToStage';
 import StepScene, { type Scene } from '@/components/v2/home/HowToScenes';
@@ -10,8 +12,8 @@ const STEPS: readonly { icon: ComponentType; title: string; text: string; scene:
   { icon: BadgeCheck, title: 'Admin membalas', text: 'Admin INZTA mengonfirmasi ongkir dan pembayaran di WhatsApp.', scene: 'reply' },
 ];
 
-// "Pesan dalam tiga langkah." (F-016 S1.10). Warranty and shipping time point to the admin until INZTA writes them
-// (A-023, P-5, P-6; listed by check:f016-release, S1.10.3). S1.10.2: the v2 reset removes the list markers, so each
+// "Pesan dalam tiga langkah." (F-016 S1.10). The warranty pill links to /garansi since F-031 (A-023: 6 months); shipping
+// time points to the admin until INZTA writes it (P-6; listed by check:f016-release, S1.10.3). S1.10.2: the v2 reset removes the list markers, so each
 // number is announced once, from its visible numeral (the leading zero and the yellow fill copy are visual only); the
 // road, node icons and scenes are aria-hidden. Motion: HowToStage (desktop: the section pins and scrolling walks the
 // steps; phones: each step plays as it arrives). The Beranda sits it right under the previous section (paddingTop 0);
@@ -27,10 +29,11 @@ export default function HowToOrder({ flush = true }: { flush?: boolean }) {
               <h2 className="t-h2-landing">Pesan dalam tiga langkah.</h2>
             </div>
             <div className="iz-infopills">
-              <span className="iz-infopill">
+              {/* F-031 1.4: the same value as the buy box pill. */}
+              <Link className="iz-infopill iz-infopill--link" href="/garansi">
                 <Shield />
-                Garansi: tanya admin
-              </span>
+                {WARRANTY_COPY.entry.howToPill}
+              </Link>
               <span className="iz-infopill">
                 <Truck />
                 Waktu kirim: tanya admin

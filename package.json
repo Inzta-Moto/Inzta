@@ -31,7 +31,10 @@
     "check:v2-fit": "node scripts/gen-v2-fit.mjs --check",
     "check:f016-structure": "node scripts/check-f016-structure.mjs",
     "check:f016-release": "node scripts/check-f016-release.mjs",
-    "test:cart": "node tests/f030-cart.cjs"
+    "test:cart": "node tests/f030-cart.cjs",
+    "test:warranty": "node tests/f031-warranty.cjs",
+    "test:warranty-api": "node tests/f031-warranty-api.cjs",
+    "test:warranty-browser": "node tests/f031-browser.cjs"
   },
   "dependencies": {
     "@tiptap/core": "3.32.0",

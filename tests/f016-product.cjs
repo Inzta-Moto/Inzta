@@ -404,7 +404,7 @@ function mockFetch(table) {
     assert.match(html, /<noscript><style>\.iz-js-only \{ display: none !important; \}<\/style><\/noscript>/);
     assert.ok(/class="iz-qty iz-js-only"/.test(html) && /class="iz-voucher iz-js-only"/.test(html) && /class="iz-copylink iz-js-only"/.test(html));
     assert.match(html, /Rp520\.000<\/b><s>Rp590\.000<\/s><span class="iz-save">Hemat Rp70\.000<\/span>/);
-    assert.ok(html.includes('Dibalas admin INZTA') && html.includes('Garansi: tanya admin') && html.includes('Ongkir dikonfirmasi admin'));
+    assert.ok(html.includes('Dibalas admin INZTA') && html.includes('Garansi 6 bulan · Cara klaim') && html.includes('Ongkir dikonfirmasi admin'));
     assert.match(html, /<details open=""><summary>Apakah bisa dipasang di motor saya\?/);
     assert.strictEqual((html.match(/<details/g) || []).length, 3);
     assert.match(html, /<h2 class="t-h2-shop iz-pdp-h2">Lengkapi perjalanan Anda<\/h2>/);
