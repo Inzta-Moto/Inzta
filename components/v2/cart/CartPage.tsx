@@ -26,6 +26,7 @@ import type { CartCatalogEntry, CartLineView } from '@/lib/cart/types';
 import { CART_MAX_QTY } from '@/lib/cart/types';
 import { cldWebp } from '@/lib/v2/image';
 import { formatRupiah } from '@/lib/v2/home-data';
+import VoucherNotice from '@/components/v2/product/VoucherNotice';
 import { browserStorage, readFirstTouchUtm } from '@/lib/utm';
 import { trackBeginCheckout, trackLead, trackRemoveFromCart, trackViewCart, type CartTrackItem } from '@/lib/tracking';
 
@@ -250,14 +251,7 @@ export default function CartPage({ catalog, waHref }: { catalog: CartCatalogEntr
           </dl>
           <VoucherField order={voucher} id="voucher-keranjang" />
           <div className="iz-cartsum__live" aria-live="polite">
-            {voucher.voucher && (
-              <div className="iz-formmsg iz-formmsg--ok">
-                <p>
-                  <b>Voucher {voucher.voucher.code} aktif!</b>
-                </p>
-                {voucher.personalVoucher && <p>Voucher pribadi: Anda mendapatkan diskon, komisi tidak berlaku.</p>}
-              </div>
-            )}
+            {voucher.voucher && <VoucherNotice voucher={voucher.voucher} personal={voucher.personalVoucher} />}
             {voucher.voucherMessage && <p className={`iz-formmsg iz-formmsg--${voucher.voucherMessage.kind}`}>{voucher.voucherMessage.text}</p>}
             {conflict && <p className="iz-formmsg iz-formmsg--error">Jumlah beberapa pilihan melebihi stok. Kurangi jumlah yang ditandai dulu.</p>}
             {error && (

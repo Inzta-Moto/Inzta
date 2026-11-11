@@ -9,6 +9,8 @@ import { MinusIcon, PlusIcon } from '@/components/v2/product/product-icons';
 import SidePicker from '@/components/v2/product/SidePicker';
 import VariantPicker from '@/components/v2/product/VariantPicker';
 import VoucherField from '@/components/v2/product/VoucherField';
+import VoucherNotice from '@/components/v2/product/VoucherNotice';
+import { isZeroVoucher } from '@/components/v2/product/voucher-notice';
 import OrderSummary, { type SummaryRow } from '@/components/v2/product/OrderSummary';
 import type { OrderApi } from '@/components/v2/product/useOrder';
 import type { ButtonState } from '@/components/v2/product/order-core';
@@ -159,16 +161,14 @@ export default function BuyBox({
       {/* One live region for voucher and order messages (S3.3.1, S3.3.5, design.md §6). */}
       <div className="iz-buybox__live" aria-live="polite">
         {order.voucher && (
-          <div className="iz-formmsg iz-formmsg--ok">
-            <p>
-              <b>Voucher {order.voucher.code} aktif!</b>
-            </p>
-            {order.personalVoucher && <p>Voucher pribadi: Anda mendapatkan diskon, komisi tidak berlaku.</p>}
-            <p>
-              Diskon: -{formatRupiah(order.discount)}
-              {order.voucher.type === 'percentage' && order.voucher.maxDiscount ? ` (maks ${formatRupiah(order.voucher.maxDiscount)})` : ''}
-            </p>
-          </div>
+          <VoucherNotice voucher={order.voucher} personal={order.personalVoucher}>
+            {!isZeroVoucher(order.voucher) && (
+              <p>
+                Diskon: -{formatRupiah(order.discount)}
+                {order.voucher.type === 'percentage' && order.voucher.maxDiscount ? ` (maks ${formatRupiah(order.voucher.maxDiscount)})` : ''}
+              </p>
+            )}
+          </VoucherNotice>
         )}
         {msg && <p className={`iz-formmsg iz-formmsg--${msg.kind}`}>{msg.text}</p>}
         {order.orderError && <p className="iz-formmsg iz-formmsg--error">{order.orderError}</p>}
