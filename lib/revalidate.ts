@@ -13,7 +13,8 @@ const CATEGORY_PAGES = '/tas-motor/[kategori]';
 const PATTERNS = new Set([ARTICLE_PAGES, PRODUCT_PAGES, CATEGORY_PAGES]);
 
 // Every v2 page shows navbar starting prices and the promo bar (F-016 S0.3, S0.4).
-const V2_FRAME_PAGES = ['/', '/produk', PRODUCT_PAGES, CATEGORY_PAGES, '/blog', ARTICLE_PAGES, '/tentang'];
+// F-030: /keranjang re-checks prices and stock against the active products it renders with.
+const V2_FRAME_PAGES = ['/', '/produk', PRODUCT_PAGES, CATEGORY_PAGES, '/blog', ARTICLE_PAGES, '/tentang', '/keranjang'];
 
 function revalidate(paths: string[]) {
   for (const path of new Set(paths)) {

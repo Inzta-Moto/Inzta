@@ -1,6 +1,7 @@
-// Height of the phone zone the fixed order bar covers: 12 px gap + about 70 px bar + room to breathe. The same 96 px is
-// the page's bottom padding and scroll-padding while the bar is active (v2-product.css).
-export const MBAR_ZONE_PX = 96;
+// Height of the phone zone the fixed order bar covers: 12 px gap + about 120 px two-row bar (F-030: product row, then the
+// cart and order buttons) + room to breathe. The same 140 px is the page's bottom padding and scroll-padding while the
+// bar is active (v2-product.css), plus the iOS safe area where the browser reports one.
+export const MBAR_ZONE_PX = 140;
 
 type Box = Pick<DOMRect, 'top' | 'bottom'>;
 

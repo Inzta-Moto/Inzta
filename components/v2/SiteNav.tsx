@@ -9,12 +9,13 @@ import { formatRupiah } from '@/lib/v2/home-data';
 import { MOTOR_CATEGORIES, POSITION_ITEMS, categoryLabel } from '@/lib/v2/home-content';
 import { useMotorCategory } from '@/components/v2/MotorCategory';
 import CategoryLink from '@/components/v2/CategoryLink';
+import CartNavButton from '@/components/v2/cart/CartNavButton';
 import { ArrowRight, ChevronDown, Motorcycle, WhatsApp } from '@/components/v2/icons';
 import Bounce from '@/components/v2/motion/Bounce';
 import { motionOn, motionTier } from '@/lib/v2/motion/runtime';
 
 type OpenMenu = 'produk' | 'motor' | null;
-export type NavTab = 'produk' | 'motor' | 'artikel' | 'tentang';
+export type NavTab = 'produk' | 'motor' | 'artikel' | 'tentang' | 'keranjang';
 
 function thumb(src: string): string {
   return src.includes('res.cloudinary.com') ? cldWebp(src, 96, 96) : src;
@@ -317,6 +318,8 @@ export default function SiteNav({
               </>
             )}
           </Link>
+          {/* F-030 E7: cart link with badge, on desktop and phone. */}
+          <CartNavButton current={current === 'keranjang'} />
           <a className="iz-nav__cta iz-only-desk" href={waHref} target="_blank" rel="noopener noreferrer">
             <span>
               <WhatsApp />

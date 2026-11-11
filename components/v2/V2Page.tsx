@@ -3,6 +3,8 @@ import '@/app/(v2)/v2-tokens.css';
 import '@/app/(v2)/v2-components.css';
 import '@/app/(v2)/v2-overrides.css';
 import '@/app/(v2)/v2-ui.css';
+// F-030: the navbar cart link, the add-to-cart panel and toast appear on every v2 page; before v2-fit.css, which scales it.
+import '@/app/(v2)/v2-cart.css';
 import '@/app/(v2)/v2-fit.css';
 import { fontDisplay, fontSans } from '@/components/v2/fonts';
 import { MotorCategoryProvider } from '@/components/v2/MotorCategory';

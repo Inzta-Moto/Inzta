@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, type RefObject } from 'react';
-import { WhatsApp } from '@/components/v2/icons';
+import { Cart, WhatsApp } from '@/components/v2/icons';
 import { cldWebp } from '@/lib/v2/image';
 import { barWouldCover } from '@/components/v2/product/mbar';
 
@@ -20,6 +20,7 @@ export default function MobileOrderBar({
   disabled,
   ariaDisabled,
   onActivate,
+  cart,
 }: {
   target: RefObject<HTMLElement>;
   image: string | null;
@@ -29,6 +30,8 @@ export default function MobileOrderBar({
   disabled: boolean;
   ariaDisabled: boolean;
   onActivate: () => void;
+  // F-030 E2: icon button "Tambah ke keranjang" left of "Pesan".
+  cart?: { disabled: boolean; ariaDisabled: boolean; onAdd: () => void };
 }) {
   const [mainOut, setMainOut] = useState(false);
   const [avoid, setAvoid] = useState(false);
@@ -79,26 +82,41 @@ export default function MobileOrderBar({
   }, [shown]);
 
   return (
-    <div ref={bar} className="iz-mbar iz-mbar--fixed iz-only-mob" data-shown={shown ? 'true' : 'false'} aria-hidden={shown ? undefined : true}>
+    <div ref={bar} className="iz-mbar iz-mbar--fixed iz-mbar--stack iz-only-mob" data-shown={shown ? 'true' : 'false'} aria-hidden={shown ? undefined : true}>
+      {/* F-030: two rows, so the name, the price, and both button labels keep their room at 320 px (Sehan, 2026-11-10:
+          one row cut the name to "Side ba..." and pushed "Pilih sisi dulu" out of the bar). */}
       <div className="iz-mbar__item">
-        {image ? <img src={cldWebp(image, 144)} alt="" width={48} height={48} loading="lazy" decoding="async" /> : null}
-        <div>
-          <b>{name}</b>
-          <span>{price}</span>
-        </div>
+        {image ? <img src={cldWebp(image, 144)} alt="" width={40} height={40} loading="lazy" decoding="async" /> : null}
+        <b>{name}</b>
+        <span className="iz-mbar__price">{price}</span>
       </div>
-      <button
-        type="button"
-        className="iz-btn iz-btn--primary iz-btn--wa"
-        disabled={disabled}
-        aria-disabled={ariaDisabled ? true : undefined}
-        onClick={onActivate}
-      >
-        <span className="iz-btn__icon">
-          <WhatsApp />
-        </span>
-        <span>{label}</span>
-      </button>
+      <div className="iz-mbar__actions">
+        {cart && (
+          <button
+            type="button"
+            className="iz-btn iz-btn--secondary iz-mbar__cart"
+            aria-label="Tambah ke keranjang"
+            disabled={cart.disabled}
+            aria-disabled={cart.ariaDisabled ? true : undefined}
+            onClick={cart.onAdd}
+          >
+            <Cart width={20} height={20} />
+            <span>Keranjang</span>
+          </button>
+        )}
+        <button
+          type="button"
+          className="iz-btn iz-btn--primary iz-btn--wa"
+          disabled={disabled}
+          aria-disabled={ariaDisabled ? true : undefined}
+          onClick={onActivate}
+        >
+          <span className="iz-btn__icon">
+            <WhatsApp />
+          </span>
+          <span>{label}</span>
+        </button>
+      </div>
     </div>
   );
 }

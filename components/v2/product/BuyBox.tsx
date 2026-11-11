@@ -1,13 +1,16 @@
 'use client';
 
+import Link from 'next/link';
 import type { MutableRefObject, RefObject } from 'react';
 import type { FitLabel, SideChoice, SidePickerData, VariableProduct } from '@/types';
 import { formatRupiah } from '@/lib/v2/home-data';
-import { WhatsApp } from '@/components/v2/icons';
+import { Cart, WhatsApp } from '@/components/v2/icons';
 import { MinusIcon, PlusIcon } from '@/components/v2/product/product-icons';
 import SidePicker from '@/components/v2/product/SidePicker';
 import VariantPicker from '@/components/v2/product/VariantPicker';
 import VoucherField from '@/components/v2/product/VoucherField';
+import VoucherNotice from '@/components/v2/product/VoucherNotice';
+import { isZeroVoucher } from '@/components/v2/product/voucher-notice';
 import OrderSummary, { type SummaryRow } from '@/components/v2/product/OrderSummary';
 import type { OrderApi } from '@/components/v2/product/useOrder';
 import type { ButtonState } from '@/components/v2/product/order-core';
@@ -30,6 +33,13 @@ export interface BuyBoxView {
   waHref: string;
 }
 
+// F-030 E1, E3: the secondary "Tambah ke keranjang" control under the WhatsApp button.
+export interface BuyBoxCart {
+  state: 'ready' | 'incomplete' | 'disabled';
+  inCart: number;
+  onAdd: () => void;
+}
+
 // Hides the controls that need JavaScript (S3.3.8). Same pattern as the noscript style of V2Page.
 const NOSCRIPT_STYLE = '<style>.iz-js-only { display: none !important; }</style>';
 
@@ -49,6 +59,7 @@ export default function BuyBox({
   optionsRef,
   waRef,
   onActivate,
+  cart,
 }: {
   view: BuyBoxView;
   order: OrderApi;
@@ -61,6 +72,7 @@ export default function BuyBox({
   optionsRef: MutableRefObject<HTMLElement | null>;
   waRef: RefObject<HTMLDivElement>;
   onActivate: () => void;
+  cart: BuyBoxCart;
 }) {
   const { priceRow, fit, badge } = view;
   const qtyId = 'iz-qty-label';
@@ -149,16 +161,14 @@ export default function BuyBox({
       {/* One live region for voucher and order messages (S3.3.1, S3.3.5, design.md §6). */}
       <div className="iz-buybox__live" aria-live="polite">
         {order.voucher && (
-          <div className="iz-formmsg iz-formmsg--ok">
-            <p>
-              <b>Voucher {order.voucher.code} aktif!</b>
-            </p>
-            {order.personalVoucher && <p>Voucher pribadi: Anda mendapatkan diskon, komisi tidak berlaku.</p>}
-            <p>
-              Diskon: -{formatRupiah(order.discount)}
-              {order.voucher.type === 'percentage' && order.voucher.maxDiscount ? ` (maks ${formatRupiah(order.voucher.maxDiscount)})` : ''}
-            </p>
-          </div>
+          <VoucherNotice voucher={order.voucher} personal={order.personalVoucher}>
+            {!isZeroVoucher(order.voucher) && (
+              <p>
+                Diskon: -{formatRupiah(order.discount)}
+                {order.voucher.type === 'percentage' && order.voucher.maxDiscount ? ` (maks ${formatRupiah(order.voucher.maxDiscount)})` : ''}
+              </p>
+            )}
+          </VoucherNotice>
         )}
         {msg && <p className={`iz-formmsg iz-formmsg--${msg.kind}`}>{msg.text}</p>}
         {order.orderError && <p className="iz-formmsg iz-formmsg--error">{order.orderError}</p>}
@@ -169,6 +179,25 @@ export default function BuyBox({
       <div className="iz-wa" ref={waRef}>
         <span className="iz-wa__note">Anda akan diarahkan ke WhatsApp</span>
         <OrderControl view={view} order={order} onActivate={onActivate} />
+      </div>
+
+      {/* F-030: secondary to the WhatsApp order (D-5); needs JavaScript like the other controls. */}
+      <div className="iz-addcart iz-js-only">
+        <button
+          type="button"
+          className="iz-btn iz-btn--secondary iz-addcart__btn"
+          disabled={cart.state === 'disabled'}
+          aria-disabled={cart.state === 'incomplete' ? true : undefined}
+          onClick={cart.onAdd}
+        >
+          <Cart width={20} height={20} />
+          <span>Tambah ke keranjang</span>
+        </button>
+        {cart.inCart > 0 && (
+          <p className="iz-addcart__note">
+            Sudah ada {cart.inCart} di <Link href="/keranjang">keranjang</Link>
+          </p>
+        )}
       </div>
 
       {/* F-021: copies the product link only (plus ?aff= for a logged-in affiliate); replaces "Bagikan produk". */}
