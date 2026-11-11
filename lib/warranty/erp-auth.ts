@@ -27,7 +27,7 @@ const UNAUTHENTICATED = { ok: false as const, status: 401 as const, code: 'UNAUT
 const FORBIDDEN = { ok: false as const, status: 403 as const, code: 'FORBIDDEN', error: 'Akun ini tidak punya akses ke menu ini.' };
 
 /** 401 without a valid token of the ERP project, 403 for a valid token whose UID is not listed as admin (R1). */
-export async function authorize(authHeader: string | null, verify: TokenVerifier, cfg: Pick<WarrantyConfig, 'erpProjectId' | 'staff'>): Promise<AuthResult> {
+export async function authorize(authHeader: string | null, verify: TokenVerifier, cfg: { erpProjectId: string; staff: string }): Promise<AuthResult> {
   const m = /^Bearer\s+([A-Za-z0-9._-]{20,4096})$/.exec(authHeader || '');
   if (!m) return UNAUTHENTICATED;
   let decoded: DecodedToken;

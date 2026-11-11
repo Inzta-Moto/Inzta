@@ -93,6 +93,7 @@ export default function ClaimForm({ products }: { products: WarrantyProductOptio
     setAnnounce(C.photoUploading(n, 0));
     uploadWarrantyPhoto(
       item.file,
+      token,
       pct => setPhotos(ps => ps.map(p => (p.key === item.key ? { ...p, progress: pct } : p))),
       item.abort.signal,
     )

@@ -36,9 +36,14 @@ export function buildUploadParams(o: { folder: string; now: number; randomId: st
     overwrite: 'false',
     public_id: `${o.folder}${o.randomId}`,
     timestamp: Math.floor(o.now / 1000),
+    // Signed incoming transformation: whatever a script uploads with a signature is stored at most 1920 px, like the
+    // browser compression (review SEC-08).
+    transformation: INCOMING_TRANSFORMATION,
     type: 'authenticated',
   };
 }
+
+export const INCOMING_TRANSFORMATION = 'c_limit,h_1920,w_1920';
 
 export interface CloudinaryConfig {
   cloud: string;
@@ -56,6 +61,7 @@ export interface UploadSignature {
   allowedFormats: string;
   type: 'authenticated';
   overwrite: false;
+  transformation: string;
   maxBytes: number;
 }
 
@@ -72,6 +78,7 @@ export function uploadSignature(cfg: CloudinaryConfig, o: { folder: string; now:
     allowedFormats: params.allowed_formats,
     type: 'authenticated',
     overwrite: false,
+    transformation: params.transformation,
     maxBytes: MAX_PHOTO_BYTES,
   };
 }
@@ -118,16 +125,28 @@ export function staffPhotoUrls(cfg: CloudinaryConfig, photo: WarrantyPhoto, now:
 
 export type FetchLike = (url: string, init?: { method?: string; headers?: Record<string, string> }) => Promise<{ ok: boolean; status: number; json(): Promise<any> }>;
 
+export class CloudinaryUnavailable extends Error {}
+
 /**
  * Checks one uploaded photo with the Admin API before the claim is stored (3.2): it must exist as an authenticated
  * image under that exact public id, in an allowed format and size. Returns the stored values from Cloudinary (never the
- * client's), or null.
+ * client's), or null when the photo is not there or not acceptable. Throws CloudinaryUnavailable when Cloudinary itself
+ * fails (rate limit 420/429, 5xx, network), so an outage is not reported as a bad photo (review SEC-07).
  */
 export async function verifyUploadedPhoto(cfg: CloudinaryConfig, publicId: string, fetchImpl: FetchLike): Promise<WarrantyPhoto | null> {
   const url = `https://api.cloudinary.com/v1_1/${cfg.cloud}/resources/image/authenticated/${publicId.split('/').map(encodeURIComponent).join('/')}`;
   const auth = Buffer.from(`${cfg.apiKey}:${cfg.secret}`).toString('base64');
-  const res = await fetchImpl(url, { method: 'GET', headers: { Authorization: `Basic ${auth}` } });
-  if (!res.ok) return null;
+  let res: Awaited<ReturnType<FetchLike>>;
+  try {
+    res = await fetchImpl(url, { method: 'GET', headers: { Authorization: `Basic ${auth}` } });
+  } catch {
+    throw new CloudinaryUnavailable('network');
+  }
+  if (res.status === 404) return null;
+  if (!res.ok) {
+    if (res.status === 420 || res.status === 429 || res.status >= 500) throw new CloudinaryUnavailable(String(res.status));
+    return null;
+  }
   const r = await res.json();
   if (!r || r.public_id !== publicId || r.type !== 'authenticated' || r.resource_type !== 'image') return null;
   if (!(PHOTO_FORMATS as readonly string[]).includes(r.format)) return null;

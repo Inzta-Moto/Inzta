@@ -24,8 +24,6 @@ export const MAX_PHOTOS = 5;
 export const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
 export const MAX_BODY_BYTES = 32 * 1024;
 export const MIN_FILL_MS = 5000;
-// A form left open longer than this must be reloaded, so an old token cannot be replayed forever.
-export const MAX_FORM_AGE_MS = 24 * 60 * 60 * 1000;
 export const ACCEPTED_PHOTO_MIME = 'image/jpeg,image/png,image/webp';
 export const PHOTO_FORMATS = ['jpg', 'png', 'webp'] as const;
 const EARLIEST_PURCHASE = '2020-01-01';
@@ -65,20 +63,21 @@ export function isPlainObject(v: unknown): v is Record<string, unknown> {
   return typeof v === 'object' && v !== null && !Array.isArray(v);
 }
 
-// C0 and C1 controls plus the bidi overrides, which could reorder text in the ERP view (requirement 5.6a).
-const CONTROL = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F‪-‮⁦-⁩]/g;
+// C0 and C1 controls, bidi marks and overrides (ALM, LRM, RLM, U+202A-202E, U+2066-2069), zero-width characters, and
+// the BOM: they could reorder or hide text in the ERP view (requirement 5.6a, review SEC-05).
+const CONTROL = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F\u061C\u200B-\u200F\u202A-\u202E\u2060-\u2069\uFEFF]/g;
 
 /** One line of text: control characters removed, line breaks and runs of spaces become one space, trimmed. */
 export function cleanLine(v: unknown): string {
   if (typeof v !== 'string') return '';
-  return v.replace(/[\r\n\t]+/g, ' ').replace(CONTROL, '').replace(/\s+/g, ' ').trim();
+  return v.replace(/[\r\n\t\u2028\u2029]+/g, ' ').replace(CONTROL, '').replace(/\s+/g, ' ').trim();
 }
 
 /** Multi-line text: control characters removed except line breaks, at most two blank lines in a row, trimmed. */
 export function cleanText(v: unknown): string {
   if (typeof v !== 'string') return '';
   return v
-    .replace(/\r\n?/g, '\n')
+    .replace(/\r\n?|[\u2028\u2029]/g, '\n')
     .replace(/\t/g, ' ')
     .replace(CONTROL, '')
     .replace(/[  ]+\n/g, '\n')
@@ -418,9 +417,9 @@ export const FEEDBACK_STATUS_LABELS: Record<FeedbackStatus, string> = {
 const TEMPLATES: Partial<Record<WarrantyStatus, (v: { ticket: string; name: string; note: string }) => string>> = {
   under_review: v => `Halo ${v.name}, klaim garansi ${v.ticket} sudah kami terima dan sedang diperiksa. Kami kabari lagi setelah pengecekan.`,
   waiting_customer: v => `Halo ${v.name}, untuk klaim ${v.ticket} kami butuh: ${v.note}. Bisa dibalas di chat ini. Terima kasih.`,
-  in_progress: v => `Halo ${v.name}, klaim ${v.ticket} sedang ditangani tim produksi INZTA.${v.note ? ` ${v.note}` : ''}`,
+  in_progress: v => `Halo ${v.name}, klaim ${v.ticket} sedang ditangani tim produksi INZTA.${v.note ? ` ${v.note}.` : ''}`,
   resolved: v => `Halo ${v.name}, klaim ${v.ticket} sudah selesai: ${v.note}. Terima kasih sudah memakai INZTA.`,
-  rejected: v => `Halo ${v.name}, mohon maaf, klaim ${v.ticket} belum bisa kami proses sebagai garansi: ${v.note}. Bila ada pertanyaan, balas chat ini.`,
+  rejected: v => `Halo ${v.name}, mohon maaf, klaim ${v.ticket} belum bisa kami proses sebagai garansi. Alasannya: ${v.note}. Bila ada pertanyaan, balas chat ini.`,
 };
 
 /** Prefilled WhatsApp text for a status, or null when the status has no template. */

@@ -17,19 +17,21 @@ interface Signature {
   allowedFormats: string;
   type: string;
   overwrite: boolean;
+  transformation: string;
 }
 
 export class UploadError extends Error {}
 
-async function getSignature(): Promise<Signature> {
+async function getSignature(formToken: string): Promise<Signature> {
   let res: Response;
   try {
-    res = await fetch('/api/garansi/upload-signature', { method: 'POST' });
+    res = await fetch('/api/garansi/upload-signature', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ formToken }) });
   } catch {
     throw new UploadError(E.network);
   }
   if (res.status === 429) throw new UploadError(E.rateLimited);
   if (res.status === 503) throw new UploadError(E.photoUnavailable);
+  if (res.status === 400) throw new UploadError(E.formExpired);
   if (!res.ok) throw new UploadError(E.photoUpload);
   return res.json();
 }
@@ -44,8 +46,8 @@ async function compress(file: File): Promise<Blob> {
 }
 
 /** Uploads one photo; `signal` aborts it when the customer removes the photo. Throws UploadError with a shown message. */
-export async function uploadWarrantyPhoto(file: File, onProgress: (pct: number) => void, signal: AbortSignal): Promise<WarrantyPhoto> {
-  const [sig, blob] = await Promise.all([getSignature(), compress(file)]);
+export async function uploadWarrantyPhoto(file: File, formToken: string, onProgress: (pct: number) => void, signal: AbortSignal): Promise<WarrantyPhoto> {
+  const [sig, blob] = await Promise.all([getSignature(formToken), compress(file)]);
   if (signal.aborted) throw new UploadError('aborted');
   const form = new FormData();
   form.append('file', blob, file.name);
@@ -56,6 +58,7 @@ export async function uploadWarrantyPhoto(file: File, onProgress: (pct: number) 
   form.append('allowed_formats', sig.allowedFormats);
   form.append('type', sig.type);
   form.append('overwrite', String(sig.overwrite));
+  form.append('transformation', sig.transformation);
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     signal.addEventListener('abort', () => xhr.abort());

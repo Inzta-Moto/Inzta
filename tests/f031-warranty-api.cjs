@@ -37,6 +37,7 @@ const R = require(path.join(ROOT, 'lib/warranty/rules.ts'));
 const S = require(path.join(ROOT, 'lib/warranty/server.ts'));
 const CL = require(path.join(ROOT, 'lib/warranty/cloudinary.ts'));
 const { WARRANTY_COPY } = require(path.join(ROOT, 'lib/warranty/copy.ts'));
+const { createLocalGate } = require(path.join(ROOT, 'lib/warranty/local-gate.ts'));
 const E = WARRANTY_COPY.errors;
 
 // In-memory Firestore: the subset the handlers use (doc get/delete, transactions with get/set/create/update,
@@ -126,6 +127,7 @@ const FOLDER = 'garansi-staging/';
 const ERP_ORIGIN = 'https://dashboard.inzta.id';
 const T0 = Date.UTC(2026, 10, 11, 3, 0, 0);
 
+let current = null;
 function setup(over = {}) {
   const db = fakeDb();
   const cld = fakeCloudinary();
@@ -158,28 +160,36 @@ function setup(over = {}) {
     fetch: cld.fetch,
     stamp,
     log: (msg, meta) => logs.push(msg + ' ' + JSON.stringify(meta || {})),
+    gate: createLocalGate(),
     verify: async t => {
       if (!tokens[t]) throw Object.assign(new Error('bad token'), { code: 'auth/argument-error' });
       return tokens[t];
     },
   };
-  return { db, cld, logs, deps, env, tick: ms => (now += ms), at: ms => (now = ms), get now() { return now; } };
+  current = { db, cld, logs, deps, env, tick: ms => (now += ms), at: ms => (now = ms), get now() { return now; } };
+  return current;
 }
 
 const headers = (h = {}) => {
   const m = new Map(Object.entries(h).map(([k, v]) => [k.toLowerCase(), v]));
   return { get: n => (m.has(n.toLowerCase()) ? m.get(n.toLowerCase()) : null) };
 };
-const pub = (body, h = {}) => ({ headers: headers({ 'x-real-ip': '203.0.113.7', ...h }), body: typeof body === 'string' ? body : JSON.stringify(body) });
+const AUTO = 'auto-token';
+const tokenFor = (ip, at = current.now - 6000) => S.issueFormToken(SECRET, at, S.ipHash(SECRET, ip));
+const pub = (body, h = {}) => {
+  const ip = h['x-real-ip'] || '203.0.113.7';
+  if (body && typeof body === 'object' && body.formToken === AUTO) body = { ...body, formToken: tokenFor(ip) };
+  return { headers: headers({ 'x-real-ip': '203.0.113.7', ...h }), body: typeof body === 'string' ? body : JSON.stringify(body) };
+};
+const signReq = (h = {}) => pub({ formToken: AUTO }, h);
 const erpReq = (token, o = {}) => ({ headers: headers({ origin: ERP_ORIGIN, ...(token ? { authorization: `Bearer ${token}` } : {}), ...(o.headers || {}) }), body: o.body === undefined ? '' : JSON.stringify(o.body), query: o.query || {} });
 const ADMIN = 'tok-admin-aaaaaaaaaaaaaaaaaaaa';
 
 let pidSeq = 0;
 const newPublicId = () => `${FOLDER}${('Uji' + (++pidSeq) + 'x').padEnd(24, 'Q')}`;
 async function token(t) {
-  const r = await H.handleFormToken(t.deps);
   t.tick(6000);
-  return r.body.token;
+  return AUTO;
 }
 async function claimBody(t, over = {}) {
   const pid = newPublicId();
@@ -229,18 +239,21 @@ const test = (name, fn) => tests.push([name, fn]);
 
 test('W3/3.3 form token: issued now, accepted after 5 s, too fast before, invalid when forged or older than 24 h', async () => {
   const t = setup();
-  const tok = (await H.handleFormToken(t.deps)).body.token;
-  assert.strictEqual(S.checkFormToken(SECRET, tok, T0 + 4999), 'too-fast');
-  assert.strictEqual(S.checkFormToken(SECRET, tok, T0 + 5000), 'ok');
-  assert.strictEqual(S.checkFormToken(SECRET, tok, T0 + 24 * 3600e3 + 1), 'invalid');
-  assert.strictEqual(S.checkFormToken('lain-rahasia-0123456789', tok, T0 + 6000), 'invalid');
-  assert.strictEqual(S.checkFormToken(SECRET, tok.replace(/.$/, c => (c === 'A' ? 'B' : 'A')), T0 + 6000), 'invalid');
-  assert.strictEqual(S.checkFormToken(SECRET, `${T0 - 10000}.${tok.split('.')[1]}`, T0), 'invalid');
-  assert.strictEqual(S.checkFormToken(SECRET, undefined, T0), 'invalid');
+  const tok = (await H.handleFormToken(t.deps, pub(''))).body.token;
+  const me = S.ipHash(SECRET, '203.0.113.7');
+  assert.strictEqual(S.checkFormToken(SECRET, tok, T0 + 4999, me), 'too-fast');
+  assert.strictEqual(S.checkFormToken(SECRET, tok, T0 + 5000, me), 'ok');
+  assert.strictEqual(S.checkFormToken(SECRET, tok, T0 + 6 * 3600e3, me), 'ok');
+  assert.strictEqual(S.checkFormToken(SECRET, tok, T0 + 6 * 3600e3 + 1, me), 'invalid', 'older than 6 h (SEC-04)');
+  assert.strictEqual(S.checkFormToken(SECRET, tok, T0 + 6000, S.ipHash(SECRET, '198.51.100.20')), 'invalid', 'bound to the IP bucket (SEC-04)');
+  assert.strictEqual(S.checkFormToken('lain-rahasia-0123456789', tok, T0 + 6000, me), 'invalid');
+  assert.strictEqual(S.checkFormToken(SECRET, tok.replace(/.$/, c => (c === 'A' ? 'B' : 'A')), T0 + 6000, me), 'invalid');
+  assert.strictEqual(S.checkFormToken(SECRET, `${T0 - 10000}.${tok.split('.')[1]}`, T0, me), 'invalid');
+  assert.strictEqual(S.checkFormToken(SECRET, undefined, T0, me), 'invalid');
 });
 test('W3 config: secrets missing → public routes 503 with a generic message; folder default garansi-staging/', async () => {
   const t = setup({ env: { hashSecret: null } });
-  const r = await H.handleFormToken(t.deps);
+  const r = await H.handleFormToken(t.deps, pub(''));
   assert.strictEqual(r.status, 503);
   assert.ok(!JSON.stringify(r.body).includes('WARRANTY_HASH_SECRET'));
   const parsed = S.parseCloudinaryUrl('cloudinary://123456:abc-DEF_9@rwmgljss');
@@ -254,43 +267,48 @@ test('W3 config: secrets missing → public routes 503 with a generic message; f
   assert.strictEqual(cfg.folder, 'garansi-staging/');
   assert.strictEqual(cfg.hashSecret, null);
   assert.strictEqual(cfg.cloudinary, null);
-  assert.strictEqual(cfg.erpProjectId, 'database-inzta');
+  assert.strictEqual(cfg.erpProjectId, null, 'no default ERP project: staging and Production differ (SEC-06)');
+  const prod = S.warrantyConfig({ VERCEL_ENV: 'production' });
+  assert.strictEqual(prod.folder, null, 'Production without WARRANTY_CLOUDINARY_FOLDER fails closed (SEC-06)');
+  assert.strictEqual(S.warrantyConfig({ VERCEL_ENV: 'production', WARRANTY_CLOUDINARY_FOLDER: 'garansi/' }).folder, 'garansi/');
+  assert.strictEqual(S.warrantyConfig({ ERP_FIREBASE_PROJECT_ID: 'database-inzta' }).erpProjectId, 'database-inzta');
   assert.strictEqual(cfg.staff, '');
   assert.deepStrictEqual(cfg.rates, S.DEFAULT_RATES);
   assert.strictEqual(S.warrantyConfig({ WARRANTY_CLOUDINARY_FOLDER: 'garansi' }).folder, 'garansi/');
   assert.strictEqual(S.warrantyConfig({ WARRANTY_CLOUDINARY_FOLDER: '../produk/' }).folder, 'garansi-staging/');
   assert.strictEqual(S.warrantyConfig({ WARRANTY_RATE_CLAIM_HOUR: '50', WARRANTY_RATE_SIGN_HOUR: 'x' }).rates.claimHour, 50);
-  assert.strictEqual(S.warrantyConfig({ WARRANTY_RATE_SIGN_HOUR: '-1' }).rates.signHour, 30);
+  assert.strictEqual(S.warrantyConfig({ WARRANTY_RATE_SIGN_HOUR: '-1' }).rates.signHour, S.DEFAULT_RATES.signHour);
   assert.strictEqual(S.warrantyConfig({ WARRANTY_HASH_SECRET: 'pendek' }).hashSecret, null);
 });
 test('W2/4.1–4.2 upload signature: environment folder, random id, signed authenticated/no-overwrite params, secret never returned', async () => {
   const t = setup();
-  const r = await H.handleUploadSignature(t.deps, pub(''));
-  assert.strictEqual(r.status, 200);
+  const r = await H.handleUploadSignature(t.deps, signReq());
+  assert.strictEqual(r.status, 200, JSON.stringify(r.body));
   const b = r.body;
-  assert.deepStrictEqual(Object.keys(b).sort(), ['allowedFormats', 'apiKey', 'cloudName', 'folder', 'maxBytes', 'overwrite', 'publicId', 'signature', 'timestamp', 'type'].sort());
+  assert.deepStrictEqual(Object.keys(b).sort(), ['allowedFormats', 'apiKey', 'cloudName', 'folder', 'maxBytes', 'overwrite', 'publicId', 'signature', 'timestamp', 'transformation', 'type'].sort());
+  assert.strictEqual(b.transformation, 'c_limit,h_1920,w_1920', 'signed incoming transformation (SEC-08)');
   assert.strictEqual(b.folder, FOLDER);
   assert.ok(b.publicId.startsWith(FOLDER) && /^[A-Za-z0-9_-]{24}$/.test(b.publicId.slice(FOLDER.length)));
   assert.strictEqual(b.allowedFormats, 'jpg,png,webp');
   assert.strictEqual(b.type, 'authenticated');
   assert.strictEqual(b.overwrite, false);
-  assert.strictEqual(b.signature, CL.signParams({ allowed_formats: 'jpg,png,webp', overwrite: 'false', public_id: b.publicId, timestamp: b.timestamp, type: 'authenticated' }, 'rahasia-cloudinary-contoh'));
+  assert.strictEqual(b.signature, CL.signParams({ allowed_formats: 'jpg,png,webp', overwrite: 'false', public_id: b.publicId, timestamp: b.timestamp, transformation: 'c_limit,h_1920,w_1920', type: 'authenticated' }, 'rahasia-cloudinary-contoh'));
   assert.ok(!JSON.stringify(b).includes('rahasia-cloudinary-contoh'));
   assert.strictEqual(r.headers['Cache-Control'], 'no-store');
-  const r2 = await H.handleUploadSignature(t.deps, pub(''));
+  const r2 = await H.handleUploadSignature(t.deps, signReq());
   assert.notStrictEqual(r2.body.publicId, b.publicId);
 });
-test('W2/4.3 upload signature: 30 per hour per hashed IP, then 429; another IP still passes; 503 without Cloudinary keys', async () => {
+test('W2/4.3 upload signature: 20 per hour per hashed IP, then 429; another IP still passes; 503 without Cloudinary keys', async () => {
   const t = setup();
-  for (let i = 0; i < 30; i++) assert.strictEqual((await H.handleUploadSignature(t.deps, pub(''))).status, 200);
-  const over = await H.handleUploadSignature(t.deps, pub(''));
+  for (let i = 0; i < 20; i++) assert.strictEqual((await H.handleUploadSignature(t.deps, signReq())).status, 200);
+  const over = await H.handleUploadSignature(t.deps, signReq());
   assert.strictEqual(over.status, 429);
   assert.strictEqual(over.body.error, E.rateLimited);
-  assert.strictEqual((await H.handleUploadSignature(t.deps, pub('', { 'x-real-ip': '203.0.113.99' }))).status, 200);
-  t.tick(3600e3);
-  assert.strictEqual((await H.handleUploadSignature(t.deps, pub(''))).status, 200, 'next hour bucket');
+  assert.strictEqual((await H.handleUploadSignature(t.deps, signReq({ 'x-real-ip': '203.0.113.99' }))).status, 200);
+  t.tick(3600e3 + 1000);
+  assert.strictEqual((await H.handleUploadSignature(t.deps, signReq())).status, 200, 'next hour bucket');
   const n = setup({ env: { cloudinary: null } });
-  const u = await H.handleUploadSignature(n.deps, pub(''));
+  const u = await H.handleUploadSignature(n.deps, signReq());
   assert.strictEqual(u.status, 503);
   assert.strictEqual(u.body.error, E.photoUnavailable);
 });
@@ -321,7 +339,7 @@ test('W4/3.3 claim: timer token missing, forged, or under 5 s → 400 without wr
   const b = await claimBody(t);
   assert.strictEqual((await H.handleCreateClaim(t.deps, pub({ ...b, formToken: undefined }))).body.code, 'FORM_EXPIRED');
   assert.strictEqual((await H.handleCreateClaim(t.deps, pub({ ...b, formToken: '1.abc' }))).body.code, 'FORM_EXPIRED');
-  const fresh = (await H.handleFormToken(t.deps)).body.token;
+  const fresh = (await H.handleFormToken(t.deps, pub(''))).body.token;
   const fast = await H.handleCreateClaim(t.deps, pub({ ...b, formToken: fresh }));
   assert.strictEqual(fast.status, 400);
   assert.strictEqual(fast.body.code, 'TOO_FAST');
@@ -757,6 +775,112 @@ test('W5/10.6 feedback list, detail, PATCH: forward moves, archived → read, st
   assert.deepStrictEqual((await H.handleErpFeedbackList(t.deps, erpReq(ADMIN, { query: { status: 'read' } }))).body.items.map(i => i.ref), [a]);
   assert.strictEqual((await H.handleErpFeedbackGet(t.deps, erpReq(ADMIN), 'MSK-ZZZZZZ')).status, 404);
   assert.strictEqual((await H.handleErpFeedbackGet(t.deps, erpReq('tok-outsider-aaaaaaaaaaaaaaaaa'), a)).status, 403);
+});
+
+// Review findings (D:\\Projects\\_tmp\\f031-website\\audit-keamanan-api.md, local only): regression tests.
+
+test('SEC-01 after a Firestore refusal, repeats are refused by the local gate with zero Firestore reads', async () => {
+  const t = setup();
+  for (let i = 0; i < 3; i++) assert.strictEqual((await H.handleCreateClaim(t.deps, pub(await claimBody(t, { whatsapp: `0812345611${i}0` })))).status, 201);
+  assert.strictEqual((await H.handleCreateClaim(t.deps, pub(await claimBody(t, { whatsapp: '081234561990' })))).status, 429);
+  const before = t.db.stats.reads;
+  for (let i = 0; i < 50; i++) assert.strictEqual((await H.handleCreateClaim(t.deps, pub(await claimBody(t, { whatsapp: '081234561990' })))).status, 429);
+  assert.strictEqual(t.db.stats.reads, before, 'refused repeats read Firestore');
+  // Signatures: past the local budget (20 per 10 min) nothing reaches Firestore either.
+  const s = setup({ env: { rates: { ...S.DEFAULT_RATES, signHour: 1000 } } });
+  for (let i = 0; i < 20; i++) assert.strictEqual((await H.handleUploadSignature(s.deps, signReq())).status, 200);
+  const r0 = s.db.stats.reads;
+  for (let i = 0; i < 30; i++) assert.strictEqual((await H.handleUploadSignature(s.deps, signReq())).status, 429);
+  assert.strictEqual(s.db.stats.reads, r0);
+});
+test('SEC-01 invalid bodies are refused before any Firestore read, including the product read', async () => {
+  const t = setup();
+  t.db._store.set('products/tail-bag-contoh', { name: 'Tail bag (contoh)', isActive: true });
+  const r = await H.handleCreateClaim(t.deps, pub(await claimBody(t, { product: 'tail-bag-contoh', productOther: undefined, description: 'pendek' })));
+  assert.strictEqual(r.status, 400);
+  assert.strictEqual(t.db.stats.reads, 0);
+  const f = await H.handleCreateFeedback(t.deps, pub(await feedbackBody(t, { product: 'tail-bag-contoh', message: 'pendek' })));
+  assert.strictEqual(f.status, 400);
+  assert.strictEqual(t.db.stats.reads, 0);
+});
+test('SEC-02 global daily caps for claims and signatures; IPv6 addresses share their /64 bucket', async () => {
+  const t = setup({ env: { rates: { ...S.DEFAULT_RATES, claimGlobalDay: 2, signGlobalDay: 2 } } });
+  assert.strictEqual((await H.handleCreateClaim(t.deps, pub(await claimBody(t), { 'x-real-ip': '192.0.2.21' }))).status, 201);
+  assert.strictEqual((await H.handleCreateClaim(t.deps, pub(await claimBody(t, { whatsapp: '081299991111' }), { 'x-real-ip': '192.0.2.22' }))).status, 201);
+  assert.strictEqual((await H.handleCreateClaim(t.deps, pub(await claimBody(t, { whatsapp: '081299992222' }), { 'x-real-ip': '192.0.2.23' }))).status, 429);
+  assert.ok(t.db._store.has(`rateLimits/garansi-submit-global-${R.rateBuckets(t.now).day}`));
+  assert.strictEqual((await H.handleUploadSignature(t.deps, signReq({ 'x-real-ip': '192.0.2.31' }))).status, 200);
+  assert.strictEqual((await H.handleUploadSignature(t.deps, signReq({ 'x-real-ip': '192.0.2.32' }))).status, 200);
+  assert.strictEqual((await H.handleUploadSignature(t.deps, signReq({ 'x-real-ip': '192.0.2.33' }))).status, 429);
+  assert.strictEqual(S.ipBucket('2001:db8:aa:bb:1::1'), '2001:db8:aa:bb::/64');
+  assert.strictEqual(S.ipBucket('2001:db8:aa:bb:ffff:2:3:4'), '2001:db8:aa:bb::/64');
+  assert.strictEqual(S.ipBucket('2001:db8::1'), '2001:db8:0:0::/64');
+  assert.strictEqual(S.ipBucket('::ffff:203.0.113.7'), '203.0.113.7');
+  assert.strictEqual(S.ipBucket('203.0.113.7'), '203.0.113.7');
+  assert.strictEqual(S.ipHash(SECRET, '2001:db8:aa:bb:1::1'), S.ipHash(SECRET, '2001:db8:aa:bb:9:8:7:6'));
+  assert.notStrictEqual(S.ipHash(SECRET, '2001:db8:aa:bb::1'), S.ipHash(SECRET, '2001:db8:aa:bc::1'));
+});
+test('SEC-03 fake photos cannot use up another customer\'s WhatsApp budget; only verified claims count', async () => {
+  const t = setup();
+  for (let i = 0; i < 3; i++) {
+    const bad = await H.handleCreateClaim(t.deps, pub(await claimBody(t, { photos: [{ publicId: `${FOLDER}${'F'.repeat(23)}${i}`, version: 1, width: 1, height: 1, format: 'jpg' }] }), { 'x-real-ip': `198.18.0.${i}` }));
+    assert.strictEqual(bad.status, 400);
+  }
+  assert.ok(![...t.db._store.keys()].some(k => k.startsWith('rateLimits/garansi-wa-')), 'WA counter touched by unverified claims');
+  const real = await H.handleCreateClaim(t.deps, pub(await claimBody(t), { 'x-real-ip': '198.18.0.50' }));
+  assert.strictEqual(real.status, 201, 'the real customer is still allowed');
+});
+test('SEC-04 a token fetched from one IP is refused from another', async () => {
+  const t = setup();
+  const b = await claimBody(t);
+  const other = await H.handleCreateClaim(t.deps, pub({ ...b, formToken: tokenFor('198.51.100.77') }));
+  assert.strictEqual(other.status, 400);
+  assert.strictEqual(other.body.code, 'FORM_EXPIRED');
+  assert.strictEqual((await H.handleCreateClaim(t.deps, pub(b))).status, 201);
+});
+test('SEC-06 missing folder on Production or missing ERP project fails closed (503), with CORS on the ERP answer', async () => {
+  const t = setup({ env: { folder: null } });
+  assert.strictEqual((await H.handleUploadSignature(t.deps, signReq())).status, 503);
+  const c = await H.handleCreateClaim(t.deps, pub(await claimBody(t)));
+  assert.strictEqual(c.status, 503);
+  assert.strictEqual(t.db.stats.writes, 0);
+  const e = setup({ env: { erpProjectId: null } });
+  const r = await H.handleErpSummary(e.deps, erpReq(ADMIN));
+  assert.strictEqual(r.status, 503);
+  assert.strictEqual(r.headers['Access-Control-Allow-Origin'], ERP_ORIGIN);
+  assert.ok(e.logs.some(l => l.includes('ERP_FIREBASE_PROJECT_ID missing')));
+});
+test('SEC-07 a Cloudinary outage (420/5xx/network) answers 503, not "invalid photo", and spends no WA budget', async () => {
+  const t = setup();
+  const realFetch = t.deps.fetch;
+  t.deps.fetch = async () => ({ ok: false, status: 420, json: async () => ({}) });
+  const r = await H.handleCreateClaim(t.deps, pub(await claimBody(t)));
+  assert.strictEqual(r.status, 503);
+  assert.strictEqual(r.body.code, 'UPLOAD_UNAVAILABLE');
+  t.deps.fetch = async () => { throw new Error('ECONNRESET'); };
+  assert.strictEqual((await H.handleCreateClaim(t.deps, pub(await claimBody(t)))).status, 503);
+  assert.ok(![...t.db._store.keys()].some(k => k.startsWith('rateLimits/garansi-wa-')));
+  t.deps.fetch = realFetch;
+  assert.strictEqual((await H.handleCreateClaim(t.deps, pub(await claimBody(t)))).status, 201);
+});
+test('SEC-08 upload signatures need a valid form token from the same IP; unknown body keys refused', async () => {
+  const t = setup();
+  assert.strictEqual((await H.handleUploadSignature(t.deps, pub(''))).body.code, 'FORM_EXPIRED');
+  assert.strictEqual((await H.handleUploadSignature(t.deps, pub({ formToken: tokenFor('198.51.100.9') }))).body.code, 'FORM_EXPIRED');
+  assert.strictEqual((await H.handleUploadSignature(t.deps, pub({ formToken: AUTO, folder: 'produk/' }))).body.code, 'UNKNOWN_KEYS');
+  assert.strictEqual((await H.handleUploadSignature(t.deps, signReq())).status, 200);
+  assert.strictEqual(t.db.stats.writes, 2, 'only the accepted request touched counters (per IP and global)');
+});
+test('SEC-09 history is capped at 200 entries: further changes answer 409 HISTORY_FULL and write nothing', async () => {
+  const t = setup();
+  const ticket = await seedClaim(t);
+  const d = t.db._store.get(`warrantyClaims/${ticket}`);
+  d.history = Array.from({ length: 200 }, (_, i) => ({ at: new Date(T0 + i).toISOString(), by: 'admin.contoh@example.com', internalNote: `catatan ${i}` }));
+  const c = await detail(t, ticket);
+  const r = await patch(t, ticket, { expectedUpdatedAt: c.updatedAt, internalNote: 'satu lagi' });
+  assert.strictEqual(r.status, 409);
+  assert.strictEqual(r.body.code, 'HISTORY_FULL');
+  assert.strictEqual(t.db._store.get(`warrantyClaims/${ticket}`).history.length, 200);
 });
 
 // Firebase Admin app order (review REV-05)

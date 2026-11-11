@@ -5,5 +5,5 @@ import { routeDeps, toHandlerRequest, toResponse } from '@/lib/warranty/route-de
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
-  return toResponse(await handleUploadSignature(routeDeps(), await toHandlerRequest(request, false)));
+  return toResponse(await handleUploadSignature(routeDeps(), await toHandlerRequest(request, true)));
 }

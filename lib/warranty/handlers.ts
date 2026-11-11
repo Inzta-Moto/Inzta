@@ -47,9 +47,10 @@ import {
   waLink,
   whatsappTemplate,
 } from '@/lib/warranty/rules';
-import { staffPhotoUrls, uploadSignature, randomPublicId, verifyUploadedPhoto, type FetchLike } from '@/lib/warranty/cloudinary';
+import { CloudinaryUnavailable, staffPhotoUrls, uploadSignature, randomPublicId, verifyUploadedPhoto, type FetchLike } from '@/lib/warranty/cloudinary';
 import { checkFormToken, clientIp, ipHash, issueFormToken, whatsappHash, type WarrantyConfig } from '@/lib/warranty/server';
-import { DAY_MS, HOUR_MS, checkLimits, cleanupExpiredLimits } from '@/lib/warranty/rate-limit';
+import { DAY_MS, HOUR_MS, checkLimits, cleanupExpiredLimits, type LimitRule } from '@/lib/warranty/rate-limit';
+import type { LocalGate } from '@/lib/warranty/local-gate';
 import { authorize, erpCorsHeaders, erpPreflight, type ErpStaff, type TokenVerifier } from '@/lib/warranty/erp-auth';
 import { toIso, toMs, type Stamp } from '@/lib/warranty/time';
 
@@ -68,6 +69,7 @@ export interface Deps {
   fetch: FetchLike;
   stamp: Stamp;
   log: (msg: string, meta?: Record<string, string | number | boolean>) => void;
+  gate: LocalGate;
 }
 
 export interface ErpDeps extends Deps {
@@ -126,12 +128,17 @@ async function guard(deps: Deps, label: string, run: () => Promise<HandlerRespon
 
 /** Active product name for a submitted slug, read by id (one document, not the catalog). */
 async function productNamesFor(db: Firestore, slug: unknown): Promise<Record<string, string>> {
-  if (typeof slug !== 'string' || !/^[a-z0-9-]{1,120}$/.test(slug) || slug === 'lainnya') return {};
+  if (!isProductSlug(slug)) return {};
   const snap = await db.collection('products').doc(slug).get();
   if (!snap.exists) return {};
   const d = snap.data() as { isActive?: boolean; name?: unknown };
   return d.isActive === true && typeof d.name === 'string' && d.name.trim() ? { [slug]: d.name.trim() } : {};
 }
+
+const isProductSlug = (slug: unknown): slug is string => typeof slug === 'string' && /^[a-z0-9-]{1,120}$/.test(slug) && slug !== 'lainnya';
+
+/** Placeholder name for the submitted slug, so the pure checks run before the one product read (review SEC-01). */
+const provisionalNames = (slug: unknown): Record<string, string> => (isProductSlug(slug) ? { [slug]: '…' } : {});
 
 function requireSecret(deps: Deps): string {
   if (!deps.env.hashSecret) {
@@ -141,28 +148,79 @@ function requireSecret(deps: Deps): string {
   return deps.env.hashSecret;
 }
 
-// GET /api/garansi/form-token: the timer token both forms send back (3.3, 10.3).
-export async function handleFormToken(deps: Deps): Promise<HandlerResponse> {
-  return guard(deps, 'form-token', async () => json(200, { token: issueFormToken(requireSecret(deps), deps.now()) }));
+function requirePhotoConfig(deps: Deps, label: string): { cfg: NonNullable<WarrantyConfig['cloudinary']>; folder: string } {
+  const cfg = deps.env.cloudinary;
+  const folder = deps.env.folder;
+  if (!cfg || !folder) {
+    deps.log(`[${label}] ${!cfg ? 'CLOUDINARY_URL' : 'WARRANTY_CLOUDINARY_FOLDER'} missing`);
+    throw new HttpError(fail(503, 'UPLOAD_UNAVAILABLE', E.photoUnavailable));
+  }
+  return { cfg, folder };
 }
 
 const RATE_LIMITED = () => fail(429, 'RATE_LIMITED', E.rateLimited);
 
-// POST /api/garansi/upload-signature (group 4).
+/**
+ * Cheap gate before any Firestore read (review SEC-01): a key Firestore already refused, or a source over its local
+ * budget, gets 429 without touching the database.
+ */
+function gateRefuses(deps: Deps, key: string): boolean {
+  return deps.gate.refuse(key, deps.now());
+}
+
+/** Firestore limits; a refusal is remembered locally until the end of the longest window of the rules checked. */
+async function limits(deps: Deps, gateKey: string, rules: LimitRule[]): Promise<boolean> {
+  const now = deps.now();
+  const res = await checkLimits(deps.db, rules, now, deps.stamp);
+  if (!res.ok) {
+    const rule = rules.find(r => r.key === res.key);
+    deps.gate.block(gateKey, now + Math.min(rule ? rule.windowMs : HOUR_MS, HOUR_MS));
+  }
+  return res.ok;
+}
+
+// GET /api/garansi/form-token: the timer token both forms send back (3.3, 10.3), bound to the caller's IP bucket.
+export async function handleFormToken(deps: Deps, req: HandlerRequest): Promise<HandlerResponse> {
+  return guard(deps, 'form-token', async () => {
+    const secret = requireSecret(deps);
+    return json(200, { token: issueFormToken(secret, deps.now(), ipHash(secret, clientIp(req.headers))) });
+  });
+}
+
+/** Honeypot and timer (3.3). A filled honeypot gets a silent 200 that looks like success and writes nothing. */
+function antiSpam(deps: Deps, body: Record<string, unknown>, secret: string, ip: string, prefix: 'GRN' | 'MSK'): HandlerResponse | null {
+  if (typeof body.trap === 'string' ? body.trap !== '' : body.trap !== undefined) {
+    deps.log(`[${prefix === 'GRN' ? 'garansi' : 'masukan'}] honeypot`);
+    const fake = generateTicket(deps.randomBytes(6), prefix);
+    return json(200, prefix === 'GRN' ? { ticket: fake } : { ref: fake });
+  }
+  const timer = checkFormToken(secret, body.formToken, deps.now(), ip);
+  if (timer === 'invalid') return fail(400, 'FORM_EXPIRED', E.formExpired);
+  if (timer === 'too-fast') return fail(400, 'TOO_FAST', E.tooFast);
+  return null;
+}
+
+// POST /api/garansi/upload-signature (group 4). Needs a valid form token, so signatures go to an open form only
+// (review SEC-08); budget per IP bucket and a global daily cap (review SEC-02).
 export async function handleUploadSignature(deps: Deps, req: HandlerRequest): Promise<HandlerResponse> {
   return guard(deps, 'garansi-sign', async () => {
     const secret = requireSecret(deps);
-    const cfg = deps.env.cloudinary;
-    if (!cfg) {
-      deps.log('[garansi-sign] Cloudinary key missing');
-      return fail(503, 'UPLOAD_UNAVAILABLE', E.photoUnavailable);
-    }
-    const now = deps.now();
+    const { cfg, folder } = requirePhotoConfig(deps, 'garansi-sign');
+    const body = req.body ? parseBody(req) : {};
+    if (unknownKeys(body, ['formToken']).length) return fail(400, 'UNKNOWN_KEYS', E.badRequest);
     const ip = ipHash(secret, clientIp(req.headers));
-    const { hour } = rateBuckets(now);
-    const limited = await checkLimits(deps.db, [{ key: `garansi-sign-${ip}-${hour}`, limit: deps.env.rates.signHour, windowMs: HOUR_MS }], now, deps.stamp);
-    if (!limited.ok) return RATE_LIMITED();
-    return json(200, uploadSignature(cfg, { folder: deps.env.folder, now, randomId: randomPublicId(deps.randomBytes(18)) }));
+    if (checkFormToken(secret, body.formToken, deps.now(), ip) === 'invalid') return fail(400, 'FORM_EXPIRED', E.formExpired);
+    const gateKey = `sign:${ip}`;
+    if (gateRefuses(deps, gateKey)) return RATE_LIMITED();
+    const now = deps.now();
+    const { hour, day } = rateBuckets(now);
+    const r = deps.env.rates;
+    const ok = await limits(deps, gateKey, [
+      { key: `garansi-sign-${ip}-${hour}`, limit: r.signHour, windowMs: HOUR_MS },
+      { key: `garansi-sign-global-${day}`, limit: r.signGlobalDay, windowMs: DAY_MS },
+    ]);
+    if (!ok) return RATE_LIMITED();
+    return json(200, uploadSignature(cfg, { folder, now, randomId: randomPublicId(deps.randomBytes(18)) }));
   });
 }
 
@@ -239,56 +297,55 @@ async function createWithFreshId(deps: Deps, collection: string, prefix: 'GRN' |
   throw new Error('ticket collision');
 }
 
-/** Honeypot and timer (3.3). A filled honeypot gets a silent 200 that looks like success and writes nothing. */
-function antiSpam(deps: Deps, body: Record<string, unknown>, secret: string, prefix: 'GRN' | 'MSK'): HandlerResponse | null {
-  if (typeof body.trap === 'string' ? body.trap !== '' : body.trap !== undefined) {
-    deps.log(`[${prefix === 'GRN' ? 'garansi' : 'masukan'}] honeypot`);
-    const fake = generateTicket(deps.randomBytes(6), prefix);
-    return json(200, prefix === 'GRN' ? { ticket: fake } : { ref: fake });
-  }
-  const timer = checkFormToken(secret, body.formToken, deps.now());
-  if (timer === 'invalid') return fail(400, 'FORM_EXPIRED', E.formExpired);
-  if (timer === 'too-fast') return fail(400, 'TOO_FAST', E.tooFast);
-  return null;
-}
-
-// POST /api/garansi (group 3).
+// POST /api/garansi (group 3). Order keeps anonymous cost low: pure checks, local gate, per-IP Firestore limits, one
+// product read, photo checks, then the per-number and global counters, which only valid claims with verified photos
+// spend, so fake photos cannot use up another customer's number (review SEC-03).
 export async function handleCreateClaim(deps: Deps, req: HandlerRequest): Promise<HandlerResponse> {
   return guard(deps, 'garansi', async () => {
     const body = parseBody(req);
     const extra = unknownKeys(body, CLAIM_KEYS);
     if (extra.length) return fail(400, 'UNKNOWN_KEYS', E.badRequest);
     const secret = requireSecret(deps);
-    const spam = antiSpam(deps, body, secret, 'GRN');
+    const ip = ipHash(secret, clientIp(req.headers));
+    const spam = antiSpam(deps, body, secret, ip, 'GRN');
     if (spam) return spam;
+    const { cfg, folder } = requirePhotoConfig(deps, 'garansi');
 
     const now = deps.now();
-    const productNames = await productNamesFor(deps.db, body.product);
-    const v = validateClaimInput(body, { now, productNames, folder: deps.env.folder });
-    if (!v.ok) return fail(400, 'INVALID', E.badRequest, { fields: v.errors });
+    const pre = validateClaimInput(body, { now, productNames: provisionalNames(body.product), folder });
+    if (!pre.ok) return fail(400, 'INVALID', E.badRequest, { fields: pre.errors });
 
-    const ip = ipHash(secret, clientIp(req.headers));
+    const gateKey = `claim:${ip}`;
+    if (gateRefuses(deps, gateKey)) return RATE_LIMITED();
     const { hour, day } = rateBuckets(now);
     const r = deps.env.rates;
-    const limited = await checkLimits(
-      deps.db,
-      [
-        { key: `garansi-submit-${ip}-${hour}`, limit: r.claimHour, windowMs: HOUR_MS },
-        { key: `garansi-submit-day-${ip}-${day}`, limit: r.claimDay, windowMs: DAY_MS },
-        { key: `garansi-wa-${whatsappHash(secret, v.value.whatsapp)}-${day}`, limit: r.claimWaDay, windowMs: DAY_MS },
-      ],
-      now,
-      deps.stamp,
-    );
-    if (!limited.ok) return RATE_LIMITED();
+    const ipOk = await limits(deps, gateKey, [
+      { key: `garansi-submit-${ip}-${hour}`, limit: r.claimHour, windowMs: HOUR_MS },
+      { key: `garansi-submit-day-${ip}-${day}`, limit: r.claimDay, windowMs: DAY_MS },
+    ]);
+    if (!ipOk) return RATE_LIMITED();
 
-    const cfg = deps.env.cloudinary;
-    if (!cfg) {
-      deps.log('[garansi] Cloudinary key missing');
-      return fail(503, 'UPLOAD_UNAVAILABLE', E.photoUnavailable);
+    const productNames = await productNamesFor(deps.db, body.product);
+    const v = validateClaimInput(body, { now, productNames, folder });
+    if (!v.ok) return fail(400, 'INVALID', E.badRequest, { fields: v.errors });
+
+    let verified: (WarrantyPhoto | null)[];
+    try {
+      verified = await Promise.all(v.value.photos.map(p => verifyUploadedPhoto(cfg, p.publicId, deps.fetch)));
+    } catch (e) {
+      if (e instanceof CloudinaryUnavailable) {
+        deps.log('[garansi] Cloudinary unavailable', { status: e.message });
+        return fail(503, 'UPLOAD_UNAVAILABLE', E.photoUnavailable);
+      }
+      throw e;
     }
-    const verified = await Promise.all(v.value.photos.map(p => verifyUploadedPhoto(cfg, p.publicId, deps.fetch).catch(() => null)));
     if (verified.some(p => p === null)) return fail(400, 'INVALID', E.badRequest, { fields: { photos: E.photosInvalid } });
+
+    const numberOk = await limits(deps, `claim-wa:${ip}`, [
+      { key: `garansi-wa-${whatsappHash(secret, v.value.whatsapp)}-${day}`, limit: r.claimWaDay, windowMs: DAY_MS },
+      { key: `garansi-submit-global-${day}`, limit: r.claimGlobalDay, windowMs: DAY_MS },
+    ]);
+    if (!numberOk) return RATE_LIMITED();
 
     const ticket = await createWithFreshId(deps, 'warrantyClaims', 'GRN', id =>
       buildClaim(v.value, { ticket: id, now, ipHash: ip, photos: verified as WarrantyPhoto[], stamp: deps.stamp }),
@@ -305,28 +362,28 @@ export async function handleCreateFeedback(deps: Deps, req: HandlerRequest): Pro
     const extra = unknownKeys(body, FEEDBACK_KEYS);
     if (extra.length) return fail(400, 'UNKNOWN_KEYS', E.badRequest);
     const secret = requireSecret(deps);
-    const spam = antiSpam(deps, body, secret, 'MSK');
+    const ip = ipHash(secret, clientIp(req.headers));
+    const spam = antiSpam(deps, body, secret, ip, 'MSK');
     if (spam) return spam;
 
     const now = deps.now();
+    const pre = validateFeedbackInput(body, { productNames: provisionalNames(body.product) });
+    if (!pre.ok) return fail(400, 'INVALID', E.badRequest, { fields: pre.errors });
+
+    const gateKey = `feedback:${ip}`;
+    if (gateRefuses(deps, gateKey)) return RATE_LIMITED();
+    const { hour, day } = rateBuckets(now);
+    const r = deps.env.rates;
+    const ok = await limits(deps, gateKey, [
+      { key: `masukan-submit-${ip}-${hour}`, limit: r.feedbackHour, windowMs: HOUR_MS },
+      { key: `masukan-submit-day-${ip}-${day}`, limit: r.feedbackDay, windowMs: DAY_MS },
+      { key: `masukan-submit-global-${day}`, limit: r.feedbackGlobalDay, windowMs: DAY_MS },
+    ]);
+    if (!ok) return RATE_LIMITED();
+
     const productNames = await productNamesFor(deps.db, body.product);
     const v = validateFeedbackInput(body, { productNames });
     if (!v.ok) return fail(400, 'INVALID', E.badRequest, { fields: v.errors });
-
-    const ip = ipHash(secret, clientIp(req.headers));
-    const { hour, day } = rateBuckets(now);
-    const r = deps.env.rates;
-    const limited = await checkLimits(
-      deps.db,
-      [
-        { key: `masukan-submit-${ip}-${hour}`, limit: r.feedbackHour, windowMs: HOUR_MS },
-        { key: `masukan-submit-day-${ip}-${day}`, limit: r.feedbackDay, windowMs: DAY_MS },
-        { key: `masukan-submit-global-${day}`, limit: r.feedbackGlobalDay, windowMs: DAY_MS },
-      ],
-      now,
-      deps.stamp,
-    );
-    if (!limited.ok) return RATE_LIMITED();
 
     const ref = await createWithFreshId(deps, 'feedback', 'MSK', id => buildFeedback(v.value, { ref: id, now, ipHash: ip, stamp: deps.stamp }));
     deps.log('[masukan] created', { ref });
@@ -342,6 +399,9 @@ type FeedbackDoc = ReturnType<typeof buildFeedback> & Record<string, unknown>;
 export type PatchResult<U> = { ok: true; update: U } | { ok: false; status: number; code: string; error: string; fields?: Record<string, string> };
 
 const STALE = { ok: false as const, status: 409, code: 'STALE', error: 'Tiket sudah diubah orang lain, muat ulang.' };
+// The history lives on the document (design.md §3); a cap keeps it far below Firestore's 1 MiB limit (review SEC-09).
+const MAX_HISTORY = 200;
+const HISTORY_FULL = { ok: false as const, status: 409, code: 'HISTORY_FULL', error: 'Riwayat tiket sudah penuh (200 catatan). Hubungi pengelola website.' };
 
 function readNote(body: Record<string, unknown>, key: 'publicNote' | 'internalNote', errors: Record<string, string>): string | undefined {
   if (body[key] === undefined) return undefined;
@@ -364,6 +424,7 @@ export function applyPatch(claim: ClaimDoc, body: Record<string, unknown>, staff
   if (unknownKeys(body, CLAIM_PATCH_KEYS).length) return { ok: false, status: 400, code: 'UNKNOWN_KEYS', error: 'Ada isian yang tidak dikenal.' };
   if (typeof body.expectedUpdatedAt !== 'string') return { ok: false, status: 400, code: 'INVALID', error: 'expectedUpdatedAt wajib dikirim.' };
   if (body.expectedUpdatedAt !== toIso(claim.updatedAt)) return STALE;
+  if (((claim.history as unknown[]) || []).length >= MAX_HISTORY) return HISTORY_FULL;
 
   const errors: Record<string, string> = {};
   const from = claim.status as WarrantyStatus;
@@ -448,6 +509,7 @@ export function applyFeedbackPatch(doc: FeedbackDoc, body: Record<string, unknow
   if (unknownKeys(body, FEEDBACK_PATCH_KEYS).length) return { ok: false, status: 400, code: 'UNKNOWN_KEYS', error: 'Ada isian yang tidak dikenal.' };
   if (typeof body.expectedUpdatedAt !== 'string') return { ok: false, status: 400, code: 'INVALID', error: 'expectedUpdatedAt wajib dikirim.' };
   if (body.expectedUpdatedAt !== toIso(doc.updatedAt)) return { ...STALE, error: 'Masukan sudah diubah orang lain, muat ulang.' };
+  if (((doc.history as unknown[]) || []).length >= MAX_HISTORY) return HISTORY_FULL;
   const errors: Record<string, string> = {};
   const from = doc.status as FeedbackStatus;
   let to: FeedbackStatus | undefined;
@@ -541,7 +603,12 @@ async function erp(deps: ErpDeps, req: HandlerRequest, label: string, run: (staf
     deps,
     label,
     async () => {
-      const auth = await authorize(req.headers.get('authorization'), deps.verify, deps.env);
+      const projectId = deps.env.erpProjectId;
+      if (!projectId) {
+        deps.log(`[${label}] ERP_FIREBASE_PROJECT_ID missing`);
+        return fail(503, 'UNAVAILABLE', 'Layanan garansi belum diatur. Hubungi pengelola website.');
+      }
+      const auth = await authorize(req.headers.get('authorization'), deps.verify, { erpProjectId: projectId, staff: deps.env.staff });
       if (!auth.ok) return fail(auth.status, auth.code, auth.error);
       return run(auth.staff);
     },

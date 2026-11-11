@@ -175,6 +175,13 @@ check('W1 claim: consent must be exactly true; video flag boolean', () => {
   assert.strictEqual(vc({ videoViaWhatsApp: 'ya' }).ok, false);
   assert.strictEqual(vc({ videoViaWhatsApp: true }).value.videoViaWhatsApp, true);
 });
+check('W1/SEC-05 invisible characters (zero-width, LRM/RLM/ALM, BOM, word joiner, U+2028/2029) are removed', () => {
+  const hidden = 'Bu\u200Bdi\u200D \u200EContoh\u200F\u061C\uFEFF\u2060';
+  assert.strictEqual(R.cleanLine(hidden), 'Budi Contoh');
+  assert.strictEqual(R.cleanLine('Kota\u2028Contoh'), 'Kota Contoh');
+  assert.strictEqual(R.cleanText('Baris\u200B satu\u2028baris dua\uFEFF'), 'Baris satu\nbaris dua');
+  assert.strictEqual(R.cleanText('Emoji tetap 👍 dan é tetap'), 'Emoji tetap 👍 dan é tetap');
+});
 check('W1 unknown keys are listed (route returns 400)', () => {
   assert.deepStrictEqual(R.unknownKeys(claim({ status: 'resolved', isAdmin: true }), R.CLAIM_KEYS), ['status', 'isAdmin']);
   assert.deepStrictEqual(R.unknownKeys(claim(), R.CLAIM_KEYS), []);
@@ -311,7 +318,7 @@ check('W2 upload signature: sorted k=v pairs joined by &, secret appended, SHA-1
 });
 check('W2 upload params: folder in the public id, random 24-character id, authenticated, no overwrite, jpg/png/webp only', () => {
   const p = CL.buildUploadParams({ folder: FOLDER, now: NOW, randomId: 'Ab3dEf6hIj9kLm2nOp5qRs8t' });
-  assert.deepStrictEqual(p, { allowed_formats: 'jpg,png,webp', overwrite: 'false', public_id: FOLDER + 'Ab3dEf6hIj9kLm2nOp5qRs8t', timestamp: Math.floor(NOW / 1000), type: 'authenticated' });
+  assert.deepStrictEqual(p, { allowed_formats: 'jpg,png,webp', overwrite: 'false', public_id: FOLDER + 'Ab3dEf6hIj9kLm2nOp5qRs8t', timestamp: Math.floor(NOW / 1000), transformation: 'c_limit,h_1920,w_1920', type: 'authenticated' });
   assert.ok(!('tags' in p), 'no tag until A-147');
   assert.ok(!('upload_preset' in p));
   assert.strictEqual(CL.randomPublicId(Buffer.alloc(18, 255)).length, 24);
