@@ -1,5 +1,4 @@
 import { createHmac, timingSafeEqual } from 'crypto';
-import { CLOUDINARY_CLOUD } from '@/lib/constants';
 import type { CloudinaryConfig } from '@/lib/warranty/cloudinary';
 import { MAX_FORM_AGE_MS, MIN_FILL_MS } from '@/lib/warranty/rules';
 
@@ -51,12 +50,24 @@ export interface WarrantyConfig {
   production: boolean;
 }
 
+/**
+ * Warranty photos live in their own Cloudinary account (Angkasa, 2026-11-11), named by CLOUDINARY_URL
+ * (cloudinary://<api_key>:<api_secret>@<cloud_name>). The product cloud in lib/constants is never used here.
+ */
+export function parseCloudinaryUrl(raw: string | undefined): CloudinaryConfig | null {
+  const m = /^cloudinary:\/\/([^:@\s]+):([^@\s]+)@([a-z0-9_-]+)\/?$/i.exec((raw || '').trim());
+  if (!m) return null;
+  try {
+    return { apiKey: decodeURIComponent(m[1]), secret: decodeURIComponent(m[2]), cloud: m[3] };
+  } catch {
+    return null;
+  }
+}
+
 /** Reads the warranty env with defaults that fail closed: no secret → public routes answer 503, no staff → nobody. */
 export function warrantyConfig(env: NodeJS.ProcessEnv = process.env): WarrantyConfig {
   const rawFolder = (env.WARRANTY_CLOUDINARY_FOLDER || '').trim();
   const folder = /^[a-z0-9-]+\/?$/.test(rawFolder) ? rawFolder.replace(/\/?$/, '/') : DEFAULT_FOLDER;
-  const apiKey = (env.CLOUDINARY_API_KEY || '').trim();
-  const secret = (env.CLOUDINARY_API_SECRET || '').trim();
   const rates = { ...DEFAULT_RATES };
   for (const key of Object.keys(RATE_ENV) as (keyof WarrantyRates)[]) {
     const n = Number(env[RATE_ENV[key]]);
@@ -66,7 +77,8 @@ export function warrantyConfig(env: NodeJS.ProcessEnv = process.env): WarrantyCo
   return {
     folder,
     hashSecret: hashSecret.length >= 16 ? hashSecret : null,
-    cloudinary: apiKey && secret ? { cloud: CLOUDINARY_CLOUD, apiKey, secret } : null,
+    cloudinary: parseCloudinaryUrl(env.CLOUDINARY_URL),
+    // Per Vercel target: the ERP staging project on inzta-staging, database-inzta on Production.
     erpProjectId: (env.ERP_FIREBASE_PROJECT_ID || '').trim() || DEFAULT_ERP_PROJECT,
     staff: env.WARRANTY_ERP_STAFF || '',
     origins: env.WARRANTY_ERP_ORIGINS || '',

@@ -147,6 +147,7 @@ function setup(over = {}) {
     'tok-admin-aaaaaaaaaaaaaaaaaaaa': { uid: 'uidAdmin', email: 'admin.contoh@example.com', aud: 'database-inzta', iss: 'https://securetoken.google.com/database-inzta' },
     'tok-produksi-aaaaaaaaaaaaaaaaa': { uid: 'uidProduksi', email: 'produksi.contoh@example.com', aud: 'database-inzta', iss: 'https://securetoken.google.com/database-inzta' },
     'tok-outsider-aaaaaaaaaaaaaaaaa': { uid: 'uidLain', email: 'lain.contoh@example.com', aud: 'database-inzta', iss: 'https://securetoken.google.com/database-inzta' },
+    'tok-stagingerp-aaaaaaaaaaaaaaa': { uid: 'uidAdmin', email: 'admin-dev.contoh@example.com', aud: 'inzta-erp-staging-contoh', iss: 'https://securetoken.google.com/inzta-erp-staging-contoh' },
     'tok-otherproj-aaaaaaaaaaaaaaaa': { uid: 'uidAdmin', email: 'admin.contoh@example.com', aud: 'inzta-5244e', iss: 'https://securetoken.google.com/inzta-5244e' },
   };
   const deps = {
@@ -242,6 +243,13 @@ test('W3 config: secrets missing → public routes 503 with a generic message; f
   const r = await H.handleFormToken(t.deps);
   assert.strictEqual(r.status, 503);
   assert.ok(!JSON.stringify(r.body).includes('WARRANTY_HASH_SECRET'));
+  const parsed = S.parseCloudinaryUrl('cloudinary://123456:abc-DEF_9@rwmgljss');
+  assert.deepStrictEqual(parsed, { apiKey: '123456', secret: 'abc-DEF_9', cloud: 'rwmgljss' });
+  assert.strictEqual(S.warrantyConfig({ CLOUDINARY_URL: 'cloudinary://123456:abc@rwmgljss' }).cloudinary.cloud, 'rwmgljss', 'cloud from CLOUDINARY_URL, never the product cloud');
+  for (const bad of ['', 'https://x', 'cloudinary://only@cloud', 'cloudinary://k:s@', undefined]) assert.strictEqual(S.parseCloudinaryUrl(bad), null, String(bad));
+  assert.strictEqual(S.warrantyConfig({ CLOUDINARY_API_KEY: 'k', CLOUDINARY_API_SECRET: 's' }).cloudinary, null, 'only CLOUDINARY_URL configures the warranty account');
+  assert.strictEqual(S.warrantyConfig({ ERP_FIREBASE_PROJECT_ID: 'inzta-erp-staging-contoh' }).erpProjectId, 'inzta-erp-staging-contoh');
+  assert.strictEqual(S.warrantyConfig({ WARRANTY_ERP_ORIGINS: 'https://inzta-dashboard-staging.vercel.app' }).origins, 'https://inzta-dashboard-staging.vercel.app');
   const cfg = S.warrantyConfig({});
   assert.strictEqual(cfg.folder, 'garansi-staging/');
   assert.strictEqual(cfg.hashSecret, null);
@@ -484,6 +492,13 @@ test('W5/5.1 auth: no token 401, bad token 401, other project 401, not listed 40
   }
   assert.strictEqual((await H.handleErpSummary(t.deps, erpReq(null))).body.code, 'UNAUTHENTICATED');
   assert.strictEqual((await H.handleErpSummary(t.deps, erpReq('tok-outsider-aaaaaaaaaaaaaaaaa'))).body.code, 'FORBIDDEN');
+  // Staging website verifies against the ERP staging project; a production ERP token is refused there and vice versa.
+  const st = setup({ env: { erpProjectId: 'inzta-erp-staging-contoh', origins: 'https://inzta-dashboard-staging.vercel.app' } });
+  const stOk = await H.handleErpSummary(st.deps, erpReq('tok-stagingerp-aaaaaaaaaaaaaaa', { headers: { origin: 'https://inzta-dashboard-staging.vercel.app' } }));
+  assert.strictEqual(stOk.status, 200);
+  assert.strictEqual(stOk.headers['Access-Control-Allow-Origin'], 'https://inzta-dashboard-staging.vercel.app');
+  assert.strictEqual((await H.handleErpSummary(st.deps, erpReq(ADMIN))).status, 401, 'production ERP token on staging');
+  assert.strictEqual((await H.handleErpSummary(t.deps, erpReq('tok-stagingerp-aaaaaaaaaaaaaaa'))).status, 401, 'staging ERP token on production');
   const basic = await H.handleErpSummary(t.deps, { headers: headers({ origin: ERP_ORIGIN, authorization: 'Basic abc' }) });
   assert.strictEqual(basic.status, 401);
   const cookieOnly = await H.handleErpSummary(t.deps, { headers: headers({ origin: ERP_ORIGIN, cookie: 'admin_session=contoh' }) });
