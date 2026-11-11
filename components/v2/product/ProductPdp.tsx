@@ -27,6 +27,7 @@ import { updateCart, useCart } from '@/lib/cart/store';
 import type { CartAddInput } from '@/lib/cart/types';
 import { generateLabel } from '@/lib/product-utils';
 import { trackAddToCart } from '@/lib/tracking';
+import { isZeroVoucher } from '@/components/v2/product/voucher-notice';
 
 export interface PdpProps {
   product: Product;
@@ -234,7 +235,9 @@ export default function ProductPdp({ product, images, positionLabel, badge, fit,
 
   // Summary rows (S3.3.3 generic, S4.3 side).
   let summary: { rows: SummaryRow[]; total: string } | null = null;
-  const voucherRows: SummaryRow[] = order.voucher ? [{ label: 'Diskon Voucher', value: `-${formatRupiah(order.discount)}` }] : [];
+  // A 0-value voucher has no discount row ("-Rp0"); VoucherNotice already says it gives no price cut.
+  const voucherRows: SummaryRow[] =
+    order.voucher && !isZeroVoucher(order.voucher) ? [{ label: 'Diskon Voucher', value: `-${formatRupiah(order.discount)}` }] : [];
   if (side) {
     if (choice) {
       const s = sideSummary(choice, order.quantity);
