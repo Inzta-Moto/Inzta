@@ -469,6 +469,18 @@ check('U-7 errors: messages name the item when they can and say what to do; the 
   assert.strictEqual(none.length, 0);
 });
 
+check('voucher notice: a 0-value voucher says it gives no price cut; a valued one keeps "aktif!" and the personal note', () => {
+  const N = require(path.join(ROOT, 'components/v2/product/voucher-notice.ts'));
+  assert.strictEqual(N.isZeroVoucher({ value: 0 }), true);
+  assert.strictEqual(N.isZeroVoucher({ value: '0' }), true);
+  assert.strictEqual(N.isZeroVoucher({ value: 3 }), false);
+  assert.strictEqual(N.isZeroVoucher(null), false);
+  assert.deepStrictEqual(N.voucherNoticeLines({ code: 'INZ-CONTOH', value: 0 }, false), { title: 'Kode INZ-CONTOH terpasang.', notes: ['Kode ini tidak memberi potongan harga.'] });
+  assert.deepStrictEqual(N.voucherNoticeLines({ code: 'INZ-CONTOH', value: 0 }, true).notes, ['Kode ini tidak memberi potongan harga.', 'Kode pribadi: komisi tidak berlaku.']);
+  assert.deepStrictEqual(N.voucherNoticeLines({ code: 'INZ-CONTOH', value: 3 }, false), { title: 'Voucher INZ-CONTOH aktif!', notes: [] });
+  assert.deepStrictEqual(N.voucherNoticeLines({ code: 'INZ-CONTOH', value: 3 }, true).notes, ['Voucher pribadi: Anda mendapatkan diskon, komisi tidak berlaku.']);
+});
+
 check('U-8 existing order and voucher code is unchanged against origin/staging', () => {
   let base;
   try {
