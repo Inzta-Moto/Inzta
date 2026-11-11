@@ -4,7 +4,11 @@ import path from 'path';
 
 let app;
 
-if (!admin.apps.length) {
+// F-031 (review REV-05): check for the [DEFAULT] app, not for any app, because lib/warranty/erp-auth.ts adds a named
+// "erp" app; if that module loads first, `!admin.apps.length` would skip creating the default app.
+const hasDefaultApp = () => admin.apps.some(a => a?.name === '[DEFAULT]');
+
+if (!hasDefaultApp()) {
   try {
     const privateKey = process.env.FIREBASE_PRIVATE_KEY || process.env.NEXT_PUBLIC_FIREBASE_PRIVATE_KEY;
     const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
@@ -41,4 +45,4 @@ if (!admin.apps.length) {
 export const getAdminDb = () => admin.firestore();
 export const getAdminAuth = () => admin.auth();
 // False when no credentials were found (local or CI build without secrets); public pages then render empty.
-export const hasAdminCredentials = () => admin.apps.length > 0;
+export const hasAdminCredentials = () => hasDefaultApp();
