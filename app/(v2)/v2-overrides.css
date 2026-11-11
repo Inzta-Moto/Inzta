@@ -211,3 +211,41 @@ html:not(.js-nav) .iz-navdd:focus-within .iz-navdd__btn svg { transform: rotate(
 @media (max-width: 767px) {
   .iz-footer.iz-dark li a, .iz-footer.iz-dark li { min-height: 44px; }
 }
+
+/* F-031 1.2 (A-152): warranty entry in the navbar's empty space after the logo. Outlined, never yellow (the yellow
+   "Chat admin" stays the only coloured CTA, F-029 D-1), and hidden wherever it would push other items (1.6). */
+.iz-nav__start { display: flex; align-items: center; gap: var(--space-4); min-width: 0; }
+.iz-navgaransi { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 14px; border-radius: var(--radius-pill); border: 1px solid var(--c-garis); font-size: 15px; font-weight: 600; white-space: nowrap; color: inherit; transition: background-color .15s ease, border-color .15s ease; }
+.iz-navgaransi:hover { background: var(--c-pasir-muda); border-color: var(--c-batu-muda); }
+.iz-navgaransi:focus-visible { outline: 3px solid var(--c-focus); outline-offset: 2px; }
+.iz-navgaransi[aria-current="page"] { border-color: var(--c-kuning-tua); }
+.iz-navgaransi svg { flex: none; }
+.iz-nav--dark .iz-navgaransi { border-color: var(--c-line-on-dark); }
+.iz-nav--dark .iz-navgaransi:hover { background: var(--c-arang-naik); border-color: var(--c-pasir); }
+.iz-nav--dark .iz-navgaransi:focus-visible { outline-color: var(--c-kuning); }
+.iz-navgaransi__short { display: none; }
+/* Measured 2026-11-11: below 1600 px the desktop capsule has 72-119 px free per side, too little for this entry and the
+   Garansi menu item together (labels wrapped), so the entry hides there and the menu item carries it (1.6). */
+@media (min-width: 768px) and (max-width: 1599.98px) {
+  .iz-navgaransi { display: none; }
+}
+/* The Garansi menu item makes five links at 768-1023 px (no fit scale, F-029) and six from 1024 px; up to 1199 px the
+   links sit closer so the labels keep the room they had before F-031 (measured 2026-11-11, bold current link and a
+   chosen motor included). */
+@media (min-width: 768px) and (max-width: 1199.98px) {
+  .iz-nav__links { gap: 14px; }
+}
+@media (max-width: 767px) {
+  .iz-navgaransi { padding: 0 12px; font-size: 14px; }
+  .iz-navgaransi__long { display: none; }
+  .iz-navgaransi__short { display: inline; }
+}
+/* Below 460 px the logo would shrink under its text next to this entry (measured 2026-11-11), so it hides there. */
+@media (max-width: 459.98px) {
+  .iz-navgaransi { display: none; }
+}
+
+/* F-031 1.4: the warranty pill in the buy box and the "Cara pesan" panel is a link to /garansi. */
+.iz-infopill--link { color: var(--c-tinta); text-decoration: underline; text-decoration-color: var(--c-garis); text-underline-offset: 3px; min-height: 44px; }
+.iz-infopill--link:hover { background: var(--c-pasir-muda); text-decoration-color: currentColor; }
+.iz-infopill--link:focus-visible { outline: 3px solid var(--c-focus); outline-offset: 2px; }

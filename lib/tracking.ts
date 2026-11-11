@@ -134,3 +134,10 @@ export function trackBeginCheckout(items: readonly CartTrackItem[], coupon: stri
   gtagSafe('event', 'begin_checkout', { currency: 'IDR', value: valueOf(items), ...(coupon ? { coupon } : {}), items: gaItems(items) });
   fbqSafe('track', 'InitiateCheckout', { content_ids: items.map(i => i.slug), content_type: 'product', value: valueOf(items), num_items: items.length, currency: 'IDR' });
 }
+
+// F-031 2.8, 10.7: form events without parameters, so no personal data and no ticket number reach GA4.
+export type WarrantyEvent = 'warranty_claim_start' | 'warranty_claim_submit' | 'feedback_submit';
+export function trackWarrantyEvent(name: WarrantyEvent): void {
+  if (!allowedHere()) return;
+  gtagSafe('event', name);
+}

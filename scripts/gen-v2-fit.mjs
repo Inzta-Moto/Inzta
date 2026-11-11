@@ -8,7 +8,7 @@ import path from 'node:path';
 
 const dir = path.join('app', '(v2)');
 const out = path.join(dir, 'v2-fit.css');
-const SOURCES = ['v2-tokens.css', 'v2-components.css', 'v2-overrides.css', 'v2-ui.css', 'v2-home.css', 'v2-about.css', 'v2-motor.css', 'v2-article.css', 'v2-article-body.css', 'v2-catalog.css', 'v2-product.css', 'v2-legal.css', 'v2-store.css', 'v2-cart.css'];
+const SOURCES = ['v2-tokens.css', 'v2-components.css', 'v2-overrides.css', 'v2-ui.css', 'v2-home.css', 'v2-about.css', 'v2-motor.css', 'v2-article.css', 'v2-article-body.css', 'v2-catalog.css', 'v2-product.css', 'v2-legal.css', 'v2-store.css', 'v2-cart.css', 'v2-warranty.css'];
 // Already fluid in v2-overrides.css (clamp with a viewport-height limit); scaling them again would fight that rule.
 const SKIP = new Set(['.t-display', '.t-h2-landing', '.t-lead', '.iz-gfeature h3', '.iz-rfeature blockquote', '.iz-page .t-display', '.iz-page .t-h2-landing', '.iz-page .t-lead', '.iz-page .iz-gfeature h3', '.iz-page .iz-rfeature blockquote']);
 const MIN_PX = 13;
