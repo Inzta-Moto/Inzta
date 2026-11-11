@@ -217,13 +217,13 @@ export default function SiteNav({
         if (!e.currentTarget.contains(e.relatedTarget as Node | null)) focusInside.current = false;
       }}
     >
-      <nav ref={navRef} className={`iz-nav${dark ? ' iz-nav--dark' : ''}`} aria-label="Utama">
+      <nav ref={navRef} className={`iz-nav${dark ? ' iz-nav--dark' : ''}${chosen ? ' iz-nav--motor' : ''}`} aria-label="Utama">
         <div className="iz-nav__start">
           <Link className="iz-brand" href="/">
             <img src="/logo-inzta.png" alt="" width={32} height={32} />
             <span>INZTA</span>
           </Link>
-          {/* F-031 1.2 (A-152): warranty entry in the empty space after the logo; not yellow, hidden where it does not fit. */}
+          {/* F-031 1.2, D-W2: warranty entry after the logo; replaces the menu link from 1024 px, icon alone on small phones. */}
           <Link className="iz-navgaransi" href="/garansi" {...page('garansi')}>
             <Shield width={16} height={16} aria-hidden="true" />
             <span className="iz-navgaransi__long">{WARRANTY_COPY.entry.navSlot}</span>

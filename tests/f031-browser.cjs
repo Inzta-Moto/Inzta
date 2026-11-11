@@ -23,8 +23,17 @@ const SHOTS = opt('shots') || path.join(os.tmpdir(), 'f031-shots');
 fs.mkdirSync(SHOTS, { recursive: true });
 
 const WIDTHS = [320, 360, 375, 768, 1024, 1440];
-// Navbar only: 1600 px is where the slot after the logo has room next to the menu item (measured 2026-11-11).
-const NAV_WIDTHS = [320, 360, 375, 430, 460, 768, 900, 1024, 1280, 1440, 1600];
+// Navbar widths of D-W2 (Sehan, 2026-11-11: icon on small phones, button after the logo from 1024 px replacing the
+// menu link, text link at 768-1023 px and in the phone menu).
+const NAV_WIDTHS = [320, 360, 375, 390, 430, 460, 768, 900, 1024, 1100, 1280, 1440, 1600];
+// Expected form of the entry after the logo; a chosen motor widens its chip, so the entry takes a shorter form there.
+function expectedSlot(w, motor) {
+  if (w < 360 || (w >= 768 && w < 1024)) return 'hidden';
+  if (motor && w >= 400 && w < 460) return 'hidden';
+  if (w < 460 || (motor && w < 560) || (motor && w >= 1024 && w < 1200)) return 'icon';
+  if (w < 1440 || (motor && w < 1600)) return 'short';
+  return 'long';
+}
 // 768-899 px already wrapped "Produk", "Pilih motor", and "Chat admin" before F-031 (F-030 cart icon); F-031 keeps
 // that range from growing, the fix itself is a follow-up outside this spec.
 const PREEXISTING_WRAP = w => w >= 768 && w < 900;
@@ -73,12 +82,13 @@ const PNG_1PX = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUl
 
 /** Stubs for every warranty endpoint; returns the captured request bodies. */
 async function stubApis(ctx, o = {}) {
-  const seen = { claims: [], feedback: [], signatures: 0, uploads: 0 };
+  const seen = { claims: [], feedback: [], signatures: 0, uploads: 0, signBodies: [] };
   // External hosts (product photos, GA4, fonts) are answered locally, so the run never waits on the network.
   await ctx.route(u => !/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?\//.test(u.href) && !u.href.startsWith('https://api.cloudinary.com/'), r => r.fulfill({ status: 200, contentType: 'image/png', body: PNG_1PX }));
   await ctx.route('**/api/garansi/form-token', r => r.fulfill({ json: { token: 'token-uji' } }));
   await ctx.route('**/api/garansi/upload-signature', r => {
     seen.signatures++;
+    seen.signBodies.push(JSON.parse(r.request().postData() || '{}'));
     return r.fulfill({ json: { cloudName: 'cloud-uji', apiKey: 'kunci-uji', timestamp: 1, signature: 'tanda-uji', folder: 'garansi-staging/', publicId: `garansi-staging/${'U'.repeat(20)}${seen.signatures}xyz`, allowedFormats: 'jpg,png,webp', type: 'authenticated', overwrite: false, maxBytes: 10485760 } });
   });
   await ctx.route('https://api.cloudinary.com/**', async r => {
@@ -122,7 +132,13 @@ async function navMetrics(page) {
     return {
       noHScroll: document.documentElement.scrollWidth <= innerWidth,
       slot: vis(slot),
+      slotMode: !vis(slot) ? 'hidden' : (() => {
+        const shown = el => vis(el) && getComputedStyle(el).position !== 'absolute';
+        return shown(slot.querySelector('.iz-navgaransi__long')) ? 'long' : shown(slot.querySelector('.iz-navgaransi__short')) ? 'short' : 'icon';
+      })(),
+      slotName: slot ? slot.textContent.replace(/\s+/g, ' ').trim() : '',
       slotH: slot && vis(slot) ? Math.round(r(slot).height) : null,
+      slotHit: slot && vis(slot) ? (() => { const a = getComputedStyle(slot, '::after'); return a.content !== 'none' ? Math.round(r(slot).height - 2 * parseFloat(a.top || '0')) : Math.round(r(slot).height); })() : null,
       linkGaransi: !!links && vis(links) && !!links.querySelector('a[href="/garansi"]') && vis(links.querySelector('a[href="/garansi"]')),
       affiliate: !!links && vis(links.querySelector('a[href="/affiliate/login"]')),
       linksVisible: vis(links),
@@ -134,7 +150,8 @@ async function navMetrics(page) {
       cart: vis(document.querySelector('.iz-navcart')),
       cta: vis(document.querySelector('.iz-nav__cta')),
       navOverflow: Math.round(Math.max(0, nav.scrollWidth - nav.clientWidth)),
-      squeezed: [...document.querySelectorAll('.iz-brand, .iz-navgaransi, .iz-nav__cta, .iz-navcart')].filter(vis).filter(el => el.scrollWidth > el.clientWidth + 1).map(el => el.className),
+      // Only the logo: the cart badge, the animated CTA label, and the entry's touch area overflow their boxes by design.
+      squeezed: [...document.querySelectorAll('.iz-brand')].filter(vis).filter(el => el.scrollWidth > el.clientWidth + 1).map(el => el.className),
       wrapped: [...document.querySelectorAll('.iz-brand, .iz-navgaransi, .iz-nav__links > a, .iz-navdd__btn, .iz-nav__cta')].filter(vis).filter(el => {
         const tops = new Set();
         const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
@@ -164,23 +181,29 @@ async function entries(browser) {
         await page.setViewportSize({ width: w, height: height(w) });
         await page.goto(BASE + p, { waitUntil: 'load', timeout: 180000 });
         await page.waitForTimeout(200);
+        // The motor modifier is set after hydration, from the saved category.
+        if (chip) await page.waitForSelector('.iz-nav.iz-nav--motor', { timeout: 30000 });
         const m = await navMetrics(page);
         const tag = `${label} ${w}px${chip ? ' (motor dipilih)' : ''}`;
         await check(`W7/1.6 navbar ${tag}: no horizontal scroll, one row, no label wraps, nothing overlaps, cart stays`, async () => {
           expect(m.noHScroll, 'horizontal scroll');
           if (!PREEXISTING_WRAP(w)) expect(m.wrapped.length === 0, `labels wrap: ${m.wrapped.join(', ')}`);
-          expect(m.squeezed.length === 0, `squeezed below natural width: ${m.squeezed.join(', ')}`);
+          if (!PREEXISTING_WRAP(w)) expect(m.squeezed.length === 0, `logo squeezed below its natural width: ${m.squeezed.join(', ')}`);
           expect(m.oneRow, 'links wrap');
           expect(!m.startOverlapsLinks && !m.startOverlapsActions && !m.linksOverlapActions, JSON.stringify(m));
           expect(m.actionsInside && m.navOverflow === 0, `outside capsule ${JSON.stringify(m)}`);
           expect(m.cart, 'cart icon missing');
           if (w >= 768) expect(m.cta, '"Chat admin" missing');
         });
-        const slotShown = (w >= 460 && w < 768) || w >= 1600;
-        await check(`W7/1.1–1.2 navbar ${tag}: Garansi reachable; slot ${slotShown ? 'shown' : 'hidden (no room, 1.6)'}; Affiliate rule kept`, async () => {
-          if (w >= 768) expect(m.linkGaransi, 'Garansi link missing in desktop links');
-          expect(m.slot === slotShown, `slot visible=${m.slot} at ${w}`);
-          if (m.slot) expect(m.slotH >= 44, `slot target ${m.slotH}px`);
+        const want = expectedSlot(w, Boolean(chip));
+        await check(`W7/1.1–1.2 D-W2 navbar ${tag}: entry after the logo ${want}; menu link only at 768-1023; Affiliate rule kept`, async () => {
+          expect(m.slotMode === want, `entry ${m.slotMode}, expected ${want}`);
+          expect(m.linkGaransi === (w >= 768 && w < 1024), `menu link visible=${m.linkGaransi} at ${w}`);
+          if (w >= 1024) expect(m.slot, 'no Garansi entry on desktop');
+          if (m.slot) {
+            expect(m.slotName.startsWith('Garansi'), `accessible text "${m.slotName}"`);
+            expect(m.slotHit >= 44, `touch area ${m.slotHit}px`);
+          }
           expect(m.affiliate === (w >= 1024), `affiliate visible=${m.affiliate} at ${w}`);
           return `slot=${m.slot}`;
         });
@@ -203,9 +226,9 @@ async function entries(browser) {
     expect(links.some(([t, h]) => t === 'Garansi' && h === '/garansi'), 'Garansi');
     expect(links.some(([t, h]) => t === 'Kirim masukan' && h === '/garansi#masukan'), 'Kirim masukan');
   });
-  await check('W7/1.4 Cara pesan pill on the Beranda links to /garansi with "Garansi 6 bulan"', async () => {
+  await check('W7/1.4 Cara pesan pill on the Beranda carries the buy box value and links to /garansi', async () => {
     const pill = await page.$eval('#cara-pesan a.iz-infopill', a => [a.textContent.trim(), a.getAttribute('href')]).catch(() => null);
-    expect(pill && pill[0] === 'Garansi 6 bulan' && pill[1] === '/garansi', JSON.stringify(pill));
+    expect(pill && pill[0] === 'Garansi 6 bulan · Cara klaim' && pill[1] === '/garansi', JSON.stringify(pill));
   });
   for (const w of [375, 1440]) {
     await page.setViewportSize({ width: w, height: height(w) });
@@ -316,6 +339,7 @@ async function claimFlow(browser) {
     await page.click('button[aria-label="Hapus foto 2"]');
     expect((await page.$$('.iz-gr-photo')).length === 1, 'remove failed');
     expect(!(await page.$('#gr-photos-err')), 'HEIC error should clear after a good pick');
+    expect(seen.signBodies.length === 2 && seen.signBodies.every(b => b.formToken === 'token-uji'), `signature requests carry the form token: ${JSON.stringify(seen.signBodies)}`);
   });
 
   await check('W8/2.2 filled form: request carries only allowed keys, photos from Cloudinary, raw number; 3.5a hint shown for an old date', async () => {
