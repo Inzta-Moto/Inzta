@@ -168,7 +168,7 @@ function gateRefuses(deps: Deps, key: string): boolean {
   return deps.gate.refuse(key, deps.now());
 }
 
-/** Firestore limits; a refusal is remembered locally until the end of the longest window of the rules checked. */
+/** Firestore limits; a refusal is remembered locally (gate key) for the refused rule's window, at most one hour. */
 async function limits(deps: Deps, gateKey: string, rules: LimitRule[]): Promise<boolean> {
   const now = deps.now();
   const res = await checkLimits(deps.db, rules, now, deps.stamp);
@@ -324,6 +324,10 @@ export async function handleCreateClaim(deps: Deps, req: HandlerRequest): Promis
       { key: `garansi-submit-day-${ip}-${day}`, limit: r.claimDay, windowMs: DAY_MS },
     ]);
     if (!ipOk) return RATE_LIMITED();
+    // A source whose last claim hit the per-number or global cap is refused here, before the product read and the
+    // Cloudinary calls (review REV-03).
+    const numberGateKey = `claim-wa:${ip}`;
+    if (gateRefuses(deps, numberGateKey)) return RATE_LIMITED();
 
     const productNames = await productNamesFor(deps.db, body.product);
     const v = validateClaimInput(body, { now, productNames, folder });
@@ -341,7 +345,7 @@ export async function handleCreateClaim(deps: Deps, req: HandlerRequest): Promis
     }
     if (verified.some(p => p === null)) return fail(400, 'INVALID', E.badRequest, { fields: { photos: E.photosInvalid } });
 
-    const numberOk = await limits(deps, `claim-wa:${ip}`, [
+    const numberOk = await limits(deps, numberGateKey, [
       { key: `garansi-wa-${whatsappHash(secret, v.value.whatsapp)}-${day}`, limit: r.claimWaDay, windowMs: DAY_MS },
       { key: `garansi-submit-global-${day}`, limit: r.claimGlobalDay, windowMs: DAY_MS },
     ]);
@@ -468,7 +472,8 @@ export function applyPatch(claim: ClaimDoc, body: Record<string, unknown>, staff
   // Entering in_progress hands the work to the production team (6.6).
   const nextAssignee = to === 'in_progress' ? 'produksi' : assignee;
   const assigneeChanged = nextAssignee !== undefined && nextAssignee !== claim.assignee;
-  const publicChanged = publicNote !== undefined && publicNote !== claim.publicNote;
+  const noteRequired = Boolean(to && requiredFieldsFor(to, from).includes('publicNote'));
+  const publicChanged = publicNote !== undefined && (publicNote !== claim.publicNote || noteRequired);
   if (!to && !assigneeChanged && !publicChanged && !internalNote) return { ok: false, status: 400, code: 'NO_CHANGE', error: 'Tidak ada perubahan untuk disimpan.' };
 
   const ts = stamp(now);
@@ -546,7 +551,10 @@ export function claimView(d: ClaimDoc, deps: Pick<Deps, 'env' | 'now'>, role: Er
   const now = deps.now();
   const cfg = deps.env.cloudinary;
   const history = ((d.history as WarrantyHistoryEntry[]) || []).map(h => ({ ...h }));
-  const message = whatsappTemplate(d.status, { ticket: d.ticket, name: d.customer.name, publicNote: d.publicNote });
+  // The note written together with the move to the current status (review REV-05); an older note, for example the
+  // request of waiting_customer, must not follow into the in_progress message.
+  const statusEntry = [...history].reverse().find(h => h.to === d.status);
+  const message = whatsappTemplate(d.status, { ticket: d.ticket, name: d.customer.name, publicNote: statusEntry?.publicNote ?? '' });
   return {
     ticket: d.ticket,
     status: d.status,

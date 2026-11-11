@@ -8,7 +8,7 @@ export const WARRANTY_COPY = {
     navSlot: 'Garansi 6 bulan',
     navSlotShort: 'Garansi',
     buyBox: 'Garansi 6 bulan · Cara klaim',
-    howToPill: 'Garansi 6 bulan',
+    howToPill: 'Garansi 6 bulan · Cara klaim',
     footerClaim: 'Garansi',
     footerFeedback: 'Kirim masukan',
   },

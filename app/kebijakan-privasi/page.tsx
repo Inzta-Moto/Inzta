@@ -53,6 +53,8 @@ export default function KebijakanPrivasiPage() {
         <li>
           <strong>Penyimpanan di browser Anda.</strong> Kode afiliasi dan sumber kunjungan pertama disimpan di penyimpanan lokal
           browser (localStorage) supaya voucher mitra dan sumber pesanan tercatat. Sumber kunjungan dihapus otomatis setelah 30 hari.
+          Isian teks formulir klaim garansi yang belum dikirim disimpan sementara di sessionStorage browser Anda, supaya tidak hilang
+          saat halaman dimuat ulang; isian itu terhapus saat tab ditutup atau klaim terkirim.
         </li>
         <li>
           <strong>Log server.</strong> Penyedia hosting mencatat alamat IP, waktu akses, dan halaman yang diminta untuk keamanan dan

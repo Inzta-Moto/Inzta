@@ -63,6 +63,9 @@ export default function ClaimForm({ products }: { products: WarrantyProductOptio
   const [done, setDone] = useState<{ ticket: string; video: boolean } | null>(null);
   const [announce, setAnnounce] = useState('');
   const [trap, setTrap] = useState('');
+  // Today (WIB) set after mount: the page is ISR, so a server-rendered max could be a day old (review REV-06).
+  const [today, setToday] = useState<string | undefined>(undefined);
+  useEffect(() => setToday(wibDate(Date.now())), []);
   const { token, renew } = useFormToken();
   const formRef = useRef<HTMLFormElement>(null);
   const successRef = useRef<HTMLHeadingElement>(null);
@@ -104,6 +107,9 @@ export default function ClaimForm({ products }: { products: WarrantyProductOptio
       .catch((e: unknown) => {
         if (item.abort.signal.aborted) return;
         const msg = e instanceof UploadError ? e.message : ERR.photoUpload;
+        // The token is bound to the IP bucket and lasts 6 hours; after a network switch or a long pause a fresh one
+        // makes "Coba lagi" work (review SEC-04).
+        if (msg === ERR.formExpired) renew();
         setPhotos(ps => ps.map(p => (p.key === item.key ? { ...p, status: 'error', error: msg } : p)));
         setAnnounce(`${C.photoFailed(n)}. ${msg}`);
       });
@@ -252,7 +258,7 @@ export default function ClaimForm({ products }: { products: WarrantyProductOptio
         <ChipGroup id={`${ID}-channel`} legend={C.channel} error={err('channel')} options={opts(CHANNELS, O.channel)} value={v.channel} onChange={c => set('channel', c)} />
         <div className="iz-gr-pair">
           <Field id={`${ID}-purchaseDate`} label={C.purchaseDate} hint={C.purchaseDateHint} error={err('purchaseDate')} optional>
-            <input id={`${ID}-purchaseDate`} className="iz-gr-input" type="date" min="2020-01-01" max={wibDate(Date.now())} value={v.purchaseDate} onChange={e => set('purchaseDate', e.target.value)} aria-invalid={Boolean(err('purchaseDate'))} aria-describedby={describedBy(`${ID}-purchaseDate`, true, err('purchaseDate'))} />
+            <input id={`${ID}-purchaseDate`} className="iz-gr-input" type="date" min="2020-01-01" max={today} value={v.purchaseDate} onChange={e => set('purchaseDate', e.target.value)} aria-invalid={Boolean(err('purchaseDate'))} aria-describedby={describedBy(`${ID}-purchaseDate`, true, err('purchaseDate'))} />
             {outside && !err('purchaseDate') && (
               <p className="iz-gr-note" role="status">
                 {C.outsidePeriodHint}

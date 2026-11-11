@@ -237,7 +237,7 @@ const test = (name, fn) => tests.push([name, fn]);
 
 // Public: form token and upload signature
 
-test('W3/3.3 form token: issued now, accepted after 5 s, too fast before, invalid when forged or older than 24 h', async () => {
+test('W3/3.3 form token: issued now, accepted after 5 s, too fast before, invalid when forged, from another IP, or older than 6 h', async () => {
   const t = setup();
   const tok = (await H.handleFormToken(t.deps, pub(''))).body.token;
   const me = S.ipHash(SECRET, '203.0.113.7');
@@ -881,6 +881,28 @@ test('SEC-09 history is capped at 200 entries: further changes answer 409 HISTOR
   assert.strictEqual(r.status, 409);
   assert.strictEqual(r.body.code, 'HISTORY_FULL');
   assert.strictEqual(t.db._store.get(`warrantyClaims/${ticket}`).history.length, 200);
+});
+
+test('REV-03 after the per-number cap, repeats from that source skip the product read and Cloudinary', async () => {
+  const t = setup({ env: { rates: { ...S.DEFAULT_RATES, claimHour: 100, claimDay: 100 } } });
+  for (let i = 0; i < 3; i++) assert.strictEqual((await H.handleCreateClaim(t.deps, pub(await claimBody(t)))).status, 201);
+  assert.strictEqual((await H.handleCreateClaim(t.deps, pub(await claimBody(t)))).status, 429);
+  const calls = t.cld.calls.length;
+  for (let i = 0; i < 5; i++) assert.strictEqual((await H.handleCreateClaim(t.deps, pub(await claimBody(t)))).status, 429);
+  assert.strictEqual(t.cld.calls.length, calls, 'Cloudinary called again after the cap');
+});
+test('REV-05 the in_progress message does not repeat the waiting_customer note; a required note is recorded even if unchanged', async () => {
+  const t = setup();
+  const ticket = await seedClaim(t);
+  let c = await detail(t, ticket);
+  c = (await patch(t, ticket, { expectedUpdatedAt: c.updatedAt, status: 'under_review' })).body.claim;
+  c = (await patch(t, ticket, { expectedUpdatedAt: c.updatedAt, status: 'waiting_customer', publicNote: 'Mohon kirim foto label produk.' })).body.claim;
+  assert.ok(c.customerMessage.includes('foto label produk'));
+  c = (await patch(t, ticket, { expectedUpdatedAt: c.updatedAt, status: 'in_progress' })).body.claim;
+  assert.strictEqual(c.customerMessage, `Halo Budi Contoh, klaim ${ticket} sedang ditangani tim produksi INZTA.`);
+  c = (await patch(t, ticket, { expectedUpdatedAt: c.updatedAt, status: 'waiting_customer', publicNote: 'Mohon kirim foto label produk.' })).body.claim;
+  assert.strictEqual(t.db._store.get(`warrantyClaims/${ticket}`).history.at(-1).publicNote, 'Mohon kirim foto label produk.');
+  assert.ok(c.customerMessage.includes('foto label produk'), 'same note sent again still fills the message');
 });
 
 // Firebase Admin app order (review REV-05)

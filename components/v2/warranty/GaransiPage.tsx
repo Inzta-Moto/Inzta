@@ -14,7 +14,7 @@ const F = WARRANTY_COPY.feedback;
 
 function AskCard() {
   return (
-    <aside className="iz-gr-side" aria-labelledby="gr-ask-title">
+    <aside className="iz-gr-side">
       <div className="iz-gr-card">
         <h2 className="t-h3" id="gr-terms-title">
           <Shield width={20} height={20} aria-hidden="true" /> {P.termsTitle}
