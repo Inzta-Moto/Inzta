@@ -181,8 +181,27 @@ html.iz-motion .iz-film-scene.is-pinned .iz-film > .iz-photo--tall { width: auto
 
 /* Beranda hero title (owner copy, 2026-11-02): one sentence per line. */
 .iz-hero__title--home .iz-hero__line { display: block; }
-/* The second sentence fits one line at about 76 px within the 780 px title box; at 88 px it broke onto a third line,
-   and a wider box would run the yellow words over the rider's yellow jacket. Phones keep the shared 44 px. */
+/* The motion splits the title into word boxes of letter boxes (SplitText, lib/v2/motion/engine.ts hero()), and a line
+   may break between any two letter boxes, so a word box laid out narrower than its letters breaks the word apart. Most
+   likely cause of "C / arry" on iPhone Chrome (Bang Raja, 2026-11-11; not reproduced in desktop Chromium or WebKit).
+   Words stay whole; lines still break between words. */
+.iz-hero__title--home .iz-hero__line > div { white-space: nowrap; }
+/* Type of the first site's hero (Inter 800, uppercase, tight; owner via Bang Raja, 2026-11-11: more adventure). The
+   font comes from components/v2/home/heroFont.ts and applies to this title only. */
+.iz-page .t-display.iz-hero__title--home { font-family: var(--font-hero-v2), "Arial Black", "Arial", sans-serif; font-weight: 800; font-variation-settings: normal; text-transform: uppercase; line-height: 0.9; letter-spacing: -0.04em; }
+/* Phones: the first site's 36 px, smaller than the shared 44 px (Bang Raja asked for a smaller title on phones);
+   "ADVENTURE." still fits the 280 px title box at 320 px. */
+@media (max-width: 767px) {
+  .iz-page .t-display.iz-hero__title--home { font-size: 36px; }
+}
+/* Tablet and desktop: the first site's clamp(48px, 8vw, 96px), also capped by the viewport height so the title,
+   lead and buttons stay on the first screen of a short laptop window. The box is about the first site's 640 px at
+   96 px, so each sentence breaks after its first words ("CARRY / YOUR GEAR."). */
+@media (min-width: 768px) {
+  .iz-page .t-display.iz-hero__title--home { max-width: 6.8em; font-size: clamp(48px, min(8vw, 10.5vh), 96px); }
+}
+/* Desktop: at 8vw the 1024 px title ran over the rider's yellow jacket; 6.6vw keeps it left of the bike from
+   1024 px up and still reaches 96 px on large screens. */
 @media (min-width: 1024px) {
-  .iz-page .t-display.iz-hero__title--home { font-size: clamp(52px, min(5.2vw, 9.5vh), 76px); }
+  .iz-page .t-display.iz-hero__title--home { font-size: clamp(48px, min(6.6vw, 10.5vh), 96px); }
 }
