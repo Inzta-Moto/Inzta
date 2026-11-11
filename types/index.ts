@@ -484,3 +484,79 @@ export interface OrderItemInput {
   variationId: string | null;
   quantity: number;
 }
+
+// F-031 warranty claims (warrantyClaims/{ticket}) and feedback (feedback/{ref}) in the website Firestore. Timestamps
+// are Firestore Timestamps in the database and ISO strings in every API response (design.md §3).
+export type WarrantyStatus = 'new' | 'under_review' | 'in_progress' | 'waiting_customer' | 'resolved' | 'rejected';
+export type WarrantyChannel = 'website' | 'shopee' | 'tokopedia' | 'toko-partner' | 'lainnya';
+export type WarrantyUsage = 'lt1' | '1-3' | '3-6' | '6-12' | 'gt12';
+export type WarrantyDamage = 'resleting' | 'jahitan' | 'tali-buckle' | 'kunci-pengait' | 'bocor' | 'bahan-robek' | 'lainnya';
+export type WarrantyAssignee = 'admin' | 'produksi';
+export type WarrantyResolution = 'diperbaiki' | 'diganti' | 'kirim-part' | 'refund' | 'saran' | 'lainnya';
+export type WarrantyRejectReason = 'lewat-masa' | 'pemakaian' | 'bukan-produk-inzta' | 'data-tidak-cocok' | 'lainnya';
+// 'produksi' is accepted by the parser but refused by the ERP API until release 2 (requirement 5.8).
+export type WarrantyStaffRole = 'admin' | 'produksi';
+
+export interface WarrantyPhoto {
+  publicId: string;
+  version: number;
+  width: number;
+  height: number;
+  format: 'jpg' | 'png' | 'webp';
+}
+
+export interface WarrantyHistoryEntry {
+  at: string;
+  by: string;
+  byUid?: string;
+  from?: WarrantyStatus;
+  to?: WarrantyStatus;
+  assignee?: WarrantyAssignee;
+  publicNote?: string;
+  internalNote?: string;
+  resolution?: WarrantyResolution;
+  rejectReason?: WarrantyRejectReason;
+}
+
+export interface WarrantyClaimInput {
+  name: string;
+  whatsapp: string;
+  location: string;
+  productSlug: string | null;
+  productName: string;
+  channel: WarrantyChannel;
+  purchaseDate: string | null;
+  orderRef: string | null;
+  usage: WarrantyUsage;
+  damage: WarrantyDamage[];
+  description: string;
+  photos: WarrantyPhoto[];
+  videoViaWhatsApp: boolean;
+}
+
+export type FeedbackKind = 'pengalaman' | 'kritik' | 'saran';
+export type FeedbackStatus = 'new' | 'read' | 'followed_up' | 'archived';
+
+export interface FeedbackHistoryEntry {
+  at: string;
+  by: string;
+  byUid?: string;
+  from?: FeedbackStatus;
+  to?: FeedbackStatus;
+  internalNote?: string;
+}
+
+export interface FeedbackInput {
+  kind: FeedbackKind;
+  message: string;
+  productSlug: string | null;
+  productName: string | null;
+  name: string | null;
+  whatsapp: string | null;
+}
+
+// Product choice served to the public forms (requirement 2.2): active products only, name and slug.
+export interface WarrantyProductOption {
+  slug: string;
+  name: string;
+}
