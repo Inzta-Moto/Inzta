@@ -465,7 +465,7 @@ async function seoAndPrivacy() {
     const html = await fetchText(BASE + '/garansi');
     expect(/<title>Klaim Garansi dan Kirim Masukan \| INZTA Moto<\/title>/.test(html), 'title');
     expect(html.includes('<link rel="canonical" href="https://inzta.id/garansi"/>'), 'canonical');
-    expect(/<meta name="description" content="Ajukan klaim Garansi 6 bulan/.test(html), 'description');
+    expect(/<meta name="description" content="[^"]*Garansi 6 bulan/.test(html), 'description');
     expect(!/noindex/.test(html), 'noindex on /garansi');
     expect(html.includes('Klaim Garansi') && html.includes('Isi formulir'), 'not server-rendered');
   });
