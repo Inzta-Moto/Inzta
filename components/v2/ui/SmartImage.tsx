@@ -77,6 +77,8 @@ export default function SmartImage({
           sizes={srcSet ? sizes : undefined}
           alt={alt}
           loading={priority ? 'eager' : 'lazy'}
+          // The LCP cover: React 18 only passes the lowercase attribute through (next/image does the same).
+          {...(priority ? { fetchpriority: 'high' } : {})}
           decoding="async"
           onLoad={() => setState('loaded')}
           onError={() => setState('error')}
