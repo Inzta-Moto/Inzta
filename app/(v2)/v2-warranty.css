@@ -1,0 +1,126 @@
+/* F-031 /garansi: claim and feedback forms (design.md §8.2). Tokens only; every selector is an iz- class (S0.1.1).
+   Imported by app/garansi/page.tsx. Controls keep a 48 px target; errors sit under their field. */
+/* No error colour exists in the v2 tokens yet; one local token (6.9:1 on --c-kertas-terang) keeps it in one place. */
+.iz-gr { --iz-gr-err: #a1260d; padding-top: 128px; padding-bottom: var(--space-section); }
+.iz-gr-head { margin-bottom: var(--space-8); }
+.iz-gr-head .t-lead { max-width: 640px; }
+
+.iz-gr-switch { display: inline-flex; gap: 4px; padding: 4px; margin-top: var(--space-2); border-radius: var(--radius-pill); background: var(--c-pasir-muda); align-self: flex-start; }
+.iz-gr-switch a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 var(--space-5); border-radius: var(--radius-pill); font-size: 16px; font-weight: 600; color: var(--c-batu); }
+.iz-gr-switch a:hover { color: var(--c-tinta); }
+.iz-gr-switch a[aria-current="true"] { background: var(--c-kertas-terang); color: var(--c-tinta); box-shadow: var(--shadow-lift); }
+.iz-gr-switch a:focus-visible { outline: 3px solid var(--c-focus); outline-offset: 2px; }
+
+.iz-gr-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-4); margin: 0 0 var(--space-10); padding: 0; list-style: none; counter-reset: none; }
+.iz-gr-steps li { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-4); border-radius: var(--radius-tile); background: var(--c-kertas-terang); border: 1px solid var(--c-garis); font-size: 16px; font-weight: 600; }
+.iz-gr-steps__n { flex: none; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: var(--c-tinta); color: var(--c-krem); font-family: var(--font-display); font-weight: 800; font-size: 17px; }
+
+.iz-gr-section { scroll-margin-top: 96px; }
+.iz-gr-layout { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: var(--space-8); align-items: start; }
+.iz-gr-main { min-width: 0; }
+.iz-gr-main--wide { max-width: 800px; }
+.iz-gr-side { display: flex; flex-direction: column; gap: var(--space-4); position: sticky; top: 96px; }
+.iz-gr-card { padding: var(--space-6); border-radius: var(--radius-tile-lg); background: var(--c-kertas-terang); border: 1px solid var(--c-garis); }
+.iz-gr-card h2 { display: flex; align-items: center; gap: 8px; margin-bottom: var(--space-2); }
+.iz-gr-card p { color: var(--c-batu); font-size: 16px; line-height: 1.55; margin-bottom: var(--space-4); }
+.iz-gr-card p:last-child { margin-bottom: 0; }
+.iz-gr-card .iz-btn { min-height: 48px; padding: 0 var(--space-5); font-size: 16px; }
+
+.iz-gr-form, .iz-gr-success { padding: var(--space-8); border-radius: var(--radius-panel); background: var(--c-kertas-terang); border: 1px solid var(--c-garis); }
+.iz-gr-formtitle { font-family: var(--font-sans); font-size: 26px; line-height: 1.2; font-weight: 700; margin-bottom: var(--space-6); }
+.iz-gr-formtitle:focus { outline: none; }
+.iz-gr-formtitle:focus-visible { outline: 3px solid var(--c-focus); outline-offset: 4px; }
+.iz-gr-group { display: flex; flex-direction: column; gap: var(--space-5); padding-bottom: var(--space-6); margin-bottom: var(--space-6); border-bottom: 1px solid var(--c-garis); }
+.iz-gr-grouptitle { font-size: 15px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--c-kuning-tua); }
+/* Fields placed straight in a form (the feedback form has no groups) get the same rhythm as fields inside a group. */
+.iz-gr-form > .iz-gr-field, .iz-gr-form > .iz-gr-pair { margin-bottom: var(--space-5); }
+.iz-gr-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-5); align-items: start; }
+
+.iz-gr-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; margin: 0; padding: 0; border: 0; }
+.iz-gr-field:focus { outline: none; }
+.iz-gr-field:focus-visible { outline: 3px solid var(--c-focus); outline-offset: 4px; border-radius: 8px; }
+.iz-gr-label { font-size: 16px; font-weight: 600; color: var(--c-tinta); padding: 0; }
+.iz-gr-opt { font-weight: 500; color: var(--c-batu); }
+.iz-gr-hint { font-size: 15px; line-height: 1.45; color: var(--c-batu); }
+.iz-gr-below { display: flex; justify-content: space-between; gap: var(--space-3); }
+.iz-gr-below:empty { display: none; }
+.iz-gr-count { flex: none; font-size: 14px; color: var(--c-batu); font-variant-numeric: tabular-nums; }
+.iz-gr-err { font-size: 15px; line-height: 1.45; font-weight: 600; color: var(--iz-gr-err); }
+.iz-gr-note { font-size: 15px; line-height: 1.45; color: var(--c-tinta); padding: 8px 12px; border-radius: 10px; background: var(--c-pasir-muda); }
+
+.iz-gr-input { width: 100%; min-height: 48px; padding: 10px 14px; border: 1px solid var(--c-garis); border-radius: 12px; background: var(--c-kertas); color: var(--c-tinta); font: inherit; font-size: 16px; line-height: 1.4; appearance: none; }
+.iz-gr-input:hover { border-color: var(--c-batu-muda); }
+.iz-gr-input:focus-visible { outline: 3px solid var(--c-focus); outline-offset: 1px; border-color: var(--c-tinta); }
+.iz-gr-field[data-invalid] .iz-gr-input { border-color: var(--iz-gr-err); }
+.iz-gr-textarea { min-height: 132px; resize: vertical; }
+.iz-gr-select { padding-right: 40px; background-image: linear-gradient(45deg, transparent 50%, var(--c-batu) 50%), linear-gradient(135deg, var(--c-batu) 50%, transparent 50%); background-position: calc(100% - 20px) 50%, calc(100% - 14px) 50%; background-size: 6px 6px; background-repeat: no-repeat; }
+
+.iz-gr-chiprow { display: flex; flex-wrap: wrap; gap: 8px; }
+.iz-gr-chip { position: relative; display: inline-flex; }
+.iz-gr-chip input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.iz-gr-chip span { display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border-radius: var(--radius-pill); border: 1px solid var(--c-garis); background: var(--c-kertas); font-size: 15px; font-weight: 600; cursor: pointer; transition: background-color .15s ease, border-color .15s ease; }
+.iz-gr-chip span:hover { background: var(--c-pasir-muda); }
+.iz-gr-chip input:checked + span { background: var(--c-tinta); border-color: var(--c-tinta); color: var(--c-krem); }
+.iz-gr-chip input:focus-visible + span { outline: 3px solid var(--c-focus); outline-offset: 2px; }
+.iz-gr-field[data-invalid] .iz-gr-chip span { border-color: var(--iz-gr-err); }
+
+.iz-gr-check { display: flex; align-items: flex-start; gap: 12px; min-height: 48px; padding: 12px 0; font-size: 16px; line-height: 1.45; cursor: pointer; }
+.iz-gr-check input { flex: none; width: 22px; height: 22px; margin: 0; accent-color: var(--c-tinta); }
+.iz-gr-check input:focus-visible { outline: 3px solid var(--c-focus); outline-offset: 2px; }
+.iz-gr-check a { color: var(--c-kuning-tua); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+
+.iz-gr-photos { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.iz-gr-photos:empty { display: none; }
+.iz-gr-photo { display: flex; align-items: center; gap: var(--space-3); padding: 8px; border-radius: 14px; background: var(--c-kertas); border: 1px solid var(--c-garis); }
+.iz-gr-photo img { flex: none; width: 64px; height: 64px; border-radius: 10px; object-fit: cover; background: var(--c-pasir-muda); }
+.iz-gr-photo__meta { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.iz-gr-photo__name { font-size: 15px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.iz-gr-photo__ok { font-size: 14px; color: var(--c-fit); font-weight: 600; }
+.iz-gr-bar { display: block; height: 6px; border-radius: 3px; background: var(--c-pasir-muda); overflow: hidden; }
+.iz-gr-bar span { display: block; height: 100%; background: var(--c-tinta); transition: width .2s ease; }
+.iz-gr-remove { flex: none; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; border: 0; background: transparent; font-size: 26px; line-height: 1; color: var(--c-batu); cursor: pointer; }
+.iz-gr-remove:hover { background: var(--c-pasir-muda); color: var(--c-tinta); }
+.iz-gr-remove:focus-visible { outline: 3px solid var(--c-focus); outline-offset: 2px; }
+.iz-gr-add { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 56px; padding: 0 var(--space-5); border-radius: 14px; border: 1.5px dashed var(--c-batu-muda); font-size: 16px; font-weight: 600; cursor: pointer; align-self: flex-start; }
+.iz-gr-add:hover { background: var(--c-pasir-muda); }
+.iz-gr-add:focus-within { outline: 3px solid var(--c-focus); outline-offset: 2px; }
+.iz-gr-add span { font-size: 22px; line-height: 1; }
+.iz-gr-textbtn { display: inline-flex; align-items: center; min-height: 44px; padding: 0 4px; border: 0; background: transparent; color: var(--c-kuning-tua); font: inherit; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.iz-gr-textbtn:focus-visible { outline: 3px solid var(--c-focus); outline-offset: 2px; }
+
+.iz-gr-submit { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-3); margin-top: var(--space-4); }
+.iz-gr-formerr { font-size: 16px; font-weight: 600; color: var(--iz-gr-err); }
+.iz-gr-formerr:empty { display: none; }
+.iz-gr-submitbtn:disabled { opacity: .55; cursor: not-allowed; transform: none; }
+
+.iz-gr-trap { position: absolute; left: -10000px; top: auto; width: 1px; height: 1px; overflow: hidden; }
+
+.iz-gr-success p { font-size: 17px; line-height: 1.55; color: var(--c-batu); margin-bottom: var(--space-3); }
+.iz-gr-ticket { display: flex; flex-direction: column; gap: 4px; padding: var(--space-4) var(--space-5); border-radius: var(--radius-tile); background: var(--c-pasir-muda); }
+.iz-gr-success .iz-gr-ticket { color: var(--c-tinta); }
+.iz-gr-ticket span { font-size: 15px; font-weight: 600; color: var(--c-batu); }
+.iz-gr-ticket strong { font-family: var(--font-display); font-size: 32px; font-weight: 800; letter-spacing: 0.04em; font-variant-numeric: tabular-nums; }
+.iz-gr-copy { min-height: 48px; margin-bottom: var(--space-4); }
+.iz-gr-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); margin-top: var(--space-4); }
+
+.iz-gr-feedback { margin-top: var(--space-section); }
+.iz-gr-lead { font-size: 18px; line-height: 1.55; color: var(--c-batu); margin: var(--space-2) 0 var(--space-6); }
+
+@media (max-width: 1023px) {
+  .iz-gr-layout { grid-template-columns: minmax(0, 1fr); }
+  .iz-gr-side { position: static; }
+}
+@media (max-width: 767px) {
+  .iz-gr { padding-top: 104px; }
+  .iz-gr-steps { grid-template-columns: minmax(0, 1fr); gap: 8px; margin-bottom: var(--space-8); }
+  .iz-gr-steps li { padding: 12px 14px; font-size: 15px; }
+  .iz-gr-form, .iz-gr-success { padding: var(--space-5) var(--space-4); border-radius: var(--radius-tile-lg); }
+  .iz-gr-formtitle { font-size: 22px; margin-bottom: var(--space-5); }
+  .iz-gr-pair { grid-template-columns: minmax(0, 1fr); }
+  .iz-gr-switch { width: 100%; }
+  .iz-gr-switch a { flex: 1; justify-content: center; padding: 0 var(--space-3); font-size: 15px; }
+  .iz-gr-submitbtn, .iz-gr-actions .iz-btn, .iz-gr-add { width: 100%; }
+  .iz-gr-actions .iz-btn { white-space: normal; text-align: center; }
+  .iz-gr-ticket strong { font-size: 26px; }
+  .iz-gr-chip span { padding: 0 14px; font-size: 14px; }
+}

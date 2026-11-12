@@ -4,6 +4,7 @@ import type { Product, PublicArticle } from '@/types';
 import { SITE_ORIGIN, DEFAULT_AUTHOR } from '@/lib/constants';
 import { extractBodyImages, formatOf, isAllowedImageUrl, publicDate } from '@/lib/article-format';
 import { STORE_COPY } from '@/lib/v2/partner-stores';
+import { WARRANTY_COPY } from '@/lib/warranty/copy';
 
 /** canonicalUrl() -> 'https://inzta.id/', canonicalUrl('blog', slug) -> 'https://inzta.id/blog/{slug}'. Never a query or fragment. */
 export function canonicalUrl(...segments: string[]): string {
@@ -50,6 +51,8 @@ export const PAGE_TEXT = {
   // F-027: the text lives with the rest of the shop copy, so an edit to copy.md changes one file. Not part of the
   // 2026-10-29 approval above: checked by the inzta-hq editor; store listing confirmed by INZTA on 2026-11-09 (A-096).
   toko: STORE_COPY.meta,
+  // F-031 2.1: text lives with the rest of the warranty copy (writer → editor round, task W9).
+  garansi: WARRANTY_COPY.meta,
 } as const;
 
 export const DEFAULT_OG_IMAGE = { url: `${SITE_ORIGIN}/logo-mtg.png`, width: 842, height: 842, alt: SITE_NAME };

@@ -157,6 +157,7 @@
   html .iz-page .iz-msheet__group h2 { font-size: max(11.8px, calc(14 * var(--u))); }
   html .iz-page .iz-footer__shops span { font-size: max(12.6px, calc(15 * var(--u))); }
   html .iz-page .iz-footer__about { font-size: max(12.6px, calc(15 * var(--u))); }
+  html .iz-page .iz-navgaransi { font-size: max(12.6px, calc(15 * var(--u))); }
   html .iz-page .iz-fallback { font-size: max(11.8px, calc(14 * var(--u))); }
   html .iz-page .iz-empty__title { font-size: max(18.5px, calc(22 * var(--u))); }
   html .iz-page .iz-band__price { font-size: max(26.9px, calc(32 * var(--u))); }
@@ -234,4 +235,29 @@
   html .iz-page .iz-cartbar__total span { font-size: max(10.9px, calc(13 * var(--u))); }
   html .iz-page .iz-cartbar__total b { font-size: max(13.4px, calc(16 * var(--u))); }
   html .iz-page .iz-cartbar .iz-btn { font-size: max(12.6px, calc(15 * var(--u))); }
+  html .iz-page .iz-gr-switch a { font-size: max(13.4px, calc(16 * var(--u))); }
+  html .iz-page .iz-gr-steps li { font-size: max(13.4px, calc(16 * var(--u))); }
+  html .iz-page .iz-gr-steps__n { font-size: max(14.3px, calc(17 * var(--u))); }
+  html .iz-page .iz-gr-card p { font-size: max(13.4px, calc(16 * var(--u))); }
+  html .iz-page .iz-gr-card .iz-btn { font-size: max(13.4px, calc(16 * var(--u))); }
+  html .iz-page .iz-gr-formtitle { font-size: max(21.8px, calc(26 * var(--u))); }
+  html .iz-page .iz-gr-grouptitle { font-size: max(12.6px, calc(15 * var(--u))); }
+  html .iz-page .iz-gr-label { font-size: max(13.4px, calc(16 * var(--u))); }
+  html .iz-page .iz-gr-hint { font-size: max(12.6px, calc(15 * var(--u))); }
+  html .iz-page .iz-gr-count { font-size: max(11.8px, calc(14 * var(--u))); }
+  html .iz-page .iz-gr-err { font-size: max(12.6px, calc(15 * var(--u))); }
+  html .iz-page .iz-gr-note { font-size: max(12.6px, calc(15 * var(--u))); }
+  html .iz-page .iz-gr-input { font-size: max(13.4px, calc(16 * var(--u))); }
+  html .iz-page .iz-gr-chip span { font-size: max(12.6px, calc(15 * var(--u))); }
+  html .iz-page .iz-gr-check { font-size: max(13.4px, calc(16 * var(--u))); }
+  html .iz-page .iz-gr-photo__name { font-size: max(12.6px, calc(15 * var(--u))); }
+  html .iz-page .iz-gr-photo__ok { font-size: max(11.8px, calc(14 * var(--u))); }
+  html .iz-page .iz-gr-remove { font-size: max(21.8px, calc(26 * var(--u))); }
+  html .iz-page .iz-gr-add { font-size: max(13.4px, calc(16 * var(--u))); }
+  html .iz-page .iz-gr-add span { font-size: max(18.5px, calc(22 * var(--u))); }
+  html .iz-page .iz-gr-formerr { font-size: max(13.4px, calc(16 * var(--u))); }
+  html .iz-page .iz-gr-success p { font-size: max(14.3px, calc(17 * var(--u))); }
+  html .iz-page .iz-gr-ticket span { font-size: max(12.6px, calc(15 * var(--u))); }
+  html .iz-page .iz-gr-ticket strong { font-size: max(26.9px, calc(32 * var(--u))); }
+  html .iz-page .iz-gr-lead { font-size: max(15.1px, calc(18 * var(--u))); }
 }

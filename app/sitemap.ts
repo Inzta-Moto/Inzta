@@ -48,6 +48,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${baseUrl}/syarat-ketentuan`, changeFrequency: 'yearly', priority: 0.3 },
     // F-027 B7: static shop data, so no lastModified; /toko 404s while the list is empty, so it is listed only then.
     ...(PARTNER_STORES.length > 0 ? [{ url: `${baseUrl}/toko`, changeFrequency: 'monthly' as const, priority: 0.5 }] : []),
+    // F-031 2.1: claim and feedback forms; static text, so no lastModified.
+    { url: `${baseUrl}/garansi`, changeFrequency: 'monthly', priority: 0.5 },
   ];
 
   // Halaman dinamis produk

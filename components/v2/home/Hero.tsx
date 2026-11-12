@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import HeroImage from '@/components/v2/home/HeroImage';
+import { fontHero } from '@/components/v2/home/heroFont';
 import { Motorcycle } from '@/components/v2/icons';
 import Bounce from '@/components/v2/motion/Bounce';
 
@@ -14,7 +15,7 @@ export default function Hero() {
       <div className="iz-hero__body">
         {/* Copy from the owner, Om Fahrul (2026-11-02, via Sehan). One sentence per line; the space between the spans
             keeps the accessible name "Carry Your Gear. Create Your Adventure." */}
-        <h1 className="t-display iz-hero__title--home" data-reveal-lines="">
+        <h1 className={`t-display iz-hero__title--home ${fontHero.variable}`} data-reveal-lines="">
           <span className="iz-hero__line">Carry Your Gear.</span>{' '}
           <span className="iz-hero__line iz-tone2">Create Your Adventure.</span>
         </h1>
