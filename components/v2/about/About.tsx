@@ -4,6 +4,7 @@ import ProcessSteps from '@/components/v2/about/ProcessSteps';
 import ValuesList from '@/components/v2/about/ValuesList';
 import CommunityPanel from '@/components/v2/about/CommunityPanel';
 import ContactCard from '@/components/v2/about/ContactCard';
+import LocationSection from '@/components/v2/about/LocationSection';
 import { SHOW_VALUES_COPY } from '@/components/v2/about/about-content';
 
 // Tentang (F-016 S8), section order of tentang.dc.html. Server component: every text is in the server HTML
@@ -17,6 +18,8 @@ export default function About({ gasberHref }: { gasberHref: string }) {
       <CommunityPanel gasberHref={gasberHref} />
       <HowToOrder flush={false} />
       <ContactCard />
+      {/* F-032: the address on a map, last, so the contact channels stay right after "Cara pesan". */}
+      <LocationSection />
     </>
   );
 }

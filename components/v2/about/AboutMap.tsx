@@ -17,7 +17,7 @@ type Leg = { key: string; view: string; d: string; box: [number, number, number,
 // climbs the empty right side of the card from the bottom edge to the top right corner (160 x 337 box at the right
 // edge); below 1024 px only a short corner leg is left, above the number. Paths may leave their box; the card clips
 // them.
-const LEGS: Record<'community' | 'contact', Leg[]> = {
+const LEGS: Record<'community' | 'contact' | 'location', Leg[]> = {
   community: [
     {
       key: 'wide',
@@ -47,6 +47,17 @@ const LEGS: Record<'community' | 'contact', Leg[]> = {
       box: [0, -40, 180, 160],
     },
   ],
+  // F-032 location panel: the contact card's corner leg at every width, in the free top right corner beside the
+  // short headline; the long address lines below stay clear of it. Its own variant so the mask ids stay unique next
+  // to the contact card's map on /tentang.
+  location: [
+    {
+      key: 'corner',
+      view: '0 0 140 140',
+      d: 'M40-20C50 16 84 30 104 48S132 78 160 84',
+      box: [0, -40, 180, 160],
+    },
+  ],
 };
 
 /**
@@ -58,7 +69,7 @@ const LEGS: Record<'community' | 'contact', Leg[]> = {
  * drawn route, so nothing blinks out in front of the visitor. No loops. The lite motion tier shortens the draw-in to
  * 1 s (v2-about.css, html[data-iz-tier]); the minimal tier counts as reduced motion.
  */
-export default function AboutMap({ variant }: { variant: 'community' | 'contact' }) {
+export default function AboutMap({ variant }: { variant: 'community' | 'contact' | 'location' }) {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {

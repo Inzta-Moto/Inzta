@@ -76,3 +76,14 @@ export const COMMUNITY_PHOTOS = {
 
 // S8.6: shops without a known URL stay text (P-7).
 export const TOKOPEDIA_URL = 'https://www.tokopedia.com/lentoratoko';
+
+// F-032: the location section. Every line comes from the business address or names the action, so it adds no claim:
+// no opening hours, phone, rating, or visit promise (whether buyers may visit is open, inzta-hq A-161).
+export const LOCATION_COPY = {
+  title: 'Lokasi INZTA.',
+  addressLabel: 'Alamat',
+  area: 'Cengkareng, Jakarta Barat.',
+  mapsButton: 'Buka di Google Maps',
+  mapsNote: 'Anda akan diarahkan ke Google Maps',
+  mapTitle: 'Peta lokasi INZTA Moto di Google Maps',
+};

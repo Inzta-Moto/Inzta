@@ -135,6 +135,17 @@ html:not(.js-nav) .iz-navdd:focus-within .iz-navdd__btn svg { transform: rotate(
 /* Business name and address (Google Ads destination requirements, 2026-11-02): one line each, upright, not italic. */
 .iz-footer__address { font-style: normal; }
 .iz-footer__address span { display: block; }
+/* F-032: the footer address is one link to Google Maps. It keeps the muted text of the address and says what it does
+   on a last line with the external arrow; the whole block is the target (well over 44 px tall). */
+.iz-footer__maps { display: block; color: inherit; border-radius: 8px; }
+.iz-footer__maps:hover { color: var(--c-krem); }
+.iz-footer__maps:focus-visible { outline: 2px solid var(--c-kuning); outline-offset: 4px; }
+.iz-footer__address .iz-footer__mapscta { display: inline-flex; align-items: center; gap: 6px; margin-top: 6px; color: var(--c-kuning); font-weight: 600; }
+.iz-footer__mapscta svg { width: 16px; height: 16px; flex: none; transition: transform 0.3s ease; }
+.iz-footer__maps:hover .iz-footer__mapscta { text-decoration: underline; text-underline-offset: 3px; }
+@media (prefers-reduced-motion: no-preference) {
+  .iz-footer__maps:hover .iz-footer__mapscta svg { transform: translate(2px, -2px); }
+}
 
 /* Tablet footer: five columns left the Kontak column too narrow for the phone number and shop pills at 768 px, so the
    brand takes its own row above four columns. */

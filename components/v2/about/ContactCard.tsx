@@ -1,10 +1,10 @@
 import Link from 'next/link';
-import { BUSINESS_ADDRESS, BUSINESS_EMAIL, BUSINESS_NAME, WA_NUMBER } from '@/lib/constants';
+import { BUSINESS_ADDRESS, BUSINESS_EMAIL, BUSINESS_MAPS_URL, BUSINESS_NAME, WA_NUMBER } from '@/lib/constants';
 import { PARTNER_STORES, STORE_COPY } from '@/lib/v2/partner-stores';
 import { formatWaDisplay } from '@/lib/v2/home-data';
 import { ArrowRight, WhatsApp } from '@/components/v2/icons';
 import AboutMap from '@/components/v2/about/AboutMap';
-import { INSTAGRAM, TOKOPEDIA_URL } from '@/components/v2/about/about-content';
+import { INSTAGRAM, LOCATION_COPY, TOKOPEDIA_URL } from '@/components/v2/about/about-content';
 
 const Bag = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -97,20 +97,24 @@ export default function ContactCard() {
               Email <span className="iz-nowrap">{BUSINESS_EMAIL}</span>
             </span>
           </a>
-          <address className="iz-channel iz-channel--plain iz-channel--address">
+          {/* F-032: the address opens the INZTA Moto listing in Google Maps, like the other outside channels. */}
+          <a className="iz-channel iz-channel--address" href={BUSINESS_MAPS_URL} target="_blank" rel="noopener noreferrer">
             <span className="iz-iconbtn">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
                 <circle cx="12" cy="10" r="3" />
               </svg>
             </span>
-            <span>
+            <address className="iz-channel__text">
               {BUSINESS_NAME}
               {BUSINESS_ADDRESS.map(line => (
                 <span key={line} className="iz-channel__line">{line}</span>
               ))}
-            </span>
-          </address>
+            </address>
+            {/* The arrow is aria-hidden, so screen readers get the destination as text. */}
+            <span className="iz-sr">{LOCATION_COPY.mapsButton}</span>
+            <External />
+          </a>
         </div>
       </div>
     </section>

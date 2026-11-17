@@ -26,3 +26,12 @@ export const BUSINESS_ADDRESS: readonly string[] = [
   'Duri Kosambi, Cengkareng',
   'Jakarta Barat, DKI Jakarta 11750',
 ];
+
+// F-032: the INZTA Moto Google Maps listing ("Inztamoto", same address as BUSINESS_ADDRESS, website inzta.id), checked
+// on 2026-11-17 (inzta-hq docs/specs/F-032-maps-tentang). The cid form is the stable link to the listing, the same
+// pattern as mapsUrl in lib/v2/partner-stores.ts. One constant for the /tentang section, the contact row, and the
+// footer, so the link never drifts between them.
+export const BUSINESS_MAPS_CID = '9682882888321659961';
+export const BUSINESS_MAPS_URL = `https://maps.google.com/?cid=${BUSINESS_MAPS_CID}`;
+// Keyless embed of the same listing; Google redirects it to /maps/embed, which only renders inside an iframe.
+export const BUSINESS_MAPS_EMBED_URL = `https://maps.google.com/maps?cid=${BUSINESS_MAPS_CID}&output=embed&hl=id`;
