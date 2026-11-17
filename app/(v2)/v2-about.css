@@ -215,6 +215,9 @@
 .iz-location__cta .iz-btn svg { width: 18px; height: 18px; }
 .iz-location__map { position: relative; min-height: 480px; background: var(--c-pasir-muda); border: 1px solid var(--c-garis); border-left: 0; border-radius: 0 var(--radius-band) var(--radius-band) 0; overflow: hidden; }
 .iz-location__map iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+/* Ring on the box while the map holds focus, in browsers that match :focus-within across the iframe boundary.
+   Chromium does not for this cross-origin embed (checked 2026-11-17, F-032 REV-05); keyboard focus inside the map
+   then shows Google's own focus style. */
 .iz-location__map:focus-within { outline: 3px solid var(--c-focus); outline-offset: 4px; }
 
 /* The route of the location panel: the short corner leg in the top right, lit by a glow there, with the topo lines

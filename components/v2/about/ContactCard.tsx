@@ -4,7 +4,7 @@ import { PARTNER_STORES, STORE_COPY } from '@/lib/v2/partner-stores';
 import { formatWaDisplay } from '@/lib/v2/home-data';
 import { ArrowRight, WhatsApp } from '@/components/v2/icons';
 import AboutMap from '@/components/v2/about/AboutMap';
-import { INSTAGRAM, TOKOPEDIA_URL } from '@/components/v2/about/about-content';
+import { INSTAGRAM, LOCATION_COPY, TOKOPEDIA_URL } from '@/components/v2/about/about-content';
 
 const Bag = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -111,6 +111,8 @@ export default function ContactCard() {
                 <span key={line} className="iz-channel__line">{line}</span>
               ))}
             </address>
+            {/* The arrow is aria-hidden, so screen readers get the destination as text. */}
+            <span className="iz-sr">{LOCATION_COPY.mapsButton}</span>
             <External />
           </a>
         </div>

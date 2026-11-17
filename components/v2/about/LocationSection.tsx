@@ -6,7 +6,8 @@ import { LOCATION_COPY } from '@/components/v2/about/about-content';
 // "Lokasi INZTA." (F-032): the business address with the Maps button on a dark panel that carries the /tentang route
 // map, next to the real map of the listing. The iframe is the keyless Google embed with loading="lazy": the section is
 // the last one on the page, so it never competes with the hero, and it needs no client code or API key. The button is
-// the primary path, so a blocked or failed embed still leaves the link; the map box keeps its tint while it loads.
+// the primary path, so a blocked or failed embed still leaves the link; the map box keeps its tint while it loads. No
+// referrerPolicy override: the browser default sends Google only the origin, never ?aff=, UTM, or click ids.
 export default function LocationSection() {
   return (
     <section id="lokasi" className="iz-wrap" aria-labelledby="lokasi-judul">
@@ -41,7 +42,6 @@ export default function LocationSection() {
             src={BUSINESS_MAPS_EMBED_URL}
             title={LOCATION_COPY.mapTitle}
             loading="lazy"
-            referrerPolicy="no-referrer-when-downgrade"
           />
         </div>
       </div>
