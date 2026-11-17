@@ -4,7 +4,7 @@ import { INSTAGRAM, MOTOR_CATEGORIES, SHOP_LINKS } from '@/lib/v2/home-content';
 import type { MotorCategory } from '@/types';
 import CategoryLink from '@/components/v2/CategoryLink';
 import { ArrowUpRight } from '@/components/v2/icons';
-import { BUSINESS_ADDRESS, BUSINESS_EMAIL, BUSINESS_NAME } from '@/lib/constants';
+import { BUSINESS_ADDRESS, BUSINESS_EMAIL, BUSINESS_MAPS_URL, BUSINESS_NAME } from '@/lib/constants';
 import { PARTNER_STORES, STORE_COPY } from '@/lib/v2/partner-stores';
 import { WARRANTY_COPY } from '@/lib/warranty/copy';
 
@@ -34,12 +34,19 @@ export default function SiteFooter({ waHref, waNumber, currentCategory }: { waHr
             Tank bag, side bag, tail bag, dan aksesori touring untuk rider Indonesia. Dirancang dan diproduksi sendiri.
           </p>
           <p className="iz-footer__about">Pertanyaan dan pesanan dijawab admin INZTA lewat WhatsApp.</p>
-          {/* Business identity for Google Ads destination requirements (address confirmed by Angkasa, 2026-11-02). */}
+          {/* Business identity for Google Ads destination requirements (address confirmed by Angkasa, 2026-11-02). F-032:
+              the whole address is one link to the INZTA Moto listing in Google Maps, with a visible "open" line. */}
           <address className="iz-footer__about iz-footer__address">
-            {BUSINESS_NAME}
-            {BUSINESS_ADDRESS.map(line => (
-              <span key={line}>{line}</span>
-            ))}
+            <a className="iz-footer__maps" href={BUSINESS_MAPS_URL} target="_blank" rel="noopener noreferrer">
+              <span>{BUSINESS_NAME}</span>
+              {BUSINESS_ADDRESS.map(line => (
+                <span key={line}>{line}</span>
+              ))}
+              <span className="iz-footer__mapscta">
+                Buka di Google Maps
+                <ArrowUpRight />
+              </span>
+            </a>
           </address>
         </div>
         <div>
